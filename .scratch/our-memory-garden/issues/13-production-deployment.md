@@ -2,7 +2,7 @@
 
 ## What to build
 
-Publish and verify the finished garden on Vercel with Supabase and the planned GitHub repository.
+Publish and verify the finished garden on Vercel with Neon in Singapore and the planned GitHub repository.
 
 ## Blocked by
 
@@ -20,7 +20,7 @@ ready-for-agent
 
 ## Acceptance criteria
 
-- [ ] Deploy production with no preview deployments and connect the intended Supabase services.
+- [ ] Deploy production with no preview deployments and connect the intended Neon PostgreSQL, managed authentication and Object Storage services in Singapore.
 - [ ] Verify key public, private and administrator journeys on desktop and mobile in production.
 - [ ] Document how to monitor storage and maintain independent backups.
 
