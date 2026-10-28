@@ -4,7 +4,7 @@ Reviewed and owner approved 2026-10-28 for ticket 01, based on commit `e11a9c0`.
 
 ## Design coverage
 
-The approved ticket 01 snapshot contains 53 separate screens across five pages: General styles & brand, Desktop website, Desktop admin, Mobile website and Mobile admin. Screens sit side by side within their group. Ticket 02 adds six account-recovery states using the same components, bringing the current document to 59 screens.
+The approved ticket 01 snapshot contains 53 separate screens across five pages: General styles & brand, Desktop website, Desktop admin, Mobile website and Mobile admin. Screens sit side by side within their group. Ticket 02 adds six account-recovery states using the same components, bringing that snapshot to 59 screens. Routine implementation-state follow-through on 2026-10-29 adds 38 separate reference screens (19 desktop/mobile pairs), bringing the current native document to 97 top-level frames across the same five pages. See `docs/design-state-reference.md` for exact frame IDs and field/action contracts.
 
 | Area | Desktop and mobile designs |
 | --- | --- |
@@ -40,13 +40,24 @@ The prototype intentionally uses clicks to advance examples. Status indicators a
 
 ## Implementation follow-through
 
-The owner approved the broad visual shell and core editing flow. These later-ticket interactions still need their relevant states designed or refined before implementing them:
+The owner approved the broad visual shell and core editing flow. The routine UI follow-through is now recorded in 19 desktop/mobile reference pairs within that approved direction. These controls may be implemented using the contracts in `docs/design-state-reference.md`:
 
-- Tickets 04–08: settings for non-text blocks, responsive panel opening, exact nested layout controls, page metadata/addresses/categories, grids and nested menu editing.
-- Tickets 05–06: upload progress/errors, private-only and unused-photo variants, deletion confirmation/errors, and functional gallery stepping/captions.
-- Tickets 09–10: production integration of recovered edits, contested reorder/delete choices, history, trash, inbound-link warnings and restore-as-private. Current conflict and failure screens establish copy and choices; persistence and durable saved-version preservation require implementation tests.
-- Tickets 11–12: actual export completion/errors, live storage source, search/sharing controls and their feedback states.
-- Ticket 02 follow-through is complete: desktop/mobile neutral reset confirmation, new-password and invalid/expired-link designs now exist, and the corresponding local password-recovery journeys are verified. Managed delivery and owner sign-in remain part of production verification.
+- Ticket 04: Banner, Image and Button settings; responsive opening settings panels; Section/Columns fields and explicit nested add targets, including empty slots; persistent sibling move, duplicate and remove actions.
+- Tickets 05–08: gallery and page-grid settings; page title/address/date/category/cover controls; upload progress with per-file retry; private-only and unused-photo deletion/error patterns; nested navigation item editing and reusable page/external destinations.
+- Tickets 09–10: contested reorder/delete choice, grouped history with read-only snapshot/restore confirmation, trash restore-as-private feedback and inbound-link/homepage safeguards. Existing recovery, save failure and text-conflict frames remain the reference for those flows.
+- Tickets 11–12: export progress, ready/download and failure/expired-download patterns; storage source/freshness/refresh errors; public search-indexing and sharing controls, including private-page guidance.
+- Ticket 02 follow-through is complete: desktop/mobile neutral reset confirmation, new-password and invalid/expired-link designs exist, and the corresponding local password-recovery journeys are verified. Managed delivery and owner sign-in remain part of production verification.
+
+The references intentionally combine closely related controls and their inline feedback within a single interaction surface. They are separate screens, not a screen mosaic. Category create/rename, field validation, confirmation and minor error variants reuse the documented labelled-field, action and inline-feedback pattern rather than receiving a separate frame for every value. The gallery viewer reuses the existing gallery presentation with labelled stepping/close/caption behavior specified in the contract. Some references show adjacent example feedback variants for implementers; they are not simultaneous runtime states.
+
+This completes the listed routine visual-state gap; it does not claim working media processing, safe multi-user persistence, export generation or live storage measurement. Implement and test actual state transitions in the application before declaring the affected ticket complete. Material departures from the approved direction still require owner review.
+
+### State-reference validation (2026-10-29)
+
+- FigCraft CLI native audit: 5 pages, 97 top-level frames, 38 new references, 2,669 nodes, 471 navigation actions. Every navigation destination exists and is a frame. All 1,530 authoring commands succeeded; no missing fonts.
+- All new references fit their frame bounds; field values fit their input surfaces. They append side by side at y=100 after the existing matching admin frames. Existing approved nodes are unchanged except for the two admin pages' appended child lists.
+- Render-inspected mobile Banner settings, Nested layout targets and Page details, plus desktop Banner settings, Private photo and Version history. The samples have readable type and no clipping. Desktop content uses 64 px outer gutters after the 240 px sidebar; mobile uses 28 px gutters. Long forms use taller scroll references.
+- Render/audit evidence is retained in the task artifacts under `C:/Users/QW/.codex/visualizations/2026/10/28/01a1818b-b61d-7d30-b067-bc8107dbaffb/`: `design-audit.json`, `reference-mobile-banner.png`, `reference-mobile-nested-targets.png`, `reference-mobile-page-details.png`, `reference-desktop-banner.png`, `reference-desktop-private-photo.png` and `reference-desktop-history.png`.
 
 Do not infer privacy enforcement from hidden navigation or prototype links. Verify server-side administrator authorization, Neon persistence, public/private media boundaries, real network failures and concurrent edits in the application. Use approved design components for the remaining states and resolve material design changes with the owner before implementing the affected interaction.
 
