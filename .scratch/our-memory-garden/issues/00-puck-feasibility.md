@@ -14,7 +14,7 @@ resolved
 
 ## Acceptance criteria
 
-- [ ] On desktop and mobile, try adding and editing text and an image placeholder, using sections and columns, moving blocks with touch-friendly alternatives, and changing canvas size.
+- [x] On desktop and mobile, try adding and editing text and an image placeholder, using sections and columns, moving blocks with touch-friendly alternatives, and changing canvas size. Approved by the owner.
 - [x] Simulate automatic saving, failure, retry and same-device recovery with local sample data. Do not claim this validates Supabase persistence, private access or network security.
 - [x] Record what works and what fails; resolve or discuss significant gaps before ticket 01 is approved.
 - [x] Keep the experiment clearly separate from production and document how to run it.
@@ -27,7 +27,7 @@ Observed: text can be selected and edited; top-level text, image placeholder, se
 
 Open gaps: nested blocks currently rely on drag controls, the compact mobile editor has cramped/nested scrolling and needs a real phone-size usability test, and adding/moving nested content by non-drag controls has not been verified. Actual mobile touch dragging, complete section/column editing, and desktop drag interaction still need hands-on validation. The experiment does not verify Supabase, authentication, private access, real network failures or multi-user conflicts. No full application test suite or TypeScript configuration exists for this throwaway JavaScript experiment.
 
-The owner accepted the experiment with the limitations above. The first acceptance criterion remains unchecked because full mobile and nested-layout validation was not completed. Those limitations must be addressed during the relevant editor work and do not constitute final approval of ticket 01. The experiment is committed and pushed to the prototype branch.
+The owner accepted the experiment and explicitly approved the desktop/mobile editing acceptance criterion. All ticket 00 acceptance criteria are now approved. This owner approval does not expand the automated validation performed or establish production readiness; the technical limitations above remain recorded for the relevant editor work. Ticket 01 still requires final design approval. The experiment is committed and pushed to the prototype branch.
 
 
 ## Owner review
