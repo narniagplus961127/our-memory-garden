@@ -14,4 +14,4 @@ This project uses a single-context layout. See `docs/agents/domain.md`.
 
 ## Delivery
 
-After completing a feature, commit its changes and push the working branch to `https://github.com/narniagplus961127/our-memory-garden`. Keep disposable experiments on prototype branches and record known limitations in the relevant ticket.
+After completing each ticket, commit its changes and push the working branch to `https://github.com/narniagplus961127/our-memory-garden`. Keep disposable experiments on prototype branches and record known limitations in the relevant ticket.
