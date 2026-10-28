@@ -10,6 +10,7 @@ export type PageData = {
   zones?: Record<string, JsonValue>;
 };
 export type GardenPage = {
+  is_homepage?: boolean;
   id: string;
   title: string;
   slug: string;

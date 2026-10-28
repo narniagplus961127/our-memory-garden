@@ -11,10 +11,15 @@ export function BasicPageEditor({
 }) {
   const [title, setTitle] = useState(page.title);
   const [text, setText] = useState(initialText);
+  const [visibility, setVisibility] = useState(page.visibility);
   const [status, setStatus] = useState("Saved");
   const [error, setError] = useState("");
   const version = useRef(page.version);
-  const queued = useRef<{ title: string; text: string } | null>(null);
+  const queued = useRef<{
+    title: string;
+    text: string;
+    visibility: GardenPage["visibility"];
+  } | null>(null);
   const saving = useRef(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(
@@ -51,8 +56,16 @@ export function BasicPageEditor({
       if (queued.current && !failed) void persist();
     }
   }
-  function changed(nextTitle: string, nextText: string) {
-    queued.current = { title: nextTitle, text: nextText };
+  function changed(
+    nextTitle: string,
+    nextText: string,
+    nextVisibility = visibility,
+  ) {
+    queued.current = {
+      title: nextTitle,
+      text: nextText,
+      visibility: nextVisibility,
+    };
     setStatus("Saving…");
     if (timer.current) clearTimeout(timer.current);
     timer.current = setTimeout(() => {
@@ -69,7 +82,28 @@ export function BasicPageEditor({
       <div className="editor-toolbar">
         <Link href="/admin/pages">← Pages</Link>
         <div className="actions">
-          <span className="badge">Private</span>
+          <div className="visibility-control">
+            <label className="visually-hidden" htmlFor="page-visibility">
+              Page visibility
+            </label>
+            <select
+              id="page-visibility"
+              value={visibility}
+              disabled={page.is_homepage}
+              onChange={(event) => {
+                const next =
+                  event.target.value === "public" ? "public" : "private";
+                setVisibility(next);
+                changed(title, text, next);
+              }}
+            >
+              <option value="private">Private</option>
+              <option value="public">Public</option>
+            </select>
+          </div>
+          {page.is_homepage && (
+            <span className="badge">Homepage · always public</span>
+          )}
           <span role="status">{status}</span>
           <Link className="button secondary" href={"/p/" + page.id}>
             View page
@@ -104,8 +138,10 @@ export function BasicPageEditor({
         </div>
         <p className="muted">
           <small>
-            Changes save automatically. Only garden administrators can see this
-            page.
+            Changes save automatically.{" "}
+            {visibility === "public"
+              ? "Saved changes are visible to visitors."
+              : "Only garden administrators can see this page."}
           </small>
         </p>
         {error && (
