@@ -31,12 +31,14 @@ The prototype now includes desktop and mobile overview, pages, media library, na
 
 The editor now shows desktop and mobile content palettes, page canvas, a selected-text settings state, visibility and save status. Review the states and design missing error, drag/drop, canvas device-view and responsive-panel interactions before final approval.
 
-## Review handoff — 2026-10-28
+## Comments
 
-Ticket 00 is resolved and owner accepted. The native FigCraft document now contains 51 separate screens across five grouped pages. Added desktop/mobile saving, saved-edit, failure/retry, conflicting-text comparison, generic not-found and password-reset designs; added mobile public navigation, context-preserving admin-menu close and an editable line-art cat motif. Corrected palette, navigation-label and editor status review links.
+### Review handoff — 2026-10-28
 
-The acceptance flow is illustrated with linked sample screens; arbitrary editing, dragging, nested layouts and device-width switching belong to the owner-accepted working Puck experiment. The native graph audit verified 284 navigation actions with no missing destinations and both core desktop/mobile routes. Player spot checks and selected mobile renders were reviewed. Full evidence, routes and later-ticket design work are in `docs/design-spec-review.md`.
+Ticket 00 is resolved and owner accepted. The native FigCraft document now contains 53 separate screens across five grouped pages. Added desktop/mobile saving, saved-edit, failure/retry, conflicting-text comparison, generic not-found and password-reset designs; added mobile public navigation, context-preserving admin-menu close and an editable line-art cat motif. Corrected palette, navigation-label and editor status review links.
+
+The acceptance flow is illustrated with linked sample screens; arbitrary editing, dragging, nested layouts and device-width switching belong to the owner-accepted working Puck experiment. The native graph audit verified 300 navigation actions with no missing destinations and both core desktop/mobile routes. Player spot checks and selected mobile renders were reviewed. Full evidence, routes and later-ticket design work are in `docs/design-spec-review.md`.
 
 Status remains ready-for-human because the final criterion includes owner approval. Approve the overall visual direction and core editor flow before ticket 02 begins. Later-ticket states listed in the review must be refined before implementing their respective interactions; no production application has been started.
 
-
+Standards and spec review against owner-selected commit `0352905` completed. Corrected the comments heading and recovery destinations so their example text matches the selected version. Both review axes rechecked with zero remaining findings. Final native font inspection reports no missing fonts.
