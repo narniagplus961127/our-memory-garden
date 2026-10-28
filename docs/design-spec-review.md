@@ -1,66 +1,50 @@
 # Design and specification review
 
-The FigCraft document is the design reference for implementation, subject to owner approval. Ticket 01 remains open and blocks development until the relevant design is reviewed. The FigCraft prototype illustrates states; it is not a working website.
+Reviewed 2026-10-28 for ticket 01. The native `Our Memory Garden.figcraft` document is the visual reference, subject to owner approval. The specification and tickets govern behavior and security. Full application development remains gated on owner design approval.
 
-## Aligned so far
+## Design coverage
 
-- Desktop and mobile frames exist for home, a public page, gallery, login, dashboard, templates, and private/public editor states.
-- The homepage is a regular public page using example content blocks; the image can span the viewport. No separate story feature is implied.
-- The style guide includes H1–H4, paragraph, small text, palette, buttons, fields, privacy indicators and reading/wide/full-width guidance. Brand assets include a logo and favicon.
-- Public pages use warm parchment. Admin screens have a sage-tinted workspace and dedicated navigation.
-- The prototype contains links between example states, including visibility changes. Destinations were checked for existence, but the complete interaction flow has not been tested in the FigCraft player.
+The document contains 51 separate screens across five pages: General styles & brand, Desktop website, Desktop admin, Mobile website and Mobile admin. Screens sit side by side within their group.
 
-## Design gaps before ticket 01 can be approved
+| Area | Desktop and mobile designs |
+| --- | --- |
+| Public website | Editable homepage example, page, gallery, login, password reset, generic not found; mobile website menu |
+| Administration | Overview, pages, templates, media library, navigation, settings; mobile admin menu |
+| Settings | Individual Homepage, Account, Storage and Export screens |
+| Media | Photo details, public-access information, original download entry and in-use deletion safeguard |
+| Puck editor | Private/public page, selected text settings, saving, saved edit, failure/retry and text-conflict comparison |
+| Shared styles | H1–H4, paragraph, small, palette, components, logo, favicon, plant placeholder and editable garden cat motif |
 
-- The editor shows a simulated added block and saved state, but does not yet demonstrate a complete block-editing flow, reordering controls, different block types, device-view switching, or saving/failure/retry and concurrent-edit warnings.
-- Desktop and mobile overview, pages, media library, navigation and settings screens now exist. Detailed flows for page settings and addresses, categories, grids, menu editing, media upload and usage, search visibility, history, trash and export still need design and review. Corresponding tickets 04–12 retain those requirements.
-- The gallery and sign-in examples are illustrative; check actual player navigation, gallery stepping, password recovery and mobile interactions. A mobile admin menu is now illustrated; the public mobile navigation still needs a complete design.
-- Private-page not-found, private media, photo deletion warnings and restore-as-private behavior are specified but not visually demonstrated. Privacy must be enforced by the application and storage, not inferred from visibility in the design.
-- The homepage and ordinary page should be visually reconciled as components evolve; the sample home shows a full-width image, while the existing page example has an inset placeholder.
-- The photo and example copy are placeholders. The garden illustration and animal details remain sparse. The logo wordmark is a hybrid SVG containing a raster mark; favicon is a simplified vector.
+Public pages use warm parchment and administration uses sage. The page canvas is fluid. Desktop outer gutters and sidebar padding use 64 px; mobile gutters use 28 px. Full-width images/backgrounds are exceptions. The editor uses its own toolbar and panels. There are no separate Save, Publish, Preview or Undo/Redo controls.
 
-## Development handoff
+## Prototype review routes
 
-Follow approved FigCraft screens and style guide for visual presentation. The specification and individual tickets govern behavior, security, data handling and tests. Resolve missing or conflicting design states before implementing the affected interaction. Keep the public and admin themes distinct, and keep the homepage editable with the same blocks as other pages. Never interpret simulated prototype controls as completed product behavior.
+Start Present from Desktop / Home or Mobile / Home. The links illustrate example states, not real authentication or persistence.
 
-The owners subsequently removed the fixed page content-width limit. Use a fluid layout and the larger shared header/sidebar inset shown in the prototype; earlier numeric reading and wide limits are superseded.
+1. Garden dashboard (mobile: menu → Admin sign in) → Sign in → Dashboard → Create page → choose a template → private editor.
+2. Select the paragraph, or Text in the palette → selected text settings → click the example content field → changed text with Saving… → click Saving… → saved edit.
+3. Click PRIVATE → public editor; PUBLIC returns to private. Public editor examples illustrate visibility separately from the edited-text example.
+4. Click saved status in the private editor → unsaved failure screen → retry or continue editing. Click saved status in selected text settings → compare the two text versions → keep mine, accept saved, or edit manually.
+5. Use sidebar/menu entries to inspect pages, media, navigation and settings. Open individual settings and Photo details. Forgot password opens the reset design. Generic not-found screens are available directly in the website group for review.
 
+The prototype intentionally uses clicks to advance examples. Status indicators are review shortcuts; the application must update them from actual persistence results. Input fields do not accept arbitrary text. Block dragging, nested movement, device-width switching and editing arbitrary content are exercised in the separately approved Puck experiment, not simulated as complete product behavior here.
 
+## Validation evidence
 
+- Native document audit: 5 pages, 51 top-level frames, 284 navigation actions; every destination exists and is a frame.
+- Both desktop and mobile core route graphs pass: home → login → dashboard → templates → private editor → selected text → saving → saved edit → public editor (mobile includes its website menu).
+- FigCraft player spot check: home → login → dashboard → private editor crossed the website/admin groups successfully. This is not a claim that every hotspot was exercised in the player.
+- Render inspection: mobile homepage, saving editor and conflict comparison have readable content without clipping. CLI font inspection reported no missing fonts before the final additions, which use the same installed Arial/Georgia families and vector paths.
+- Ticket 00's local Puck experiment is owner accepted, including the additional desktop/mobile exercise. Its sample/local-storage limitations remain recorded in ticket 00.
 
-Individual Homepage, Account, Storage and Export settings screens now exist on desktop and mobile. They align with existing homepage, account recovery, storage monitoring and export requirements. The screens use example data and entry-point controls; completion states, errors, exact storage data source, and functional security remain to be specified and validated during development. Owner approval of the overall prototype remains pending.
+## Implementation follow-through
 
+The broad visual shell and core editing review are ready for owner approval. These later-ticket interactions still need their relevant states designed or refined before implementing them:
 
-Desktop and mobile Photo details screens now illustrate a public photo's usage, restricted original download, and in-use deletion safeguard. Private-only, unused-photo, upload, and deletion confirmation/error states remain to be designed and verified.
+- Tickets 04–08: settings for non-text blocks, responsive panel opening, exact nested layout controls, page metadata/addresses/categories, grids and nested menu editing.
+- Tickets 05–06: upload progress/errors, private-only and unused-photo variants, deletion confirmation/errors, and functional gallery stepping/captions.
+- Tickets 09–10: inline/recovered-unsaved presentation, contested reorder/delete choices, history, trash, inbound-link warnings and restore-as-private. Current conflict and failure screens establish copy and choices; persistence and durable saved-version preservation require implementation tests.
+- Tickets 11–12: actual export completion/errors, live storage source, search/sharing controls and their feedback states.
+- Ticket 02: reset-email submission/confirmation and new-password form states. The current reset page is an entry-point design; its neutral-confirmation note is a handoff annotation, not final application copy.
 
-
-The page editor was redesigned with a Klaviyo-inspired palette, canvas and contextual block settings on desktop, plus a compact mobile canvas and content panel. The spec and ticket 04 now include button blocks, sections, columns, desktop/mobile canvas views. The static prototype demonstrates selection between illustrative states; dragging, responsive panel behavior, block settings beyond text, preview, errors and save/conflict flows still need design and interactive validation.
-
-
-The separate Preview button was removed by request. The editor canvas remains live, and the desktop/mobile view controls remain. Save/error indicators still need full design and validation.
-
-
-
-Puck is selected as the React editor foundation. The existing palette/canvas/settings design has selected-block outlines; it remains a custom garden-themed design rather than an assertion that Puck's default UI matches it. Validate the editor experience with the local Puck experiment before design approval; verify production autosave, authentication and multi-user conflicts during implementation. Puck overrides/plugins may be experimental.
-
-
-## Editor-first review decisions
-
-- The owners agreed to a small local Puck feasibility experiment during the design phase, before approving ticket 01. It should validate desktop and mobile editing, adding and moving blocks, sections/columns, device views, and the auto-save interaction, then inform the FigCraft design.
-- Review the working experiment and corrected design together before approving the design or starting full implementation.
-- The first working slice should cover a private page, text, a basic image placeholder, sections/columns, and auto-save; the media library, galleries, page grids and remaining settings follow.
-- If both administrators edit the same text block and one saves first, preserve the second editor's local text and show both versions for a choice; do not silently overwrite either version.
-- Ticket 00 now covers the design-phase experiment and blocks ticket 01. Tickets 02–04 establish private pages, visibility and the first Puck editor slice; ticket 09 adds robust recovery and conflicts, and ticket 10 adds history UI.
-
-- The Puck experiment uses sample content and local storage. Supabase persistence, security and real network-failure behavior are verified during implementation.
-- On a same-block conflict, preserve the second editor's local text and offer keeping it, accepting the saved version, or copying it for manual editing. Preserve the saved version in page history before replacing it.
-- After an unsaved edit and a browser refresh or closure, attempt recovery on the same device and clearly mark the recovered changes as unsaved until persistence succeeds.
-
-- Conflicting moves or deletion of the same block require a choice from the second editor while preserving unsaved work; independent changes should be applied where safe.
-- Device-local recovery copies are cleared after successful saving or administrator sign-out.
-- The Puck experiment succeeds only after desktop and mobile testing of adding and editing text, adding an image placeholder, sections and columns, moving blocks, switching canvas size, and simulated saving/recovery. Report and resolve any gap before full development.
-
-
-## Local Puck experiment — initial findings
-
-Puck 0.21.3 runs locally with sample text, image placeholders, sections and columns. Top-level tap-to-add and move controls, text edits, canvas-width selection, and simulated local save/failure/reload recovery were exercised. Nested non-drag editing and real phone-size usability remain unresolved; the experiment uses local storage and does not establish production security, persistence, or multi-user behavior. The owners need to review the experiment and resolve these gaps before design approval.
+Do not infer privacy enforcement from hidden navigation or prototype links. Verify Supabase authorization, public/private media boundaries, real network failures and concurrent edits in the application. Use approved design components for the remaining states and resolve material design changes with the owner before implementing the affected interaction.

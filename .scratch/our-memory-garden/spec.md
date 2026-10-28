@@ -107,4 +107,4 @@ Public registration, visitor comments or reactions, a separate story content typ
 
 ## Further Notes
 
-Use sample content in the prototype; the generated garden photo is illustrative, not a personal memory. The project currently has a FigCraft design, agent documentation, tickets and a dependency-only experiment folder; no application or working Puck experiment has been built. Ticket 01 and full implementation remain gated on the experiment and owner design approval.
+Use sample content in the prototype; the homepage uses a plant image placeholder. The project has a FigCraft design, documentation, tickets and a working disposable Puck experiment on the prototype branch. Ticket 00 is owner accepted; its local-storage and sample-data limitations do not establish production persistence or security. Ticket 01 now includes desktop/mobile saving, failure, conflict, password-reset and not-found designs. See `docs/design-spec-review.md` for review routes, validation evidence and later-ticket design follow-through. Full implementation remains gated on owner approval of ticket 01.
