@@ -1,0 +1,1 @@
+{"name":"garden-puck-experiment","private":true,"version":"0.0.0","type":"module","scripts":{"dev":"vite --host 127.0.0.1"},"dependencies":{"@puckeditor/core":"^0.21.0","react":"^19.0.0","react-dom":"^19.0.0","vite":"^6.0.0"}}
