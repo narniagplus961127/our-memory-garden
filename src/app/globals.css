@@ -439,3 +439,31 @@ td:last-child {
     transition: none !important;
   }
 }
+.visibility-control select {
+  width: auto;
+  min-width: 112px;
+}
+.settings-card {
+  background: var(--cream);
+  padding: 24px;
+  margin: 24px 0 36px;
+  border-radius: 5px;
+}
+.settings-card h2 {
+  font-size: 23px;
+  margin-bottom: 14px;
+}
+.settings-card p {
+  margin-bottom: 14px;
+}
+.settings-note {
+  margin-top: 24px;
+  font-size: 13px;
+}
+.homepage-label {
+  margin-left: 12px;
+}
+button.primary {
+  background: var(--ink);
+  color: var(--cream);
+}

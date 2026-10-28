@@ -17,9 +17,11 @@ The local fixture creates two administrator identities and one non-administrator
 
 Copy `.env.example` to `.env.local` and supply the dedicated Neon PostgreSQL connection, managed Neon Auth URL and a random server-only cookie secret of at least 32 characters. Set `AUTH_MODE=neon` and `NEXT_PUBLIC_APP_URL` to the exact application origin. Database and authentication credentials must stay server-side.
 
-Apply checked-in SQL with `npm run db:migrate`. Privately provision an identity using Neon Auth, then run `node --env-file=.env.local scripts/provision-admin.mjs USER_ID EMAIL` with its immutable identity ID. The allowlist supports up to two garden administrators. Do not auto-enroll accounts from email addresses or user-supplied metadata.
+Apply checked-in SQL with `npm run db:migrate`. For hosted migrations, set `DIRECT_DATABASE_URL` to the direct Neon connection; runtime requests use the pooled `DATABASE_URL`. The runner falls back to `DATABASE_URL` when a direct connection is not set, including local development. Privately provision an identity using Neon Auth, then run `node --env-file=.env.local scripts/provision-admin.mjs USER_ID EMAIL` with its immutable identity ID. The allowlist supports up to two garden administrators. Do not auto-enroll accounts from email addresses or user-supplied metadata.
 
 The application exposes no registration page or sign-up proxy. Managed Neon Auth currently permits direct upstream registration; such identities still have no garden access unless their exact immutable ID is privately allowlisted. The database Data API stays disabled. Password recovery uses the managed provider's email delivery; validate the owner's password-setup flow separately from the local test delivery.
+
+The first administrator visit initializes the public homepage. Edit it through Pages or Settings → Homepage; any other public page can be selected as the homepage. It stays public and cannot be trashed or deleted until another public page is selected.
 
 ## Validation
 
