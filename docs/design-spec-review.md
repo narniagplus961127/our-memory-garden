@@ -48,4 +48,6 @@ The owner approved the broad visual shell and core editing flow. These later-tic
 - Tickets 11–12: actual export completion/errors, live storage source, search/sharing controls and their feedback states.
 - Ticket 02: reset-email submission/confirmation and new-password form states. The current reset page is an entry-point design; its neutral-confirmation note is a handoff annotation, not final application copy.
 
-Do not infer privacy enforcement from hidden navigation or prototype links. Verify Supabase authorization, public/private media boundaries, real network failures and concurrent edits in the application. Use approved design components for the remaining states and resolve material design changes with the owner before implementing the affected interaction.
+Do not infer privacy enforcement from hidden navigation or prototype links. Verify server-side administrator authorization, Neon persistence, public/private media boundaries, real network failures and concurrent edits in the application. Use approved design components for the remaining states and resolve material design changes with the owner before implementing the affected interaction.
+
+The owner approved a backend change from Supabase to Neon in Singapore on 2026-10-28. This changes service integration, not the approved visual design. Managed authentication alone does not grant administrator access; the server must enforce the garden's administrator allowlist.
