@@ -1,6 +1,6 @@
 # Design and specification review
 
-Reviewed 2026-10-28 for ticket 01. The native `Our Memory Garden.figcraft` document is the visual reference, subject to owner approval. The specification and tickets govern behavior and security. Full application development remains gated on owner design approval.
+Reviewed and owner approved 2026-10-28 for ticket 01, based on commit `e11a9c0`. The native `Our Memory Garden.figcraft` document is the approved visual reference. The specification and tickets govern behavior and security. The design approval gate is satisfied and ticket 02 is unblocked.
 
 ## Design coverage
 
@@ -40,7 +40,7 @@ The prototype intentionally uses clicks to advance examples. Status indicators a
 
 ## Implementation follow-through
 
-The broad visual shell and core editing review are ready for owner approval. These later-ticket interactions still need their relevant states designed or refined before implementing them:
+The owner approved the broad visual shell and core editing flow. These later-ticket interactions still need their relevant states designed or refined before implementing them:
 
 - Tickets 04–08: settings for non-text blocks, responsive panel opening, exact nested layout controls, page metadata/addresses/categories, grids and nested menu editing.
 - Tickets 05–06: upload progress/errors, private-only and unused-photo variants, deletion confirmation/errors, and functional gallery stepping/captions.

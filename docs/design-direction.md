@@ -14,7 +14,7 @@ Brand assets are under `assets/brand`. The generated garden photograph is sample
 
 ## Review state
 
-This is a design revision for review, not final owner approval of ticket 01. The prototype represents interactions using linked screens. Full application development remains gated on approval of the design.
+The owner approved the FigCraft design and core editor flow on 2026-10-28, based on commit `e11a9c0`, completing ticket 01. The prototype represents interactions using linked screens. Follow this approved visual direction during implementation and the remaining design follow-through recorded in `docs/design-spec-review.md`.
 
 
 

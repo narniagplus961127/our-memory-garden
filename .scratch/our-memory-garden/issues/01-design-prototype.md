@@ -10,13 +10,13 @@ Create a clickable desktop and mobile Figcraft prototype reflecting the agreed b
 
 ## Status
 
-ready-for-human
+resolved
 
 ## Acceptance criteria
 
 - [x] Show public homepage, page, gallery, login, dashboard and editor with mobile and desktop layouts.
 - [x] Demonstrate browsing, signing in, creating a private page from a template, editing blocks and making it public, including visibility and save states.
-- [ ] Use sample content, soft colors, garden motifs and animals; review the prototype and record owner approval.
+- [x] Use sample content, soft colors, garden motifs and animals; review the prototype and record owner approval.
 
 
 ## Design revision — Sunlit Garden
@@ -42,3 +42,11 @@ The acceptance flow is illustrated with linked sample screens; arbitrary editing
 Status remains ready-for-human because the final criterion includes owner approval. Approve the overall visual direction and core editor flow before ticket 02 begins. Later-ticket states listed in the review must be refined before implementing their respective interactions; no production application has been started.
 
 Standards and spec review against owner-selected commit `0352905` completed. Corrected the comments heading and recovery destinations so their example text matches the selected version. Both review axes rechecked with zero remaining findings. Final native font inspection reports no missing fonts.
+
+### Owner approval — 2026-10-28
+
+The owner replied “approved” to the final design and core editor flow review at commit `e11a9c0`. This approves the 53-screen FigCraft prototype and closes ticket 01. The approval supersedes the pending-review statements above and unblocks ticket 02. Later-ticket design refinements and production validation remain as recorded in `docs/design-spec-review.md`.
+
+## Answer
+
+The desktop/mobile FigCraft prototype, general styles, brand assets and core editor flow are owner approved. All ticket 01 acceptance criteria are complete.
