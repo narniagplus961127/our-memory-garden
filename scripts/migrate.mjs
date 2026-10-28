@@ -1,12 +1,11 @@
 import { readFile, readdir } from "node:fs/promises";
 import postgres from "postgres";
-if (!process.env.DATABASE_URL) throw new Error("DATABASE_URL is required.");
-const sql = postgres(process.env.DATABASE_URL, {
+const connection = process.env.DIRECT_DATABASE_URL || process.env.DATABASE_URL;
+if (!connection)
+  throw new Error("DIRECT_DATABASE_URL or DATABASE_URL is required.");
+const sql = postgres(connection, {
   max: 1,
-  ssl:
-    new URL(process.env.DATABASE_URL).hostname === "127.0.0.1"
-      ? false
-      : "require",
+  ssl: new URL(connection).hostname === "127.0.0.1" ? false : "require",
 });
 try {
   await sql`create table if not exists garden_migrations(name text primary key,applied_at timestamptz not null default now())`;

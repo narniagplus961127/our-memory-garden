@@ -29,6 +29,9 @@ export default async function Pages() {
                 <tr key={page.id}>
                   <td>
                     <Link href={"/admin/pages/" + page.id}>{page.title}</Link>
+                    {page.is_homepage && (
+                      <span className="badge homepage-label">Homepage</span>
+                    )}
                   </td>
                   <td>
                     <span className="badge">

@@ -2,6 +2,8 @@ import "server-only";
 import { database } from "./db";
 import type { GardenPage, PageData } from "../pages";
 import { initialPageData } from "../pages";
+import { getHomepage } from "./homepage";
+import { RequestError } from "./http";
 export type Administrator = { id: string; email: string; name: string };
 const validId =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -10,7 +12,7 @@ export async function listPages(
 ): Promise<GardenPage[]> {
   const rows = await database()<
     GardenPage[]
-  >`select * from pages where deleted_at is null order by updated_at desc`;
+  >`select pages.*, exists(select 1 from garden_settings where homepage_id=pages.id) as is_homepage from pages where deleted_at is null order by updated_at desc`;
   return JSON.parse(JSON.stringify(rows));
 }
 export async function getVisiblePage(
@@ -20,7 +22,7 @@ export async function getVisiblePage(
   if (!validId.test(id)) return null;
   const rows = await database()<
     GardenPage[]
-  >`select * from pages where id=${id} and deleted_at is null and (${Boolean(administrator)} or visibility='public') limit 1`;
+  >`select pages.*, exists(select 1 from garden_settings where homepage_id=pages.id) as is_homepage from pages where id=${id} and deleted_at is null and (${Boolean(administrator)} or visibility='public') limit 1`;
   return rows[0] ? JSON.parse(JSON.stringify(rows[0])) : null;
 }
 export async function createPrivatePage(
@@ -40,11 +42,17 @@ export async function updatePageText(
   title: string,
   text: string,
   version: number,
+  visibility?: GardenPage["visibility"],
 ): Promise<GardenPage | null> {
   if (!validId.test(id)) return null;
+  if (visibility === "private" && (await getHomepage())?.id === id)
+    throw new RequestError(
+      409,
+      "The homepage stays public. Choose another homepage first.",
+    );
   const rows = await database()<
     GardenPage[]
-  >`update pages set title=${title},content=${database().json(initialPageData(text))},version=version+1,updated_at=now(),updated_by=${administrator.id} where id=${id} and version=${version} and deleted_at is null returning *`;
+  >`update pages set title=${title},content=${database().json(initialPageData(text))},visibility=coalesce(${visibility ?? null},visibility),version=version+1,updated_at=now(),updated_by=${administrator.id} where id=${id} and version=${version} and deleted_at is null returning *`;
   return rows[0] ? JSON.parse(JSON.stringify(rows[0])) : null;
 }
 export function firstText(data: PageData): string {
@@ -54,4 +62,22 @@ export function firstText(data: PageData): string {
       typeof block.props.text === "string" ? block.props.text : "",
     )
     .join("\n\n");
+}
+
+export async function updatePageVisibility(
+  administrator: Administrator,
+  id: string,
+  visibility: GardenPage["visibility"],
+  version: number,
+): Promise<GardenPage | null> {
+  if (!validId.test(id)) return null;
+  if (visibility === "private" && (await getHomepage())?.id === id)
+    throw new RequestError(
+      409,
+      "The homepage stays public. Choose another homepage first.",
+    );
+  const rows = await database()<
+    GardenPage[]
+  >`update pages set visibility=${visibility}, version=version+1, updated_at=now(), updated_by=${administrator.id} where id=${id} and version=${version} and deleted_at is null returning *`;
+  return rows[0] ? JSON.parse(JSON.stringify(rows[0])) : null;
 }
