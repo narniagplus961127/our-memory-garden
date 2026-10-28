@@ -9,3 +9,9 @@ dist/
 *.log
 .DS_Store
 Thumbs.db
+/.next/
+/test-results/
+/playwright-report/
+*.tsbuildinfo
+/.vercel/
+/.supabase/

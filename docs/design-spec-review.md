@@ -4,7 +4,7 @@ Reviewed and owner approved 2026-10-28 for ticket 01, based on commit `e11a9c0`.
 
 ## Design coverage
 
-The document contains 53 separate screens across five pages: General styles & brand, Desktop website, Desktop admin, Mobile website and Mobile admin. Screens sit side by side within their group.
+The approved ticket 01 snapshot contains 53 separate screens across five pages: General styles & brand, Desktop website, Desktop admin, Mobile website and Mobile admin. Screens sit side by side within their group. Ticket 02 adds six account-recovery states using the same components, bringing the current document to 59 screens.
 
 | Area | Desktop and mobile designs |
 | --- | --- |
@@ -46,7 +46,7 @@ The owner approved the broad visual shell and core editing flow. These later-tic
 - Tickets 05–06: upload progress/errors, private-only and unused-photo variants, deletion confirmation/errors, and functional gallery stepping/captions.
 - Tickets 09–10: production integration of recovered edits, contested reorder/delete choices, history, trash, inbound-link warnings and restore-as-private. Current conflict and failure screens establish copy and choices; persistence and durable saved-version preservation require implementation tests.
 - Tickets 11–12: actual export completion/errors, live storage source, search/sharing controls and their feedback states.
-- Ticket 02: reset-email submission/confirmation and new-password form states. The current reset page is an entry-point design; its neutral-confirmation note is a handoff annotation, not final application copy.
+- Ticket 02 follow-through is complete: desktop/mobile neutral reset confirmation, new-password and invalid/expired-link designs now exist, and the corresponding local password-recovery journeys are verified. Managed delivery and owner sign-in remain part of production verification.
 
 Do not infer privacy enforcement from hidden navigation or prototype links. Verify server-side administrator authorization, Neon persistence, public/private media boundaries, real network failures and concurrent edits in the application. Use approved design components for the remaining states and resolve material design changes with the owner before implementing the affected interaction.
 

@@ -1,0 +1,45 @@
+{
+  "name": "our-memory-garden",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "next dev --hostname 127.0.0.1",
+    "build": "next build",
+    "start": "next start --hostname 127.0.0.1",
+    "typecheck": "tsc --noEmit",
+    "test": "playwright test",
+    "test:api": "node --env-file=.env.test --test tests/service/*.test.mjs",
+    "db:migrate": "node --env-file=.env.local scripts/migrate.mjs",
+    "db:local-auth": "node --env-file=.env.test scripts/setup-local-auth.mjs",
+    "format:check": "prettier --check src tests scripts package.json tsconfig.json next.config.ts playwright.config.ts postcss.config.mjs"
+  },
+  "dependencies": {
+    "@neondatabase/auth": "0.7.0-beta",
+    "better-auth": "1.7.14",
+    "next": "16.4.3",
+    "pg": "8.23.1",
+    "postgres": "3.4.9",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "server-only": "0.0.1",
+    "tailwindcss": "4.3.3"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.64.1",
+    "@tailwindcss/postcss": "4.3.3",
+    "@types/node": "26.6.5",
+    "@types/pg": "8.23.1",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.2.3",
+    "prettier": "3.9.10",
+    "typescript": "7.0.2"
+  },
+  "overrides": {
+    "better-auth": "$better-auth",
+    "zod": "4.6.7"
+  },
+  "engines": {
+    "node": "24.x"
+  }
+}
