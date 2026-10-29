@@ -28,12 +28,26 @@ test("either administrator creates and edits a private page while visitors recei
   await page.getByRole("button", { name: "Create private page" }).click();
   await expect(page).toHaveURL(/\/admin\/pages\/[0-9a-f-]+$/);
   const id = page.url().split("/").pop()!;
-  await page.getByLabel("Page text").fill("We planted basil together.");
-  await expect(page.getByRole("status")).toContainText("Saved");
+  await page.getByRole("button", { name: "Open content panel" }).click();
+  await page
+    .getByRole("button", { name: "Select Text 1", exact: true })
+    .click();
+  await page.getByRole("button", { name: "Open settings panel" }).click();
+  await page
+    .getByRole("textbox", { name: "Text content", exact: true })
+    .fill("We planted basil together.");
+  await expect(
+    page.getByRole("status", { name: "Auto-save status" }),
+  ).toContainText("Saved");
   await page.reload();
-  await expect(page.getByLabel("Page text")).toHaveValue(
-    "We planted basil together.",
-  );
+  await page.getByRole("button", { name: "Open content panel" }).click();
+  await page
+    .getByRole("button", { name: "Select Text 1", exact: true })
+    .click();
+  await page.getByRole("button", { name: "Open settings panel" }).click();
+  await expect(
+    page.getByRole("textbox", { name: "Text content", exact: true }),
+  ).toHaveValue("We planted basil together.");
   const visitor = await browser.newContext();
   const notFound = await visitor.request.get(baseURL + "/api/pages/" + id);
   expect(notFound.status()).toBe(404);

@@ -1,4 +1,5 @@
 "use client";
+import { templates } from "@/lib/blocks";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 export function NewPageForm() {
@@ -11,11 +12,13 @@ export function NewPageForm() {
     setPending(true);
     setError("");
     try {
-      const title = new FormData(event.currentTarget).get("title");
+      const form = new FormData(event.currentTarget);
+      const title = form.get("title"),
+        template = form.get("template");
       const response = await fetch("/api/pages", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title }),
+        body: JSON.stringify({ title, template }),
       });
       const result = await response.json();
       if (!response.ok) {
@@ -35,6 +38,16 @@ export function NewPageForm() {
       <div className="field">
         <label htmlFor="new-title">Page title</label>
         <input id="new-title" name="title" required maxLength={200} autoFocus />
+      </div>
+      <div className="field">
+        <label htmlFor="new-template">Start from a template</label>
+        <select id="new-template" name="template">
+          {templates.map((template) => (
+            <option key={template.id} value={template.id}>
+              {template.label} — {template.description}
+            </option>
+          ))}
+        </select>
       </div>
       <div className="actions">
         <button disabled={pending}>Create private page</button>

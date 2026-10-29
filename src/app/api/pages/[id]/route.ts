@@ -1,7 +1,9 @@
+import { validPageData } from "@/lib/blocks";
 import { currentAdministrator } from "@/lib/server/auth";
 import {
   getVisiblePage,
   updatePageText,
+  updatePageContent,
   updatePageVisibility,
 } from "@/lib/server/pages";
 import {
@@ -35,7 +37,9 @@ export async function PATCH(request: Request, { params }: Context) {
     const body = await bodyJson(request);
     if (
       !Number.isSafeInteger(body.version) ||
-      (body.visibility === undefined && typeof body.text !== "string") ||
+      (body.visibility === undefined &&
+        typeof body.text !== "string" &&
+        body.content === undefined) ||
       (body.text !== undefined &&
         (typeof body.text !== "string" || body.text.length > 100000))
     )
@@ -46,25 +50,39 @@ export async function PATCH(request: Request, { params }: Context) {
       body.visibility !== "public"
     )
       throw new RequestError(400, "Choose public or private visibility.");
+    if (
+      body.content !== undefined &&
+      (!validPageData(body.content) || body.text !== undefined)
+    )
+      throw new RequestError(400, "Invalid page content.");
     const id = (await params).id;
     const existing = await getVisiblePage(id, admin);
     if (!existing) throw new RequestError(404, "Page not found.");
     const page =
-      typeof body.text !== "string"
-        ? await updatePageVisibility(
-            admin,
-            id,
-            body.visibility as "public" | "private",
-            Number(body.version),
-          )
-        : await updatePageText(
+      body.content !== undefined
+        ? await updatePageContent(
             admin,
             id,
             pageTitle(body.title),
-            body.text,
+            body.content,
             Number(body.version),
             body.visibility as "public" | "private" | undefined,
-          );
+          )
+        : typeof body.text !== "string"
+          ? await updatePageVisibility(
+              admin,
+              id,
+              body.visibility as "public" | "private",
+              Number(body.version),
+            )
+          : await updatePageText(
+              admin,
+              id,
+              pageTitle(body.title),
+              body.text,
+              Number(body.version),
+              body.visibility as "public" | "private" | undefined,
+            );
     if (!page)
       throw new RequestError(
         409,
