@@ -467,3 +467,425 @@ button.primary {
   background: var(--ink);
   color: var(--cream);
 }
+.garden-document {
+  background: var(--paper);
+  color: var(--ink);
+  min-height: 300px;
+  padding: 28px 0;
+}
+.garden-document h1 {
+  font-size: clamp(32px, 4vw, 56px);
+}
+.garden-block {
+  padding: 16px var(--gutter);
+}
+.garden-text .text-block {
+  margin: 0;
+  min-height: 1.5em;
+}
+.garden-text small {
+  display: block;
+}
+.garden-banner {
+  padding: 72px var(--gutter);
+  margin: 0 0 28px;
+}
+.garden-banner h1 {
+  max-width: 22ch;
+}
+.garden-banner p:last-child {
+  margin-bottom: 0;
+  max-width: 65ch;
+}
+.garden-banner[style*="center"] h1,
+.garden-banner[style*="center"] p {
+  margin-left: auto;
+  margin-right: auto;
+}
+.garden-tone-paper {
+  background: var(--paper);
+}
+.garden-tone-sage {
+  background: var(--sage);
+}
+.garden-tone-clay {
+  background: #e7d1c2;
+}
+.garden-section {
+  padding: 32px 0;
+}
+.garden-space-compact {
+  padding-top: 16px;
+  padding-bottom: 16px;
+}
+.garden-space-spacious {
+  padding-top: 64px;
+  padding-bottom: 64px;
+}
+.garden-columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 24px;
+  padding: 16px var(--gutter);
+}
+.garden-columns-wide-left {
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+}
+.garden-columns-wide-right {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+}
+.garden-columns > div {
+  min-width: 0;
+}
+.garden-columns .garden-block,
+.garden-columns .garden-columns {
+  padding-left: 0;
+  padding-right: 0;
+}
+.garden-columns .garden-image-inset {
+  margin-left: 0;
+  margin-right: 0;
+}
+.garden-gap-compact {
+  gap: 12px;
+}
+.garden-gap-spacious {
+  gap: 48px;
+}
+.garden-image {
+  margin: 24px 0;
+}
+.garden-image-inset {
+  margin-left: var(--gutter);
+  margin-right: var(--gutter);
+}
+.garden-photo-placeholder {
+  min-height: 320px;
+  aspect-ratio: 16/9;
+  background: #d9dfcc;
+  color: #6a7b5b;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.garden-photo-placeholder svg {
+  width: 150px;
+  height: 150px;
+}
+.garden-fit-contain {
+  background: var(--sage);
+  padding: 36px;
+}
+.garden-image figcaption {
+  padding: 12px 0;
+  font-size: 13px;
+  color: var(--muted);
+}
+.garden-image-full figcaption {
+  padding: 12px var(--gutter);
+}
+.garden-button-block {
+  padding-top: 24px;
+  padding-bottom: 24px;
+}
+.garden-button-block .primary {
+  background: var(--ink);
+  color: var(--cream);
+}
+.editor-admin-main {
+  min-height: 100vh;
+  background: var(--sage);
+}
+.garden-editor {
+  --puck-color-azure-04: var(--ink);
+  --puck-color-azure-09: var(--sage);
+  --puck-color-grey-12: var(--paper);
+  min-height: 100vh;
+  background: var(--sage);
+}
+.garden-workspace-bar {
+  padding: 14px 28px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  background: var(--leaf);
+  border-bottom: 1px solid var(--line);
+}
+.editor-back {
+  text-decoration: none;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  white-space: nowrap;
+}
+.editor-page-identity {
+  flex: 1;
+  min-width: 100px;
+}
+.editor-page-identity input {
+  border-color: transparent;
+  background: transparent;
+  font-family: Georgia, serif;
+  font-size: 21px;
+}
+.garden-workspace-bar select {
+  width: auto;
+}
+.editor-save-status {
+  white-space: nowrap;
+  font-size: 13px;
+  min-width: 66px;
+}
+.garden-editor-tools {
+  display: flex;
+  justify-content: space-between;
+  padding: 14px 28px;
+  gap: 12px;
+  border-bottom: 1px solid var(--line);
+}
+.garden-editor-tools button {
+  font-size: 13px;
+}
+.garden-editor-tools button[aria-pressed="true"],
+.garden-editor-tools button.active {
+  background: var(--ink);
+  color: var(--cream);
+}
+.garden-editor-body {
+  display: flex;
+  min-height: calc(100vh - 160px);
+}
+.garden-editor-panel {
+  width: 320px;
+  flex-shrink: 0;
+  padding: 24px;
+  background: var(--cream);
+  border-right: 1px solid var(--line);
+  height: calc(100vh - 160px);
+  overflow: auto;
+}
+.garden-editor-panel[hidden] {
+  display: none;
+}
+.panel-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.panel-heading h2 {
+  font-size: 23px;
+  margin: 0;
+}
+.panel-heading button {
+  padding: 8px;
+  font-size: 12px;
+}
+.garden-editor-panel label {
+  margin-top: 16px;
+}
+.garden-editor-panel h3 {
+  font-family: Arial, sans-serif;
+  font-size: 14px;
+  margin: 28px 0 12px;
+}
+.garden-palette {
+  margin: 20px 0;
+}
+.garden-palette-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+.garden-palette-row > div {
+  flex: 1;
+  min-width: 0;
+}
+.garden-palette-row button {
+  font-size: 13px;
+  padding: 8px 12px;
+}
+.garden-palette-row span {
+  font:
+    14px Arial,
+    sans-serif;
+}
+.garden-block-list {
+  display: grid;
+  gap: 6px;
+}
+.garden-block-list button {
+  justify-content: flex-start;
+  display: block;
+  text-align: left;
+  font-size: 13px;
+}
+.garden-block-list button span {
+  display: block;
+  font-size: 11px;
+  opacity: 0.7;
+}
+.garden-block-list button[aria-pressed="true"] {
+  border: 2px solid var(--muted);
+  background: var(--leaf);
+}
+.block-move-controls {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 24px;
+}
+.block-move-controls button {
+  font-size: 12px;
+  padding: 8px;
+}
+.garden-editor-panel input,
+.garden-editor-panel textarea,
+.garden-editor-panel select {
+  font:
+    14px Arial,
+    sans-serif;
+  min-height: 44px;
+}
+.garden-editor-panel textarea {
+  min-height: 120px;
+}
+.garden-canvas-workspace {
+  flex: 1;
+  min-width: 0;
+  padding: 24px 28px 48px;
+}
+.canvas-size-label {
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 16px;
+}
+.garden-canvas-scroll {
+  overflow: auto;
+  max-width: 100%;
+  padding-bottom: 12px;
+}
+.garden-canvas-frame {
+  margin: 0 auto;
+  background: var(--paper);
+  box-shadow: 0 4px 24px #30433716;
+  min-height: 650px;
+}
+.canvas-desktop {
+  width: 1280px;
+}
+.canvas-mobile {
+  width: 390px;
+}
+.garden-canvas-frame iframe {
+  width: 100%;
+  min-height: 650px;
+  border: 0;
+  display: block;
+  background: var(--paper);
+}
+.editor-save-error {
+  background: #f1dfd4;
+  color: #713e30;
+  padding: 12px 28px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-size: 13px;
+}
+.editor-save-error button {
+  white-space: nowrap;
+}
+@media (max-width: 760px) {
+  .garden-columns,
+  .garden-columns-wide-left,
+  .garden-columns-wide-right {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 20px;
+  }
+  .garden-banner {
+    padding: 44px var(--gutter);
+  }
+  .garden-photo-placeholder {
+    min-height: 230px;
+  }
+  .garden-section.garden-space-spacious {
+    padding-top: 40px;
+    padding-bottom: 40px;
+  }
+  .garden-workspace-bar {
+    padding: 12px 20px;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .editor-page-identity {
+    flex-basis: calc(100% - 90px);
+  }
+  .editor-page-identity input {
+    font-size: 18px;
+    padding: 8px;
+  }
+  .garden-workspace-bar select {
+    margin-left: 0;
+  }
+  .editor-save-status {
+    margin-left: auto;
+  }
+  .garden-editor-tools {
+    padding: 12px 20px;
+    flex-wrap: wrap;
+  }
+  .garden-editor-tools .actions {
+    gap: 8px;
+  }
+  .garden-editor-tools button {
+    padding: 9px 12px;
+  }
+  .garden-editor-body {
+    display: flex;
+    flex-direction: column;
+  }
+  .garden-canvas-workspace {
+    order: 0;
+    padding: 18px 0 24px;
+  }
+  .canvas-size-label {
+    padding: 0 28px;
+  }
+  .garden-canvas-scroll {
+    padding: 0 0 12px;
+  }
+  .garden-canvas-frame {
+    min-height: 400px;
+  }
+  .garden-canvas-frame iframe {
+    min-height: 400px;
+  }
+  .garden-editor-panel {
+    order: 1;
+    width: 100%;
+    height: auto;
+    max-height: none;
+    padding: 28px;
+    border: 0;
+    border-top: 1px solid var(--line);
+  }
+  .panel-closed .garden-canvas-workspace {
+    min-height: 70vh;
+  }
+  .garden-editor-panel .panel-heading button {
+    padding: 10px 16px;
+  }
+  .garden-palette-row button {
+    min-height: 44px;
+  }
+  .editor-save-error {
+    padding: 16px 28px;
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}

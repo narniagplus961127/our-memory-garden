@@ -7,7 +7,7 @@ export type PageData = {
     type: string;
     props: { id: string; [key: string]: JsonValue };
   }>;
-  zones?: Record<string, JsonValue>;
+  zones?: Record<string, PageData["content"]>;
 };
 export type GardenPage = {
   is_homepage?: boolean;

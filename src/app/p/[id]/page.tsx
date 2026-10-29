@@ -1,3 +1,4 @@
+import { GardenContent } from "@/components/garden-content";
 import { notFound } from "next/navigation";
 import { currentAdministrator } from "@/lib/server/auth";
 import { getVisiblePage } from "@/lib/server/pages";
@@ -16,15 +17,11 @@ export default async function PageView({
   return (
     <>
       <PublicHeader />
-      <main className="page-content">
-        <h1>{page.title}</h1>
-        {page.content.content
-          .filter((block) => block.type === "Text")
-          .map((block) => (
-            <p className="text-block" key={block.props.id}>
-              {typeof block.props.text === "string" ? block.props.text : ""}
-            </p>
-          ))}
+      <main className="public-page">
+        <div className="page-content">
+          <h1>{page.title}</h1>
+        </div>
+        <GardenContent data={page.content} />
       </main>
     </>
   );

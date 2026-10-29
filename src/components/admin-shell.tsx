@@ -11,6 +11,8 @@ const navigation = [
 ];
 export function AdminShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  if (/^\/admin\/pages\/[^/]+$/.test(pathname))
+    return <main className="editor-admin-main">{children}</main>;
   const links = navigation.map(([label, path]) => (
     <Link
       href={path}

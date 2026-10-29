@@ -1,3 +1,4 @@
+import { GardenContent } from "@/components/garden-content";
 import { PublicHeader, GardenCat } from "@/components/brand";
 import { getHomepage } from "@/lib/server/homepage";
 import { isConfigured } from "@/lib/config";
@@ -7,21 +8,19 @@ export default async function HomePage() {
   return (
     <>
       <PublicHeader />
-      <main className="page-content">
-        <p className="eyebrow">Our garden</p>
-        <h1>{page?.title ?? "Our Memory Garden"}</h1>
+      <main className="public-page">
+        <div className="page-content">
+          <p className="eyebrow">Our garden</p>
+          <h1>{page?.title ?? "Our Memory Garden"}</h1>
+        </div>
         {page ? (
-          page.content.content
-            .filter((block) => block.type === "Text")
-            .map((block) => (
-              <p className="text-block" key={block.props.id}>
-                {typeof block.props.text === "string" ? block.props.text : ""}
-              </p>
-            ))
+          <GardenContent data={page.content} />
         ) : (
           <p className="muted">A little place for the moments we share.</p>
         )}
-        <GardenCat />
+        <div className="page-content">
+          <GardenCat />
+        </div>
       </main>
     </>
   );

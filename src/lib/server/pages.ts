@@ -2,6 +2,7 @@ import "server-only";
 import { database } from "./db";
 import type { GardenPage, PageData } from "../pages";
 import { initialPageData } from "../pages";
+import { templateData, type TemplateId } from "../blocks";
 import { getHomepage } from "./homepage";
 import { RequestError } from "./http";
 export type Administrator = { id: string; email: string; name: string };
@@ -28,12 +29,13 @@ export async function getVisiblePage(
 export async function createPrivatePage(
   administrator: Administrator,
   title: string,
+  template: TemplateId = "blank",
 ): Promise<GardenPage> {
   const id = crypto.randomUUID();
   const slug = "page-" + id;
   const rows = await database()<
     GardenPage[]
-  >`insert into pages(id,title,slug,content,created_by,updated_by) values (${id},${title},${slug},${database().json(initialPageData())},${administrator.id},${administrator.id}) returning *`;
+  >`insert into pages(id,title,slug,content,created_by,updated_by) values (${id},${title},${slug},${database().json(templateData(template))},${administrator.id},${administrator.id}) returning *`;
   return JSON.parse(JSON.stringify(rows[0]));
 }
 export async function updatePageText(
@@ -79,5 +81,25 @@ export async function updatePageVisibility(
   const rows = await database()<
     GardenPage[]
   >`update pages set visibility=${visibility}, version=version+1, updated_at=now(), updated_by=${administrator.id} where id=${id} and version=${version} and deleted_at is null returning *`;
+  return rows[0] ? JSON.parse(JSON.stringify(rows[0])) : null;
+}
+
+export async function updatePageContent(
+  administrator: Administrator,
+  id: string,
+  title: string,
+  content: PageData,
+  version: number,
+  visibility?: GardenPage["visibility"],
+): Promise<GardenPage | null> {
+  if (!validId.test(id)) return null;
+  if (visibility === "private" && (await getHomepage())?.id === id)
+    throw new RequestError(
+      409,
+      "The homepage stays public. Choose another homepage first.",
+    );
+  const rows = await database()<
+    GardenPage[]
+  >`update pages set title=${title},content=${database().json(content)},visibility=coalesce(${visibility ?? null},visibility),version=version+1,updated_at=now(),updated_by=${administrator.id} where id=${id} and version=${version} and deleted_at is null returning *`;
   return rows[0] ? JSON.parse(JSON.stringify(rows[0])) : null;
 }
