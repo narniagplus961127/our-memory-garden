@@ -7,12 +7,31 @@ export function Brand() {
     </Link>
   );
 }
-export function PublicHeader() {
+export function PublicHeader({
+  items = [],
+}: {
+  items?: import("@/lib/destinations").PublicMenuItem[];
+}) {
+  function menu(parentId: string | null): React.ReactNode {
+    const children = items.filter((i) => i.parentId === parentId);
+    if (!children.length) return null;
+    return (
+      <ul className="public-menu-items">
+        {children.map((i) => (
+          <li key={i.id}>
+            <a href={i.href}>{i.label}</a>
+            {menu(i.id)}
+          </li>
+        ))}
+      </ul>
+    );
+  }
   return (
     <header className="public-header">
       <Brand />
       <nav className="public-nav" aria-label="Main navigation">
         <Link href="/">Our garden</Link>
+        {menu(null)}
         <Link className="button secondary" href="/login">
           Garden dashboard
         </Link>
@@ -20,8 +39,9 @@ export function PublicHeader() {
       <details className="public-menu">
         <summary aria-label="Open website menu">☰</summary>
         <nav aria-label="Mobile navigation">
-          <Link href="/">Home</Link>
-          <Link href="/login">Admin sign in</Link>
+          <Link href="/">Our garden</Link>
+          {menu(null)}
+          <Link href="/login">Garden dashboard</Link>
         </nav>
       </details>
     </header>

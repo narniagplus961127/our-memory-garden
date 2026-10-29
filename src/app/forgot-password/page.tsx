@@ -1,10 +1,10 @@
-import { PublicHeader } from "@/components/brand";
+import { GardenHeader } from "@/components/garden-header";
 import { AuthForm } from "@/components/auth-form";
 import { isConfigured } from "@/lib/config";
-export default function ForgotPasswordPage() {
+export default async function ForgotPasswordPage() {
   return (
     <>
-      <PublicHeader />
+      <GardenHeader />
       <main className="auth-main">
         <h1>Reset your password</h1>
         <p className="muted">
