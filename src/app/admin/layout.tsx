@@ -7,6 +7,7 @@ export default async function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
-  await ensureHomepage(await requireAdministrator());
-  return <AdminShell>{children}</AdminShell>;
+  const administrator = await requireAdministrator();
+  await ensureHomepage(administrator);
+  return <AdminShell accountId={administrator.id}>{children}</AdminShell>;
 }
