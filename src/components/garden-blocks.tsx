@@ -1,3 +1,5 @@
+import { PhotoPicker } from "./media-library";
+import { displayPhotoUrl } from "@/lib/media";
 import { DestinationPicker } from "./destination-picker";
 import { destinationHref, type Destination } from "@/lib/destinations";
 import type { Config, Slot } from "@puckeditor/core";
@@ -17,6 +19,7 @@ export type GardenBlocks = {
     align?: "left" | "center";
   };
   Image: {
+    photoId?: string;
     alt: string;
     caption?: string;
     fit?: "cover" | "contain";
@@ -155,6 +158,13 @@ export const gardenConfig: Config<GardenBlocks> = {
     Image: {
       label: "Image",
       fields: {
+        photoId: {
+          type: "custom",
+          label: "Photo",
+          render: ({ value, onChange }) => (
+            <PhotoPicker value={value} onChange={onChange} />
+          ),
+        },
         alt: { type: "text", label: "Alternative text" },
         caption: { type: "textarea", label: "Caption" },
         fit: {
@@ -180,25 +190,33 @@ export const gardenConfig: Config<GardenBlocks> = {
         fit: "cover",
         width: "inset",
       },
-      render: ({ alt, caption, fit, width }) => (
+      render: ({ photoId, alt, caption, fit, width }) => (
         <figure className={"garden-image garden-image-" + (width ?? "inset")}>
-          <div
-            role="img"
-            aria-label={alt || "Photo placeholder"}
-            className={
-              "garden-photo-placeholder garden-fit-" + (fit ?? "cover")
-            }
-          >
-            <svg viewBox="0 0 200 150" aria-hidden="true">
-              <path
-                d="M100 140V60M100 100C40 100 35 55 35 55c50-5 65 45 65 45ZM100 80c55 0 65-50 65-50-50-5-65 50-65 50ZM100 60C60 40 85 10 85 10s35 20 15 50Z"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="3"
-              />
-            </svg>
-            <span>Photo placeholder</span>
-          </div>
+          {photoId ? (
+            <img
+              className={"garden-photo garden-fit-" + (fit ?? "cover")}
+              src={displayPhotoUrl(photoId)}
+              alt={alt}
+            />
+          ) : (
+            <div
+              role="img"
+              aria-label={alt || "Photo placeholder"}
+              className={
+                "garden-photo-placeholder garden-fit-" + (fit ?? "cover")
+              }
+            >
+              <svg viewBox="0 0 200 150" aria-hidden="true">
+                <path
+                  d="M100 140V60M100 100C40 100 35 55 35 55c50-5 65 45 65 45ZM100 80c55 0 65-50 65-50-50-5-65 50-65 50ZM100 60C60 40 85 10 85 10s35 20 15 50Z"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="3"
+                />
+              </svg>
+              <span>Photo placeholder</span>
+            </div>
+          )}
           {caption && <figcaption>{caption}</figcaption>}
         </figure>
       ),
