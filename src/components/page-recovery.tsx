@@ -94,7 +94,7 @@ export function TrashAction({
 }: {
   page: GardenPage;
   references?: InboundReference[];
-  onDone?: () => void;
+  onDone?: (message: string) => void;
 }) {
   const router = useRouter();
   const [action, setAction] = useState<"trash" | "restore" | "delete" | null>(
@@ -115,15 +115,15 @@ export function TrashAction({
       });
       const data = await r.json();
       if (!r.ok) throw new Error(data.error);
-      setSuccess(
+      const message =
         action === "restore"
           ? "Page restored as private."
           : action === "delete"
             ? "Page permanently deleted."
-            : "Page moved to trash.",
-      );
+            : "Page moved to trash.";
+      setSuccess(message);
       setAction(null);
-      onDone?.();
+      onDone?.(message);
       router.refresh();
     } catch (e) {
       setError(
@@ -254,5 +254,31 @@ export function TrashAction({
       )}
       {success && <p role="status">{success}</p>}
     </div>
+  );
+}
+
+export function TrashList({ pages }: { pages: GardenPage[] }) {
+  const [notice, setNotice] = useState("");
+  return (
+    <>
+      {notice && <p role="status">{notice}</p>}
+      {pages.length ? (
+        pages.map((page) => (
+          <article className="trash-card" key={page.id}>
+            <h2>{page.title}</h2>
+            <p>
+              Moved to trash{" "}
+              {new Date(page.deleted_at!).toLocaleString("en-GB")}
+            </p>
+            <Link href={"/admin/pages/" + page.id + "/history"}>
+              View saved history
+            </Link>
+            <TrashAction page={page} onDone={setNotice} />
+          </article>
+        ))
+      ) : (
+        <p>The trash is empty.</p>
+      )}
+    </>
   );
 }

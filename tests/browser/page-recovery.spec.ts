@@ -86,6 +86,7 @@ test("administrator reviews history, confirms restore and safely recovers a tras
     .getByRole("button", { name: "Confirm restore as private", exact: true })
     .click();
   await expect(card).toHaveCount(0);
+  await expect(page.getByRole("status")).toBeVisible();
   expect(
     (await (await page.request.get("/api/pages/" + p.id)).json()).visibility,
   ).toBe("private");
@@ -115,6 +116,7 @@ test("administrator reviews history, confirms restore and safely recovers a tras
     .getByRole("button", { name: "Confirm permanent deletion", exact: true })
     .click();
   await expect(card).toHaveCount(0);
+  await expect(page.getByRole("status")).toBeVisible();
 });
 test("anonymous history and trash are denied", async ({ page }) => {
   for (const path of [
