@@ -1,12 +1,19 @@
 import { GallerySettings } from "./gallery-settings";
 import { PhotoGallery, type GalleryPhoto } from "./photo-gallery";
 import { PhotoPicker } from "./media-library";
+import { PageGrid, PageGridSettings } from "./page-grid";
+import type { GridSelection, PageCard } from "@/lib/organization";
 import { displayPhotoUrl } from "@/lib/media";
 import { DestinationPicker } from "./destination-picker";
 import { destinationHref, type Destination } from "@/lib/destinations";
 import type { Config, Slot } from "@puckeditor/core";
 import type { TextStyle } from "@/lib/pages";
 export type GardenBlocks = {
+  PageGrid: {
+    selection: GridSelection;
+    showDate?: boolean;
+    cards?: PageCard[];
+  };
   Text: {
     text: string;
     style: TextStyle;
@@ -78,6 +85,33 @@ export const gardenConfig: Config<GardenBlocks> = {
     render: ({ children }) => <div className="garden-document">{children}</div>,
   },
   components: {
+    PageGrid: {
+      label: "Page grid",
+      fields: {
+        selection: {
+          type: "custom",
+          label: "Pages",
+          render: ({ value, onChange }) => (
+            <PageGridSettings value={value} onChange={onChange} />
+          ),
+        },
+        showDate: {
+          type: "radio",
+          label: "Show page dates",
+          options: [
+            { label: "Show", value: true },
+            { label: "Hide", value: false },
+          ],
+        },
+      },
+      defaultProps: {
+        selection: { mode: "manual", pageIds: [], categoryId: "" },
+        showDate: true,
+      },
+      render: ({ selection, showDate, cards }) => (
+        <PageGrid selection={selection} showDate={showDate} cards={cards} />
+      ),
+    },
     Text: {
       label: "Text",
       fields: {

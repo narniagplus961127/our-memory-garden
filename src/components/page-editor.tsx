@@ -11,6 +11,7 @@ import {
 import "@puckeditor/core/puck.css";
 import { gardenConfig } from "./garden-blocks";
 import { PageAddress } from "./page-address";
+import { PageDetails } from "./page-details";
 import {
   blockNames,
   slotNames,
@@ -23,6 +24,7 @@ import { usePageAutosave } from "./use-page-autosave";
 import { SaveFeedback } from "./save-feedback";
 import { equal } from "@/lib/page-merge";
 const useGardenPuck = createUsePuck<typeof gardenConfig>();
+const blockLabel = (type: string) => (type === "PageGrid" ? "Page grid" : type);
 type Snapshot = import("@/lib/page-merge").PageSnapshot;
 function documentData(data: Data): PageData {
   return { root: { props: {} }, content: data.content as PageBlock[] };
@@ -51,7 +53,9 @@ function documentOutline(content: PageBlock[]) {
   function walk(blocks: PageBlock[], depth: number) {
     for (const block of blocks) {
       const label =
-        block.type + " " + (counts[block.type] = (counts[block.type] ?? 0) + 1);
+        blockLabel(block.type) +
+        " " +
+        (counts[block.type] = (counts[block.type] ?? 0) + 1);
       items.push({ block, label, depth });
       for (const slot of slotNames(block.type)) {
         const children = slotContent(block, slot);
@@ -70,6 +74,7 @@ function documentOutline(content: PageBlock[]) {
 }
 function Workspace({
   page,
+  accountId,
   title,
   visibility,
   status,
@@ -77,8 +82,10 @@ function Workspace({
   retry,
   feedback,
   onMetadata,
+  onDetailsSaved,
 }: {
   page: GardenPage;
+  accountId: string;
   title: string;
   visibility: GardenPage["visibility"];
   status: string;
@@ -86,6 +93,7 @@ function Workspace({
   retry: () => void;
   feedback: React.ReactNode;
   onMetadata: (changes: Partial<Snapshot>) => void;
+  onDetailsSaved: (page: GardenPage) => void;
 }) {
   const [panel, setPanel] = useState<"content" | "settings" | null>("content"),
     [device, setDevice] = useState<"desktop" | "mobile">("desktop"),
@@ -285,7 +293,7 @@ function Workspace({
             <h2>
               {panel === "settings"
                 ? selected
-                  ? selected.type + " settings"
+                  ? blockLabel(selected.type) + " settings"
                   : "Page settings"
                 : "Make it yours"}
             </h2>
@@ -299,6 +307,11 @@ function Workspace({
           </div>
           <div hidden={panel !== "settings" || Boolean(selected)}>
             <PageAddress page={page} />
+            <PageDetails
+              page={page}
+              accountId={accountId}
+              onSaved={onDetailsSaved}
+            />
           </div>
           {panel === "content" ? (
             <>
@@ -326,13 +339,13 @@ function Workspace({
                       <Drawer.Item name={type}>
                         {() => (
                           <span className="garden-drag-tile">
-                            {type} <span aria-hidden="true">⠿</span>
+                            {blockLabel(type)} <span aria-hidden="true">⠿</span>
                           </span>
                         )}
                       </Drawer.Item>
                       <button
                         className="secondary"
-                        aria-label={"Add " + type}
+                        aria-label={"Add " + blockLabel(type)}
                         onClick={() => insert(type)}
                       >
                         ＋ Add
@@ -473,6 +486,8 @@ export function PageEditor({
         <EditorSync content={save.working.content} />
         <Workspace
           page={page}
+          accountId={accountId}
+          onDetailsSaved={save.detailsSaved}
           title={save.working.title}
           visibility={save.working.visibility}
           status={ready ? save.status : "Loading editor…"}

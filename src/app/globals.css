@@ -1,4 +1,58 @@
 @import "tailwindcss";
+
+.garden-page-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 28px;
+}
+.garden-page-card {
+  min-width: 0;
+}
+.garden-page-card a {
+  text-decoration: none;
+}
+.garden-page-card img,
+.garden-card-cover {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border-radius: 8px;
+}
+.garden-card-cover {
+  display: grid;
+  place-items: center;
+  background: var(--sage);
+  color: var(--ink);
+  font-size: 48px;
+}
+.garden-page-card h3 {
+  margin: 16px 0 8px;
+}
+.garden-page-card time,
+.garden-page-card > small {
+  display: block;
+}
+.page-details {
+  margin-top: 28px;
+}
+.details-cover {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border-radius: 8px;
+}
+.grid-selected-pages {
+  padding-left: 20px;
+}
+.grid-selected-pages li {
+  margin: 16px 0;
+}
+@media (max-width: 760px) {
+  .garden-page-grid {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+}
 :root {
   --paper: #f6f1e7;
   --cream: #fffcf5;
