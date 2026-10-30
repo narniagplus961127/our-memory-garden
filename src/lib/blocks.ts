@@ -5,6 +5,7 @@ export const blockNames = [
   "Text",
   "Banner",
   "Image",
+  "Gallery",
   "Button",
   "Section",
   "Columns",
@@ -103,6 +104,7 @@ export function validPageData(
           Text: ["text", "style", "align", "linkText", "destination"],
           Banner: ["heading", "description", "background", "align"],
           Image: ["photoId", "alt", "caption", "fit", "width"],
+          Gallery: ["photos"],
           Button: ["label", "href", "destination", "variant", "align"],
           Section: ["background", "spacing", "content"],
           Columns: ["ratio", "gap", "left", "right"],
@@ -147,6 +149,28 @@ export function validPageData(
               str("caption", 2000) &&
               opt("fit", ["cover", "contain"]) &&
               opt("width", ["inset", "full"])
+            );
+          case "Gallery":
+            return (
+              Array.isArray(props.photos) &&
+              props.photos.length <= 100 &&
+              props.photos.every((photo: unknown) => {
+                if (!photo || typeof photo !== "object" || Array.isArray(photo))
+                  return false;
+                const item = photo as Record<string, unknown>;
+                return (
+                  Object.keys(item).every((key) =>
+                    ["photoId", "caption"].includes(key),
+                  ) &&
+                  typeof item.photoId === "string" &&
+                  /^[\da-f]{8}-[\da-f]{4}-[\da-f]{4}-[\da-f]{4}-[\da-f]{12}$/i.test(
+                    item.photoId,
+                  ) &&
+                  (item.caption === undefined ||
+                    (typeof item.caption === "string" &&
+                      item.caption.length <= 2000))
+                );
+              })
             );
           case "Button":
             return (
