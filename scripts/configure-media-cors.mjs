@@ -22,7 +22,10 @@ const client = new S3Client({
   region: process.env.AWS_REGION || "ap-southeast-1",
   endpoint,
 });
-const Bucket = process.env.MEDIA_ORIGINALS_BUCKET || "garden-originals";
+const Bucket =
+  process.env.MEDIA_ORIGINALS_BUCKET ||
+  process.env.GARDEN_ORIGINALS_BUCKET ||
+  "garden-originals";
 let existing = [];
 try {
   existing =

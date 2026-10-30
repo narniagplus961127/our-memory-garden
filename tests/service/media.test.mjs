@@ -401,3 +401,57 @@ test("a genuine non-administrator session cannot enter the library, finalize upl
     await options.database.end();
   }
 });
+
+test("page saving rejects missing and still-pending photo references inside nested blocks", async () => {
+  const cookie = await login();
+  const page = await (
+    await call("/api/pages", "POST", { title: "Ready photos only" }, cookie)
+  ).json();
+  const pending = await (
+    await call(
+      "/api/media/uploads",
+      "POST",
+      { name: "not-ready.jpg", size: 100, type: "image/jpeg" },
+      cookie,
+    )
+  ).json();
+  for (const id of [crypto.randomUUID(), pending.id]) {
+    const content = {
+      root: { props: {} },
+      content: [
+        {
+          type: "Section",
+          props: {
+            id: "photo-validation-section",
+            content: [
+              {
+                type: "Image",
+                props: {
+                  id: "photo-validation-image",
+                  photoId: id,
+                  alt: "A ready photograph",
+                },
+              },
+            ],
+          },
+        },
+      ],
+    };
+    const response = await call(
+      "/api/pages/" + page.id,
+      "PATCH",
+      { title: page.title, version: page.version, content },
+      cookie,
+    );
+    assert.equal(response.status, 400);
+    assert.match((await response.json()).error, /ready photo/i);
+    assert.equal(
+      (
+        await (
+          await call("/api/pages/" + page.id, "GET", undefined, cookie)
+        ).json()
+      ).version,
+      page.version,
+    );
+  }
+});

@@ -35,7 +35,10 @@ try {
       for (const row of rows) {
         await storage.send(
           new DeleteObjectCommand({
-            Bucket: process.env.MEDIA_ORIGINALS_BUCKET || "garden-originals",
+            Bucket:
+              process.env.MEDIA_ORIGINALS_BUCKET ||
+              process.env.GARDEN_ORIGINALS_BUCKET ||
+              "garden-originals",
             Key: row.staging_key,
           }),
         );

@@ -17,7 +17,14 @@ const client = new S3Client({
 });
 const key = "garden-smoke/" + crypto.randomUUID(),
   bytes = Buffer.from("private garden storage smoke");
-for (const bucket of ["garden-originals", "garden-display"]) {
+for (const bucket of [
+  process.env.MEDIA_ORIGINALS_BUCKET ||
+    process.env.GARDEN_ORIGINALS_BUCKET ||
+    "garden-originals",
+  process.env.MEDIA_DISPLAY_BUCKET ||
+    process.env.GARDEN_DISPLAY_BUCKET ||
+    "garden-display",
+]) {
   try {
     await client.send(
       new PutObjectCommand({ Bucket: bucket, Key: key, Body: bytes }),
@@ -33,7 +40,11 @@ for (const bucket of ["garden-originals", "garden-display"]) {
     if (unsigned.ok) throw new Error("Bucket permits unsigned reads");
     const uploadUrl = await getSignedUrl(
       client,
-      new PutObjectCommand({ Bucket: bucket, Key: key }),
+      new PutObjectCommand({
+        Bucket: bucket,
+        Key: key,
+        ContentLength: bytes.length,
+      }),
       { expiresIn: 60 },
     );
     const uploaded = await fetch(uploadUrl, { method: "PUT", body: bytes });

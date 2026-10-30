@@ -13,9 +13,13 @@ import { RequestError } from "./http";
 import { MAX_PHOTO_BYTES } from "../media";
 import type { Administrator } from "./pages";
 export const originalsBucket = () =>
-  process.env.MEDIA_ORIGINALS_BUCKET || "garden-originals";
+  process.env.MEDIA_ORIGINALS_BUCKET ||
+  process.env.GARDEN_ORIGINALS_BUCKET ||
+  "garden-originals";
 export const displayBucket = () =>
-  process.env.MEDIA_DISPLAY_BUCKET || "garden-display";
+  process.env.MEDIA_DISPLAY_BUCKET ||
+  process.env.GARDEN_DISPLAY_BUCKET ||
+  "garden-display";
 let client: S3Client | undefined;
 export const storage = () =>
   (client ??= new S3Client({
@@ -247,4 +251,14 @@ export async function photoResponse(
         : {}),
     },
   });
+}
+import type { PageData } from "../pages";
+export async function validatePhotoReferences(content: PageData) {
+  const invalid =
+    await database()`select reference.id from garden_photo_ids(${database().json(content)}) reference(id) left join media_photos photo on photo.id=reference.id and photo.status='ready' where photo.id is null limit 1`;
+  if (invalid.length)
+    throw new RequestError(
+      400,
+      "Choose a ready photo from the shared library.",
+    );
 }

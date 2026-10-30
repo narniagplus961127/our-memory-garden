@@ -1,3 +1,4 @@
+import { validatePhotoReferences } from "@/lib/server/media";
 import { validatePageReferences } from "@/lib/server/page-references";
 import { validPageData } from "@/lib/blocks";
 import { currentAdministrator } from "@/lib/server/auth";
@@ -59,11 +60,13 @@ export async function PATCH(request: Request, { params }: Context) {
     const id = (await params).id;
     const existing = await getVisiblePage(id, admin);
     if (!existing) throw new RequestError(404, "Page not found.");
-    if (body.content !== undefined)
-      await validatePageReferences(
-        body.content as import("@/lib/pages").PageData,
-        existing.content,
-      );
+    if (body.content !== undefined) {
+      const content = body.content as import("@/lib/pages").PageData;
+      await Promise.all([
+        validatePageReferences(content, existing.content),
+        validatePhotoReferences(content),
+      ]);
+    }
     const page =
       body.content !== undefined
         ? await updatePageContent(

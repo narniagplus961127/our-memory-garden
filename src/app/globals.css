@@ -1075,6 +1075,7 @@ button.primary {
   inset: 0;
   margin: auto;
   height: fit-content;
+}
 
 .public-menu-items {
   list-style: none;
