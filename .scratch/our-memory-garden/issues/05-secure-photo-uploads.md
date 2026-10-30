@@ -11,7 +11,7 @@ Upload photos to a shared library and use them on pages with privacy appropriate
 
 ## Status
 
-ready-for-agent
+claimed
 
 ## Acceptance criteria
 
@@ -32,4 +32,5 @@ Follow the Media library screen for the upload and shared-photo entry point.
 ## Photo detail design
 
 Follow the desktop and mobile Photo details screens for the preview, public-access indicator, page usage, original download and in-use deletion safeguard. Implement and verify private-only and unused-photo states as required by the spec; the illustrated example is not a complete flow.
+
 

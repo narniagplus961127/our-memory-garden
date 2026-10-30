@@ -88,7 +88,7 @@ export function validPageData(value: unknown): value is PageData {
         const allowed: Record<BlockName, string[]> = {
           Text: ["text", "style", "align"],
           Banner: ["heading", "description", "background", "align"],
-          Image: ["alt", "caption", "fit", "width"],
+          Image: ["photoId", "alt", "caption", "fit", "width"],
           Button: ["label", "href", "variant", "align"],
           Section: ["background", "spacing", "content"],
           Columns: ["ratio", "gap", "left", "right"],
@@ -120,6 +120,12 @@ export function validPageData(value: unknown): value is PageData {
             );
           case "Image":
             return (
+              (props.photoId === undefined ||
+                props.photoId === "" ||
+                (typeof props.photoId === "string" &&
+                  /^[\da-f]{8}-[\da-f]{4}-[\da-f]{4}-[\da-f]{4}-[\da-f]{12}$/i.test(
+                    props.photoId,
+                  ))) &&
               str("alt", 1000, true) &&
               str("caption", 2000) &&
               opt("fit", ["cover", "contain"]) &&

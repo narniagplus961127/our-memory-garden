@@ -475,15 +475,6 @@ function Workspace({
                         Enter a complete http:// or https:// web address.
                       </p>
                     )}
-
-                  {selected.type === "Image" && (
-                    <p className="muted">
-                      <small>
-                        Photo placeholder. Library and uploads arrive with the
-                        media library.
-                      </small>
-                    </p>
-                  )}
                   {selected.type === "Button" && (
                     <p className="muted">
                       <small>
