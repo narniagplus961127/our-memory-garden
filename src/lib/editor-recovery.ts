@@ -18,14 +18,17 @@ export type RecoveryRecord = {
   source?: { key: string; value: string | null };
   comparison?: { baseSnapshot: PageSnapshot; saved: GardenPage };
 };
-function validSnapshot(value: unknown): value is PageSnapshot {
+function validSnapshot(
+  value: unknown,
+  allowIncomplete = false,
+): value is PageSnapshot {
   if (!value || typeof value !== "object") return false;
   const s = value as PageSnapshot;
   return (
     typeof s.title === "string" &&
     s.title.length <= 200 &&
     ["private", "public"].includes(s.visibility) &&
-    validPageData(s.content)
+    validPageData(s.content, { allowIncomplete })
   );
 }
 export function parseRecovery(
@@ -45,7 +48,7 @@ export function parseRecovery(
       r.baseVersion > 0 &&
       Number.isSafeInteger(r.editSeq) &&
       validSnapshot(r.baseSnapshot) &&
-      validSnapshot(r.workingSnapshot) &&
+      validSnapshot(r.workingSnapshot, true) &&
       (!r.source ||
         (typeof r.source.key === "string" &&
           r.source.key.startsWith(recoveryPrefix(accountId) + pageId + ":") &&

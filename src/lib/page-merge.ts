@@ -119,7 +119,23 @@ export function mergePage(
   }
 
   // Deleting a changed subtree or its destination requires an explicit layout choice.
-  let overlapping = false;
+  const affectedIds = new Set<string>();
+  function includeSubtree(id: string) {
+    for (const tree of trees) {
+      const visited = new Set<string>();
+      function walk(nodeId: string) {
+        const node = tree.nodes.get(nodeId);
+        if (!node || visited.has(nodeId)) return;
+        visited.add(nodeId);
+        affectedIds.add(nodeId);
+        for (const slot of slotNames(node.type))
+          for (const child of tree.lists.get(nodeId + ":" + slot) ?? [])
+            walk(child);
+      }
+      walk(id);
+    }
+  }
+
   for (const [id, original] of b.originals) {
     for (const [deleted, changed] of [
       [l, s],
@@ -135,29 +151,50 @@ export function mergePage(
             b.lists.get(b.parents.get(id)!),
           ))
       )
-        overlapping = true;
+        includeSubtree(id);
     }
   }
-  function useWholeLayout() {
-    const key = "layout:all";
-    const existing = conflicts.find((c) => c.key === key);
-    if (!choices[key] && !existing)
+  function useLayout(scope?: Set<string>) {
+    const key = scope ? "layout:contested" : "layout:all";
+    if (!choices[key] && !conflicts.some((c) => c.key === key))
       conflicts.push({
         key,
         kind: "layout",
-        label: "Contested move or deletion",
+        label: scope
+          ? "Contested move or deletion"
+          : "Overlapping page layouts",
         local: local.content,
         saved: saved.content,
       });
     const source = choices[key] === "saved" ? s : l;
-    lists.clear();
-    for (const [zone, ids] of source.lists) lists.set(zone, ids);
-    // A whole-layout choice supersedes individual topology prompts.
-    for (let i = conflicts.length - 1; i >= 0; i--)
-      if (conflicts[i].kind === "layout" && conflicts[i].key !== key)
+    const zones =
+      scope ?? new Set(trees.flatMap((tree) => [...tree.lists.keys()]));
+    for (const zone of zones) lists.set(zone, source.lists.get(zone) ?? []);
+    for (let i = conflicts.length - 1; i >= 0; i--) {
+      const c = conflicts[i];
+      if (
+        c.kind === "layout" &&
+        c.key !== key &&
+        (!scope || scope.has(c.key.slice("layout:".length)))
+      )
         conflicts.splice(i, 1);
+    }
   }
-  if (overlapping) useWholeLayout();
+  const contestedZones = new Set(
+    conflicts
+      .filter((c) => c.kind === "layout")
+      .map((c) => c.key.slice("layout:".length)),
+  );
+  for (const id of affectedIds)
+    for (const tree of trees) {
+      const parent = tree.parents.get(id);
+      if (parent) contestedZones.add(parent);
+      const node = tree.nodes.get(id);
+      if (node)
+        for (const slot of slotNames(node.type))
+          contestedZones.add(id + ":" + slot);
+    }
+  if (contestedZones.size) useLayout(contestedZones);
   function build(zone: string, seen = new Set<string>()): PageBlock[] {
     return (lists.get(zone) ?? []).map((id) => {
       if (seen.has(id) || !nodes.has(id))
@@ -174,7 +211,7 @@ export function mergePage(
   try {
     content = build("root");
   } catch {
-    useWholeLayout();
+    useLayout();
     content = build("root");
   }
   return {

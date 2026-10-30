@@ -267,6 +267,10 @@ test("tabs keep separate drafts and sign-out clears account recovery before late
   await started;
   const signout = await context.newPage();
   await signout.goto(origin + "/admin/pages");
+  const mobileMenu = signout.getByRole("button", {
+    name: "Open administration menu",
+  });
+  if (await mobileMenu.isVisible()) await mobileMenu.click();
   await signout.getByRole("button", { name: "Sign out", exact: true }).click();
   await expect(signout).toHaveURL(/\/login$/);
   release();

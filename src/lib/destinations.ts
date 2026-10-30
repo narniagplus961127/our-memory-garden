@@ -38,11 +38,11 @@ export function validDestination(value: unknown): value is Destination {
     : d.kind === "external" && Object.keys(d).length === 2 && isWebUrl(d.url);
 }
 export function destinationHref(destination?: Destination, legacy?: string) {
-  return destination?.kind === "page"
-    ? "/p/" + destination.pageId
-    : destination?.kind === "external" && isWebUrl(destination.url)
-      ? destination.url
-      : isWebUrl(legacy)
-        ? legacy
-        : undefined;
+  if (destination) {
+    if (!validDestination(destination)) return undefined;
+    return destination.kind === "page"
+      ? "/p/" + destination.pageId
+      : destination.url;
+  }
+  return isWebUrl(legacy) ? legacy : undefined;
 }
