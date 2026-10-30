@@ -150,6 +150,14 @@ for (const choice of ["mine", "saved", "manual"] as const)
       await expect(
         second.getByLabel("Page title", { exact: true }),
       ).toHaveValue("A private new title");
+      if (choice === "mine")
+        await second.screenshot({
+          path:
+            "work/ticket09-evidence/conflict-" +
+            (isMobile ? "mobile" : "desktop") +
+            ".png",
+          fullPage: true,
+        });
       // A fresh independent edit after comparison must survive the eventual choice too.
       const latest = await (await page.request.get(path)).json();
       latest.content.content[1].props.text = "New independent B";
@@ -614,12 +622,33 @@ test("closed-tab recovery offers an explicit copy and clears that acknowledged c
   ).toHaveText("Not saved");
   await page.close();
   const reopened = await context.newPage();
+  await reopened.route("**/api/pages/*", (route) =>
+    route.request().method() === "PATCH"
+      ? route.abort("internetdisconnected")
+      : route.continue(),
+  );
   await reopened.goto(origin + "/admin/pages/" + created.id);
   await expect(
     reopened.getByRole("button", { name: "Recover device copy", exact: true }),
   ).toBeVisible();
   await reopened
     .getByRole("button", { name: "Recover device copy", exact: true })
+    .click();
+  await expect(
+    reopened.getByRole("status", { name: "Auto-save status" }),
+  ).toHaveText("Not saved");
+  await reopened.reload();
+  await expect(
+    reopened.getByText(
+      "Recovered work is unsaved until it reaches the garden.",
+    ),
+  ).toBeVisible();
+  await expect(
+    reopened.getByRole("status", { name: "Auto-save status" }),
+  ).toHaveText("Not saved");
+  await reopened.unroute("**/api/pages/*");
+  await reopened
+    .getByRole("button", { name: "Retry save", exact: true })
     .click();
   await expect(
     reopened.getByRole("status", { name: "Auto-save status" }),
@@ -747,4 +776,37 @@ test("an in-flight reconciliation conflict stays unresolved after refresh", asyn
     final.content.content.map((b: { props: { text: string } }) => b.props.text),
   ).toEqual(["Local A during the request", "Submitted B"]);
   await other.close();
+});
+
+test("another administrator cannot recover this account's device draft", async ({
+  page,
+}) => {
+  await fixture(page);
+  await page.route("**/api/pages/*", (route) =>
+    route.request().method() === "PATCH"
+      ? route.abort("internetdisconnected")
+      : route.continue(),
+  );
+  await editText(page, "An unsaved account-scoped private memory");
+  await expect(
+    page.getByRole("status", { name: "Auto-save status" }),
+  ).toHaveText("Not saved");
+  await login(page, "OTHER");
+  await page.reload();
+  await expect(
+    page.getByRole("status", { name: "Auto-save status" }),
+  ).toHaveText("Saved");
+  await expect(
+    page.getByRole("button", { name: "Recover device copy", exact: true }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByText("Recovered work is unsaved until it reaches the garden."),
+  ).toHaveCount(0);
+  await page
+    .getByRole("button", { name: "Select Text 1", exact: true })
+    .click();
+  await page.getByRole("button", { name: "Open settings panel" }).click();
+  await expect(
+    page.getByRole("textbox", { name: "Text content", exact: true }),
+  ).toHaveValue("");
 });

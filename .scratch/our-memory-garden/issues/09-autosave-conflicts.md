@@ -10,7 +10,7 @@ Make automatic saving dependable and protect work when two administrators edit o
 
 ## Status
 
-ready-for-agent
+claimed
 
 ## Acceptance criteria
 
@@ -33,4 +33,5 @@ Preserve unsaved edits across refresh/closure on the same device when possible; 
 
 
 This ticket must durably preserve the previously saved version before resolving an overwrite; it may introduce the minimum history storage needed for that guarantee. Ticket 10 adds the user-facing history and restoration experience. Ticket 09 must not depend on ticket 10, which already depends on ticket 09.
+
 

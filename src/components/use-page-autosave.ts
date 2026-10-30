@@ -65,6 +65,7 @@ export function usePageAutosave(page: GardenPage, accountId: string) {
       workingSnapshot: s.working,
       editSeq: s.seq,
       savedAt: new Date().toISOString(),
+      source: s.source ?? undefined,
       reason: s.reason === "resolution" ? "resolution" : "edit",
       comparison: s.comparison
         ? { baseSnapshot: s.comparison.base, saved: s.comparison.saved }
@@ -210,6 +211,7 @@ export function usePageAutosave(page: GardenPage, accountId: string) {
     s.base = record.baseSnapshot;
     s.version = record.baseVersion;
     s.seq = record.editSeq + 1;
+    s.source = record.source ?? s.source;
     s.reason = record.reason ?? "edit";
     apply(record.workingSnapshot);
     s.comparison = null;
@@ -245,7 +247,12 @@ export function usePageAutosave(page: GardenPage, accountId: string) {
         const prefix = recoveryPrefix(accountId) + page.id + ":";
         setCopies(
           Object.keys(localStorage)
-            .filter((key) => key.startsWith(prefix) && key !== s.key)
+            .filter(
+              (key) =>
+                key.startsWith(prefix) &&
+                key !== s.key &&
+                key !== s.source?.key,
+            )
             .flatMap((key) => {
               const record = parseRecovery(
                 localStorage.getItem(key),

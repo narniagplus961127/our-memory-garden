@@ -15,6 +15,7 @@ export type RecoveryRecord = {
   editSeq: number;
   savedAt: string;
   reason?: "edit" | "resolution";
+  source?: { key: string; value: string | null };
   comparison?: { baseSnapshot: PageSnapshot; saved: GardenPage };
 };
 function validSnapshot(value: unknown): value is PageSnapshot {
@@ -45,6 +46,10 @@ export function parseRecovery(
       Number.isSafeInteger(r.editSeq) &&
       validSnapshot(r.baseSnapshot) &&
       validSnapshot(r.workingSnapshot) &&
+      (!r.source ||
+        (typeof r.source.key === "string" &&
+          r.source.key.startsWith(recoveryPrefix(accountId) + pageId + ":") &&
+          (r.source.value === null || typeof r.source.value === "string"))) &&
       (!r.comparison ||
         (validSnapshot(r.comparison.baseSnapshot) &&
           validSnapshot(r.comparison.saved) &&

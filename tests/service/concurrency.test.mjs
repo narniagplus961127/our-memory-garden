@@ -530,3 +530,15 @@ test("moving into a deleted parent retains the edited subtree for an explicit la
   );
   assert.equal(final.content.content[2].props.text, "new C");
 });
+
+test("a subtree deletion choice preserves an independent insertion in another section",async()=>{
+  const section=(id,children)=>({type:"Section",props:{id,content:children}});
+  const {owner,other,path,page}=await fixture(doc(section("contested",[text("a","old A")]),section("independent",[])));
+  await call(path,"PATCH",{version:page.version,content:doc(section("contested",[text("a","new A")]),section("independent",[text("x","Independent new X")]))},owner);
+  const r=await call(path,"PATCH",{version:page.version,content:doc(section("independent",[]))},other);
+  assert.equal(r.status,409);
+  const conflict=await r.json();
+  const independent=conflict.draft.content.content.find(b=>b.props.id==="independent");
+  assert.equal(independent.props.content[0]?.props.text,"Independent new X");
+});
+

@@ -10,5 +10,11 @@ export default async function PageEditorRoute({
   const administrator = await requireAdministrator();
   const page = await getVisiblePage((await params).id, administrator);
   if (!page) notFound();
-  return <PageEditor key={page.id} page={page} accountId={administrator.id} />;
+  return (
+    <PageEditor
+      key={administrator.id + ":" + page.id}
+      page={page}
+      accountId={administrator.id}
+    />
+  );
 }
