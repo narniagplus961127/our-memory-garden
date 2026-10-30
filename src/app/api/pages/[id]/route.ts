@@ -1,11 +1,6 @@
 import { validPageData } from "@/lib/blocks";
 import { currentAdministrator } from "@/lib/server/auth";
-import {
-  getVisiblePage,
-  updatePageText,
-  updatePageContent,
-  updatePageVisibility,
-} from "@/lib/server/pages";
+import { getVisiblePage, savePage } from "@/lib/server/pages";
 import {
   RequestError,
   assertSameOrigin,
@@ -35,10 +30,17 @@ export async function PATCH(request: Request, { params }: Context) {
     const admin = await currentAdministrator(request.headers);
     if (!admin) throw new RequestError(401, "Sign in to edit pages.");
     const body = await bodyJson(request);
+    if (body.accountId !== undefined && body.accountId !== admin.id)
+      throw new RequestError(
+        401,
+        "Sign in again before continuing this editor.",
+      );
     if (
       !Number.isSafeInteger(body.version) ||
-      (body.visibility === undefined &&
-        typeof body.text !== "string" &&
+      Number(body.version) < 1 ||
+      (body.title === undefined &&
+        body.visibility === undefined &&
+        body.text === undefined &&
         body.content === undefined) ||
       (body.text !== undefined &&
         (typeof body.text !== "string" || body.text.length > 100000))
@@ -55,40 +57,27 @@ export async function PATCH(request: Request, { params }: Context) {
       (!validPageData(body.content) || body.text !== undefined)
     )
       throw new RequestError(400, "Invalid page content.");
-    const id = (await params).id;
-    const existing = await getVisiblePage(id, admin);
-    if (!existing) throw new RequestError(404, "Page not found.");
-    const page =
-      body.content !== undefined
-        ? await updatePageContent(
-            admin,
-            id,
-            pageTitle(body.title),
-            body.content,
-            Number(body.version),
-            body.visibility as "public" | "private" | undefined,
-          )
-        : typeof body.text !== "string"
-          ? await updatePageVisibility(
-              admin,
-              id,
-              body.visibility as "public" | "private",
-              Number(body.version),
-            )
-          : await updatePageText(
-              admin,
-              id,
-              pageTitle(body.title),
-              body.text,
-              Number(body.version),
-              body.visibility as "public" | "private" | undefined,
-            );
-    if (!page)
-      throw new RequestError(
-        409,
-        "This page changed elsewhere. Reload to see the latest version.",
-      );
-    return Response.json(page, {
+    if (
+      body.editorSessionId !== undefined &&
+      (typeof body.editorSessionId !== "string" ||
+        !/^[\w-]{1,120}$/.test(body.editorSessionId))
+    )
+      throw new RequestError(400, "Invalid editor session.");
+    const result = await savePage(admin, (await params).id, {
+      version: Number(body.version),
+      ...(body.title === undefined ? {} : { title: pageTitle(body.title) }),
+      ...(body.content === undefined
+        ? {}
+        : { content: body.content as import("@/lib/pages").PageData }),
+      ...(body.text === undefined ? {} : { text: body.text as string }),
+      ...(body.visibility === undefined
+        ? {}
+        : { visibility: body.visibility as "public" | "private" }),
+      editorSessionId: body.editorSessionId as string | undefined,
+      reason: body.reason as string | undefined,
+    });
+    return Response.json(result.kind === "saved" ? result.page : result, {
+      status: result.kind === "saved" ? 200 : 409,
       headers: { "Cache-Control": "private, no-store" },
     });
   } catch (error) {
