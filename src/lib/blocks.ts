@@ -24,7 +24,10 @@ export function slotNames(type: string): string[] {
 export function slotContent(block: PageBlock, name: string): PageBlock[] {
   return block.props[name] as PageBlock[];
 }
-export function validPageData(value: unknown): value is PageData {
+export function validPageData(
+  value: unknown,
+  options: { allowIncomplete?: boolean } = {},
+): value is PageData {
   if (!value || typeof value !== "object" || Array.isArray(value)) return false;
   const data = value as Record<string, unknown>;
   if (
@@ -50,6 +53,23 @@ export function validPageData(value: unknown): value is PageData {
       Object.keys(data.zones).length)
   )
     return false;
+  function destination(value: unknown) {
+    if (validDestination(value)) return true;
+    if (
+      !options.allowIncomplete ||
+      !value ||
+      typeof value !== "object" ||
+      Array.isArray(value)
+    )
+      return false;
+    const d = value as Record<string, unknown>;
+    return (
+      Object.keys(d).length === 2 &&
+      ((d.kind === "page" && typeof d.pageId === "string") ||
+        (d.kind === "external" && typeof d.url === "string"))
+    );
+  }
+
   const ids = new Set<string>();
   let count = 0;
   function list(value: unknown, depth: number): boolean {
@@ -101,7 +121,8 @@ export function validPageData(value: unknown): value is PageData {
         const str = (key: string, max: number, required = false) =>
           props[key] === undefined
             ? !required
-            : typeof props[key] === "string" && props[key].length <= max;
+            : typeof props[key] === "string" &&
+              (options.allowIncomplete || props[key].length <= max);
         const opt = (key: string, values: string[], required = false) =>
           props[key] === undefined ? !required : values.includes(props[key]);
         if (!opt("align", ["left", "center"])) return false;
@@ -116,8 +137,7 @@ export function validPageData(value: unknown): value is PageData {
             return (
               str("text", 100000, true) &&
               str("linkText", 1000) &&
-              (props.destination == null ||
-                validDestination(props.destination)) &&
+              (props.destination == null || destination(props.destination)) &&
               opt("style", ["h1", "h2", "h3", "h4", "p", "small"], true)
             );
           case "Banner":
@@ -165,8 +185,10 @@ export function validPageData(value: unknown): value is PageData {
             return (
               str("label", 200, true) &&
               (props.destination
-                ? validDestination(props.destination)
-                : isWebUrl(props.href)) &&
+                ? destination(props.destination)
+                : options.allowIncomplete
+                  ? typeof props.href === "string"
+                  : isWebUrl(props.href)) &&
               opt("variant", ["primary", "secondary"])
             );
           case "Section":

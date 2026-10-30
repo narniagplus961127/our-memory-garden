@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Brand } from "./brand";
+import { signOutEditors } from "@/lib/editor-recovery";
 const navigation = [
   ["Overview", "/admin"],
   ["Pages", "/admin/pages"],
@@ -9,7 +10,13 @@ const navigation = [
   ["Navigation", "/admin/navigation"],
   ["Settings", "/admin/settings"],
 ];
-export function AdminShell({ children }: { children: React.ReactNode }) {
+export function AdminShell({
+  children,
+  accountId,
+}: {
+  children: React.ReactNode;
+  accountId: string;
+}) {
   const pathname = usePathname();
   if (/^\/admin\/pages\/[^/]+$/.test(pathname))
     return <main className="editor-admin-main">{children}</main>;
@@ -30,7 +37,11 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
     <>
       <Link href="/">View website ↗</Link>
       <Link href="/admin/settings/account">Account</Link>
-      <form action="/api/auth/logout" method="post">
+      <form
+        action="/api/auth/logout"
+        method="post"
+        onSubmit={() => signOutEditors(accountId)}
+      >
         <button type="submit">Sign out</button>
       </form>
     </>

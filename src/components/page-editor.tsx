@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   Puck,
@@ -20,106 +20,26 @@ import {
   type PageBlock,
 } from "@/lib/blocks";
 import type { GardenPage, PageData } from "@/lib/pages";
+import { usePageAutosave } from "./use-page-autosave";
+import { SaveFeedback } from "./save-feedback";
+import { equal } from "@/lib/page-merge";
 const useGardenPuck = createUsePuck<typeof gardenConfig>();
-type Snapshot = {
-  title: string;
-  content: PageData;
-  visibility: GardenPage["visibility"];
-};
+type Snapshot = import("@/lib/page-merge").PageSnapshot;
 function documentData(data: Data): PageData {
   return { root: { props: {} }, content: data.content as PageBlock[] };
 }
-function snapshotKey(snapshot: Snapshot) {
-  return JSON.stringify(snapshot);
-}
-function useAutosave(page: GardenPage) {
-  const initial: Snapshot = {
-    title: page.title,
-    content: documentData(page.content),
-    visibility: page.visibility,
-  };
-  const latest = useRef(initial),
-    persisted = useRef(snapshotKey(initial)),
-    version = useRef(page.version),
-    queued = useRef<Snapshot | null>(null),
-    saving = useRef(false),
-    timer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [status, setStatus] = useState("Saved"),
-    [error, setError] = useState("");
-  useEffect(
-    () => () => {
-      if (timer.current) clearTimeout(timer.current);
-    },
-    [],
-  );
-  async function persist() {
-    if (saving.current || !queued.current) return;
-    const submitted = queued.current;
-    queued.current = null;
-    if (!submitted.title.trim()) {
-      setStatus("Not saved");
-      setError("Enter a page title.");
-      queued.current = latest.current;
-      return;
-    }
-    saving.current = true;
-    setStatus("Saving…");
-    let failed = false;
-    try {
-      const response = await fetch("/api/pages/" + page.id, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...submitted, version: version.current }),
-      });
-      const result = await response.json();
-      if (!response.ok)
-        throw new Error(result.error ?? "Could not save your changes.");
-      version.current = Math.max(version.current, result.version);
-      persisted.current = snapshotKey(submitted);
-      setError("");
-      if (snapshotKey(latest.current) !== persisted.current) {
-        queued.current = latest.current;
-        setStatus("Saving…");
-      } else {
-        queued.current = null;
-        setStatus("Saved");
-      }
-    } catch (error) {
-      failed = true;
-      queued.current = latest.current;
-      setStatus("Not saved");
-      setError(
-        error instanceof Error
-          ? error.message
-          : "Could not connect. Your changes are still here.",
-      );
-    } finally {
-      saving.current = false;
-      if (queued.current && !failed) void persist();
-    }
-  }
-  function change(changes: Partial<Snapshot>) {
-    latest.current = { ...latest.current, ...changes };
-    if (timer.current) clearTimeout(timer.current);
-    if (!saving.current && snapshotKey(latest.current) === persisted.current) {
-      queued.current = null;
-      setStatus("Saved");
-      setError("");
-      return;
-    }
-    queued.current = latest.current;
-    setStatus("Saving…");
-    timer.current = setTimeout(() => void persist(), 650);
-  }
-  return {
-    status,
-    error,
-    change,
-    retry: () => void persist(),
-    detailsSaved: (saved: GardenPage) => {
-      version.current = Math.max(version.current, saved.version);
-    },
-  };
+function EditorSync({ content }: { content: PageData }) {
+  const getPuck = useGetPuck();
+  const selected = useGardenPuck((state) => state.selectedItem);
+  useEffect(() => {
+    const api = getPuck();
+    if (equal(documentData(api.appState.data), content)) return;
+    const id = selected?.props.id;
+    api.dispatch({ type: "setData", data: content });
+    const selector = id ? getPuck().getSelectorForId(id) : undefined;
+    api.dispatch({ type: "setUi", ui: { itemSelector: selector ?? null } });
+  }, [content, getPuck, selected]);
+  return null;
 }
 type Target = { zone: string; label: string; items: PageBlock[] };
 type OutlineItem = { block: PageBlock; label: string; depth: number };
@@ -153,24 +73,22 @@ function Workspace({
   page,
   accountId,
   title,
-  setTitle,
   visibility,
-  setVisibility,
   status,
   error,
   retry,
+  feedback,
   onMetadata,
   onDetailsSaved,
 }: {
   page: GardenPage;
   accountId: string;
   title: string;
-  setTitle: (value: string) => void;
   visibility: GardenPage["visibility"];
-  setVisibility: (value: GardenPage["visibility"]) => void;
   status: string;
   error: string;
   retry: () => void;
+  feedback: React.ReactNode;
   onMetadata: (changes: Partial<Snapshot>) => void;
   onDetailsSaved: (page: GardenPage) => void;
 }) {
@@ -284,7 +202,6 @@ function Workspace({
             value={title}
             maxLength={200}
             onChange={(event) => {
-              setTitle(event.target.value);
               onMetadata({ title: event.target.value });
             }}
           />
@@ -299,7 +216,6 @@ function Workspace({
           disabled={page.is_homepage}
           onChange={(event) => {
             const next = event.target.value === "public" ? "public" : "private";
-            setVisibility(next);
             onMetadata({ visibility: next });
           }}
         >
@@ -363,6 +279,7 @@ function Workspace({
           <button onClick={retry}>Retry save</button>
         </div>
       )}
+      {feedback}
       <div className="garden-editor-body">
         <aside
           className="garden-editor-panel"
@@ -547,29 +464,39 @@ export function PageEditor({
   page: GardenPage;
   accountId: string;
 }) {
-  const [title, setTitle] = useState(page.title),
-    [visibility, setVisibility] = useState(page.visibility);
-  const save = useAutosave(page);
+  const save = usePageAutosave(page, accountId);
+  const [ready, setReady] = useState(false);
+  useEffect(() => setReady(true), []);
   return (
-    <Puck
-      config={gardenConfig}
-      data={page.content}
-      onChange={(data) => save.change({ content: documentData(data) })}
-      overrides={{ actionBar: () => <></> }}
+    <fieldset
+      className="garden-editor-init"
+      disabled={!ready}
+      aria-busy={!ready}
+      aria-label="Page editor"
     >
-      <Workspace
-        page={page}
-        accountId={accountId}
-        title={title}
-        setTitle={setTitle}
-        visibility={visibility}
-        setVisibility={setVisibility}
-        status={save.status}
-        error={save.error}
-        retry={save.retry}
-        onMetadata={save.change}
-        onDetailsSaved={save.detailsSaved}
-      />
-    </Puck>
+      <Puck
+        config={gardenConfig}
+        data={page.content}
+        onChange={(data) => save.change({ content: documentData(data) })}
+        overrides={{ actionBar: () => <></> }}
+      >
+        <EditorSync content={save.working.content} />
+        <Workspace
+          page={page}
+          title={save.working.title}
+          visibility={save.working.visibility}
+          status={ready ? save.status : "Loading editor…"}
+          error={save.error}
+          retry={save.retry}
+          onMetadata={save.change}
+          feedback={
+            <SaveFeedback
+              key={save.comparison?.saved.version ?? "feedback"}
+              save={save}
+            />
+          }
+        />
+      </Puck>
+    </fieldset>
   );
 }
