@@ -1,3 +1,4 @@
+import { validatePageReferences } from "@/lib/server/page-references";
 import { validPageData } from "@/lib/blocks";
 import { currentAdministrator } from "@/lib/server/auth";
 import { getVisiblePage, savePage } from "@/lib/server/pages";
@@ -57,13 +58,22 @@ export async function PATCH(request: Request, { params }: Context) {
       (!validPageData(body.content) || body.text !== undefined)
     )
       throw new RequestError(400, "Invalid page content.");
+
     if (
       body.editorSessionId !== undefined &&
       (typeof body.editorSessionId !== "string" ||
         !/^[\w-]{1,120}$/.test(body.editorSessionId))
     )
       throw new RequestError(400, "Invalid editor session.");
-    const result = await savePage(admin, (await params).id, {
+    const id = (await params).id;
+    const existing = await getVisiblePage(id, admin);
+    if (!existing) throw new RequestError(404, "Page not found.");
+    if (body.content !== undefined)
+      await validatePageReferences(
+        body.content as import("@/lib/pages").PageData,
+        existing.content,
+      );
+    const result = await savePage(admin, id, {
       version: Number(body.version),
       ...(body.title === undefined ? {} : { title: pageTitle(body.title) }),
       ...(body.content === undefined
@@ -78,6 +88,7 @@ export async function PATCH(request: Request, { params }: Context) {
     });
     return Response.json(result.kind === "saved" ? result.page : result, {
       status: result.kind === "saved" ? 200 : 409,
+
       headers: { "Cache-Control": "private, no-store" },
     });
   } catch (error) {

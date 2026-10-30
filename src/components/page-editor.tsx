@@ -10,11 +10,11 @@ import {
 } from "@puckeditor/core";
 import "@puckeditor/core/puck.css";
 import { gardenConfig } from "./garden-blocks";
+import { PageAddress } from "./page-address";
 import {
   blockNames,
   slotNames,
   slotContent,
-  isWebUrl,
   type BlockName,
   type PageBlock,
 } from "@/lib/blocks";
@@ -244,6 +244,15 @@ function Workspace({
             Settings
           </button>
         </div>
+        <button
+          className="secondary"
+          onClick={() => {
+            getPuck().dispatch({ type: "setUi", ui: { itemSelector: null } });
+            setPanel("settings");
+          }}
+        >
+          Page details
+        </button>
         <div className="actions device-controls" aria-label="Canvas width">
           <button
             aria-pressed={device === "desktop"}
@@ -287,6 +296,9 @@ function Workspace({
             >
               Close
             </button>
+          </div>
+          <div hidden={panel !== "settings" || Boolean(selected)}>
+            <PageAddress page={page} />
           </div>
           {panel === "content" ? (
             <>
@@ -394,12 +406,6 @@ function Workspace({
                     </button>
                   </div>
                   <Puck.Fields />
-                  {selected.type === "Button" &&
-                    !isWebUrl(String(selected.props.href)) && (
-                      <p role="alert" className="error">
-                        Enter a complete http:// or https:// web address.
-                      </p>
-                    )}
 
                   {selected.type === "Image" && (
                     <p className="muted">
@@ -412,17 +418,19 @@ function Workspace({
                   {selected.type === "Button" && (
                     <p className="muted">
                       <small>
-                        Use a complete https:// or http:// address. Garden page
-                        links arrive with navigation.
+                        Choose a garden page or a complete web address. Garden
+                        page links keep working when its address changes.
                       </small>
                     </p>
                   )}
                 </>
               ) : (
-                <p className="muted">
-                  Select a block on the canvas or in Content to change its
-                  settings.
-                </p>
+                <>
+                  <p className="muted">
+                    Select a block on the canvas or in Content to change its
+                    settings.
+                  </p>
+                </>
               )}
             </>
           )}

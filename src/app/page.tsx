@@ -1,5 +1,6 @@
 import { GardenContent } from "@/components/garden-content";
-import { PublicHeader, GardenCat } from "@/components/brand";
+import { GardenCat } from "@/components/brand";
+import { GardenHeader } from "@/components/garden-header";
 import { getHomepage } from "@/lib/server/homepage";
 import { isConfigured } from "@/lib/config";
 export const dynamic = "force-dynamic";
@@ -7,7 +8,7 @@ export default async function HomePage() {
   const page = isConfigured() ? await getHomepage() : null;
   return (
     <>
-      <PublicHeader />
+      <GardenHeader />
       <main className="public-page">
         <div className="page-content">
           <p className="eyebrow">Our garden</p>

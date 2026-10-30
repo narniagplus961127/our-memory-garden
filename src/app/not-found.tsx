@@ -1,9 +1,9 @@
 import Link from "next/link";
-import { PublicHeader } from "@/components/brand";
-export default function NotFound() {
+import { GardenHeader } from "@/components/garden-header";
+export default async function NotFound() {
   return (
     <>
-      <PublicHeader />
+      <GardenHeader />
       <main className="page-content">
         <h1>Page not found</h1>
         <p>This page is not available.</p>
