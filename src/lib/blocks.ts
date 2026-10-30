@@ -1,10 +1,12 @@
 import { isWebUrl, validDestination } from "./destinations";
+import { validGrid } from "./organization";
 export { isWebUrl } from "./destinations";
 import type { PageData, JsonValue } from "./pages";
 export const blockNames = [
   "Text",
   "Banner",
   "Image",
+  "PageGrid",
   "Gallery",
   "Button",
   "Section",
@@ -104,6 +106,7 @@ export function validPageData(
           Text: ["text", "style", "align", "linkText", "destination"],
           Banner: ["heading", "description", "background", "align"],
           Image: ["photoId", "alt", "caption", "fit", "width"],
+          PageGrid: ["selection", "showDate"],
           Gallery: ["photos"],
           Button: ["label", "href", "destination", "variant", "align"],
           Section: ["background", "spacing", "content"],
@@ -124,6 +127,12 @@ export function validPageData(
           props[key] === undefined ? !required : values.includes(props[key]);
         if (!opt("align", ["left", "center"])) return false;
         switch (type) {
+          case "PageGrid":
+            return (
+              validGrid(props.selection) &&
+              (props.showDate === undefined ||
+                typeof props.showDate === "boolean")
+            );
           case "Text":
             return (
               str("text", 100000, true) &&

@@ -11,6 +11,10 @@ export type PageData = {
 };
 export type GardenPage = {
   is_homepage?: boolean;
+  page_date?: string | null;
+  category_id?: string | null;
+  cover_photo_id?: string | null;
+  metadata_version?: number;
   id: string;
   title: string;
   slug: string;

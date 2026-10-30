@@ -408,6 +408,20 @@ export function usePageAutosave(page: GardenPage, accountId: string) {
     recovered,
     comparison,
     copies,
+    detailsSaved: (saved: GardenPage) => {
+      const s = state.current;
+      // Metadata can advance the page revision without changing this content base.
+      // An in-flight write or a different base must go through the trusted merge path.
+      if (
+        s.active &&
+        !s.saving &&
+        saved.version > s.version &&
+        equal(snapshot(saved), s.base)
+      ) {
+        s.version = saved.version;
+        if (!equal(s.working, s.base)) writeRecovery();
+      }
+    },
     change,
     editConflictText,
     retry: () => void persist(),
