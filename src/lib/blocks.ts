@@ -1,3 +1,5 @@
+import { isWebUrl, validDestination } from "./destinations";
+export { isWebUrl } from "./destinations";
 import type { PageData, JsonValue } from "./pages";
 export const blockNames = [
   "Text",
@@ -18,14 +20,6 @@ export function slotNames(type: string): string[] {
 }
 export function slotContent(block: PageBlock, name: string): PageBlock[] {
   return block.props[name] as PageBlock[];
-}
-export function isWebUrl(value: string) {
-  try {
-    const url = new URL(value);
-    return ["https:", "http:"].includes(url.protocol) && Boolean(url.hostname);
-  } catch {
-    return false;
-  }
 }
 export function validPageData(value: unknown): value is PageData {
   if (!value || typeof value !== "object" || Array.isArray(value)) return false;
@@ -86,10 +80,10 @@ export function validPageData(value: unknown): value is PageData {
           return false;
         ids.add(props.id);
         const allowed: Record<BlockName, string[]> = {
-          Text: ["text", "style", "align"],
+          Text: ["text", "style", "align", "linkText", "destination"],
           Banner: ["heading", "description", "background", "align"],
           Image: ["photoId", "alt", "caption", "fit", "width"],
-          Button: ["label", "href", "variant", "align"],
+          Button: ["label", "href", "destination", "variant", "align"],
           Section: ["background", "spacing", "content"],
           Columns: ["ratio", "gap", "left", "right"],
         };
@@ -110,6 +104,9 @@ export function validPageData(value: unknown): value is PageData {
           case "Text":
             return (
               str("text", 100000, true) &&
+              str("linkText", 1000) &&
+              (props.destination == null ||
+                validDestination(props.destination)) &&
               opt("style", ["h1", "h2", "h3", "h4", "p", "small"], true)
             );
           case "Banner":
@@ -134,9 +131,9 @@ export function validPageData(value: unknown): value is PageData {
           case "Button":
             return (
               str("label", 200, true) &&
-              typeof props.href === "string" &&
-              props.href.length <= 2000 &&
-              isWebUrl(props.href) &&
+              (props.destination
+                ? validDestination(props.destination)
+                : isWebUrl(props.href)) &&
               opt("variant", ["primary", "secondary"])
             );
           case "Section":

@@ -1,10 +1,10 @@
-import { PublicHeader } from "@/components/brand";
+import { GardenHeader } from "@/components/garden-header";
 import { AuthForm } from "@/components/auth-form";
 import { isConfigured } from "@/lib/config";
-export default function LoginPage() {
+export default async function LoginPage() {
   return (
     <>
-      <PublicHeader />
+      <GardenHeader />
       <main className="auth-main">
         <p className="eyebrow">Your garden</p>
         <h1>Welcome back</h1>

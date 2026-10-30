@@ -1,9 +1,17 @@
 import { PhotoPicker } from "./media-library";
 import { displayPhotoUrl } from "@/lib/media";
+import { DestinationPicker } from "./destination-picker";
+import { destinationHref, type Destination } from "@/lib/destinations";
 import type { Config, Slot } from "@puckeditor/core";
 import type { TextStyle } from "@/lib/pages";
 export type GardenBlocks = {
-  Text: { text: string; style: TextStyle; align?: "left" | "center" };
+  Text: {
+    text: string;
+    style: TextStyle;
+    align?: "left" | "center";
+    linkText?: string;
+    destination?: Destination | null;
+  };
   Banner: {
     heading: string;
     description: string;
@@ -19,7 +27,8 @@ export type GardenBlocks = {
   };
   Button: {
     label: string;
-    href: string;
+    href?: string;
+    destination?: Destination | null;
     variant?: "primary" | "secondary";
     align?: "left" | "center";
   };
@@ -84,20 +93,39 @@ export const gardenConfig: Config<GardenBlocks> = {
           })),
         },
         align: alignment,
+        linkText: { type: "text", label: "Linked text" },
+        destination: {
+          type: "custom",
+          render: ({ value, onChange }) => (
+            <DestinationPicker value={value} onChange={onChange} optional />
+          ),
+        },
       },
       defaultProps: {
         text: "Write a little memory…",
         style: "p",
         align: "left",
       },
-      render: ({ text, style, align }) => {
+      render: ({ text, style, align, linkText, destination }) => {
+        const href = destinationHref(destination ?? undefined);
+        const start = linkText ? text.indexOf(linkText) : -1;
         const Tag = style;
         return (
           <div
             className="garden-block garden-text"
             style={{ textAlign: align }}
           >
-            <Tag className="text-block">{text}</Tag>
+            <Tag className="text-block">
+              {href && linkText && start >= 0 ? (
+                <>
+                  {text.slice(0, start)}
+                  <a href={href}>{linkText}</a>
+                  {text.slice(start + linkText.length)}
+                </>
+              ) : (
+                text
+              )}
+            </Tag>
           </div>
         );
       },
@@ -197,7 +225,15 @@ export const gardenConfig: Config<GardenBlocks> = {
       label: "Button",
       fields: {
         label: { type: "text", label: "Button label" },
-        href: { type: "text", label: "External web address" },
+        destination: {
+          type: "custom",
+          render: ({ value, onChange }) => (
+            <DestinationPicker
+              value={value ?? { kind: "external", url: "https://example.com" }}
+              onChange={onChange}
+            />
+          ),
+        },
         variant: {
           type: "select",
           label: "Appearance",
@@ -208,18 +244,33 @@ export const gardenConfig: Config<GardenBlocks> = {
         },
         align: alignment,
       },
+      resolveFields: (data, { fields }) => ({
+        ...fields,
+        destination: {
+          type: "custom",
+          render: ({ value, onChange }) => (
+            <DestinationPicker
+              value={value ?? { kind: "external", url: data.props.href ?? "" }}
+              onChange={onChange}
+            />
+          ),
+        },
+      }),
       defaultProps: {
         label: "Explore a little more",
         href: "https://example.com",
         variant: "primary",
         align: "left",
       },
-      render: ({ label, href, variant, align }) => (
+      render: ({ label, href, destination, variant, align }) => (
         <div
           className="garden-block garden-button-block"
           style={{ textAlign: align }}
         >
-          <a className={"button " + (variant ?? "primary")} href={href}>
+          <a
+            className={"button " + (variant ?? "primary")}
+            href={destinationHref(destination ?? undefined, href)}
+          >
             {label}
           </a>
         </div>
