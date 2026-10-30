@@ -1,46 +1,33 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import type { GardenPage } from "@/lib/pages";
-import type { Category, PageDetails as Details } from "@/lib/organization";
+import type { Category } from "@/lib/organization";
+import { displayPhotoUrl } from "@/lib/media";
 import { PhotoPicker } from "./media-library";
+import { detailsOf, usePageDetails } from "./use-page-details";
 export function PageDetails({
   page,
+  accountId,
   onSaved,
 }: {
   page: GardenPage;
+  accountId: string;
   onSaved: (page: GardenPage) => void;
 }) {
-  const initial: Details = {
-    date: page.page_date?.slice(0, 10) ?? null,
-    categoryId: page.category_id ?? null,
-    coverPhotoId: page.cover_photo_id ?? null,
-  };
-  const [details, setDetails] = useState(initial),
-    [saved, setSaved] = useState(JSON.stringify(initial)),
-    [status, setStatus] = useState("Saved"),
-    [error, setError] = useState(""),
+  const save = usePageDetails(page, accountId, onSaved),
+    { details, status, change } = save;
+  const [error, setError] = useState(""),
     [list, setList] = useState<Category[]>([]),
     [name, setName] = useState(""),
-    [categoryBusy, setCategoryBusy] = useState(false);
-  const version = useRef(page.metadata_version ?? 0),
-    busy = useRef(false),
-    latest = useRef(details),
-    callback = useRef(onSaved);
-  latest.current = details;
-  callback.current = onSaved;
+    [categoryBusy, setCategoryBusy] = useState(false),
+    [showComparison, setShowComparison] = useState(true);
   useEffect(() => {
     let cancelled = false;
     fetch("/api/categories")
       .then(async (r) => {
         if (!r.ok) throw Error("Could not load categories. Reload to retry.");
         const categories = await r.json();
-        if (!cancelled) {
-          setList(categories);
-          setName(
-            categories.find((c: Category) => c.id === page.category_id)?.name ??
-              "",
-          );
-        }
+        if (!cancelled) setList(categories);
       })
       .catch((e) => {
         if (!cancelled) setError(e.message);
@@ -48,53 +35,13 @@ export function PageDetails({
     return () => {
       cancelled = true;
     };
-  }, [page.category_id]);
-  function change(changes: Partial<Details>) {
-    setDetails((d) => ({ ...d, ...changes }));
-    setStatus("Autosaving…");
-    setError("");
-  }
-  async function persist() {
-    if (busy.current || JSON.stringify(latest.current) === saved) return;
-    busy.current = true;
-    const submitted = latest.current;
-    setStatus("Autosaving…");
-    try {
-      const r = await fetch("/api/pages/" + page.id + "/details", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...submitted,
-          metadataVersion: version.current,
-        }),
-      });
-      const result = await r.json();
-      if (!r.ok) throw Error(result.error);
-      version.current = result.metadata_version;
-      setSaved(JSON.stringify(submitted));
-      callback.current(result);
-      setError("");
-      setStatus(
-        JSON.stringify(latest.current) === JSON.stringify(submitted)
-          ? "Saved"
-          : "Autosaving…",
-      );
-    } catch (e) {
-      setStatus("Unsaved · Retry");
-      setError(
-        e instanceof Error
-          ? e.message
-          : "Could not save page details. Your changes are still here.",
-      );
-    } finally {
-      busy.current = false;
-    }
-  }
+  }, []);
   useEffect(() => {
-    if (JSON.stringify(details) === saved) return;
-    const timer = setTimeout(() => void persist(), 650);
-    return () => clearTimeout(timer);
-  }, [details, saved]);
+    setName(list.find((c) => c.id === details.categoryId)?.name ?? "");
+  }, [list, details.categoryId]);
+  useEffect(() => {
+    if (save.comparison) setShowComparison(true);
+  }, [save.comparison?.metadata_version]);
   async function category(rename: boolean) {
     if (categoryBusy) return;
     setCategoryBusy(true);
@@ -189,15 +136,82 @@ export function PageDetails({
         value={details.coverPhotoId ?? ""}
         onChange={(value) => change({ coverPhotoId: value || null })}
       />
+      {save.comparison &&
+        (showComparison ? (
+          <div
+            className="details-conflict"
+            role="region"
+            aria-label="Page details conflict"
+          >
+            <h3>Page details changed elsewhere</h3>
+            <p>
+              Compare your details with the saved details before choosing which
+              to keep.
+            </p>
+            {[
+              { label: "My details", value: details },
+              { label: "Saved details", value: detailsOf(save.comparison) },
+            ].map(({ label, value }) => (
+              <div key={label}>
+                <h4>{label}</h4>
+                <p>
+                  Date: {value.date ?? "No date"}
+                  <br />
+                  Category:{" "}
+                  {list.find((c) => c.id === value.categoryId)?.name ??
+                    "No category"}
+                </p>
+                {value.coverPhotoId ? (
+                  <img
+                    className="details-cover"
+                    src={displayPhotoUrl(value.coverPhotoId)}
+                    alt={label + " cover"}
+                  />
+                ) : (
+                  <p>No cover photo</p>
+                )}
+              </div>
+            ))}
+            <div className="actions">
+              <button className="secondary" onClick={() => save.resolve(true)}>
+                Keep my details
+              </button>
+              <button className="secondary" onClick={() => save.resolve(false)}>
+                Use saved details
+              </button>
+              <button
+                className="secondary"
+                onClick={() => {
+                  setShowComparison(false);
+                  document.getElementById("page-date")?.focus();
+                }}
+              >
+                Continue editing details
+              </button>
+            </div>
+          </div>
+        ) : (
+          <button className="secondary" onClick={() => setShowComparison(true)}>
+            Review details conflict
+          </button>
+        ))}
       <span role="status" aria-label="Page details status">
         {status}
       </span>
-      {error && (
+      {save.recovered && (
+        <p className="muted">
+          Recovered page details are unsaved. Retry to save them.
+        </p>
+      )}
+      {save.warning && <p role="status">{save.warning}</p>}
+      {(error || save.error || save.recovered) && (
         <>
-          <p role="alert" className="error">
-            {error}
-          </p>
-          <button className="secondary" onClick={() => void persist()}>
+          {(error || save.error) && (
+            <p role="alert" className="error">
+              {error || save.error}
+            </p>
+          )}
+          <button className="secondary" onClick={save.retry}>
             Retry details
           </button>
         </>

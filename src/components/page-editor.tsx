@@ -151,6 +151,7 @@ function documentOutline(content: PageBlock[]) {
 }
 function Workspace({
   page,
+  accountId,
   title,
   setTitle,
   visibility,
@@ -162,6 +163,7 @@ function Workspace({
   onDetailsSaved,
 }: {
   page: GardenPage;
+  accountId: string;
   title: string;
   setTitle: (value: string) => void;
   visibility: GardenPage["visibility"];
@@ -385,7 +387,11 @@ function Workspace({
           </div>
           <div hidden={panel !== "settings" || Boolean(selected)}>
             <PageAddress page={page} />
-            <PageDetails page={page} onSaved={onDetailsSaved} />
+            <PageDetails
+              page={page}
+              accountId={accountId}
+              onSaved={onDetailsSaved}
+            />
           </div>
           {panel === "content" ? (
             <>
@@ -534,7 +540,13 @@ function Workspace({
     </div>
   );
 }
-export function PageEditor({ page }: { page: GardenPage }) {
+export function PageEditor({
+  page,
+  accountId,
+}: {
+  page: GardenPage;
+  accountId: string;
+}) {
   const [title, setTitle] = useState(page.title),
     [visibility, setVisibility] = useState(page.visibility);
   const save = useAutosave(page);
@@ -547,6 +559,7 @@ export function PageEditor({ page }: { page: GardenPage }) {
     >
       <Workspace
         page={page}
+        accountId={accountId}
         title={title}
         setTitle={setTitle}
         visibility={visibility}
