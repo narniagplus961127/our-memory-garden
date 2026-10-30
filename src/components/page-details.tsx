@@ -84,6 +84,8 @@ export function PageDetails({
         id="page-date"
         aria-label="Page date"
         type="date"
+        min="0001-01-01"
+        max="9999-12-31"
         value={details.date ?? ""}
         onChange={(e) => change({ date: e.target.value || null })}
       />
@@ -136,6 +138,30 @@ export function PageDetails({
         value={details.coverPhotoId ?? ""}
         onChange={(value) => change({ coverPhotoId: value || null })}
       />
+      {save.copies.map((copy) => (
+        <div className="editor-recovery-notice" key={copy.key}>
+          <p>
+            Another device copy of this page has unsaved details. Review one
+            copy at a time; another tab may still be editing it.
+          </p>
+          <button
+            className="secondary"
+            disabled={!save.canRecover}
+            onClick={() => save.recover(copy.key)}
+          >
+            Recover details device copy
+          </button>
+          <button className="secondary" onClick={() => save.discard(copy.key)}>
+            Discard details device copy
+          </button>
+          {!save.canRecover && (
+            <p className="muted">
+              Save or resolve your current details before recovering another
+              copy.
+            </p>
+          )}
+        </div>
+      ))}
       {save.comparison &&
         (showComparison ? (
           <div

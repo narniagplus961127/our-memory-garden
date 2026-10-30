@@ -228,6 +228,119 @@ test("concurrent page details preserve independent changes and require a choice 
     .toBe(0);
   await other.close();
 });
+test("two tabs keep separate details recovery copies through refresh and acknowledgement", async ({
+  page,
+  context,
+}) => {
+  await page.goto("/login");
+  await page.getByLabel("Email address").fill(env.TEST_ADMIN_EMAIL);
+  await page
+    .getByLabel("Password", { exact: true })
+    .fill(env.TEST_ADMIN_PASSWORD);
+  await page.getByRole("button", { name: "Sign in", exact: true }).click();
+  await expect(page).toHaveURL(/\/admin\/pages$/);
+  const p = await (
+    await page.request.post("/api/pages", {
+      headers: { Origin: new URL(page.url()).origin },
+      data: { title: "Two details drafts " + Date.now() },
+    })
+  ).json();
+  const second = await context.newPage();
+  for (const [tab, date] of [
+    [page, "2026-10-28"],
+    [second, "2026-10-29"],
+  ] as const) {
+    await tab.goto("/admin/pages/" + p.id);
+    await tab.route("**/api/pages/" + p.id + "/details", (route) =>
+      route.fulfill({
+        status: 503,
+        contentType: "application/json",
+        body: JSON.stringify({ error: "The connection is unavailable." }),
+      }),
+    );
+    await tab
+      .getByRole("button", { name: "Page details", exact: true })
+      .click();
+    await tab.getByLabel("Page date", { exact: true }).fill(date);
+    await expect(
+      tab.getByRole("status", { name: "Page details status" }),
+    ).toHaveText("Unsaved · Retry");
+  }
+  await expect
+    .poll(() =>
+      page.evaluate(
+        (id) =>
+          Object.keys(localStorage).filter((k) => k.includes(id + ":details:"))
+            .length,
+        p.id,
+      ),
+    )
+    .toBe(2);
+  for (const [tab, date] of [
+    [page, "2026-10-28"],
+    [second, "2026-10-29"],
+  ] as const) {
+    await tab.reload();
+    await tab
+      .getByRole("button", { name: "Page details", exact: true })
+      .click();
+    await expect(tab.getByLabel("Page date", { exact: true })).toHaveValue(
+      date,
+    );
+    await expect(
+      tab.getByRole("status", { name: "Page details status" }),
+    ).toHaveText("Recovered · unsaved");
+  }
+  await page.unroute("**/api/pages/" + p.id + "/details");
+  await page
+    .getByRole("button", { name: "Retry details", exact: true })
+    .click();
+  await expect(
+    page.getByRole("status", { name: "Page details status" }),
+  ).toHaveText("Saved");
+  await second.reload();
+  await second
+    .getByRole("button", { name: "Page details", exact: true })
+    .click();
+  await expect(second.getByLabel("Page date", { exact: true })).toHaveValue(
+    "2026-10-29",
+  );
+  await expect
+    .poll(() =>
+      page.evaluate(
+        (id) =>
+          Object.keys(localStorage).filter((k) => k.includes(id + ":details:"))
+            .length,
+        p.id,
+      ),
+    )
+    .toBe(1);
+  await second.unroute("**/api/pages/" + p.id + "/details");
+  await second
+    .getByRole("button", { name: "Retry details", exact: true })
+    .click();
+  await expect(
+    second.getByRole("region", { name: "Page details conflict" }),
+  ).toBeVisible();
+  await second
+    .getByRole("button", { name: "Keep my details", exact: true })
+    .click();
+  await expect(
+    second.getByRole("status", { name: "Page details status" }),
+  ).toHaveText("Saved");
+  await expect
+    .poll(() =>
+      page.evaluate(
+        (id) =>
+          Object.keys(localStorage).filter((k) => k.includes(id + ":details:"))
+            .length,
+        p.id,
+      ),
+    )
+    .toBe(0);
+  await second.close();
+});
+
 test("sign-out clears pending details recovery before a late response can rewrite it", async ({
   page,
   context,

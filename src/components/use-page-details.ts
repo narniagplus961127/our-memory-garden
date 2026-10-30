@@ -26,6 +26,48 @@ function validDetails(value: unknown): value is PageDetails {
           : uuid.test(details[key]))),
   );
 }
+type DetailsRecovery = {
+  schemaVersion: "page-details-1";
+  accountId: string;
+  pageId: string;
+  editorSessionId: string;
+  metadataVersion: number;
+  baseDetails: PageDetails;
+  details: PageDetails;
+  savedAt: string;
+  source?: { key: string; value: string | null };
+};
+function parseDetailsRecovery(
+  raw: string | null,
+  accountId: string,
+  pageId: string,
+): DetailsRecovery | null {
+  try {
+    if (!raw || raw.length > 8192) return null;
+    const r = JSON.parse(raw);
+    return r.schemaVersion === "page-details-1" &&
+      r.accountId === accountId &&
+      r.pageId === pageId &&
+      typeof r.editorSessionId === "string" &&
+      /^[\w-]{1,120}$/.test(r.editorSessionId) &&
+      Number.isSafeInteger(r.metadataVersion) &&
+      r.metadataVersion >= 0 &&
+      validDetails(r.baseDetails) &&
+      validDetails(r.details) &&
+      typeof r.savedAt === "string" &&
+      Number.isFinite(Date.parse(r.savedAt)) &&
+      (!r.source ||
+        (typeof r.source.key === "string" &&
+          r.source.key.startsWith(
+            recoveryPrefix(accountId) + pageId + ":details:",
+          ) &&
+          (r.source.value === null || typeof r.source.value === "string")))
+      ? r
+      : null;
+  } catch {
+    return null;
+  }
+}
 export function usePageDetails(
   page: GardenPage,
   accountId: string,
@@ -41,6 +83,8 @@ export function usePageDetails(
     version: page.metadata_version ?? 0,
     saving: false,
     key: "",
+    session: "",
+    source: null as { key: string; value: string | null } | null,
     written: null as string | null,
     comparison: null as GardenPage | null,
   });
@@ -52,7 +96,10 @@ export function usePageDetails(
     [error, setError] = useState(""),
     [warning, setWarning] = useState(""),
     [recovered, setRecovered] = useState(false),
-    [comparison, setComparison] = useState<GardenPage | null>(null);
+    [comparison, setComparison] = useState<GardenPage | null>(null),
+    [copies, setCopies] = useState<
+      Array<{ key: string; record: DetailsRecovery }>
+    >([]);
   function cancelTimer() {
     if (timer.current) clearTimeout(timer.current);
     timer.current = null;
@@ -69,10 +116,12 @@ export function usePageDetails(
         schemaVersion: "page-details-1",
         accountId,
         pageId: page.id,
+        editorSessionId: s.session,
         metadataVersion: s.version,
         baseDetails: s.base,
         details: s.working,
         savedAt: new Date().toISOString(),
+        source: s.source ?? undefined,
       });
       if (record.length > 8192) throw Error();
       localStorage.setItem(s.key, record);
@@ -89,6 +138,14 @@ export function usePageDetails(
     try {
       if (localStorage.getItem(s.key) === s.written)
         localStorage.removeItem(s.key);
+      if (s.source && localStorage.getItem(s.source.key) === s.source.value) {
+        localStorage.removeItem(s.source.key);
+        const sourceKey = s.source.key;
+        setCopies((current) =>
+          current.filter((copy) => copy.key !== sourceKey),
+        );
+      }
+      s.source = null;
       s.written = null;
     } catch {}
   }
@@ -201,20 +258,21 @@ export function usePageDetails(
     s.active = true;
     if (!s.initialized) {
       s.initialized = true;
-      s.key = recoveryPrefix(accountId) + page.id + ":details";
+      const sessionKey = "garden-editor-session:" + accountId + ":" + page.id;
+      try {
+        s.session = sessionStorage.getItem(sessionKey) ?? crypto.randomUUID();
+        sessionStorage.setItem(sessionKey, s.session);
+      } catch {
+        s.session = crypto.randomUUID();
+      }
+      const prefix = recoveryPrefix(accountId) + page.id + ":details:";
+      s.key = prefix + s.session;
       try {
         const raw = localStorage.getItem(s.key);
-        const record = raw && raw.length <= 8192 ? JSON.parse(raw) : null;
-        if (
-          record?.schemaVersion === "page-details-1" &&
-          record.accountId === accountId &&
-          record.pageId === page.id &&
-          Number.isSafeInteger(record.metadataVersion) &&
-          record.metadataVersion >= 0 &&
-          validDetails(record.baseDetails) &&
-          validDetails(record.details)
-        ) {
+        const record = parseDetailsRecovery(raw, accountId, page.id);
+        if (record) {
           s.written = raw;
+          s.source = record.source ?? null;
           if (same(record.details, initial)) clearAcknowledged();
           else {
             s.base = record.baseDetails;
@@ -224,6 +282,23 @@ export function usePageDetails(
             setStatus("Recovered · unsaved");
           }
         }
+        setCopies(
+          Object.keys(localStorage)
+            .filter(
+              (key) =>
+                key.startsWith(prefix) &&
+                key !== s.key &&
+                key !== s.source?.key,
+            )
+            .flatMap((key) => {
+              const record = parseDetailsRecovery(
+                localStorage.getItem(key),
+                accountId,
+                page.id,
+              );
+              return record ? [{ key, record }] : [];
+            }),
+        );
       } catch {
         setWarning(
           "Device recovery is unavailable. Keep this editor open until page details are saved.",
@@ -303,6 +378,41 @@ export function usePageDetails(
     warning,
     recovered,
     comparison,
+    copies,
+    canRecover: same(details, state.current.base) && !state.current.saving,
+    recover: (key: string) => {
+      const s = state.current,
+        copy = copies.find((copy) => copy.key === key);
+      if (!s.active || s.saving || !same(s.working, s.base) || !copy) return;
+      let record: DetailsRecovery | null = null;
+      try {
+        const value = localStorage.getItem(key);
+        record = parseDetailsRecovery(value, accountId, page.id);
+        s.source = { key, value };
+      } catch {}
+      if (!record) {
+        setCopies((current) => current.filter((copy) => copy.key !== key));
+        return;
+      }
+      s.base = record.baseDetails;
+      s.version = record.metadataVersion;
+      apply(record.details);
+      s.comparison = null;
+      setComparison(null);
+      setRecovered(true);
+      setStatus("Recovered · unsaved");
+      setError("");
+      writeRecovery();
+      setCopies((current) => current.filter((copy) => copy.key !== key));
+    },
+    discard: (key: string) => {
+      const s = state.current;
+      if (!s.active) return;
+      try {
+        localStorage.removeItem(key);
+      } catch {}
+      setCopies((current) => current.filter((copy) => copy.key !== key));
+    },
     change,
     retry: () => void persist(),
     resolve,

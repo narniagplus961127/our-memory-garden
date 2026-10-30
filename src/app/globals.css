@@ -21,8 +21,8 @@
 .garden-card-cover {
   display: grid;
   place-items: center;
-  background: #e4eadf;
-  color: #456449;
+  background: var(--sage);
+  color: var(--ink);
   font-size: 48px;
 }
 .garden-page-card h3 {
