@@ -13,3 +13,9 @@ Hosted credentials must be kept separately in an ignored environment file. `node
 Staging maintenance: run `node --env-file=.env.local scripts/cleanup-media-staging.mjs` to inspect up to 100 pending uploads expired for over an hour. Add `--apply` only after inspecting the dry-run IDs. It deletes only recorded server-generated staging keys, keeps photo records with an audit marker, and never deletes originals/display copies. `tests/service/staging-cleanup.test.mjs` simulates elapsed time only in the guarded local fixture and verifies dry-run, expired-pending cleanup and ready-photo retention through the real CLI and storage boundaries. Scheduling production maintenance is ticket 13.
 
 The local storage port can be set with `LOCAL_S3_PORT`; otherwise it follows the loopback `AWS_ENDPOINT_URL_S3` port, then defaults to 59005. Set both consistently for parallel worktrees. The runtime and maintenance scripts accept `GARDEN_ORIGINALS_BUCKET` / `GARDEN_DISPLAY_BUCKET` as aliases; explicit `MEDIA_*` values take precedence.
+
+## Gallery boundary tests
+
+`tests/service/gallery.test.mjs` uses the real local upload/finalization API, authenticated page API and anonymous media gateway to verify nested ordered galleries, caption persistence, invalid photo references, current public/private access and protected originals. Run it with the same isolated local database/auth/S3 environment as the media tests.
+
+`tests/browser/gallery.spec.ts` composes a gallery using the actual shared library in Puck, edits captions, moves/removes photos, reloads and publishes the saved page. Desktop/mobile visitor contexts verify the responsive grid and enlarged viewer, matching captions/count, previous/next/close, keyboard arrows/Escape, focus return and 44 px controls. Fixtures are uploaded photographs generated at test time; the application does not substitute sample photos. Hosted managed-auth and deployed-browser checks remain ticket 13.
