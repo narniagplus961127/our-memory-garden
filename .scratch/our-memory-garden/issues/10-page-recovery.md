@@ -12,7 +12,7 @@ Recover earlier page versions and safely delete or restore pages.
 
 ## Status
 
-ready-for-agent
+claimed
 
 ## Acceptance criteria
 
@@ -26,4 +26,5 @@ Follow the owner-approved desktop and mobile screens and General styles & brand 
 
 
 Build the user-facing history and restoration experience on the saved-version preservation established by ticket 09; retain grouped version history and existing trash safeguards.
+
 
