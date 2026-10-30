@@ -89,7 +89,7 @@ export async function updateDetails(
       );
     const rows = await sql<
       GardenPage[]
-    >`update pages set page_date=${date as string | null},category_id=${categoryId as string | null},cover_photo_id=${coverPhotoId as string | null},metadata_version=metadata_version+1,version=version+1,updated_at=now(),updated_by=${admin.id} where id=${id} and metadata_version=${Number(metadataVersion)} and deleted_at is null returning *`;
+    >`update pages set page_date=${date as string | null},category_id=${categoryId as string | null},cover_photo_id=${coverPhotoId as string | null},metadata_version=metadata_version+1,version=version+1,edit_group_id=case when updated_by=${admin.id} and edit_reason='details' and updated_at>now()-interval '1 minute' then edit_group_id else gen_random_uuid() end,editor_session_id=null,edit_reason='details',updated_at=now(),updated_by=${admin.id} where id=${id} and metadata_version=${Number(metadataVersion)} and deleted_at is null returning *`;
     if (!rows[0])
       throw new RequestError(
         409,

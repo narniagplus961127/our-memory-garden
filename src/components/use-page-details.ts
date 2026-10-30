@@ -2,10 +2,11 @@
 import { useEffect, useRef, useState } from "react";
 import type { GardenPage } from "@/lib/pages";
 import { uuid, type PageDetails } from "@/lib/organization";
-// Use the same namespace and sign-out event as the shared editor recovery flow.
-const recoveryPrefix = (accountId: string) =>
-  "garden-recovery:" + encodeURIComponent(accountId) + ":";
-const logoutSignal = "garden-signout";
+import {
+  recoveryPrefix,
+  logoutSignal,
+  clearAccountRecovery,
+} from "@/lib/editor-recovery";
 const fields = ["date", "categoryId", "coverPhotoId"] as const;
 const same = (a: PageDetails, b: PageDetails) =>
   fields.every((key) => a[key] === b[key]);
@@ -154,11 +155,7 @@ export function usePageDetails(
     s.active = false;
     s.epoch++;
     cancelTimer();
-    try {
-      for (const key of Object.keys(localStorage))
-        if (key.startsWith(recoveryPrefix(accountId)))
-          localStorage.removeItem(key);
-    } catch {}
+    clearAccountRecovery(accountId);
   }
   async function persist() {
     const s = state.current;

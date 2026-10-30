@@ -1,6 +1,78 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 const base = process.env.TEST_BASE_URL;
+test("metadata revisions preserve the trusted base for independent editor saves", async () => {
+  const cookie = await login();
+  const original = await (
+    await call(
+      "/api/pages",
+      "POST",
+      { title: "Details and content " + crypto.randomUUID() },
+      cookie,
+    )
+  ).json();
+  const path = "/api/pages/" + original.id;
+  const details = await call(
+    path + "/details",
+    "PATCH",
+    {
+      date: "2026-10-30",
+      categoryId: null,
+      coverPhotoId: null,
+      metadataVersion: 0,
+    },
+    cookie,
+  );
+  assert.equal(details.status, 200);
+  const response = await call(
+    path,
+    "PATCH",
+    {
+      title: original.title,
+      version: original.version,
+      content: {
+        root: { props: {} },
+        content: [
+          {
+            type: "Text",
+            props: {
+              id: "independent-block",
+              text: "Content survives a metadata revision",
+              style: "p",
+            },
+          },
+        ],
+      },
+    },
+    cookie,
+  );
+  assert.equal(response.status, 200);
+  const current = await response.json();
+  assert.equal(current.page_date, "2026-10-30");
+  assert.equal(
+    current.content.content[0].props.text,
+    "Content survives a metadata revision",
+  );
+  assert.equal(current.version, original.version + 2);
+  const later = await call(
+    path + "/details",
+    "PATCH",
+    {
+      date: "2026-10-29",
+      categoryId: null,
+      coverPhotoId: null,
+      metadataVersion: current.metadata_version,
+    },
+    cookie,
+  );
+  assert.equal(later.status, 200);
+  const final = await (await call(path, "GET", null, cookie)).json();
+  assert.equal(final.page_date, "2026-10-29");
+  assert.equal(
+    final.content.content[0].props.text,
+    "Content survives a metadata revision",
+  );
+});
 async function login() {
   const r = await fetch(base + "/api/auth/sign-in/email", {
     method: "POST",

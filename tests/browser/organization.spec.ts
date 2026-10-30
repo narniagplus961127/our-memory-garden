@@ -375,9 +375,7 @@ test("sign-out clears pending details recovery before a late response can rewrit
   await started;
   const signout = await context.newPage();
   await signout.goto("/admin/pages");
-  const menu = signout.getByRole("button", {
-    name: "Open administration menu",
-  });
+  const menu = signout.getByLabel("Open administration menu");
   if (await menu.isVisible()) await menu.click();
   await signout.getByRole("button", { name: "Sign out", exact: true }).click();
   await expect(signout).toHaveURL(/\/login$/);
@@ -597,7 +595,7 @@ test("nested page grids select, order and filter pages in actual desktop and mob
   ).json();
   await page.goto("/admin/pages/" + source.id);
   await page
-    .getByRole("button", { name: "Select PageGrid 1", exact: true })
+    .getByRole("button", { name: "Select Page grid 1", exact: true })
     .click();
   await page.getByRole("button", { name: "Open settings panel" }).click();
   for (const p of targets) {
@@ -672,7 +670,7 @@ test("nested page grids select, order and filter pages in actual desktop and mob
   ).toHaveText("Saved");
   await page.reload();
   await page
-    .getByRole("button", { name: "Select PageGrid 1", exact: true })
+    .getByRole("button", { name: "Select Page grid 1", exact: true })
     .click();
   await page.getByRole("button", { name: "Open settings panel" }).click();
   await expect(page.getByLabel("Grid selection", { exact: true })).toHaveValue(

@@ -1,5 +1,15 @@
 # Implementation notes
 
+## Ticket 07 page organization
+
+`0007-organization.sql` adds shared named categories and optional page date/category/cover fields. Calendar dates stay `YYYY-MM-DD` across PostgreSQL and JSON. Category creation and rename require an allowlisted session and same origin, with case-insensitive unique names and compare-and-swap rename. `/api/pages/[id]/details` saves only these details under `metadata_version`; it advances the ordinary page revision too, so ticket 09's trigger archives the exact prior row. Ready cover photos are checked and locked before association. Details form their own adjacent same-actor history groups and never inherit a content editor session. Content saves update their own columns and preserve independent metadata.
+
+Page details write bounded device copies immediately, before the debounce. Copies use the shared account prefix and editor session, with a separate details schema ignored by the content recovery parser. A refresh restores that tab's copy as unsaved; a new tab can explicitly recover another copy. Acknowledgement clears only its own unchanged copy and any acknowledged recovery source. Shared same-tab/cross-tab sign-out stops writes and clears account copies before late callbacks. Independent metadata changes merge safely; contested fields retain local values and offer Keep my details, Use saved details or continued editing. An editor adopts a metadata-only revision only when its content base still matches and no content request is in flight; other cases use the trusted saved-revision merge path.
+
+The Page grid Puck block stores an ordered manual page-ID list or category ID, plus optional date display. Its labelled selection/order controls work in nested layouts and actual device-width iframes. Public rendering and the editor use the same card component: the server resolves current cards for rendered pages, and the editor requests the same server-filtered cards. Manual order is retained; category mode orders by date then creation time. Anonymous results exclude private/trashed pages before serialization. Cover gateways use current live public references, including cover-only use, so hiding a page or removing its final cover reference revokes subsequent anonymous display requests. Existing gallery and stable destination behavior remain integrated.
+
+Validation: four organization API checks and twelve desktop/mobile journeys verified, plus TypeScript, formatting and a production build. Screenshots under ignored `work/ticket07-evidence/` were inspected. Verification used the isolated local database, Better Auth accounts and S3 fixture; hosted deployment checks remain ticket 13.
+
 ## Ticket 02 foundation
 
 The app uses Next.js 16 App Router, React, TypeScript and Tailwind. Public surfaces use parchment; the admin shell uses sage with a 240 px desktop sidebar and equal 64 px insets. Mobile uses 28 px gutters and a collapsible admin menu. Basic text editing is intentionally temporary until ticket 04's Puck editor.
