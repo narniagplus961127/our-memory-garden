@@ -455,29 +455,38 @@ export function PageEditor({
   accountId: string;
 }) {
   const save = usePageAutosave(page, accountId);
+  const [ready, setReady] = useState(false);
+  useEffect(() => setReady(true), []);
   return (
-    <Puck
-      config={gardenConfig}
-      data={page.content}
-      onChange={(data) => save.change({ content: documentData(data) })}
-      overrides={{ actionBar: () => <></> }}
+    <fieldset
+      className="garden-editor-init"
+      disabled={!ready}
+      aria-busy={!ready}
+      aria-label="Page editor"
     >
-      <EditorSync content={save.working.content} />
-      <Workspace
-        page={page}
-        title={save.working.title}
-        visibility={save.working.visibility}
-        status={save.status}
-        error={save.error}
-        retry={save.retry}
-        onMetadata={save.change}
-        feedback={
-          <SaveFeedback
-            key={save.comparison?.saved.version ?? "feedback"}
-            save={save}
-          />
-        }
-      />
-    </Puck>
+      <Puck
+        config={gardenConfig}
+        data={page.content}
+        onChange={(data) => save.change({ content: documentData(data) })}
+        overrides={{ actionBar: () => <></> }}
+      >
+        <EditorSync content={save.working.content} />
+        <Workspace
+          page={page}
+          title={save.working.title}
+          visibility={save.working.visibility}
+          status={ready ? save.status : "Loading editor…"}
+          error={save.error}
+          retry={save.retry}
+          onMetadata={save.change}
+          feedback={
+            <SaveFeedback
+              key={save.comparison?.saved.version ?? "feedback"}
+              save={save}
+            />
+          }
+        />
+      </Puck>
+    </fieldset>
   );
 }

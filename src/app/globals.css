@@ -1343,3 +1343,9 @@ button.primary {
     grid-template-columns: 1fr;
   }
 }
+.garden-editor-init {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-inline-size: 0;
+}
