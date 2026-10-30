@@ -1,3 +1,5 @@
+import { GallerySettings } from "./gallery-settings";
+import { PhotoGallery, type GalleryPhoto } from "./photo-gallery";
 import { PhotoPicker } from "./media-library";
 import { PageGrid, PageGridSettings } from "./page-grid";
 import type { GridSelection, PageCard } from "@/lib/organization";
@@ -32,6 +34,7 @@ export type GardenBlocks = {
     fit?: "cover" | "contain";
     width?: "inset" | "full";
   };
+  Gallery: { photos: GalleryPhoto[] };
   Button: {
     label: string;
     href?: string;
@@ -254,6 +257,20 @@ export const gardenConfig: Config<GardenBlocks> = {
           {caption && <figcaption>{caption}</figcaption>}
         </figure>
       ),
+    },
+    Gallery: {
+      label: "Gallery",
+      fields: {
+        photos: {
+          type: "custom",
+          label: "Gallery photos",
+          render: ({ value, onChange }) => (
+            <GallerySettings value={value} onChange={onChange} />
+          ),
+        },
+      },
+      defaultProps: { photos: [] },
+      render: ({ photos }) => <PhotoGallery photos={photos} />,
     },
     Button: {
       label: "Button",
