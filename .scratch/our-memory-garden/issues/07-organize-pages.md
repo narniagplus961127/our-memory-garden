@@ -12,7 +12,7 @@ Organize pages with optional details and display selected pages in editable grid
 
 ## Status
 
-ready-for-agent
+claimed
 
 ## Acceptance criteria
 
@@ -26,5 +26,6 @@ Follow the owner-approved desktop and mobile screens and General styles & brand 
 
 
 The redesigned editor palette includes this block; follow the approved editor canvas and contextual settings design when adding its controls.
+
 
 

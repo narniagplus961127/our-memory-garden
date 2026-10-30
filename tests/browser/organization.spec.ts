@@ -1,0 +1,249 @@
+import { test, expect } from "@playwright/test";
+import fs from "node:fs";
+const env = Object.fromEntries(
+  fs
+    .readFileSync(".env.test", "utf8")
+    .split(/\r?\n/)
+    .filter((l) => l && !l.startsWith("#"))
+    .map((l) => {
+      const i = l.indexOf("=");
+      return [l.slice(0, i), l.slice(i + 1)];
+    }),
+);
+test("page details autosave and categories can be created and renamed", async ({
+  page,
+}) => {
+  await page.goto("/login");
+  await page.getByLabel("Email address").fill(env.TEST_ADMIN_EMAIL);
+  await page
+    .getByLabel("Password", { exact: true })
+    .fill(env.TEST_ADMIN_PASSWORD);
+  await page.getByRole("button", { name: "Sign in", exact: true }).click();
+  await expect(page).toHaveURL(/\/admin\/pages$/);
+  const p = await (
+    await page.request.post("/api/pages", {
+      headers: { Origin: new URL(page.url()).origin },
+      data: { title: "Page details journey " + Date.now() },
+    })
+  ).json();
+  await page.goto("/admin/pages/" + p.id);
+  await page.getByRole("button", { name: "Page details", exact: true }).click();
+  await page.getByLabel("Page date", { exact: true }).fill("2026-10-30");
+  await expect(
+    page.getByRole("status", { name: "Page details status" }),
+  ).toHaveText("Saved");
+  const category = "Garden dates " + Date.now();
+  await page.getByLabel("Category name", { exact: true }).fill(category);
+  await page
+    .getByRole("button", { name: "Create category", exact: true })
+    .click();
+  await expect(page.getByLabel("Page category", { exact: true })).toHaveValue(
+    /.+/,
+  );
+  await expect(
+    page.getByRole("status", { name: "Page details status" }),
+  ).toHaveText("Saved");
+  await page
+    .getByLabel("Category name", { exact: true })
+    .fill(category + " renamed");
+  await page
+    .getByRole("button", { name: "Rename category", exact: true })
+    .click();
+  await expect(
+    page.getByLabel("Page category", { exact: true }).locator("option:checked"),
+  ).toHaveText(category + " renamed");
+  await page.reload();
+  await page.getByRole("button", { name: "Page details", exact: true }).click();
+  await expect(page.getByLabel("Page date", { exact: true })).toHaveValue(
+    "2026-10-30",
+  );
+  await expect(
+    page.getByLabel("Page category", { exact: true }).locator("option:checked"),
+  ).toHaveText(category + " renamed");
+  await page
+    .getByLabel("Page title", { exact: true })
+    .fill("Independent title after details");
+  await expect(
+    page.getByRole("status", { name: "Auto-save status" }),
+  ).toHaveText("Saved");
+  await expect
+    .poll(
+      async () =>
+        (await (await page.request.get("/api/pages/" + p.id)).json()).title,
+    )
+    .toBe("Independent title after details");
+});
+test("nested page grids select, order and filter pages in actual desktop and mobile canvases", async ({
+  page,
+  browser,
+  baseURL,
+  isMobile,
+}) => {
+  await page.goto("/login");
+  await page.getByLabel("Email address").fill(env.TEST_ADMIN_EMAIL);
+  await page
+    .getByLabel("Password", { exact: true })
+    .fill(env.TEST_ADMIN_PASSWORD);
+  await page.getByRole("button", { name: "Sign in", exact: true }).click();
+  await expect(page).toHaveURL(/\/admin\/pages$/);
+  const headers = { Origin: new URL(page.url()).origin },
+    stamp = Date.now();
+  const category = await (
+    await page.request.post("/api/categories", {
+      headers,
+      data: { name: "Grid journey " + stamp },
+    })
+  ).json();
+  const targets = [];
+  for (const [index, visibility] of ["public", "private", "public"].entries()) {
+    let p = await (
+      await page.request.post("/api/pages", {
+        headers,
+        data: { title: "Grid story " + index + " " + stamp },
+      })
+    ).json();
+    p = await (
+      await page.request.patch("/api/pages/" + p.id + "/details", {
+        headers,
+        data: {
+          date: "2026-10-30",
+          categoryId: category.id,
+          coverPhotoId: null,
+          metadataVersion: 0,
+        },
+      })
+    ).json();
+    if (visibility === "public")
+      p = await (
+        await page.request.patch("/api/pages/" + p.id, {
+          headers,
+          data: { version: p.version, visibility },
+        })
+      ).json();
+    targets.push(p);
+  }
+  let source = await (
+    await page.request.post("/api/pages", {
+      headers,
+      data: { title: "Grid canvas " + stamp },
+    })
+  ).json();
+  source = await (
+    await page.request.patch("/api/pages/" + source.id, {
+      headers,
+      data: {
+        title: source.title,
+        version: source.version,
+        visibility: "public",
+        content: {
+          root: { props: {} },
+          content: [
+            {
+              type: "Section",
+              props: {
+                id: "grid-section",
+                content: [
+                  {
+                    type: "PageGrid",
+                    props: {
+                      id: "journey-grid",
+                      selection: {
+                        mode: "manual",
+                        pageIds: [],
+                        categoryId: "",
+                      },
+                      showDate: true,
+                    },
+                  },
+                ],
+              },
+            },
+          ],
+        },
+      },
+    })
+  ).json();
+  await page.goto("/admin/pages/" + source.id);
+  await page
+    .getByRole("button", { name: "Select PageGrid 1", exact: true })
+    .click();
+  await page.getByRole("button", { name: "Open settings panel" }).click();
+  for (const p of targets) {
+    await page
+      .getByLabel("Add page to grid", { exact: true })
+      .selectOption(p.id);
+    await page
+      .getByRole("button", { name: "Add selected page", exact: true })
+      .click();
+  }
+  await page
+    .getByRole("button", { name: "Move page up 3", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "Move page up 2", exact: true })
+    .click();
+  await expect(
+    page.getByRole("status", { name: "Auto-save status" }),
+  ).toHaveText("Saved");
+  const canvas = page.frameLocator("iframe");
+  await expect(canvas.getByRole("heading", { level: 3 })).toHaveText([
+    targets[2].title,
+    targets[0].title,
+    targets[1].title,
+  ]);
+  await page.getByRole("button", { name: "Mobile", exact: true }).click();
+  await expect
+    .poll(async () =>
+      canvas
+        .locator(".garden-page-grid")
+        .evaluate(
+          (el) => getComputedStyle(el).gridTemplateColumns.split(" ").length,
+        ),
+    )
+    .toBe(1);
+  await page.getByRole("button", { name: "Desktop", exact: true }).click();
+  await expect
+    .poll(async () =>
+      canvas
+        .locator(".garden-page-grid")
+        .evaluate(
+          (el) => getComputedStyle(el).gridTemplateColumns.split(" ").length,
+        ),
+    )
+    .toBe(3);
+  if (isMobile)
+    await page.getByRole("button", { name: "Mobile", exact: true }).click();
+  const context = await browser.newContext();
+  const visitor = await context.newPage();
+  await visitor.goto(baseURL + "/garden/" + source.slug);
+  await expect(visitor.locator(".garden-page-grid h3")).toHaveText([
+    targets[2].title,
+    targets[0].title,
+  ]);
+  await expect(
+    visitor.getByText(targets[1].title, { exact: true }),
+  ).toHaveCount(0);
+  await page
+    .getByLabel("Grid selection", { exact: true })
+    .selectOption("category");
+  await page
+    .getByLabel("Grid category", { exact: true })
+    .selectOption(category.id);
+  await expect(
+    page.getByRole("status", { name: "Auto-save status" }),
+  ).toHaveText("Saved");
+  await page.reload();
+  await page
+    .getByRole("button", { name: "Select PageGrid 1", exact: true })
+    .click();
+  await page.getByRole("button", { name: "Open settings panel" }).click();
+  await expect(page.getByLabel("Grid selection", { exact: true })).toHaveValue(
+    "category",
+  );
+  await expect(page.getByLabel("Grid category", { exact: true })).toHaveValue(
+    category.id,
+  );
+  await visitor.reload();
+  await expect(visitor.locator(".garden-page-grid h3")).toHaveCount(2);
+  await context.close();
+});

@@ -11,6 +11,7 @@ import {
 import "@puckeditor/core/puck.css";
 import { gardenConfig } from "./garden-blocks";
 import { PageAddress } from "./page-address";
+import { PageDetails } from "./page-details";
 import {
   blockNames,
   slotNames,
@@ -73,7 +74,7 @@ function useAutosave(page: GardenPage) {
       const result = await response.json();
       if (!response.ok)
         throw new Error(result.error ?? "Could not save your changes.");
-      version.current = result.version;
+      version.current = Math.max(version.current, result.version);
       persisted.current = snapshotKey(submitted);
       setError("");
       if (snapshotKey(latest.current) !== persisted.current) {
@@ -110,7 +111,15 @@ function useAutosave(page: GardenPage) {
     setStatus("Saving…");
     timer.current = setTimeout(() => void persist(), 650);
   }
-  return { status, error, change, retry: () => void persist() };
+  return {
+    status,
+    error,
+    change,
+    retry: () => void persist(),
+    detailsSaved: (saved: GardenPage) => {
+      version.current = Math.max(version.current, saved.version);
+    },
+  };
 }
 type Target = { zone: string; label: string; items: PageBlock[] };
 type OutlineItem = { block: PageBlock; label: string; depth: number };
@@ -150,6 +159,7 @@ function Workspace({
   error,
   retry,
   onMetadata,
+  onDetailsSaved,
 }: {
   page: GardenPage;
   title: string;
@@ -160,6 +170,7 @@ function Workspace({
   error: string;
   retry: () => void;
   onMetadata: (changes: Partial<Snapshot>) => void;
+  onDetailsSaved: (page: GardenPage) => void;
 }) {
   const [panel, setPanel] = useState<"content" | "settings" | null>("content"),
     [device, setDevice] = useState<"desktop" | "mobile">("desktop"),
@@ -374,6 +385,7 @@ function Workspace({
           </div>
           <div hidden={panel !== "settings" || Boolean(selected)}>
             <PageAddress page={page} />
+            <PageDetails page={page} onSaved={onDetailsSaved} />
           </div>
           {panel === "content" ? (
             <>
@@ -543,6 +555,7 @@ export function PageEditor({ page }: { page: GardenPage }) {
         error={save.error}
         retry={save.retry}
         onMetadata={save.change}
+        onDetailsSaved={save.detailsSaved}
       />
     </Puck>
   );

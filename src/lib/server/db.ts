@@ -9,6 +9,14 @@ export function database() {
     idle_timeout: 20,
     connect_timeout: 10,
     prepare: false,
+    types: {
+      calendarDate: {
+        to: 1082,
+        from: [1082],
+        serialize: (value: string) => value,
+        parse: (value: string) => value,
+      },
+    },
     ssl:
       new URL(process.env.DATABASE_URL).hostname === "127.0.0.1"
         ? false
