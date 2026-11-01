@@ -3,6 +3,14 @@ import { GardenHeader } from "@/components/garden-header";
 import { currentAdministrator } from "@/lib/server/auth";
 import { getPageBySlug } from "@/lib/server/addresses";
 import { notFound } from "next/navigation";
+import { publicMetadata } from "@/lib/server/discovery";
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}) {
+  return publicMetadata(await getPageBySlug((await params).slug, null));
+}
 export const dynamic = "force-dynamic";
 export default async function GardenPage({
   params,

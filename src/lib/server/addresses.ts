@@ -48,6 +48,6 @@ export async function getPageBySlug(slug: string, admin: Administrator | null) {
   if (!validSlug(slug)) return null;
   const rows = await database()<
     GardenPage[]
-  >`select * from pages where slug=${slug} and deleted_at is null and (${Boolean(admin)} or visibility='public') limit 1`;
+  >`select pages.*, exists(select 1 from garden_settings where homepage_id=pages.id) as is_homepage from pages where slug=${slug} and deleted_at is null and (${Boolean(admin)} or visibility='public') limit 1`;
   return rows[0] ? (JSON.parse(JSON.stringify(rows[0])) as GardenPage) : null;
 }

@@ -15,6 +15,10 @@ export type GardenPage = {
   category_id?: string | null;
   cover_photo_id?: string | null;
   metadata_version?: number;
+  sharing_title?: string | null;
+  sharing_description?: string | null;
+  sharing_cover_photo_id?: string | null;
+  allow_indexing?: boolean;
   id: string;
   title: string;
   slug: string;

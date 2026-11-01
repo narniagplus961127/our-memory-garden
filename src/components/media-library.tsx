@@ -406,22 +406,31 @@ export function MediaLibrary({
 export function PhotoPicker({
   value,
   onChange,
+  label = "Photo",
 }: {
   value?: string;
+  label?: string;
   onChange: (value: string) => void;
 }) {
   const [open, setOpen] = useState(false);
   return (
     <div className="photo-picker">
-      <span className="field-label">Photo</span>
-      {value && <img src={displayPhotoUrl(value)} alt="Selected photo" />}
+      <span className="field-label">{label}</span>
+      {value && (
+        <img
+          src={displayPhotoUrl(value)}
+          alt={"Selected " + label.toLowerCase()}
+        />
+      )}
       <div className="actions">
         <button
           type="button"
           className="secondary"
           onClick={() => setOpen(!open)}
         >
-          {open ? "Close photo library" : "Choose photo"}
+          {open
+            ? "Close " + label.toLowerCase() + " library"
+            : "Choose " + label.toLowerCase()}
         </button>
         {value && (
           <button
@@ -429,7 +438,7 @@ export function PhotoPicker({
             className="secondary"
             onClick={() => onChange("")}
           >
-            Remove photo
+            {"Remove " + label.toLowerCase()}
           </button>
         )}
       </div>
