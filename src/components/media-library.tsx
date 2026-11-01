@@ -84,7 +84,14 @@ export function PhotoDetails({
             : "Could not delete the photo. Please retry.",
       );
       try {
-        setPhoto(await jsonRequest("/api/media/" + photo.id));
+        const response = await fetch("/api/media/" + photo.id, {
+          cache: "no-store",
+        });
+        if (response.status === 404) {
+          onDeleted();
+          return;
+        }
+        if (response.ok) setPhoto(await response.json());
       } catch {}
     } finally {
       setDeleting(false);
