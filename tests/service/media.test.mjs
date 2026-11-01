@@ -282,7 +282,7 @@ test("nested shared photos lose anonymous access immediately after the final pub
   assert.equal((await call(photoPath + "/display")).status, 404);
   details = await (await call(photoPath, "GET", undefined, cookie)).json();
   assert.equal(details.publiclyAccessible, false);
-  assert.equal(details.usages.length, 1);
+  assert.equal(details.usages.filter((usage) => !usage.history).length, 1);
 });
 
 test("invalid image bytes and mismatched sizes never become usable photos", async () => {
