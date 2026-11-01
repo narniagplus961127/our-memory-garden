@@ -1,6 +1,6 @@
 # Our Memory Garden specification
 
-Status: claimed
+Status: resolved
 
 ## Problem Statement
 
