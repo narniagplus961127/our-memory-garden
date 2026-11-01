@@ -72,3 +72,8 @@ The ordinary 240 px admin sidebar remains on the template screen; actual page UU
 The mobile website menu is a full-viewport native dialog, preserving the current page when Back or Escape closes it and returning focus to the opener. Its nested rows come from the existing server-filtered public tree. Menu links close the surface and navigate normally. Parchment/sage/cream, Arial/Georgia, 64 px desktop insets, 28 px mobile gutters and the fluid canvas are preserved. No native FigCraft nodes were edited.
 
 Visual review covers desktop/mobile sign-in, Overview, Pages, Templates and mobile website menu; evidence is retained under ignored `work/design-alignment-evidence/`. This records application alignment and local verification, not production hosted-auth or deployment acceptance; those remain ticket 13.
+
+
+Integration follow-through preserves Trash and each page's History and recovery link alongside the approved cards. A reproduced restore-to-trash race was corrected by sharing acknowledged page revisions while a route refresh is pending. Authentication forms now use explicit POST fallbacks and remain disabled until the client handler is ready, preventing the reproduced native GET credential submission. Both fixes are covered at the existing desktop/mobile browser seam; the design document remains unchanged.
+
+Initial alignment regression: 24 applicable desktop/mobile journeys passed with two intentional device-specific skips (mobile dragging and the desktop-only absence of the mobile menu). After the interaction fixes, all nine authentication/password-recovery checks pass, with one desktop-menu skip, and both held-refresh restore-to-trash checks pass. Final integration checks are recorded below.

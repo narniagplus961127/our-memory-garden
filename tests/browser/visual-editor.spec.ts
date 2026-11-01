@@ -135,6 +135,7 @@ test("templates start independently and the device controls resize the actual re
   isMobile,
 }, testInfo) => {
   await page.goto("/login");
+  await expect(page.getByLabel("Email address")).toBeEnabled();
   await page.screenshot({
     path: testInfo.outputPath("login.png"),
     caret: "initial",

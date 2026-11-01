@@ -217,7 +217,7 @@ a:focus-visible {
   border: 1px solid var(--line);
   border-radius: 6px;
 }
-.auth-main form > button[type="submit"] {
+.auth-main button[type="submit"] {
   width: 100%;
   background: var(--ink);
   color: var(--cream);
@@ -1755,4 +1755,11 @@ button.primary {
   .template-mini-lines {
     gap: 6px;
   }
+}
+
+.auth-fields {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
 }
