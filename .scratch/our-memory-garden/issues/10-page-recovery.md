@@ -35,7 +35,7 @@ Build the user-facing history and restoration experience on the saved-version pr
 
 Post-merge browser validation found that immediate Move to trash after a successful history restore could submit the old page revision while router refresh was pending. The server rejected it safely, but the advertised next action was unnecessarily failing. History recovery now shares the actual page returned by successful restore/trash writes between its sibling controls. A newer acknowledged revision wins until the refreshed server page catches up; original server-side version and homepage guards remain unchanged.
 
-The existing browser recovery journey now deliberately holds only the history RSC refresh response, restores a real saved version and immediately moves the page to trash. It failed with the stale-page error before the fix and passes on desktop and mobile afterward. No click delay, arbitrary sleep or relaxed success assertion masks the race.
+The existing browser recovery journey now deliberately holds only the history RSC refresh response, restores a real saved version and immediately moves the page to trash. It failed with the stale-page error before the fix and passes on desktop and mobile afterward. No click delay, arbitrary sleep or relaxed success assertion masks the race. Two further desktop/mobile checks restore the current homepage while holding the refresh and verify that Move to trash stays disabled: acknowledged response fields merge into the existing page, preserving its derived homepage flag.
 
 ## Answer
 

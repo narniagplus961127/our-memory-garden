@@ -276,3 +276,68 @@ test("failed trash and permanent deletion keep the original state and offer retr
     "Page permanently deleted",
   );
 });
+
+test("restoring the homepage keeps its trash guard while the history refresh is pending", async ({
+  page,
+}) => {
+  const origin = env.NEXT_PUBLIC_APP_URL;
+  const signed = await page.request.post("/api/auth/sign-in/email", {
+    headers: { Origin: origin },
+    data: { email: env.TEST_ADMIN_EMAIL, password: env.TEST_ADMIN_PASSWORD },
+  });
+  expect(signed.status()).toBe(200);
+  let created = await (
+    await page.request.post("/api/pages", {
+      headers: { Origin: origin },
+      data: { title: "Homepage recovery guard " + Date.now() },
+    })
+  ).json();
+  const revision = created.version;
+  created = await (
+    await page.request.patch("/api/pages/" + created.id, {
+      headers: { Origin: origin },
+      data: { version: created.version, visibility: "public" },
+    })
+  ).json();
+  await page.goto("/admin/settings/homepage");
+  await page.getByLabel("Public page").selectOption({ label: created.title });
+  await page.getByRole("button", { name: "Choose as homepage" }).click();
+  await expect(page.getByRole("status")).toHaveText("Homepage updated");
+  await page.goto(
+    "/admin/pages/" + created.id + "/history?version=" + revision,
+  );
+  const trash = page.getByRole("button", {
+    name: "Move to trash",
+    exact: true,
+  });
+  await expect(trash).toBeDisabled();
+  let releaseRefresh = () => {};
+  const refreshGate = new Promise<void>((resolve) => {
+    releaseRefresh = resolve;
+  });
+  await page.route(
+    "**/admin/pages/" + created.id + "/history?**",
+    async (route) => {
+      if (route.request().headers()["rsc"] === "1") await refreshGate;
+      await route.continue();
+    },
+  );
+  try {
+    await page
+      .getByRole("button", { name: "Restore this version", exact: true })
+      .click();
+    await page
+      .getByRole("button", { name: "Confirm restore version", exact: true })
+      .click();
+    await expect(page.getByRole("status")).toContainText("Version restored");
+    await expect(trash).toBeDisabled();
+    const saved = await (
+      await page.request.get("/api/pages/" + created.id)
+    ).json();
+    expect(saved.is_homepage).toBe(true);
+    expect(saved.visibility).toBe("public");
+  } finally {
+    releaseRefresh();
+    await page.unrouteAll({ behavior: "wait" });
+  }
+});
