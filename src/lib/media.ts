@@ -3,10 +3,13 @@ export type PhotoUsage = {
   title: string;
   visibility: "public" | "private";
   deleted: boolean;
+  history?: boolean;
 };
 export type Photo = {
   id: string;
   name: string;
+  deletionPending?: boolean;
+  deletionError?: string;
   width: number;
   height: number;
   original_bytes: number;

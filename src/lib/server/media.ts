@@ -24,6 +24,7 @@ let client: S3Client | undefined;
 export const storage = () =>
   (client ??= new S3Client({
     forcePathStyle: true,
+    requestChecksumCalculation: "WHEN_REQUIRED",
     region: process.env.AWS_REGION || "ap-southeast-1",
     endpoint: process.env.AWS_ENDPOINT_URL_S3,
   }));
@@ -59,22 +60,31 @@ export async function initiatePhoto(
   return { id, uploadUrl, expiresIn: 900 };
 }
 const validId = /^[\da-f]{8}-[\da-f]{4}-[\da-f]{4}-[\da-f]{4}-[\da-f]{12}$/i;
+function pageUsages(rows: PhotoUsage[]): PhotoUsage[] {
+  const pages = new Map<string, PhotoUsage>();
+  for (const usage of rows) {
+    const current = pages.get(usage.id);
+    if (!current) pages.set(usage.id, usage);
+    else if (current.history && !usage.history) pages.set(usage.id, usage);
+  }
+  return [...pages.values()];
+}
 export async function photoUsages(id: string): Promise<PhotoUsage[]> {
   const rows =
-    await database()`select p.id,p.title,p.visibility,(p.deleted_at is not null) as deleted from pages p where ${id}::uuid in (select garden_photo_ids(to_jsonb(p))) order by p.title`;
-  return rows as unknown as PhotoUsage[];
+    await database()`select page_id as id,title,visibility,deleted,history from garden_media_usages where photo_id=${id} order by title,history`;
+  return pageUsages(rows as unknown as PhotoUsage[]);
 }
 export async function getPhoto(id: string): Promise<Photo | null> {
   if (!validId.test(id)) return null;
   const rows =
-    await database()`select id,name,width,height,original_bytes,display_bytes from media_photos where id=${id} and status='ready'`;
+    await database()`select id,name,width,height,original_bytes,display_bytes,(status='deleting') as "deletionPending",deletion_error as "deletionError" from media_photos where id=${id} and status in ('ready','deleting')`;
   if (!rows[0]) return null;
   const usages = await photoUsages(id);
   return {
     ...rows[0],
     usages,
     publiclyAccessible: usages.some(
-      (u) => u.visibility === "public" && !u.deleted,
+      (u) => u.visibility === "public" && !u.deleted && !u.history,
     ),
   } as Photo;
 }
@@ -82,10 +92,10 @@ export async function listPhotos(): Promise<Photo[]> {
   const [photos, usages] = await Promise.all([
     database()<
       Omit<Photo, "usages" | "publiclyAccessible">[]
-    >`select id,name,width,height,original_bytes,display_bytes from media_photos where status='ready' order by created_at desc`,
+    >`select id,name,width,height,original_bytes,display_bytes,(status='deleting') as "deletionPending",deletion_error as "deletionError" from media_photos where status in ('ready','deleting') order by created_at desc`,
     database()<
       (PhotoUsage & { photo_id: string })[]
-    >`select p.id,p.title,p.visibility,(p.deleted_at is not null) as deleted,refs.photo_id from pages p cross join lateral (select distinct garden_photo_ids(to_jsonb(p)) as photo_id) refs order by p.title`,
+    >`select page_id as id,title,visibility,deleted,history,photo_id from garden_media_usages order by title,history`,
   ]);
   const byPhoto = new Map<string, PhotoUsage[]>();
   for (const { photo_id, ...usage } of usages) {
@@ -94,12 +104,12 @@ export async function listPhotos(): Promise<Photo[]> {
     byPhoto.set(photo_id, group);
   }
   return photos.map((photo) => {
-    const references = byPhoto.get(photo.id) ?? [];
+    const references = pageUsages(byPhoto.get(photo.id) ?? []);
     return {
       ...photo,
       usages: references,
       publiclyAccessible: references.some(
-        (u) => u.visibility === "public" && !u.deleted,
+        (u) => u.visibility === "public" && !u.deleted && !u.history,
       ),
     };
   });
@@ -140,6 +150,11 @@ export async function completePhoto(id: string): Promise<Photo> {
     const photo = rows[0];
     if (!photo) throw new RequestError(404, "Photo not found.");
     if (photo.status === "ready") return;
+    if (photo.status === "deleting")
+      throw new RequestError(
+        409,
+        "This photo has an unfinished deletion. Retry deletion from its details.",
+      );
     if (new Date(photo.expires_at).getTime() < Date.now())
       throw new RequestError(
         410,
@@ -261,4 +276,47 @@ export async function validatePhotoReferences(content: PageData) {
       400,
       "Choose a ready photo from the shared library.",
     );
+}
+
+export async function deletePhoto(id: string) {
+  if (!validId.test(id)) throw new RequestError(404, "Photo not found.");
+  const photo = await database().begin(async (sql) => {
+    const rows =
+      await sql`select * from media_photos where id=${id} and status in ('ready','deleting') for update`;
+    if (!rows[0]) throw new RequestError(404, "Photo not found.");
+    const usages =
+      await sql`select page_id from garden_media_usages where photo_id=${id} limit 1`;
+    if (usages.length)
+      throw new RequestError(
+        409,
+        "This photo is in use. Remove its page and history references before deleting it.",
+      );
+    const pins =
+      await sql`select i.source_photo_id from garden_export_items i join garden_exports e on e.id=i.export_id where i.photo_id=${id} and e.expires_at>now() limit 1`;
+    if (pins.length)
+      throw new RequestError(
+        409,
+        "This photo is being prepared for a backup. Finish or cancel the export before deleting it.",
+      );
+    await sql`update media_photos set status='deleting',deletion_error=null where id=${id}`;
+    return rows[0];
+  });
+  try {
+    // Each operation is idempotent; keep the tombstone if either object fails.
+    for (const [Bucket, Key] of [
+      [originalsBucket(), photo.original_key],
+      [displayBucket(), photo.display_key],
+      [originalsBucket(), photo.staging_key],
+    ]) {
+      await storage().send(new DeleteObjectCommand({ Bucket, Key }));
+    }
+    await database()`delete from media_photos where id=${id} and status='deleting'`;
+  } catch {
+    await database()`update media_photos set deletion_error='Storage deletion was incomplete. Retry to finish removing this photo.' where id=${id}`;
+    throw new RequestError(
+      503,
+      "Storage deletion was incomplete. Retry to finish removing this photo.",
+    );
+  }
+  return { deleted: true };
 }

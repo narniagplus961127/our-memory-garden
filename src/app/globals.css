@@ -1501,3 +1501,62 @@ button.primary {
   height: 20px;
   min-height: 20px;
 }
+.backup-settings > h1 {
+  margin-top: 40px;
+}
+.backup-settings > h2 {
+  font-size: 24px;
+  color: var(--muted);
+}
+.backup-settings .settings-card {
+  margin: 16px 0;
+  max-width: none;
+  padding: 18px;
+  overflow-wrap: anywhere;
+}
+.backup-settings .settings-card h3 {
+  margin-top: 0;
+  margin-bottom: 8px;
+}
+.backup-settings progress {
+  width: 100%;
+  accent-color: var(--muted);
+}
+.backup-settings > p {
+  margin: 24px 0;
+}
+.photo-delete {
+  margin-top: 24px;
+  padding: 20px;
+  background: var(--cream);
+  border-radius: 5px;
+}
+.photo-delete h3 {
+  margin-top: 0;
+}
+.photo-delete .actions {
+  flex-wrap: wrap;
+}
+.backup-settings .actions {
+  flex-wrap: wrap;
+}
+@media (max-width: 760px) {
+  .backup-settings > h1 {
+    margin-top: 28px;
+  }
+  .backup-settings .actions {
+    display: grid;
+  }
+  .photo-delete .actions {
+    display: grid;
+  }
+}
+.media-cleanup-preview {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  aspect-ratio: 4/3;
+  background: var(--sage);
+  color: var(--muted);
+  padding: 16px;
+}

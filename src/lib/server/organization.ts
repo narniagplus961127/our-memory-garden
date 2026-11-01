@@ -99,6 +99,13 @@ export async function updateDetails(
       "Choose a valid date, category and ready cover photo.",
     );
   return database().begin(async (sql) => {
+    const locked =
+      await sql`select id from pages where id=${id} and metadata_version=${Number(metadataVersion)} and deleted_at is null for update`;
+    if (!locked.length)
+      throw new RequestError(
+        409,
+        "Page details changed elsewhere. Reload to see the saved details.",
+      );
     if (
       categoryId &&
       !(

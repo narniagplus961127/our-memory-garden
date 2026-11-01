@@ -51,12 +51,52 @@ function transfer(
   });
 }
 export function PhotoDetails({
-  photo,
+  photo: initialPhoto,
   onClose,
+  onDeleted,
 }: {
   photo: Photo;
   onClose: () => void;
+  onDeleted: () => void;
 }) {
+  const [photo, setPhoto] = useState(initialPhoto),
+    [confirm, setConfirm] = useState(false),
+    [deleting, setDeleting] = useState(false),
+    [deleteError, setDeleteError] = useState(initialPhoto.deletionError || "");
+  async function remove() {
+    setDeleting(true);
+    setDeleteError("");
+    try {
+      const response = await fetch("/api/media/" + photo.id, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ confirm: true }),
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error);
+      onDeleted();
+    } catch (error) {
+      setDeleteError(
+        error instanceof TypeError
+          ? "Could not delete the photo. Check your connection and retry."
+          : error instanceof Error
+            ? error.message
+            : "Could not delete the photo. Please retry.",
+      );
+      try {
+        const response = await fetch("/api/media/" + photo.id, {
+          cache: "no-store",
+        });
+        if (response.status === 404) {
+          onDeleted();
+          return;
+        }
+        if (response.ok) setPhoto(await response.json());
+      } catch {}
+    } finally {
+      setDeleting(false);
+    }
+  }
   const dialog = useRef<HTMLDialogElement>(null);
   useEffect(() => {
     const element = dialog.current;
@@ -80,11 +120,18 @@ export function PhotoDetails({
           Close
         </button>
       </div>
-      <img
-        className="photo-detail-preview"
-        src={displayPhotoUrl(photo.id)}
-        alt={photo.name}
-      />
+      {!photo.deletionPending && (
+        <img
+          className="photo-detail-preview"
+          src={displayPhotoUrl(photo.id)}
+          alt={photo.name}
+        />
+      )}
+      {photo.deletionPending && (
+        <p className="muted">
+          Deletion is incomplete. Retry to remove the remaining stored copies.
+        </p>
+      )}
       <h3>{photo.name}</h3>
       <p className="badge">
         {photo.publiclyAccessible ? "Publicly accessible" : "Private photo"}
@@ -105,14 +152,16 @@ export function PhotoDetails({
       {photo.usages.length ? (
         <ul className="photo-usages">
           {photo.usages.map((usage) => (
-            <li key={usage.id}>
+            <li key={usage.id + (usage.history ? "-history" : "-current")}>
               <Link href={"/admin/pages/" + usage.id}>{usage.title}</Link>
               <span className="badge">
-                {usage.deleted
-                  ? "In trash"
-                  : usage.visibility === "public"
-                    ? "Public"
-                    : "Private"}
+                {usage.history
+                  ? "Retained history"
+                  : usage.deleted
+                    ? "In trash"
+                    : usage.visibility === "public"
+                      ? "Public"
+                      : "Private"}
               </span>
             </li>
           ))}
@@ -128,19 +177,62 @@ export function PhotoDetails({
         </small>
       </p>
       <div className="actions">
-        <a className="button" href={"/api/media/" + photo.id + "/original"}>
-          Download original
-        </a>
+        {!photo.deletionPending && (
+          <a className="button" href={"/api/media/" + photo.id + "/original"}>
+            Download original
+          </a>
+        )}
         {photo.usages.length > 0 && (
           <button disabled aria-describedby="photo-in-use">
             Delete photo
           </button>
         )}
       </div>
+      {photo.usages.length === 0 && (
+        <div className="photo-delete">
+          {!confirm && !photo.deletionPending ? (
+            <button className="secondary" onClick={() => setConfirm(true)}>
+              Delete photo
+            </button>
+          ) : (
+            <>
+              <h3>Delete this photo permanently?</h3>
+              <p>
+                This removes its original and display copies from the shared
+                library. This cannot be undone.
+              </p>
+              <div className="actions">
+                <button disabled={deleting} onClick={() => void remove()}>
+                  {deleting
+                    ? "Deleting…"
+                    : deleteError || photo.deletionPending
+                      ? "Retry deletion"
+                      : "Delete permanently"}
+                </button>
+                {!photo.deletionPending && (
+                  <button
+                    className="secondary"
+                    disabled={deleting}
+                    onClick={() => setConfirm(false)}
+                  >
+                    Keep photo
+                  </button>
+                )}
+              </div>
+            </>
+          )}
+        </div>
+      )}
+      {deleteError && (
+        <p role="alert" className="error">
+          {deleteError}
+        </p>
+      )}
       {photo.usages.length > 0 && (
         <p id="photo-in-use" className="muted">
           <small>
-            This photo is in use. Remove its page references before deleting it.
+            This photo is in use. Remove its page and retained history
+            references before deleting it.
           </small>
         </p>
       )}
@@ -242,7 +334,9 @@ export function MediaLibrary({
     }
   }
   const filtered = photos.filter((photo) =>
-    photo.name.toLowerCase().includes(query.toLowerCase()),
+    (photo.name + " " + photo.usages.map((u) => u.title).join(" "))
+      .toLowerCase()
+      .includes(query.toLowerCase()),
   );
   return (
     <div className={onSelect ? "media-library media-picker" : "media-library"}>
@@ -361,22 +455,28 @@ export function MediaLibrary({
       <div className="media-grid">
         {filtered.map((photo) => (
           <article className="media-card" key={photo.id}>
-            <img
-              src={displayPhotoUrl(photo.id)}
-              alt={photo.name}
-              loading="lazy"
-            />
+            {photo.deletionPending ? (
+              <div className="media-cleanup-preview">Deletion unfinished</div>
+            ) : (
+              <img
+                src={displayPhotoUrl(photo.id)}
+                alt={photo.name}
+                loading="lazy"
+              />
+            )}
             <div>
               <strong>{photo.name}</strong>
               <small>
-                {photo.publiclyAccessible
-                  ? "Publicly accessible"
-                  : "Private photo"}{" "}
+                {photo.deletionPending
+                  ? "Deletion unfinished · retry in Details"
+                  : photo.publiclyAccessible
+                    ? "Publicly accessible"
+                    : "Private photo"}{" "}
                 · {photo.usages.length}{" "}
                 {photo.usages.length === 1 ? "page" : "pages"}
               </small>
               <div className="actions">
-                {onSelect ? (
+                {onSelect && !photo.deletionPending ? (
                   <button
                     className="secondary"
                     aria-label={"Use photo " + photo.name}
@@ -399,7 +499,16 @@ export function MediaLibrary({
           </article>
         ))}
       </div>
-      {detail && <PhotoDetails photo={detail} onClose={closeDetails} />}
+      {detail && (
+        <PhotoDetails
+          photo={detail}
+          onClose={closeDetails}
+          onDeleted={() => {
+            setPhotos((current) => current.filter((p) => p.id !== detail.id));
+            closeDetails();
+          }}
+        />
+      )}
     </div>
   );
 }
