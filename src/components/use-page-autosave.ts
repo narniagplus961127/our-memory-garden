@@ -206,12 +206,15 @@ export function usePageAutosave(page: GardenPage, accountId: string) {
     setComparison(null);
     setStatus("Signed out");
   }
-  function restore(record: RecoveryRecord) {
+  function restore(
+    record: RecoveryRecord,
+    source = record.source ?? state.current.source,
+  ) {
     const s = state.current;
     s.base = record.baseSnapshot;
     s.version = record.baseVersion;
     s.seq = record.editSeq + 1;
-    s.source = record.source ?? s.source;
+    s.source = source;
     s.reason = record.reason ?? "edit";
     apply(record.workingSnapshot);
     s.comparison = null;
@@ -408,6 +411,12 @@ export function usePageAutosave(page: GardenPage, accountId: string) {
     recovered,
     comparison,
     copies,
+    canRecover:
+      state.current.active &&
+      !state.current.saving &&
+      !comparison &&
+      equal(working, state.current.base) &&
+      state.current.reason !== "resolution",
     detailsSaved: (saved: GardenPage) => {
       const s = state.current;
       // Metadata can advance the page revision without changing this content base.
@@ -427,14 +436,23 @@ export function usePageAutosave(page: GardenPage, accountId: string) {
     retry: () => void persist(),
     resolve,
     recover: (key: string) => {
-      const copy = copies.find((c) => c.key === key);
-      if (copy) {
-        try {
-          state.current.source = { key, value: localStorage.getItem(key) };
-        } catch {}
-        restore(copy.record);
-        setCopies(copies.filter((c) => c.key !== key));
-      }
+      const s = state.current;
+      if (
+        !s.active ||
+        s.saving ||
+        s.comparison ||
+        !equal(s.working, s.base) ||
+        s.reason === "resolution"
+      )
+        return;
+      if (!copies.some((copy) => copy.key === key)) return;
+      try {
+        const value = localStorage.getItem(key),
+          record = parseRecovery(value, accountId, page.id);
+        if (!record) return;
+        restore(record, { key, value });
+        setCopies((current) => current.filter((copy) => copy.key !== key));
+      } catch {}
     },
     discard: (key: string) => {
       try {

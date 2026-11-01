@@ -36,7 +36,44 @@ await server.run();
 if (faults) {
   const http = await import("node:http");
   let failDisplayDelete = false;
-  const proxy = http.createServer((request, response) => {
+  let failArchiveHead = false,
+    failedArchive = "",
+    heldArchiveDelete = false,
+    releaseArchiveDelete;
+  let archiveDeleteGate;
+  const proxy = http.createServer(async (request, response) => {
+    if (request.url === "/__fixture/archive-cleanup-race") {
+      if (request.method === "PUT") {
+        failArchiveHead = true;
+        failedArchive = "";
+        heldArchiveDelete = false;
+        archiveDeleteGate = new Promise(
+          (resolve) => (releaseArchiveDelete = resolve),
+        );
+      } else if (request.method === "DELETE") {
+        releaseArchiveDelete?.();
+      }
+      response.writeHead(200, { "Content-Type": "application/json" });
+      response.end(JSON.stringify({ held: heldArchiveDelete }));
+      return;
+    }
+    const path = new URL(request.url, "http://127.0.0.1").pathname;
+    if (
+      failArchiveHead &&
+      request.method === "HEAD" &&
+      path.startsWith("/garden-originals/exports/")
+    ) {
+      failArchiveHead = false;
+      failedArchive = path;
+      response.writeHead(400);
+      response.end();
+      return;
+    }
+    if (request.method === "DELETE" && path === failedArchive) {
+      heldArchiveDelete = true;
+      await archiveDeleteGate;
+      failedArchive = "";
+    }
     if (request.url === "/__fixture/fail-display-delete") {
       failDisplayDelete = request.method === "PUT";
       response.writeHead(204);

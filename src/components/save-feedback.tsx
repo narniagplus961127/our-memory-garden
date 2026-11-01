@@ -48,12 +48,20 @@ export function SaveFeedback({ save }: { save: Save }) {
             Another device copy of this page has unsaved work. Review one copy
             at a time; another tab may still be editing it.
           </p>
-          <button onClick={() => save.recover(copy.key)}>
+          <button
+            disabled={!save.canRecover}
+            onClick={() => save.recover(copy.key)}
+          >
             Recover device copy
           </button>{" "}
           <button className="secondary" onClick={() => save.discard(copy.key)}>
             Discard device copy
           </button>
+          {!save.canRecover && (
+            <p className="muted">
+              Save or resolve your current work before recovering another copy.
+            </p>
+          )}
         </div>
       ))}
       {save.comparison && (

@@ -342,24 +342,24 @@ export async function generateExport(id: string) {
   } catch {
     if (partId) {
       const failedPartId = partId;
-      const failed = await database().begin(async (sql) => {
+      await database().begin(async (sql) => {
         await sql`select id from garden_exports where id=${id} for update`;
         const [part] =
           await sql`select status,object_key from garden_export_parts where id=${failedPartId} for update`;
         if (!part || part.status === "ready") return null;
         await sql`update garden_export_parts set status='error',error='This part could not be prepared. Resume to retry the same snapshot.' where id=${failedPartId}`;
         await sql`update garden_exports set status='error',error='Preparation failed. Resume to retry the unfinished part; completed downloads are retained.',activity_at=now() where id=${id}`;
-        return part;
-      });
-      if (failed)
+        // Retry writes the same archive key. Keep cleanup under the job/part
+        // locks so an older failure cannot delete a newly verified retry.
         await storage()
           .send(
             new DeleteObjectCommand({
               Bucket: originalsBucket(),
-              Key: failed.object_key,
+              Key: part.object_key,
             }),
           )
           .catch(() => {});
+      });
     } else
       throw new RequestError(503, "Could not start preparation. Please retry.");
   } finally {
