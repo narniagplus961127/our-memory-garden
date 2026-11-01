@@ -434,3 +434,71 @@ test("trusted historical links can be restored after their target was permanentl
   );
   assert.equal((await call("/p/" + target.id)).status, 404);
 });
+test("restoration recovers date/category and invalidates an open details editor", async () => {
+  const owner = await login();
+  let p = await create(owner, "Metadata restoration");
+  const path = "/api/pages/" + p.id;
+  const cat = await (
+    await call(
+      "/api/categories",
+      "POST",
+      { name: "History category " + crypto.randomUUID() },
+      owner,
+    )
+  ).json();
+  p = await (
+    await call(
+      path + "/details",
+      "PATCH",
+      {
+        date: "2024-05-20",
+        categoryId: cat.id,
+        coverPhotoId: null,
+        metadataVersion: p.metadata_version,
+      },
+      owner,
+    )
+  ).json();
+  const chosen = p.version;
+  p = await (
+    await call(
+      path + "/details",
+      "PATCH",
+      {
+        date: "2025-07-21",
+        categoryId: null,
+        coverPhotoId: null,
+        metadataVersion: p.metadata_version,
+      },
+      owner,
+    )
+  ).json();
+  const openVersion = p.metadata_version;
+  const r = await call(
+    path + "/history/" + chosen,
+    "POST",
+    { version: p.version, confirm: true },
+    owner,
+  );
+  assert.equal(r.status, 200);
+  const restored = await r.json();
+  assert.equal(restored.page_date, "2024-05-20");
+  assert.equal(restored.category_id, cat.id);
+  assert.equal(restored.metadata_version, openVersion + 1);
+  assert.equal(
+    (
+      await call(
+        path + "/details",
+        "PATCH",
+        {
+          date: null,
+          categoryId: null,
+          coverPhotoId: null,
+          metadataVersion: openVersion,
+        },
+        owner,
+      )
+    ).status,
+    409,
+  );
+});

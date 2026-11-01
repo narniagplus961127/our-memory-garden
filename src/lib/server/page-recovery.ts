@@ -79,9 +79,31 @@ export async function restoreVersion(
       { snapshot: GardenPage }[]
     >`select snapshot from page_versions where page_id=${id} and version=${revision}`;
     if (!r) throw new RequestError(404, "Version not found.");
+    const category = r.snapshot.category_id ?? null;
+    const cover = r.snapshot.cover_photo_id ?? null;
+    if (
+      category &&
+      !(
+        await sql`select id from page_categories where id=${category} for key share`
+      ).length
+    )
+      throw new RequestError(
+        409,
+        "This saved category is unavailable. Current content is preserved.",
+      );
+    if (
+      cover &&
+      !(
+        await sql`select id from media_photos where id=${cover} and status='ready' for share`
+      ).length
+    )
+      throw new RequestError(
+        409,
+        "This saved cover photo is unavailable. Current content is preserved.",
+      );
     const [saved] = await sql<
       GardenPage[]
-    >`update pages set title=${r.snapshot.title},content=${sql.json(r.snapshot.content)},version=version+1,updated_at=now(),updated_by=${admin.id},edit_reason='restore',edit_group_id=${crypto.randomUUID()},editor_session_id=null where id=${id} returning *`;
+    >`update pages set title=${r.snapshot.title},content=${sql.json(r.snapshot.content)},page_date=${r.snapshot.page_date ?? null},category_id=${category},cover_photo_id=${cover},metadata_version=metadata_version+1,version=version+1,updated_at=now(),updated_by=${admin.id},edit_reason='restore',edit_group_id=${crypto.randomUUID()},editor_session_id=null where id=${id} returning *`;
     return saved;
   });
 }
