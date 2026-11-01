@@ -247,6 +247,16 @@ test("templates start independently and the device controls resize the actual re
   await page.goto("/admin/pages");
   await page.getByRole("link", { name: new RegExp(second.title) }).click();
   await expect(page).toHaveURL("/admin/pages/" + second.id);
+  await page.goto("/admin/pages");
+  await page
+    .locator('a[href="/admin/pages/' + second.id + '/history"]')
+    .click();
+  await expect(
+    page.getByRole("heading", { name: "Version history", exact: true }),
+  ).toBeVisible();
+  await page.goto("/admin/pages");
+  await page.getByRole("link", { name: "Trash", exact: true }).click();
+  await expect(page).toHaveURL(/\/admin\/trash$/);
 });
 
 test("autosave keeps the latest edit during a slow write and preserves failures for retry", async ({

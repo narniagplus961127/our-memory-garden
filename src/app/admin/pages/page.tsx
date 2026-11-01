@@ -13,11 +13,16 @@ export default async function Pages() {
           <p className="muted">Manage and organize your pages.</p>
         </div>
       </div>
-      <Link className="button create-page-link" href="/admin/pages/new">
-        Create page
-      </Link>
+      <div className="actions create-page-link">
+        <Link className="button" href="/admin/pages/new">
+          Create page
+        </Link>
+        <Link className="button secondary" href="/admin/trash">
+          Trash
+        </Link>
+      </div>
       {pages.length ? (
-        <AdminPageCards pages={pages} />
+        <AdminPageCards pages={pages} recoveryLinks />
       ) : (
         <div className="empty-state">
           <h2>Your first page starts here</h2>

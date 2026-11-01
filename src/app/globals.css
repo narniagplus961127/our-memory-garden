@@ -1441,6 +1441,86 @@ button.primary {
   margin: 0;
   min-inline-size: 0;
 }
+.history-layout {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) minmax(0, 3fr);
+  gap: 32px;
+}
+.history-layout nav a {
+  display: block;
+  padding: 12px;
+  min-height: 44px;
+  border-bottom: 1px solid var(--line);
+}
+.history-layout nav a[aria-current] {
+  background: var(--paper);
+  font-weight: bold;
+}
+.history-layout summary {
+  padding: 12px 0;
+  cursor: pointer;
+  overflow-wrap: anywhere;
+}
+.history-snapshot {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  margin: 24px 0;
+  overflow: hidden;
+}
+.recovery-action {
+  margin: 24px 0;
+}
+.recovery-action button {
+  min-height: 44px;
+  margin: 4px;
+}
+.recovery-confirm,
+.trash-card {
+  border: 1px solid var(--line);
+  background: var(--paper);
+  padding: 24px;
+  margin: 20px 0;
+  border-radius: 8px;
+}
+.recovery-trash {
+  margin-top: 48px;
+  border-top: 1px solid var(--line);
+  padding-top: 24px;
+}
+@media (max-width: 760px) {
+  .history-layout {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  .recovery-confirm,
+  .trash-card {
+    padding: 20px;
+  }
+  .history-layout nav {
+    max-height: 320px;
+    overflow: auto;
+  }
+}
+.history-metadata {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 8px 20px;
+}
+.history-metadata dt {
+  font-weight: bold;
+}
+.history-metadata dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.history-cover {
+  margin: 20px 0;
+}
+.history-cover img {
+  width: 100%;
+  max-height: 240px;
+  object-fit: contain;
+}
 
 .sharing-fields {
   border: 0;
@@ -1488,15 +1568,27 @@ button.primary {
   display: grid;
   gap: 16px;
 }
-.admin-page-cards a {
-  display: block;
-  min-height: 76px;
-  padding: 16px;
+.admin-page-cards > li {
   background: var(--cream);
   border: 1px solid var(--line);
   border-radius: 5px;
+  overflow: hidden;
+}
+.admin-page-cards > li > a {
+  display: block;
+  min-height: 76px;
+  padding: 16px;
   text-decoration: none;
   overflow-wrap: anywhere;
+}
+.admin-page-card-actions {
+  padding: 0 16px 8px;
+}
+.admin-page-card-actions a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  font-size: 13px;
 }
 .admin-page-cards a:hover {
   background: var(--paper);
