@@ -1403,3 +1403,21 @@ button.primary {
   margin: 0;
   min-inline-size: 0;
 }
+
+.sharing-fields {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
+}
+.sharing-indexing {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 44px;
+}
+.sharing-indexing input {
+  width: 20px;
+  height: 20px;
+  min-height: 20px;
+}

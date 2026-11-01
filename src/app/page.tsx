@@ -3,6 +3,10 @@ import { GardenCat } from "@/components/brand";
 import { GardenHeader } from "@/components/garden-header";
 import { getHomepage } from "@/lib/server/homepage";
 import { isConfigured } from "@/lib/config";
+import { publicMetadata } from "@/lib/server/discovery";
+export async function generateMetadata() {
+  return publicMetadata(isConfigured() ? await getHomepage() : null);
+}
 export const dynamic = "force-dynamic";
 export default async function HomePage() {
   const page = isConfigured() ? await getHomepage() : null;

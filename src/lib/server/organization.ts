@@ -52,7 +52,36 @@ export async function updateDetails(
   body: Record<string, unknown>,
 ) {
   if (!uuid.test(id)) throw new RequestError(404, "Page not found.");
-  const { date, categoryId, coverPhotoId, metadataVersion } = body;
+  const {
+    date,
+    categoryId,
+    coverPhotoId,
+    metadataVersion,
+    sharingTitle,
+    sharingDescription,
+    sharingCoverPhotoId,
+    allowIndexing,
+  } = body;
+  if (
+    [
+      [sharingTitle, 200],
+      [sharingDescription, 2000],
+    ].some(
+      ([value, limit]) =>
+        value !== undefined &&
+        value !== null &&
+        (typeof value !== "string" || value.length > Number(limit)),
+    ) ||
+    (sharingCoverPhotoId !== undefined &&
+      sharingCoverPhotoId !== null &&
+      (typeof sharingCoverPhotoId !== "string" ||
+        !uuid.test(sharingCoverPhotoId))) ||
+    (allowIndexing !== undefined && typeof allowIndexing !== "boolean")
+  )
+    throw new RequestError(
+      400,
+      "Choose valid sharing details and a ready sharing cover photo.",
+    );
   if (
     !Number.isSafeInteger(metadataVersion) ||
     Number(metadataVersion) < 0 ||
@@ -77,19 +106,21 @@ export async function updateDetails(
       ).length
     )
       throw new RequestError(400, "Choose an existing category.");
-    if (
-      coverPhotoId &&
-      !(
-        await sql`select id from media_photos where id=${String(coverPhotoId)} and status='ready' for update`
-      ).length
-    )
-      throw new RequestError(
-        400,
-        "Choose a ready photo from the shared library.",
-      );
+    for (const photoId of [coverPhotoId, sharingCoverPhotoId]) {
+      if (
+        photoId &&
+        !(
+          await sql`select id from media_photos where id=${String(photoId)} and status='ready' for share`
+        ).length
+      )
+        throw new RequestError(
+          400,
+          "Choose a ready photo from the shared library.",
+        );
+    }
     const rows = await sql<
       GardenPage[]
-    >`update pages set page_date=${date as string | null},category_id=${categoryId as string | null},cover_photo_id=${coverPhotoId as string | null},metadata_version=metadata_version+1,version=version+1,edit_group_id=case when updated_by=${admin.id} and edit_reason='details' and updated_at>now()-interval '1 minute' then edit_group_id else gen_random_uuid() end,editor_session_id=null,edit_reason='details',updated_at=now(),updated_by=${admin.id} where id=${id} and metadata_version=${Number(metadataVersion)} and deleted_at is null returning *`;
+    >`update pages set page_date=${date as string | null},category_id=${categoryId as string | null},cover_photo_id=${coverPhotoId as string | null},sharing_title=case when ${sharingTitle !== undefined} then ${typeof sharingTitle === "string" ? sharingTitle || null : null} else sharing_title end,sharing_description=case when ${sharingDescription !== undefined} then ${typeof sharingDescription === "string" ? sharingDescription || null : null} else sharing_description end,sharing_cover_photo_id=case when ${sharingCoverPhotoId !== undefined} then ${(sharingCoverPhotoId as string | null) ?? null}::uuid else sharing_cover_photo_id end,allow_indexing=case when ${allowIndexing !== undefined} then ${allowIndexing ?? true}::boolean else allow_indexing end,metadata_version=metadata_version+1,version=version+1,edit_group_id=case when updated_by=${admin.id} and edit_reason='details' and updated_at>now()-interval '1 minute' then edit_group_id else gen_random_uuid() end,editor_session_id=null,edit_reason='details',updated_at=now(),updated_by=${admin.id} where id=${id} and metadata_version=${Number(metadataVersion)} and deleted_at is null returning *`;
     if (!rows[0])
       throw new RequestError(
         409,

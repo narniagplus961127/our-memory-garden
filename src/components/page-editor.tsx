@@ -308,8 +308,9 @@ function Workspace({
           <div hidden={panel !== "settings" || Boolean(selected)}>
             <PageAddress page={page} />
             <PageDetails
-              page={page}
+              page={{ ...page, title }}
               accountId={accountId}
+              visibility={visibility}
               onSaved={onDetailsSaved}
             />
           </div>

@@ -7,25 +7,40 @@ import {
   logoutSignal,
   clearAccountRecovery,
 } from "@/lib/editor-recovery";
-const fields = ["date", "categoryId", "coverPhotoId"] as const;
+const fields = [
+  "date",
+  "categoryId",
+  "coverPhotoId",
+  "sharingTitle",
+  "sharingDescription",
+  "sharingCoverPhotoId",
+  "allowIndexing",
+] as const;
 const same = (a: PageDetails, b: PageDetails) =>
   fields.every((key) => a[key] === b[key]);
 export const detailsOf = (page: GardenPage): PageDetails => ({
   date: page.page_date?.slice(0, 10) ?? null,
   categoryId: page.category_id ?? null,
   coverPhotoId: page.cover_photo_id ?? null,
+  sharingTitle: page.sharing_title ?? null,
+  sharingDescription: page.sharing_description ?? null,
+  sharingCoverPhotoId: page.sharing_cover_photo_id ?? null,
+  allowIndexing: page.allow_indexing ?? true,
 });
 function validDetails(value: unknown): value is PageDetails {
   if (!value || typeof value !== "object") return false;
   const details = value as PageDetails;
-  return fields.every(
-    (key) =>
-      details[key] === null ||
-      (typeof details[key] === "string" &&
-        (key === "date"
-          ? /^\d{4}-\d{2}-\d{2}$/.test(details[key])
-          : uuid.test(details[key]))),
-  );
+  return fields.every((key) => {
+    const value = details[key];
+    if (key === "allowIndexing") return typeof value === "boolean";
+    if (value === null) return true;
+    if (typeof value !== "string") return false;
+    if (key === "sharingTitle") return value.length <= 200;
+    if (key === "sharingDescription") return value.length <= 2000;
+    return key === "date"
+      ? /^\d{4}-\d{2}-\d{2}$/.test(value)
+      : uuid.test(value);
+  });
 }
 type DetailsRecovery = {
   schemaVersion: "page-details-1";
@@ -42,10 +57,28 @@ function parseDetailsRecovery(
   raw: string | null,
   accountId: string,
   pageId: string,
+  current: PageDetails,
 ): DetailsRecovery | null {
   try {
-    if (!raw || raw.length > 8192) return null;
+    if (!raw || raw.length > 32768) return null;
     const r = JSON.parse(raw);
+    // Old device copies never expressed sharing intent. Upgrade both sides
+    // from the current page so recovery cannot undo independent sharing edits.
+    for (const key of [
+      "sharingTitle",
+      "sharingDescription",
+      "sharingCoverPhotoId",
+      "allowIndexing",
+    ] as const) {
+      for (const details of [r.baseDetails, r.details]) {
+        if (
+          details &&
+          typeof details === "object" &&
+          !Object.hasOwn(details, key)
+        )
+          details[key] = current[key];
+      }
+    }
     return r.schemaVersion === "page-details-1" &&
       r.accountId === accountId &&
       r.pageId === pageId &&
@@ -124,7 +157,7 @@ export function usePageDetails(
         savedAt: new Date().toISOString(),
         source: s.source ?? undefined,
       });
-      if (record.length > 8192) throw Error();
+      if (record.length > 32768) throw Error();
       localStorage.setItem(s.key, record);
       s.written = record;
       setWarning("");
@@ -193,7 +226,8 @@ export function usePageDetails(
           merged = { ...s.working };
         let conflict = false;
         for (const key of fields) {
-          if (s.working[key] === s.base[key]) merged[key] = remote[key];
+          if (s.working[key] === s.base[key])
+            Object.assign(merged, { [key]: remote[key] });
           else if (
             remote[key] !== s.base[key] &&
             remote[key] !== s.working[key]
@@ -266,7 +300,7 @@ export function usePageDetails(
       s.key = prefix + s.session;
       try {
         const raw = localStorage.getItem(s.key);
-        const record = parseDetailsRecovery(raw, accountId, page.id);
+        const record = parseDetailsRecovery(raw, accountId, page.id, initial);
         if (record) {
           s.written = raw;
           s.source = record.source ?? null;
@@ -292,6 +326,7 @@ export function usePageDetails(
                 localStorage.getItem(key),
                 accountId,
                 page.id,
+                initial,
               );
               return record ? [{ key, record }] : [];
             }),
@@ -384,7 +419,12 @@ export function usePageDetails(
       let record: DetailsRecovery | null = null;
       try {
         const value = localStorage.getItem(key);
-        record = parseDetailsRecovery(value, accountId, page.id);
+        record = parseDetailsRecovery(
+          value,
+          accountId,
+          page.id,
+          state.current.base,
+        );
         s.source = { key, value };
       } catch {}
       if (!record) {
