@@ -1,17 +1,57 @@
 "use client";
-import { useState } from "react";
+import { createContext, useContext, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import type { GardenPage } from "@/lib/pages";
 import type { InboundReference } from "@/lib/server/page-recovery";
-export function RestoreVersion({
+
+const RecoveryPageContext = createContext<{
+  page: GardenPage;
+  acknowledge: (saved: GardenPage) => void;
+} | null>(null);
+
+export function RecoveryPage({
   page,
+  children,
+}: {
+  page: GardenPage;
+  children: ReactNode;
+}) {
+  const [acknowledged, setAcknowledged] = useState<GardenPage | null>(null);
+  const current =
+    acknowledged?.id === page.id && acknowledged.version > page.version
+      ? acknowledged
+      : page;
+  return (
+    <RecoveryPageContext.Provider
+      value={{
+        page: current,
+        acknowledge: (saved) =>
+          setAcknowledged((previous) =>
+            !previous ||
+            previous.id !== saved.id ||
+            saved.version > previous.version
+              ? { ...page, ...saved }
+              : previous,
+          ),
+      }}
+    >
+      {children}
+    </RecoveryPageContext.Provider>
+  );
+}
+
+export function RestoreVersion({
+  page: initialPage,
   revision,
 }: {
   page: GardenPage;
   revision: number;
 }) {
   const router = useRouter();
+  const recovery = useContext(RecoveryPageContext);
+  const page =
+    recovery?.page.id === initialPage.id ? recovery.page : initialPage;
   const [confirm, setConfirm] = useState(false),
     [busy, setBusy] = useState(false),
     [error, setError] = useState(""),
@@ -27,6 +67,7 @@ export function RestoreVersion({
       });
       const data = await r.json();
       if (!r.ok) throw new Error(data.error);
+      recovery?.acknowledge(data);
       setSuccess("Version restored. The previous content is kept in history.");
       setConfirm(false);
       router.refresh();
@@ -88,7 +129,7 @@ export function RestoreVersion({
   );
 }
 export function TrashAction({
-  page,
+  page: initialPage,
   references = [],
   onDone,
 }: {
@@ -97,6 +138,9 @@ export function TrashAction({
   onDone?: (message: string) => void;
 }) {
   const router = useRouter();
+  const recovery = useContext(RecoveryPageContext);
+  const page =
+    recovery?.page.id === initialPage.id ? recovery.page : initialPage;
   const [action, setAction] = useState<"trash" | "restore" | "delete" | null>(
       null,
     ),
@@ -115,6 +159,7 @@ export function TrashAction({
       });
       const data = await r.json();
       if (!r.ok) throw new Error(data.error);
+      if (action !== "delete") recovery?.acknowledge(data);
       const message =
         action === "restore"
           ? "Page restored as private."

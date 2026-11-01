@@ -50,31 +50,46 @@ test("administrator reviews history, confirms restore and safely recovers a tras
   await expect(
     page.getByRole("region", { name: "Read-only saved snapshot" }),
   ).toContainText(title);
-  await page
-    .getByRole("button", { name: "Restore this version", exact: true })
-    .click();
-  await expect(
-    page.getByRole("region", { name: "Confirm version restoration" }),
-  ).toContainText("current saved version will be kept");
-  await page
-    .getByRole("button", { name: "Confirm restore version", exact: true })
-    .click();
-  await expect(page.getByRole("status")).toContainText("Version restored");
-  const saved = await (await page.request.get("/api/pages/" + p.id)).json();
-  expect(saved.title).toBe(title);
-  expect(saved.visibility).toBe("public");
-  await page
-    .getByRole("button", { name: "Move to trash", exact: true })
-    .click();
-  await expect(
-    page.getByRole("region", { name: "Confirm page action" }),
-  ).toContainText("Links to this page");
-  await page
-    .getByRole("button", { name: "Confirm move to trash", exact: true })
-    .click();
-  await expect(
-    page.getByRole("status").filter({ hasText: "Page moved to trash." }),
-  ).toBeVisible();
+  // Keep the history refresh pending so the next action must use the acknowledged revision.
+  let releaseRefresh = () => {};
+  const refreshGate = new Promise<void>((resolve) => {
+    releaseRefresh = resolve;
+  });
+  const refreshPattern = "**/admin/pages/" + p.id + "/history?**";
+  await page.route(refreshPattern, async (route) => {
+    if (route.request().headers()["rsc"] === "1") await refreshGate;
+    await route.continue();
+  });
+  try {
+    await page
+      .getByRole("button", { name: "Restore this version", exact: true })
+      .click();
+    await expect(
+      page.getByRole("region", { name: "Confirm version restoration" }),
+    ).toContainText("current saved version will be kept");
+    await page
+      .getByRole("button", { name: "Confirm restore version", exact: true })
+      .click();
+    await expect(page.getByRole("status")).toContainText("Version restored");
+    const saved = await (await page.request.get("/api/pages/" + p.id)).json();
+    expect(saved.title).toBe(title);
+    expect(saved.visibility).toBe("public");
+    await page
+      .getByRole("button", { name: "Move to trash", exact: true })
+      .click();
+    await expect(
+      page.getByRole("region", { name: "Confirm page action" }),
+    ).toContainText("Links to this page");
+    await page
+      .getByRole("button", { name: "Confirm move to trash", exact: true })
+      .click();
+    await expect(
+      page.getByRole("status").filter({ hasText: "Page moved to trash." }),
+    ).toBeVisible();
+  } finally {
+    releaseRefresh();
+    await page.unrouteAll({ behavior: "wait" });
+  }
   await page.goto("/admin/trash");
   const card = page
     .locator("article")
