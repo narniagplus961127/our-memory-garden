@@ -25,6 +25,7 @@ The first administrator visit initializes the public homepage. Edit it through P
 
 ## Validation
 
+- `npm run test:neon` — production-mode pinned Neon SDK regression using only loopback auth/database fixtures. First run `npm run build` with the same local `.env.local`/`.env.test` origin, and stop the app on that test port. It verifies initialization, anonymous denial and fresh authorization after upstream session revocation.
 - `npm run typecheck`
 - `npm run build`
 - `npm test` — desktop/mobile browser journeys, automatically starting the local app if necessary.
