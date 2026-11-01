@@ -34,7 +34,7 @@ The custom authentication UI uses the pinned managed SDK's email/password and pa
 
 The Vercel project has production environment variables configured. Preview deployments were disabled when creating it. Resource provisioning is not application deployment: ticket 13 owns the final release and production verification.
 
-Hosted schema migrations `0001-private-pages.sql` and `0002-homepage.sql` are applied. The migration ledger was verified on 2026-10-29. Runtime connections use the pooled URL; migration tooling prefers `DIRECT_DATABASE_URL` when configured. The homepage protection migration adds no sample or personal pages; the first signed-in administrator visit initializes the editable public homepage.
+All ten checked-in migrations through `0012-discovery.sql` (including `0011`, `0011b` and `0011c` media/export migrations) are applied. The production ledger was verified on 2026-11-01 after a fresh local sorted-migration rehearsal; the existing administrator was preserved and no content fixtures were created. Runtime connections use the pooled URL; migration tooling prefers `DIRECT_DATABASE_URL` when configured. The homepage protection migration adds no sample or personal pages; the first signed-in administrator visit initializes the editable public homepage.
 
 Use isolated local PostgreSQL/auth fixtures for destructive tests. Record local adapter results separately from hosted managed-auth and storage results. Preserve the owner identity and any real content during verification.
 

@@ -38,3 +38,7 @@ See `docs/implementation-notes.md` for module boundaries and evidence. The dispo
 - `.scratch/our-memory-garden/spec.md` — behavior and security requirements
 - `.scratch/our-memory-garden/issues/` — dependency graph and implementation evidence
 - `docs/design-spec-review.md` — design review and follow-through
+
+## Production operations
+
+See [production operations](docs/production-operations.md) for the canonical release targets, owner setup, storage monitoring, independent backups and bounded expiry maintenance. The ticket records separately what has been verified on the deployed service.
