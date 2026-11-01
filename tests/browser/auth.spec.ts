@@ -1,4 +1,6 @@
 import { test, expect } from "@playwright/test";
+import { readFileSync } from "node:fs";
+import { parseEnv } from "node:util";
 test("administrators see sign in and password recovery, with no registration entry", async ({
   page,
 }) => {
@@ -121,4 +123,57 @@ test("authentication waits for client initialization before accepting credential
     "This test sign-in was denied.",
   );
   await expect(page).toHaveURL(/\/login$/);
+});
+
+test("signed-in gardeners return from the public website to their dashboard", async ({
+  page,
+  isMobile,
+}) => {
+  const {
+    NEXT_PUBLIC_APP_URL: origin,
+    TEST_ADMIN_EMAIL: email,
+    TEST_ADMIN_PASSWORD: password,
+  } = parseEnv(readFileSync(".env.test", "utf8"));
+  if (!origin || !email || !password)
+    throw new Error("Configure the local auth fixture first.");
+  const signedIn = await page.request.post("/api/auth/sign-in/email", {
+    headers: { Origin: origin },
+    data: { email, password },
+  });
+  expect(signedIn.status()).toBe(200);
+  await page.goto("/admin");
+  if (isMobile) await page.getByLabel("Open administration menu").click();
+  await page.getByRole("link", { name: "View website ↗", exact: true }).click();
+  await expect(page).toHaveURL(/\/$/);
+  if (isMobile) await page.getByLabel("Open website menu").click();
+  await page
+    .getByRole("link", { name: "Garden dashboard", exact: true })
+    .click();
+  await expect(page).toHaveURL(/\/admin$/);
+  await expect(
+    page.getByRole("heading", { name: "Hello, gardeners", exact: true }),
+  ).toBeVisible();
+  await page.goto("/login");
+  await expect(page).toHaveURL(/\/admin$/);
+  await expect(
+    page.getByRole("heading", { name: "Hello, gardeners", exact: true }),
+  ).toBeVisible();
+});
+
+test("anonymous garden dashboard navigation still asks for sign in", async ({
+  page,
+  isMobile,
+}) => {
+  await page.goto("/");
+  if (isMobile) await page.getByLabel("Open website menu").click();
+  const dashboard = page.getByRole("link", {
+    name: "Garden dashboard",
+    exact: true,
+  });
+  await expect(dashboard).toHaveAttribute("href", "/admin");
+  await dashboard.click();
+  await expect(page).toHaveURL(/\/login$/);
+  await expect(
+    page.getByRole("heading", { name: "Welcome back", exact: true }),
+  ).toBeVisible();
 });

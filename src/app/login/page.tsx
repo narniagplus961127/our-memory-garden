@@ -1,7 +1,12 @@
 import { GardenHeader } from "@/components/garden-header";
 import { AuthForm } from "@/components/auth-form";
 import { isConfigured } from "@/lib/config";
+import { currentAdministrator } from "@/lib/server/auth";
+import { redirect } from "next/navigation";
+import { connection } from "next/server";
 export default async function LoginPage() {
+  await connection();
+  if (await currentAdministrator()) redirect("/admin");
   return (
     <>
       <GardenHeader />
