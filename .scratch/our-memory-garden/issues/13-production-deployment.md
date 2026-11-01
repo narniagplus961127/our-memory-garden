@@ -16,12 +16,12 @@ Publish and verify the finished garden on Vercel with Neon in Singapore and the 
 
 ## Status
 
-claimed
+resolved
 
 ## Acceptance criteria
 
 - [x] Deploy production with no preview deployments and connect the intended Neon PostgreSQL, managed authentication and Object Storage services in Singapore.
-- [ ] Verify key public, private and administrator journeys on desktop and mobile in production.
+- [x] Verify key public, private and administrator journeys on desktop and mobile in production.
 - [x] Document how to monitor storage and maintain independent backups.
 
 ## Design reference
@@ -45,7 +45,7 @@ Use the Storage settings screen as the usage-monitoring entry point; confirm an 
 - Fresh local `garden_ticket13_rehearsal` successfully applied all ten checked-in migrations in sorted order; the existing isolated ticket 13 fixture also received the missing media/export migrations. Installed dependency versions match the pinned package manifest.
 - Applied the rehearsed migrations through the existing dedicated hosted garden's direct connection. Connected Neon SQL independently verified all ten ledger entries, one preserved administrator, zero pages, zero photos and zero exports. No local auth/fixture setup, owner password change, reset email or content mutation was performed on production.
 - Rechecked the existing Vercel project/team and verified canonical domain; production plain variables are `AUTH_MODE=neon` and `NEXT_PUBLIC_APP_URL=https://our-memory-garden.vercel.app`. All 11 environment variables target production only. Reasserted `previewDeploymentsDisabled:true`. This preflight preceded the releases recorded below.
-- [Production operations](../../../docs/production-operations.md) documents exact release targets, explicit production-SHA deployment, owner setup, measured storage/provider plan sources, manual monitoring, independent backups and reviewed daily bounded expiry/staging maintenance. Managed owner acceptance and authenticated >4.5 MB Vercel downloads are not yet established. Git linking was subsequently verified as recorded below.
+- [Production operations](../../../docs/production-operations.md) documents exact release targets, explicit production-SHA deployment, owner setup, measured storage/provider plan sources, manual monitoring, independent backups and reviewed daily bounded expiry/staging maintenance. Managed owner, large-download and Git-link acceptance followed this preparation and are recorded below.
 
 Hosted maintenance dry runs also completed successfully against the migrated garden: zero expired export jobs (empty candidate output) and zero eligible staging uploads (`count:0`). No `--apply` cleanup was run. Local fixture tests establish actual cleanup behavior; these empty hosted runs establish connectivity and current absence of a backlog.
 
@@ -57,11 +57,11 @@ Read-only production bucket inventory also succeeded: both `garden-originals` an
 
 Baseline browser verification at `6d478de` is complete: **96 passed, 2 intentional device-specific skips, 0 failed** in 13.1 minutes. The desktop skip is the mobile-only website-menu journey; the mobile skip is native nested dragging (tap/reorder alternatives run on mobile). This was the complete 98-case matrix with one worker, after the complete 60-case API run. Storage/mobile and export/desktop screenshots were visually inspected for readable, contained layouts and real measurement/part state. Logs and evidence are retained outside the watched checkout under the shared `ticket13/` directory.
 
-Final code review identified four export-cleanup and recovery/address defects. The single review fixer delivered `86d1cd5`, merged with the operations checkpoint into reviewed candidate `8a7c0fdae78996200b482c090ad87b4b172f566a`. Both standards and specification follow-up reviews report zero remaining findings; the affected candidate verification follows below. Owner-managed authentication and deployed authenticated large downloads remain unverified.
+Final code review identified four export-cleanup and recovery/address defects. The single review fixer delivered `86d1cd5`, merged with the operations checkpoint into reviewed candidate `8a7c0fdae78996200b482c090ad87b4b172f566a`. Both standards and specification follow-up reviews report zero remaining findings; the affected candidate verification follows below. Owner-managed authentication and deployed authenticated large downloads were still pending at this local-review checkpoint; later production evidence follows.
 
 ## Current checkpoint
 
-Ticket remains **claimed**. The reviewed runtime correction is live on the canonical production site from main `a20fdb95db1a26362dc11a8b1d279501e04392a9`, and all 21 anonymous canonical checks pass. Hosted schema, Singapore resources, approved design alignment, local full baseline and final affected checks are verified. The owner's signed-in administrator dashboard has been observed in regular Chrome. Authenticated production original/archive downloads, exact bytes, Range resume and public/private media boundaries are verified below. Remaining session-restoration and desktop/mobile editor journeys still require production acceptance. The reviewed signed-in public-navigation correction is deployed; its owner-browser verification and the remaining editor/session acceptance are in progress. No reset email or password has been chosen/sent by the agent. Monitoring remains manual; independent backups and bounded maintenance are documented.
+Ticket is **resolved**. The reviewed application is live on the canonical production site from main `a20fdb95db1a26362dc11a8b1d279501e04392a9`, with all 21 anonymous canonical checks passing. Singapore resources, hosted migrations, approved design, local full/affected checks, managed owner sessions, desktop/mobile editor persistence, dashboard navigation, actual large original/archive downloads, exact bytes, Range resume and public/private media boundaries are verified below. The owner confirmed signing out of the verification window to the login screen; a separate fresh anonymous API request returned 401. The agent did not choose/send a password or reset email, inspect credentials or export authentication state. Monitoring remains manual; independent backups and bounded maintenance are documented.
 
 ## Final review-fix verification — 2026-11-01
 
@@ -106,11 +106,31 @@ With the owner signed into an isolated browser profile through the normal applic
 - A complete two-part backup reached ready with its manifest. The **6,767,104-byte originals TAR** streamed through the deployed authenticated Vercel route, extracted the exact synthetic original, and supported exact-byte Range resume for bytes 17–1023. Anonymous archive download returned 401. Both original and archive exceed the 4.5 MB boundary.
 - Only the owned temporary page/history, photo/original/display and export were cleaned. The normal API removed the temporary page/history and photo; the owned export was cancelled, then the bounded export CLI dry-run/apply removed only its three validated recorded keys. Independent read-only Neon verification confirmed one preserved administrator, the original homepage, zero ready photos and the owned export marked cleaned.
 
-The sanitized result, byte counts, checksums and exact owned export/part identifiers are retained in shared `ticket13/production-owner-api-evidence.json`. These are actual authenticated managed-auth/Vercel/storage results rather than local fixture evidence. Final navigation deployment, desktop/mobile editor interaction, restored session and sign-out acceptance remain open; ticket 13 is still claimed.
+The sanitized result, byte counts, checksums and exact owned export/part identifiers are retained in shared `ticket13/production-owner-api-evidence.json`. These are actual authenticated managed-auth/Vercel/storage results rather than local fixture evidence. The later navigation, editor/session and final manual sign-out acceptance follow below.
 
 
 ## Navigation correction release — 2026-11-01
 
 The reviewed main `a20fdb95db1a26362dc11a8b1d279501e04392a9` automatically produced `dpl_CpM4cBJJxxYKEmZCYby9DAtARP1d` with Git source, production target, Singapore `sin1`, and the canonical alias assigned without errors. Independent remote inspection confirmed both main and integration at that exact SHA. All 21 anonymous canonical checks passed again after this release. No error logs were returned for this deployment in the inspected 15-minute window ending 15:23:55 UTC. The inventory contains three production deployments and zero previews.
 
-The authenticated media/backup acceptance above remains valid: this release only changes dashboard destinations and request-bound login routing. Final owner-browser dashboard-return, desktop/mobile editor, session restoration and sign-out checks remain open at this checkpoint.
+The authenticated media/backup acceptance above remains valid: this release only changes dashboard destinations and request-bound login routing. Owner-browser dashboard return, desktop/mobile editor, session restoration and final manual sign-out were subsequently verified below.
+
+
+## Production desktop/mobile editor and session acceptance — 2026-11-01
+
+On deployed main `a20fdb95db1a26362dc11a8b1d279501e04392a9`, the owner's normal Chrome session was exercised through a separate agent-created tab while their existing homepage editing tab remained untouched. The public Garden dashboard link targeted `/admin` and opened the actual authenticated dashboard; direct navigation to `/login` also returned to `/admin`. Authentication remained valid across the actual desktop/mobile save-and-reload checks.
+
+A private temporary page was created from the Our story template. In the real Puck workspace, nested Section/Columns content was edited through its controls: a Text block was added in the left column, edited, moved up and acknowledged Saved, then persisted through reload on desktop. An Image placeholder in the right column retained its alt text and caption through autosave. At a 390 px browser viewport with the actual Mobile 390 editor canvas selected, the Text block was selected, moved down and edited; Saved acknowledgement and reload confirmed persistence again. The document's scroll width and client width both measured 375 px (the 390 px viewport less the native 15 px scrollbar), with no content outside the viewport. Screenshots of the mobile editor and normal dashboard were inspected and retained as shared `ticket13/production-editor-mobile.jpg` and `ticket13/production-dashboard.jpg`.
+
+The actual History → Trash confirmation → permanent-delete flow removed only the owned temporary page and its history. Independent read-only Neon inspection confirmed that temporary page was absent, the one original homepage remained, and no ready photos were left. The temporary viewport was reset and the agent-created tab was left at the dashboard; the owner's original homepage edits were preserved.
+
+Final sign-out used the separate owned ephemeral Chrome profile, preserving the owner's regular editing session. Its authenticated API status was 200 before the handoff, and the owner then confirmed that the verification window signed out and displayed login. A separate fresh anonymous `/api/pages` request returned 401. The post-handoff request in the same verification context could not complete, so no same-cookie-jar HTTP revocation result or sign-out HTTP status is claimed. The visible login is manual production acceptance: this deployed login page redirects valid administrators to `/admin`. No owner passwords, cookies or browser authentication state were inspected or exported.
+
+
+## Answer
+
+Deployed and verified [Our Memory Garden](https://our-memory-garden.vercel.app) on the intended existing Vercel project with Neon PostgreSQL, managed authentication and private Object Storage in Singapore. Reviewed pushes to main automatically create production deployments; no preview deployments were created. The accepted application release is main `a20fdb95db1a26362dc11a8b1d279501e04392a9` / `dpl_CpM4cBJJxxYKEmZCYby9DAtARP1d`. All standards/specification findings and the two production auth/navigation follow-ups are fixed, reviewed and covered by regression evidence above.
+
+Completed real public/private/admin production acceptance across desktop and mobile-width browser/editor controls, managed session reloads, manual owner sign-out, photo visibility transitions, exact authenticated original/archive streaming over 4.5 MB, Range resume and safe cleanup of approved temporary content. Preserved the original homepage, administrator and the owner's editing tab. Storage monitoring, private independent backups and bounded maintenance are documented in [production operations](../../../docs/production-operations.md).
+
+Known operational limits remain explicit: monitoring and cleanup are manual, custom SMTP is not configured, backups require downloading independent copies, and no automatic archive importer is provided. The second administrator is deferred until the owner supplies that identity, matching the approved first-owner-only release scope. These do not leave ticket acceptance open. All local tickets 00–13 and the overall specification are resolved.
