@@ -127,7 +127,3 @@ Public routes dynamically emit description, OpenGraph, Twitter, canonical and ro
 Sharing covers use the protected display gateway. Public sharing-only use grants display access, and removing the final live public use revokes subsequent anonymous requests; historical copies retain media bytes without granting public access. Originals remain administrator-only. Search engines and social platforms can retain their own prior caches; the application emits current settings immediately and cannot recall copies already fetched externally.
 
 The search/sharing form follows frames 2374/2408 within the existing page details panel, with private-page guidance, labelled controls, a ready-library picker and 44 px indexing label. Desktop/mobile screenshots are ignored under `work/discovery-*.png`. Hosted managed-auth/deployment verification remains ticket 13.
-
-
-
-
