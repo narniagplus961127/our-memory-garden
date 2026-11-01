@@ -502,3 +502,312 @@ test("restoration recovers date/category and invalidates an open details editor"
     409,
   );
 });
+test("uploaded photo content and cover restore with protected originals through trash and private restoration", async () => {
+  const owner = await login();
+  const sharp = (await import("sharp")).default;
+  const bytes = await sharp({
+    create: { width: 64, height: 48, channels: 3, background: "#769270" },
+  })
+    .jpeg()
+    .toBuffer();
+  const start = await call(
+    "/api/media/uploads",
+    "POST",
+    { name: "history-photo.jpg", size: bytes.length, type: "image/jpeg" },
+    owner,
+  );
+  assert.equal(start.status, 201);
+  const upload = await start.json();
+  assert.equal(
+    (
+      await fetch(upload.uploadUrl, {
+        method: "PUT",
+        headers: { "Content-Type": "image/jpeg" },
+        body: bytes,
+      })
+    ).status,
+    200,
+  );
+  assert.equal(
+    (await call("/api/media/" + upload.id + "/complete", "POST", {}, owner))
+      .status,
+    200,
+  );
+  let p = await create(owner, "Photo history");
+  const path = "/api/pages/" + p.id;
+  p = await (
+    await call(
+      path,
+      "PATCH",
+      {
+        version: p.version,
+        content: {
+          root: { props: {} },
+          content: [
+            {
+              type: "Image",
+              props: {
+                id: "retained-image",
+                photoId: upload.id,
+                alt: "A retained memory",
+              },
+            },
+          ],
+        },
+      },
+      owner,
+    )
+  ).json();
+  p = await (
+    await call(
+      path + "/details",
+      "PATCH",
+      {
+        date: "2024-05-20",
+        categoryId: null,
+        coverPhotoId: upload.id,
+        metadataVersion: p.metadata_version,
+      },
+      owner,
+    )
+  ).json();
+  const chosen = p.version;
+  p = await (
+    await call(
+      path,
+      "PATCH",
+      { version: p.version, text: "Photo removed from current content" },
+      owner,
+    )
+  ).json();
+  p = await (
+    await call(
+      path + "/details",
+      "PATCH",
+      {
+        date: null,
+        categoryId: null,
+        coverPhotoId: null,
+        metadataVersion: p.metadata_version,
+      },
+      owner,
+    )
+  ).json();
+  assert.equal(
+    (await call("/api/media/" + upload.id + "/display")).status,
+    404,
+  );
+  const restored = await call(
+    path + "/history/" + chosen,
+    "POST",
+    { version: p.version, confirm: true },
+    owner,
+  );
+  assert.equal(restored.status, 200);
+  p = await restored.json();
+  assert.equal(p.cover_photo_id, upload.id);
+  assert.equal(p.content.content[0].props.photoId, upload.id);
+  assert.deepEqual(
+    Buffer.from(
+      await (
+        await call("/api/media/" + upload.id + "/original", "GET", null, owner)
+      ).arrayBuffer(),
+    ),
+    bytes,
+  );
+  assert.equal(
+    (await call("/api/media/" + upload.id + "/original")).status,
+    404,
+  );
+  p = await (
+    await call(
+      path,
+      "PATCH",
+      { version: p.version, visibility: "public" },
+      owner,
+    )
+  ).json();
+  assert.equal(
+    (await call("/api/media/" + upload.id + "/display")).status,
+    200,
+  );
+  p = await (
+    await call(
+      path + "/trash",
+      "POST",
+      { action: "trash", version: p.version, confirm: true },
+      owner,
+    )
+  ).json();
+  assert.equal(
+    (await call("/api/media/" + upload.id + "/display")).status,
+    404,
+  );
+  p = await (
+    await call(
+      path + "/trash",
+      "POST",
+      { action: "restore", version: p.version, confirm: true },
+      owner,
+    )
+  ).json();
+  assert.equal(p.visibility, "private");
+  assert.equal(p.cover_photo_id, upload.id);
+  assert.equal(
+    (await call("/api/media/" + upload.id + "/display")).status,
+    404,
+  );
+  assert.deepEqual(
+    Buffer.from(
+      await (
+        await call("/api/media/" + upload.id + "/original", "GET", null, owner)
+      ).arrayBuffer(),
+    ),
+    bytes,
+  );
+});
+test("inbound warnings include nested text, button, manual/category grids and menu references", async () => {
+  const owner = await login();
+  let target = await create(owner, "Inbound target");
+  const source = await create(owner, "Nested inbound page");
+  const category = await (
+    await call(
+      "/api/categories",
+      "POST",
+      { name: "Inbound category " + crypto.randomUUID() },
+      owner,
+    )
+  ).json();
+  target = await (
+    await call(
+      "/api/pages/" + target.id + "/details",
+      "PATCH",
+      {
+        date: null,
+        categoryId: category.id,
+        coverPhotoId: null,
+        metadataVersion: target.metadata_version,
+      },
+      owner,
+    )
+  ).json();
+  const content = {
+    root: { props: {} },
+    content: [
+      {
+        type: "Section",
+        props: {
+          id: "inbound-section",
+          background: "paper",
+          spacing: "comfortable",
+          content: [
+            {
+              type: "Text",
+              props: {
+                id: "inbound-text",
+                text: "Our garden destination",
+                linkText: "destination",
+                style: "p",
+                destination: { kind: "page", pageId: target.id },
+              },
+            },
+            {
+              type: "Button",
+              props: {
+                id: "inbound-button",
+                label: "Visit",
+                destination: { kind: "page", pageId: target.id },
+              },
+            },
+            {
+              type: "PageGrid",
+              props: {
+                id: "inbound-manual",
+                selection: {
+                  mode: "manual",
+                  pageIds: [target.id],
+                  categoryId: "",
+                },
+              },
+            },
+            {
+              type: "PageGrid",
+              props: {
+                id: "inbound-category",
+                selection: {
+                  mode: "category",
+                  pageIds: [],
+                  categoryId: category.id,
+                },
+              },
+            },
+          ],
+        },
+      },
+    ],
+  };
+  assert.equal(
+    (
+      await call(
+        "/api/pages/" + source.id,
+        "PATCH",
+        { version: source.version, content },
+        owner,
+      )
+    ).status,
+    200,
+  );
+  const menu = await (await call("/api/navigation", "GET", null, owner)).json();
+  const menuItem = {
+    id: crypto.randomUUID(),
+    label: "Inbound menu target",
+    parentId: null,
+    destination: { kind: "page", pageId: target.id },
+  };
+  const updatedMenu = await call(
+    "/api/navigation",
+    "PUT",
+    { version: menu.version, items: [...menu.items, menuItem] },
+    owner,
+  );
+  assert.equal(updatedMenu.status, 200);
+  try {
+    const { references } = await (
+      await call("/api/pages/" + target.id + "/trash", "GET", null, owner)
+    ).json();
+    assert.equal(
+      references.filter(
+        (r) => r.kind === "Text or button link" && r.id === source.id,
+      ).length,
+      2,
+    );
+    assert.ok(
+      references.some(
+        (r) => r.kind === "Manual page grid" && r.id === source.id,
+      ),
+    );
+    assert.ok(
+      references.some(
+        (r) => r.kind === "Category page grid" && r.id === source.id,
+      ),
+    );
+    assert.ok(
+      references.some(
+        (r) => r.kind === "Menu link" && r.title === "Inbound menu target",
+      ),
+    );
+  } finally {
+    const latest = await (
+      await call("/api/navigation", "GET", null, owner)
+    ).json();
+    await call(
+      "/api/navigation",
+      "PUT",
+      {
+        version: latest.version,
+        items: latest.items.filter((i) => i.id !== menuItem.id),
+      },
+      owner,
+    );
+  }
+});

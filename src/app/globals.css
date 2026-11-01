@@ -1463,3 +1463,23 @@ button.primary {
     overflow: auto;
   }
 }
+.history-metadata {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 8px 20px;
+}
+.history-metadata dt {
+  font-weight: bold;
+}
+.history-metadata dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.history-cover {
+  margin: 20px 0;
+}
+.history-cover img {
+  width: 100%;
+  max-height: 240px;
+  object-fit: contain;
+}

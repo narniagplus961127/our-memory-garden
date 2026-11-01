@@ -9,6 +9,8 @@ import {
 import { RestoreVersion, TrashAction } from "@/components/page-recovery";
 import { GardenContent } from "@/components/garden-content";
 import { RequestError } from "@/lib/server/http";
+import { categories } from "@/lib/server/organization";
+import { displayPhotoUrl } from "@/lib/media";
 export default async function History({
   params,
   searchParams,
@@ -24,10 +26,15 @@ export default async function History({
     const version = requested
       ? Number(requested)
       : groups[0]?.versions[0]?.version;
+    if (requested && (!Number.isSafeInteger(version) || Number(version) < 1))
+      notFound();
     const selected = version
       ? (await historicalPage(id, version)).snapshot
       : null;
-    const { references } = await inboundReferences(id);
+    const [{ references }, categoryList] = await Promise.all([
+      inboundReferences(id),
+      categories(),
+    ]);
     return (
       <>
         <Link href="/admin/pages">← Pages</Link>
@@ -75,6 +82,24 @@ export default async function History({
               <>
                 <p className="eyebrow">Read-only · Version {version}</p>
                 <h2>{selected.title}</h2>
+                <dl className="history-metadata">
+                  <dt>Date</dt>
+                  <dd>{selected.page_date ?? "No date"}</dd>
+                  <dt>Category</dt>
+                  <dd>
+                    {categoryList.find((c) => c.id === selected.category_id)
+                      ?.name ?? "No category"}
+                  </dd>
+                </dl>
+                {selected.cover_photo_id && (
+                  <figure className="history-cover">
+                    <img
+                      src={displayPhotoUrl(selected.cover_photo_id)}
+                      alt="Saved page cover"
+                    />
+                    <figcaption>Saved cover photo</figcaption>
+                  </figure>
+                )}
                 <p>
                   This is saved content. Links and photo access follow current
                   page visibility.
@@ -82,7 +107,7 @@ export default async function History({
                 <div className="history-snapshot">
                   <GardenContent data={selected.content} />
                 </div>
-                <RestoreVersion page={page} revision={version} />
+                <RestoreVersion key={version} page={page} revision={version} />
               </>
             )}
           </section>

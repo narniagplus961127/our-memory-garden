@@ -12,13 +12,13 @@ Recover earlier page versions and safely delete or restore pages.
 
 ## Status
 
-claimed
+resolved
 
 ## Acceptance criteria
 
-- [ ] Group nearby edits into useful version history and allow restoration.
-- [ ] Keep deleted pages in trash until explicitly deleted permanently and restore them as private.
-- [ ] Warn about inbound links before deletion and protect the homepage until another is selected.
+- [x] Group nearby edits into useful version history and allow restoration.
+- [x] Keep deleted pages in trash until explicitly deleted permanently and restore them as private.
+- [x] Warn about inbound links before deletion and protect the homepage until another is selected.
 
 ## Design reference
 
@@ -28,3 +28,20 @@ Follow the owner-approved desktop and mobile screens and General styles & brand 
 Build the user-facing history and restoration experience on the saved-version preservation established by ticket 09; retain grouped version history and existing trash safeguards.
 
 
+
+## Answer
+
+Implemented authenticated grouped history and read-only exact snapshot review, including title, content, date, category and cover. Restoration requires explicit confirmation and the current page version. It locks the page, reads only its trusted stored revision and archives the displaced complete row in the same transaction. Current live visibility, stable ID, slug and homepage selection remain unchanged; supported details restore while the current metadata counter advances to reject stale details editors. Historical links to targets deleted since the snapshot remain legitimate restored content.
+
+Pages and the editor expose history/recovery, and Pages exposes Trash. Trash confirmation lists inbound menu, nested text/button, manual-grid and category-grid references. The current homepage cannot be trashed. Trashed pages retain their stable identity; explicit restoration returns them private. A separate irreversible confirmation permanently deletes only an already-trashed current version, cascading its history while retaining other pages and photos. Pending/error states retain the snapshot or trash card and allow retry; list-level success feedback survives card removal.
+
+### Verification
+
+- All 31 affected local HTTP/auth/database/storage service checks passed: 12 concurrency, six media, four organization and nine page-recovery tests. They cover trusted restoration, exact durable preservation, grouping, actor boundaries, one-winner concurrent restores, homepage protection, outsider/cross-origin denial, stale metadata-counter rejection, stable private trash restoration, permanent-delete restrictions, all inbound warnings and real uploaded image/cover/original privacy transitions.
+- All 10 final desktop/mobile browser checks passed: eight history/trash journeys and the two existing delayed-initialization editor regressions. Tests cover confirmation, cancel, private restoration, persistent success feedback, anonymous denial and recovery after restore/trash/permanent-delete HTTP failures. Desktop/mobile screenshots were inspected under ignored work/history-desktop.png and work/history-mobile.png.
+- An initial post-resume browser probe was interrupted by repeated development Fast Refresh reloads. Failed traces were preserved outside the project. The original launcher, project-local trace output and unchanged readiness assertions all passed after regenerating the resumed development cache; no application behavior or assertion was relaxed. The precise stale-cache trigger could not be reconstructed after regeneration.
+- Production build, TypeScript, repository formatting and diff checks passed after browser testing stopped. Ticket 07 and current integration were merged; no new migration was needed. All fixtures used the isolated local database/auth and loopback S3 service; hosted managed-auth/deployment checks remain ticket 13.
+
+### Known limitations
+
+Snapshots preserve this page's data, while linked page grids, category names and media access resolve using current garden state. Exact revisions are retained without pruning. Permanent page deletion intentionally retains photo objects; ticket 11 owns media deletion/retention safeguards and export. No existing archive or media guard is bypassed.

@@ -190,3 +190,74 @@ test("failed restoration retains the read-only snapshot and can be retried", asy
     .click();
   await expect(page.getByRole("status")).toContainText("Version restored");
 });
+test("failed trash and permanent deletion keep the original state and offer retry", async ({
+  page,
+}) => {
+  const origin = env.NEXT_PUBLIC_APP_URL;
+  await page.request.post("/api/auth/sign-in/email", {
+    headers: { Origin: origin },
+    data: { email: env.TEST_ADMIN_EMAIL, password: env.TEST_ADMIN_PASSWORD },
+  });
+  const p = await (
+    await page.request.post("/api/pages", {
+      headers: { Origin: origin },
+      data: { title: "Retry trash " + Date.now() },
+    })
+  ).json();
+  await page.goto("/admin/pages/" + p.id + "/history");
+  const path = "**/api/pages/" + p.id + "/trash";
+  await page.route(path, (route) =>
+    route.fulfill({
+      status: 503,
+      contentType: "application/json",
+      body: JSON.stringify({ error: "Trash connection interrupted." }),
+    }),
+  );
+  await page
+    .getByRole("button", { name: "Move to trash", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "Confirm move to trash", exact: true })
+    .click();
+  await expect(
+    page
+      .getByRole("alert")
+      .filter({ hasText: "Trash connection interrupted." }),
+  ).toBeVisible();
+  expect((await page.request.get("/api/pages/" + p.id)).status()).toBe(200);
+  await page.unroute(path);
+  await page.getByRole("button", { name: "Retry action", exact: true }).click();
+  await expect(page.getByRole("status")).toContainText("Page moved to trash");
+  await page.goto("/admin/trash");
+  const card = page
+    .locator("article")
+    .filter({ has: page.getByRole("heading", { name: p.title, exact: true }) });
+  await page.route(path, (route) =>
+    route.fulfill({
+      status: 503,
+      contentType: "application/json",
+      body: JSON.stringify({ error: "Deletion connection interrupted." }),
+    }),
+  );
+  await card
+    .getByRole("button", { name: "Delete permanently", exact: true })
+    .click();
+  await card
+    .getByRole("button", { name: "Confirm permanent deletion", exact: true })
+    .click();
+  await expect(card.getByRole("alert")).toContainText(
+    "Deletion connection interrupted",
+  );
+  await expect(card).toBeVisible();
+  expect(
+    (await (await page.request.get("/api/trash")).json()).some(
+      (item: { id: string }) => item.id === p.id,
+    ),
+  ).toBe(true);
+  await page.unroute(path);
+  await card.getByRole("button", { name: "Retry action", exact: true }).click();
+  await expect(card).toHaveCount(0);
+  await expect(page.getByRole("status")).toContainText(
+    "Page permanently deleted",
+  );
+});
