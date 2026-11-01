@@ -1,0 +1,33 @@
+# Media retention and independent backups
+
+The media library is shared by both administrators. Search matches photo names and page titles. Usage comes from current pages (including trash) and exact `page_versions.snapshot` records. One page appears once; a current reference takes precedence over its history-only label. Only current, non-trashed public pages grant anonymous display access. Retained public history never grants access.
+
+## Deletion boundary
+
+`DELETE /api/media/[id]` requires an administrator, matching origin and `{ "confirm": true }`. A transaction takes the media row `FOR UPDATE`, checks page/history references and unfinished backup reservations, then claims `deleting`. Page and history mutations lock discovered media rows `FOR SHARE` and validate readiness. Cover/sharing details lock the page before media, matching page restoration's lock order. The database retention trigger enforces the same references; a concurrent attachment cannot leave a saved page pointing at deleted bytes.
+
+An unused photo is removed from the library only after original, display and staging cleanup succeed. Rejection before the claim preserves the usable photo. A storage failure after cleanup starts retains a clearly labelled unfinished-deletion record with retry; bytes already removed are not rolled back. Unfinished photos cannot be attached, finalized again, downloaded as intact originals or included in a new backup. Removing a photo block does not delete a photo. Retained versions continue protecting it until the owning page/history is permanently deleted.
+
+## Backup format and snapshot
+
+`POST /api/exports` records one repeatable-read snapshot of every page, homepage/navigation settings, categories, retained versions and all ready original-photo inventory. Snapshot rows are copied in the database; photo inventory and part assignments use bounded batches. Both administrators can resume the shared export. One pending job prevents accidental duplicate requests.
+
+The `our-memory-garden/v2` format consists of an authenticated streamed `manifest.json`, a README in every TAR, and all listed TAR parts. Extract every part into the same folder with a standard archive tool. `content/<table>/<record>.json` holds exact snapshot records; photo records map stable photo IDs to `originals/<id>.<type>`. Paths are safe and stable throughout preparation/retry of the recorded job. The manifest lists the snapshot time, complete inventory, real part states, filenames and measured sizes. The complete flag becomes true only after every part is stored and verified. No authentication passwords, sessions or storage credentials are exported.
+
+Each authenticated `POST /api/exports/[id]/prepare` prepares at most one unfinished part. Original parts are bounded by 200 MB (including TAR overhead allowance) and 50 photos; content parts by 8 MB and 1,000 records. There is no total collection-size cap. Generation streams originals through a temporary file, uploads that file privately and verifies its stored length before committing readiness. Ready parts can be downloaded before later parts finish. A failed/interrupted part retries the same snapshot; reload resumes preparation. Cancellation stops the browser driver, waits for any current server step, then releases unfinished photo reservations. Late responses cannot resume a cancelled browser job.
+
+Unprepared originals are pinned against deletion. Each successful original part releases its own pins because the independent stored copy exists. Cancellation releases remaining pins. Expired reservations no longer block explicit media deletion; maintenance also removes their records. Preparation uses the Node route's 300-second budget with a 260-second operation deadline. A stalled invocation becomes retryable, rather than a false ready state.
+
+`GET /api/exports/[id]/parts/[partId]/download` rechecks administrator access and expiry on every request, streams private bytes and supports explicit single byte ranges (`bytes=N-M` or `bytes=N-`). Downloads have no public/signed bearer URL. The manifest is streamed too. Availability expires 24 hours after the most recent completed preparation step. Downloaded independent copies cannot be recalled.
+
+## Explicit expiry maintenance
+
+Run `node --env-file=<private-environment-file> scripts/cleanup-exports.mjs` to dry-run at most ten expired jobs. `--export-id=<uuid>` narrows the selection. After inspecting the candidate IDs/keys, `--apply` releases expired reservations, removes private snapshot records and deletes only recorded, validated `exports/<job-id>/...` keys (including recorded legacy local archive keys). Successful cleanup records `cleaned_at`; partial object deletion remains retryable. Other garden originals, display copies, pages and history are untouched. Production scheduling/operation belongs to ticket 13; no hosted cleanup was run for this ticket.
+
+## Measurements and verification
+
+Storage settings paginate both configured private bucket listings and report original, display, archive and staging bytes. PostgreSQL's `pg_database_size(current_database())` is separately labelled physical database usage. Source and freshness are shown; failed refresh retains a stale-labelled last value. These are not provider-billed usage, and unknown plan/quota values remain unavailable.
+
+Local checks use the real isolated PostgreSQL/Better Auth services and a loopback S3-compatible fixture. `LOCAL_EXPORT_PART_BYTES` only lowers the original-part threshold when the configured object endpoint is loopback; it cannot alter a hosted endpoint's limits. `LOCAL_S3_FAULTS=1` enables the fixture's loopback-only display-deletion failure switch. Tests prove exact original bytes with standard `tar`, multipart coverage, immutable page/category/cover/sharing snapshots, history retention/privacy, concurrent attachment/deletion, failure/retry, auth/ranges/expiry and actual cleanup. Browser journeys cover desktop/mobile search, deletion confirmation/retry, measured storage/stale refresh, reload/resume, downloads, expiry and active cancellation.
+
+The backup is an independent content/original-file archive, not an automatic application importer. Hosted Neon/Vercel authentication, large streamed downloads, real production part throughput and scheduled maintenance still need ticket 13 verification. Temporary backup records and stored parts consume measured storage until cleanup runs.

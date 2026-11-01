@@ -28,6 +28,18 @@ export async function bodyJson(
   }
 }
 export function errorResponse(error: unknown) {
+  if (
+    error &&
+    typeof error === "object" &&
+    "code" in error &&
+    error.code === "23503" &&
+    "message" in error &&
+    String(error.message).includes("ready photo")
+  )
+    error = new RequestError(
+      409,
+      "This photo is no longer available. Choose a ready photo from the shared library.",
+    );
   if (error instanceof RequestError)
     return Response.json(
       { error: error.message },
