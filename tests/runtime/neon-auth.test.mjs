@@ -158,6 +158,14 @@ test(
       ["true"],
       "authorization asks upstream even with a valid signed cache",
     );
+    sessions.length = 0;
+    const loginPage = await fetch(base + "/login", {
+      headers: { Cookie: cookie },
+      redirect: "manual",
+    });
+    assert.equal(loginPage.status, 307);
+    assert.equal(loginPage.headers.get("location"), "/admin");
+    assert.deepEqual(sessions, ["true"]);
     active = false;
     sessions.length = 0;
     assert.equal(

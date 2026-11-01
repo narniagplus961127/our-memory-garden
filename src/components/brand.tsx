@@ -33,14 +33,14 @@ export function PublicHeader({
       <nav className="public-nav" aria-label="Main navigation">
         <Link href="/">Our garden</Link>
         {menu(null)}
-        <Link className="button secondary" href="/login">
+        <Link className="button secondary" href="/admin">
           Garden dashboard
         </Link>
       </nav>
       <PublicMenu>
         <Link href="/">Our garden</Link>
         {menu(null)}
-        <Link href="/login">Garden dashboard</Link>
+        <Link href="/admin">Garden dashboard</Link>
       </PublicMenu>
     </header>
   );
