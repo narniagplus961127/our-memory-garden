@@ -63,6 +63,14 @@ Validation: production build, typecheck, formatting and all six API/service chec
 
 Known limitations: image blocks use a clearly labelled placeholder; uploads and protected photo handling belong to ticket 05. Buttons currently accept validated external addresses; stable garden-page destinations arrive in ticket 08. Ticket 09 owns browser-refresh recovery and concurrent-edit reconciliation; this ticket does not claim those guarantees. Tests use isolated local PostgreSQL and Better Auth, not hosted Neon Auth or production deployment; hosted checks remain in ticket 13. The prior isolated autosave selection failure did not recur in the exact rerun or full desktop/mobile suite.
 
+### Approved template and shell follow-through — 2026-11-01
+
+Creation now opens `/admin/pages/new` in the ordinary admin shell, with large visual cards for Blank page, Our story and Garden journal, native labelled radio controls, a labelled page title and Create private page. The cards represent the existing independent starting arrangements and stack on mobile. Removed the template dropdown and updated the real browser journeys to choose the cards. Editor-route detection now accepts page UUIDs, so the template screen keeps its sidebar/mobile admin header.
+
+Overview and Pages use real linked page cards with visibility/homepage information. The existing creation API, private default, Puck editing, automatic saving and template independence are preserved. The mobile website menu uses a full-width native modal with Back, Escape and focus return while retaining the real public navigation tree. Authentication uses the approved cream form surface across sign-in and recovery.
+
+Known limits: template previews are schematic starting arrangements, not live page content. Local browser checks use isolated PostgreSQL/Better Auth; hosted authentication and deployment checks remain ticket 13. See `docs/design-spec-review.md` for final validation and evidence.
+
 ## Answer
 
 Pages and the homepage now use the same responsive Puck editor and public block components. Templates, nested layouts, touch controls, desktop drag, contextual settings and basic authenticated automatic saving are implemented. See docs/implementation-notes.md and tests/browser/visual-editor.spec.ts for the handoff.

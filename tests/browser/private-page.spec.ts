@@ -21,7 +21,7 @@ test("either administrator creates and edits a private page while visitors recei
     .fill(env.TEST_ADMIN_PASSWORD);
   await page.getByRole("button", { name: "Sign in", exact: true }).click();
   await expect(page).toHaveURL(/\/admin\/pages$/);
-  await page.getByRole("button", { name: "Create page", exact: true }).click();
+  await page.getByRole("link", { name: "Create page", exact: true }).click();
   await page
     .getByLabel("Page title", { exact: true })
     .fill("Our quiet afternoon");

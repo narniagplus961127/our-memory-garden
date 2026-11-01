@@ -26,12 +26,12 @@ test("compose nested blocks with taps, retain selection through moves and save i
     .fill(env.TEST_ADMIN_PASSWORD);
   await press(page.getByRole("button", { name: "Sign in", exact: true }));
   await expect(page).toHaveURL(/\/admin\/pages$/);
-  await press(page.getByRole("button", { name: "Create page", exact: true }));
+  await press(page.getByRole("link", { name: "Create page", exact: true }));
   await page
     .getByLabel("Page title", { exact: true })
     .fill("Nested moments " + Date.now());
   await press(page.getByRole("button", { name: "Create private page" }));
-  await expect(page).toHaveURL(/\/admin\/pages\/[\w-]+$/);
+  await expect(page).toHaveURL(/\/admin\/pages\/[0-9a-f-]{36}$/);
   await press(page.getByRole("button", { name: "Open content panel" }));
   await press(page.getByRole("button", { name: "Add Section", exact: true }));
   await page
@@ -135,19 +135,41 @@ test("templates start independently and the device controls resize the actual re
   isMobile,
 }, testInfo) => {
   await page.goto("/login");
+  await page.screenshot({
+    path: testInfo.outputPath("login.png"),
+    caret: "initial",
+    fullPage: true,
+  });
   await page.getByLabel("Email address").fill(env.TEST_ADMIN_EMAIL);
   await page
     .getByLabel("Password", { exact: true })
     .fill(env.TEST_ADMIN_PASSWORD);
   await page.getByRole("button", { name: "Sign in", exact: true }).click();
   await expect(page).toHaveURL(/\/admin\/pages$/);
-  await page.getByRole("button", { name: "Create page", exact: true }).click();
+  await page.screenshot({
+    path: testInfo.outputPath("pages.png"),
+    fullPage: false,
+  });
+  await page.goto("/admin");
+  await expect(
+    page.getByRole("heading", { name: "Your pages", exact: true }),
+  ).toBeVisible();
+  await page.screenshot({
+    path: testInfo.outputPath("overview.png"),
+    fullPage: true,
+  });
+  await page.getByRole("link", { name: "Create a page", exact: true }).click();
+  await expect(page).toHaveURL(/\/admin\/pages\/new$/);
   await page
     .getByLabel("Page title", { exact: true })
     .fill("Story canvas " + Date.now());
-  await page.getByLabel("Start from a template").selectOption("story");
+  await page.getByRole("radio", { name: "Our story", exact: true }).check();
+  await page.screenshot({
+    path: testInfo.outputPath("templates.png"),
+    fullPage: true,
+  });
   await page.getByRole("button", { name: "Create private page" }).click();
-  await expect(page).toHaveURL(/\/admin\/pages\/[\w-]+$/);
+  await expect(page).toHaveURL(/\/admin\/pages\/[0-9a-f-]{36}$/);
   const id = page.url().split("/").pop();
   const first = await (await page.request.get("/api/pages/" + id)).json();
   await page
@@ -218,6 +240,13 @@ test("templates start independently and the device controls resize the actual re
     path: testInfo.outputPath("editor.png"),
     fullPage: true,
   });
+  await page.goto("/admin");
+  await expect(
+    page.getByRole("link", { name: new RegExp(second.title) }),
+  ).toBeVisible();
+  await page.goto("/admin/pages");
+  await page.getByRole("link", { name: new RegExp(second.title) }).click();
+  await expect(page).toHaveURL("/admin/pages/" + second.id);
 });
 
 test("autosave keeps the latest edit during a slow write and preserves failures for retry", async ({
@@ -230,12 +259,12 @@ test("autosave keeps the latest edit during a slow write and preserves failures 
     .fill(env.TEST_ADMIN_PASSWORD);
   await page.getByRole("button", { name: "Sign in", exact: true }).click();
   await expect(page).toHaveURL(/\/admin\/pages$/);
-  await page.getByRole("button", { name: "Create page", exact: true }).click();
+  await page.getByRole("link", { name: "Create page", exact: true }).click();
   await page
     .getByLabel("Page title", { exact: true })
     .fill("Saving rosemary " + Date.now());
   await page.getByRole("button", { name: "Create private page" }).click();
-  await expect(page).toHaveURL(/\/admin\/pages\/[\w-]+$/);
+  await expect(page).toHaveURL(/\/admin\/pages\/[0-9a-f-]{36}$/);
   await page
     .getByRole("button", { name: "Select Text 1", exact: true })
     .click();
@@ -311,12 +340,12 @@ test("drag a nested text block into an empty column and persist its new location
     .fill(env.TEST_ADMIN_PASSWORD);
   await page.getByRole("button", { name: "Sign in", exact: true }).click();
   await expect(page).toHaveURL(/\/admin\/pages$/);
-  await page.getByRole("button", { name: "Create page", exact: true }).click();
+  await page.getByRole("link", { name: "Create page", exact: true }).click();
   await page
     .getByLabel("Page title", { exact: true })
     .fill("A movable moment " + Date.now());
   await page.getByRole("button", { name: "Create private page" }).click();
-  await expect(page).toHaveURL(/\/admin\/pages\/[\w-]+$/);
+  await expect(page).toHaveURL(/\/admin\/pages\/[0-9a-f-]{36}$/);
   await page.getByRole("button", { name: "Add Columns", exact: true }).click();
   await page
     .getByLabel("Add to")
@@ -382,13 +411,15 @@ test("image and button settings appear through the same public blocks after auto
     .fill(env.TEST_ADMIN_PASSWORD);
   await page.getByRole("button", { name: "Sign in", exact: true }).click();
   await expect(page).toHaveURL(/\/admin\/pages$/);
-  await page.getByRole("button", { name: "Create page", exact: true }).click();
+  await page.getByRole("link", { name: "Create page", exact: true }).click();
   await page
     .getByLabel("Page title", { exact: true })
     .fill("Our photo journal " + Date.now());
-  await page.getByLabel("Start from a template").selectOption("journal");
+  await page
+    .getByRole("radio", { name: "Garden journal", exact: true })
+    .check();
   await page.getByRole("button", { name: "Create private page" }).click();
-  await expect(page).toHaveURL(/\/admin\/pages\/[\w-]+$/);
+  await expect(page).toHaveURL(/\/admin\/pages\/[0-9a-f-]{36}$/);
   await page
     .getByRole("button", { name: "Select Image 1", exact: true })
     .click();

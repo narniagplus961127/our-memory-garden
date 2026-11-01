@@ -18,7 +18,7 @@ export function AdminShell({
   accountId: string;
 }) {
   const pathname = usePathname();
-  if (/^\/admin\/pages\/[^/]+$/.test(pathname))
+  if (/^\/admin\/pages\/[0-9a-f-]{36}$/i.test(pathname))
     return <main className="editor-admin-main">{children}</main>;
   const links = navigation.map(([label, path]) => (
     <Link

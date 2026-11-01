@@ -1,9 +1,9 @@
 "use client";
 import { templates } from "@/lib/blocks";
+import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 export function NewPageForm() {
-  const [open, setOpen] = useState(false);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
   const router = useRouter();
@@ -33,31 +33,63 @@ export function NewPageForm() {
       setPending(false);
     }
   }
-  return open ? (
+  return (
     <form onSubmit={create} className="new-page-form">
-      <div className="field">
-        <label htmlFor="new-title">Page title</label>
-        <input id="new-title" name="title" required maxLength={200} autoFocus />
-      </div>
-      <div className="field">
-        <label htmlFor="new-template">Start from a template</label>
-        <select id="new-template" name="template">
+      <fieldset className="template-choices">
+        <legend>Start from a template</legend>
+        <div className="template-grid">
           {templates.map((template) => (
-            <option key={template.id} value={template.id}>
-              {template.label} — {template.description}
-            </option>
+            <label className="template-card" key={template.id}>
+              <input
+                type="radio"
+                name="template"
+                value={template.id}
+                aria-label={template.label}
+                defaultChecked={template.id === "blank"}
+              />
+              <span
+                className={"template-preview template-preview-" + template.id}
+                aria-hidden="true"
+              >
+                {template.id === "blank" ? (
+                  <span className="template-blank-mark">+</span>
+                ) : (
+                  <>
+                    <span className="template-mini-banner" />
+                    <span className="template-mini-content">
+                      <span className="template-mini-lines">
+                        <i />
+                        <i />
+                        <i />
+                      </span>
+                      <span className="template-mini-photo">❧</span>
+                    </span>
+                    {template.id === "journal" && (
+                      <span className="template-mini-lines">
+                        <i />
+                        <i />
+                      </span>
+                    )}
+                  </>
+                )}
+              </span>
+              <span className="template-name">{template.label}</span>
+              <span className="template-description">
+                {template.description}
+              </span>
+            </label>
           ))}
-        </select>
+        </div>
+      </fieldset>
+      <div className="field new-page-title">
+        <label htmlFor="new-title">Page title</label>
+        <input id="new-title" name="title" required maxLength={200} />
       </div>
       <div className="actions">
         <button disabled={pending}>Create private page</button>
-        <button
-          type="button"
-          className="secondary"
-          onClick={() => setOpen(false)}
-        >
+        <Link className="button secondary" href="/admin/pages">
           Cancel
-        </button>
+        </Link>
       </div>
       {error && (
         <p role="alert" className="error">
@@ -68,7 +100,5 @@ export function NewPageForm() {
         New pages are private. Only garden administrators can see them.
       </small>
     </form>
-  ) : (
-    <button onClick={() => setOpen(true)}>Create page</button>
   );
 }

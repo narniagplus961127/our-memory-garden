@@ -47,6 +47,12 @@ Standards and spec review against owner-selected commit `0352905` completed. Cor
 
 The owner replied “approved” to the final design and core editor flow review at commit `e11a9c0`. This approves the 53-screen FigCraft prototype and closes ticket 01. The approval supersedes the pending-review statements above and unblocks ticket 02. Later-ticket design refinements and production validation remain as recorded in `docs/design-spec-review.md`.
 
+### Approved-design alignment — 2026-11-01
+
+Rechecked the delivered application against native frames 6/14 (Overview), 7/15 (Templates), 726/730 (Pages), 5/13 and recovery references (authentication), and 1394 (mobile website menu). Closed the five structural omissions identified in the implementation audit: direct creation and recent real page cards; visual template starting points; responsive stacked page cards; centered cream authentication forms with full-width primary actions; and a full-width parchment website menu with explicit Back. The native FigCraft document was not changed. Real template names, page data, visibility, homepage markers and nested filtered navigation replace prototype examples.
+
+Desktop/mobile browser evidence is retained under ignored `work/design-alignment-evidence/`. Application authentication, privacy and editor persistence remain governed by the specification; hosted verification remains ticket 13. See `docs/design-spec-review.md` for implementation adaptations and validation.
+
 ## Answer
 
 The desktop/mobile FigCraft prototype, general styles, brand assets and core editor flow are owner approved. All ticket 01 acceptance criteria are complete.
