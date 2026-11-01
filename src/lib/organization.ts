@@ -3,6 +3,10 @@ export type PageDetails = {
   date: string | null;
   categoryId: string | null;
   coverPhotoId: string | null;
+  sharingTitle: string | null;
+  sharingDescription: string | null;
+  sharingCoverPhotoId: string | null;
+  allowIndexing: boolean;
 };
 export type GridSelection = {
   mode: "manual" | "category";

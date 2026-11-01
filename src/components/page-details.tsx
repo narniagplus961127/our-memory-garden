@@ -8,10 +8,12 @@ import { detailsOf, usePageDetails } from "./use-page-details";
 export function PageDetails({
   page,
   accountId,
+  visibility,
   onSaved,
 }: {
   page: GardenPage;
   accountId: string;
+  visibility: GardenPage["visibility"];
   onSaved: (page: GardenPage) => void;
 }) {
   const save = usePageDetails(page, accountId, onSaved),
@@ -138,6 +140,76 @@ export function PageDetails({
         value={details.coverPhotoId ?? ""}
         onChange={(value) => change({ coverPhotoId: value || null })}
       />
+      <h3>Search and sharing</h3>
+      {visibility === "private" && (
+        <p className="muted">
+          Private pages cannot be shared or indexed. Make this page public to
+          edit its discovery settings.
+        </p>
+      )}
+      <fieldset
+        className="sharing-fields field"
+        disabled={visibility !== "public"}
+        aria-label="Search and sharing"
+      >
+        <label htmlFor="sharing-title">
+          Sharing title <small>(optional)</small>
+        </label>
+        <input
+          id="sharing-title"
+          aria-label="Sharing title"
+          maxLength={200}
+          value={details.sharingTitle ?? ""}
+          placeholder={page.title}
+          onChange={(e) => change({ sharingTitle: e.target.value || null })}
+        />
+        <p className="muted">
+          <small>Leave blank to use the page title.</small>
+        </p>
+        <label htmlFor="sharing-description">
+          Sharing description <small>(optional)</small>
+        </label>
+        <textarea
+          id="sharing-description"
+          aria-label="Sharing description"
+          maxLength={2000}
+          value={details.sharingDescription ?? ""}
+          onChange={(e) =>
+            change({ sharingDescription: e.target.value || null })
+          }
+        />
+        <div role="group" aria-label="Sharing cover photo">
+          <span className="field-label">
+            Sharing cover photo <small>(optional)</small>
+          </span>
+          <PhotoPicker
+            label="Sharing cover photo"
+            value={details.sharingCoverPhotoId ?? ""}
+            onChange={(value) => change({ sharingCoverPhotoId: value || null })}
+          />
+          <p className="muted">
+            <small>
+              Leave blank to use the page cover. A cover used on a public page
+              is publicly accessible.
+            </small>
+          </p>
+        </div>
+        <label className="sharing-indexing" htmlFor="allow-indexing">
+          <input
+            id="allow-indexing"
+            type="checkbox"
+            checked={details.allowIndexing}
+            onChange={(e) => change({ allowIndexing: e.target.checked })}
+          />
+          Allow search indexing
+        </label>
+        <p className="muted">
+          <small>
+            Search engines may take time to update. Turning indexing off does
+            not make a public page private.
+          </small>
+        </p>
+      </fieldset>
       {save.copies.map((copy) => (
         <div className="editor-recovery-notice" key={copy.key}>
           <p>
@@ -183,10 +255,24 @@ export function PageDetails({
                 <p>
                   Date: {value.date ?? "No date"}
                   <br />
+                  Sharing title: {value.sharingTitle ?? "Use page title"}
+                  <br />
+                  Sharing description:{" "}
+                  {value.sharingDescription ?? "Use garden description"}
+                  <br />
+                  Search indexing: {value.allowIndexing ? "Allowed" : "Off"}
+                  <br />
                   Category:{" "}
                   {list.find((c) => c.id === value.categoryId)?.name ??
                     "No category"}
                 </p>
+                {value.sharingCoverPhotoId && (
+                  <img
+                    className="details-cover"
+                    src={displayPhotoUrl(value.sharingCoverPhotoId)}
+                    alt={label + " sharing cover"}
+                  />
+                )}
                 {value.coverPhotoId ? (
                   <img
                     className="details-cover"
