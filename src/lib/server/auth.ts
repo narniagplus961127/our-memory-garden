@@ -12,7 +12,6 @@ function neonAuth() {
     baseUrl: process.env.NEON_AUTH_BASE_URL!,
     cookies: {
       secret: process.env.NEON_AUTH_COOKIE_SECRET!,
-      sessionDataTtl: 0,
     },
   }));
 }
@@ -27,7 +26,11 @@ export async function currentAdministrator(
             headers: requestHeaders ?? (await headers()),
           })
         )?.user
-      : (await neonAuth().getSession()).data?.user;
+      : (
+          await neonAuth().getSession({
+            query: { disableCookieCache: "true" },
+          })
+        ).data?.user;
   if (!user) return null;
   const rows =
     await database()`select user_id from garden_administrators where user_id=${user.id} limit 1`;

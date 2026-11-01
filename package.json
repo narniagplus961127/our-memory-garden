@@ -12,7 +12,8 @@
     "test:api": "node --env-file=.env.test --test tests/service/*.test.mjs",
     "db:migrate": "node --env-file=.env.local scripts/migrate.mjs",
     "db:local-auth": "node --env-file=.env.test scripts/setup-local-auth.mjs",
-    "format:check": "prettier --check src tests scripts package.json tsconfig.json next.config.ts playwright.config.ts postcss.config.mjs"
+    "format:check": "prettier --check src tests scripts package.json tsconfig.json next.config.ts playwright.config.ts postcss.config.mjs",
+    "test:neon": "node --env-file=.env.test --test tests/runtime/neon-auth.test.mjs"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "3.1159.0",
