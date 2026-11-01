@@ -307,7 +307,7 @@ function Workspace({
             </button>
           </div>
           <div hidden={panel !== "settings" || Boolean(selected)}>
-            <PageAddress page={page} />
+            <PageAddress page={page} accountId={accountId} />
             <PageDetails
               page={{ ...page, title }}
               accountId={accountId}

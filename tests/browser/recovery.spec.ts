@@ -812,3 +812,505 @@ test("another administrator cannot recover this account's device draft", async (
     page.getByRole("textbox", { name: "Text content", exact: true }),
   ).toHaveValue("");
 });
+
+test("recovering another tab reads its newest draft and retains later source edits", async ({
+  page,
+  context,
+}) => {
+  const created = await fixture(page);
+  await page.route("**/api/pages/*", (route) =>
+    route.request().method() === "PATCH"
+      ? route.abort("internetdisconnected")
+      : route.continue(),
+  );
+  await editText(page, "First source rosemary");
+  await expect(
+    page.getByRole("status", { name: "Auto-save status" }),
+  ).toHaveText("Not saved");
+  const recipient = await context.newPage();
+  await recipient.goto("/admin/pages/" + created.id);
+  const recover = recipient.getByRole("button", {
+    name: "Recover device copy",
+    exact: true,
+  });
+  await expect(recover).toBeVisible();
+  await page
+    .getByRole("textbox", { name: "Text content", exact: true })
+    .fill("Newest source rosemary");
+  await expect(
+    page.getByRole("status", { name: "Auto-save status" }),
+  ).toHaveText("Not saved");
+  let release!: () => void;
+  const gate = new Promise<void>((resolve) => (release = resolve));
+  await recipient.route("**/api/pages/*", async (route) => {
+    if (route.request().method() !== "PATCH") return route.continue();
+    await gate;
+    await route.continue();
+  });
+  try {
+    await recover.click();
+    await recipient.getByRole("button", { name: "Open content panel" }).click();
+    await recipient
+      .getByRole("button", { name: "Select Text 1", exact: true })
+      .click();
+    await recipient
+      .getByRole("button", { name: "Open settings panel" })
+      .click();
+    await expect(
+      recipient.getByRole("textbox", { name: "Text content", exact: true }),
+    ).toHaveValue("Newest source rosemary");
+    await page
+      .getByRole("textbox", { name: "Text content", exact: true })
+      .fill("Later unacknowledged source rosemary");
+    await expect(
+      page.getByRole("status", { name: "Auto-save status" }),
+    ).toHaveText("Not saved");
+  } finally {
+    release();
+  }
+  await expect(
+    recipient.getByRole("status", { name: "Auto-save status" }),
+  ).toHaveText("Saved");
+  expect(
+    (await (await recipient.request.get("/api/pages/" + created.id)).json())
+      .content.content[0].props.text,
+  ).toBe("Newest source rosemary");
+  await page.reload();
+  await expect(
+    page.getByRole("status", { name: "Auto-save status" }),
+  ).toHaveText("Not saved");
+  await page
+    .getByRole("button", { name: "Select Text 1", exact: true })
+    .click();
+  await page.getByRole("button", { name: "Open settings panel" }).click();
+  await expect(
+    page.getByRole("textbox", { name: "Text content", exact: true }),
+  ).toHaveValue("Later unacknowledged source rosemary");
+});
+
+test("other device recovery waits until current unsaved and in-flight work is saved", async ({
+  page,
+  context,
+}) => {
+  const created = await fixture(page);
+  await page.route("**/api/pages/*", (route) =>
+    route.request().method() === "PATCH"
+      ? route.abort("internetdisconnected")
+      : route.continue(),
+  );
+  await editText(page, "Other tab's rosemary");
+  await expect(
+    page.getByRole("status", { name: "Auto-save status" }),
+  ).toHaveText("Not saved");
+  const current = await context.newPage();
+  await current.goto("/admin/pages/" + created.id);
+  const recover = current.getByRole("button", {
+    name: "Recover device copy",
+    exact: true,
+  });
+  await expect(recover).toBeEnabled();
+  let release!: () => void, entered!: () => void;
+  const gate = new Promise<void>((resolve) => (release = resolve)),
+    started = new Promise<void>((resolve) => (entered = resolve));
+  await current.route("**/api/pages/*", async (route) => {
+    if (route.request().method() !== "PATCH") return route.continue();
+    entered();
+    await gate;
+    await route.abort("internetdisconnected");
+  });
+  try {
+    await editText(current, "Current tab's irreplaceable fern");
+    await started;
+    await expect(recover).toBeDisabled();
+    await expect(
+      current.getByText(
+        "Save or resolve your current work before recovering another copy.",
+      ),
+    ).toBeVisible();
+  } finally {
+    release();
+  }
+  await expect(
+    current.getByRole("status", { name: "Auto-save status" }),
+  ).toHaveText("Not saved");
+  await expect(recover).toBeDisabled();
+  await current.reload();
+  await expect(
+    current.getByRole("status", { name: "Auto-save status" }),
+  ).toHaveText("Not saved");
+  await expect(recover).toBeDisabled();
+  await current
+    .getByRole("button", { name: "Select Text 1", exact: true })
+    .click();
+  await current.getByRole("button", { name: "Open settings panel" }).click();
+  await expect(
+    current.getByRole("textbox", { name: "Text content", exact: true }),
+  ).toHaveValue("Current tab's irreplaceable fern");
+  await current.unroute("**/api/pages/*");
+  await current
+    .getByRole("button", { name: "Retry save", exact: true })
+    .click();
+  await expect(
+    current.getByRole("status", { name: "Auto-save status" }),
+  ).toHaveText("Saved");
+  await expect(recover).toBeEnabled();
+  expect(
+    (await (await current.request.get("/api/pages/" + created.id)).json())
+      .content.content[0].props.text,
+  ).toBe("Current tab's irreplaceable fern");
+  const acknowledged = await (
+    await current.request.get("/api/pages/" + created.id)
+  ).json();
+  acknowledged.content.content[0].props.text =
+    "Remote lily after acknowledgement";
+  expect(
+    (
+      await current.request.patch("/api/pages/" + created.id, {
+        headers: { Origin: env.NEXT_PUBLIC_APP_URL },
+        data: { version: acknowledged.version, content: acknowledged.content },
+      })
+    ).status(),
+  ).toBe(200);
+  await current
+    .getByRole("textbox", { name: "Text content", exact: true })
+    .fill("Current contested fern");
+  const comparison = current.getByRole("region", {
+    name: "Resolve editing conflicts",
+  });
+  await expect(comparison).toBeVisible();
+  await expect(recover).toBeDisabled();
+  await comparison
+    .getByRole("button", { name: "Keep mine", exact: true })
+    .click();
+  await expect(
+    current.getByRole("status", { name: "Auto-save status" }),
+  ).toHaveText("Saved");
+  await expect(recover).toBeEnabled();
+});
+
+test("failed and unfinished page addresses survive refresh and retry", async ({
+  page,
+}) => {
+  const created = await fixture(page),
+    address = page.getByLabel("Page address", { exact: true });
+  await page.getByRole("button", { name: "Page details", exact: true }).click();
+  await page.route("**/api/pages/*/address", (route) =>
+    route.abort("internetdisconnected"),
+  );
+  const wanted = "recovered-rosemary-" + Date.now();
+  await address.fill(wanted);
+  await expect(page.getByRole("status", { name: "Address status" })).toHaveText(
+    "Not saved",
+  );
+  await page.reload();
+  await page.getByRole("button", { name: "Page details", exact: true }).click();
+  await expect(address).toHaveValue(wanted);
+  await expect(page.getByRole("status", { name: "Address status" })).toHaveText(
+    "Not saved",
+  );
+  await address.fill("unfinished address-");
+  await page.reload();
+  await page.getByRole("button", { name: "Page details", exact: true }).click();
+  await expect(address).toHaveValue("unfinished address-");
+  await expect(page.getByRole("status", { name: "Address status" })).toHaveText(
+    "Not saved",
+  );
+  await address.fill(wanted);
+  await expect(page.getByRole("status", { name: "Address status" })).toHaveText(
+    "Not saved",
+  );
+  await page.unroute("**/api/pages/*/address");
+  await page
+    .getByRole("button", { name: "Retry address", exact: true })
+    .click();
+  await expect(page.getByRole("status", { name: "Address status" })).toHaveText(
+    "Saved",
+  );
+  expect(
+    (await (await page.request.get("/api/pages/" + created.id)).json()).slug,
+  ).toBe(wanted);
+  await page.reload();
+  await page.getByRole("button", { name: "Page details", exact: true }).click();
+  await expect(address).toHaveValue(wanted);
+  await expect(page.getByRole("status", { name: "Address status" })).toHaveText(
+    "Saved",
+  );
+});
+
+test("an invalidated source device copy is retained without restoring its cached draft", async ({
+  page,
+  context,
+}) => {
+  const created = await fixture(page);
+  await page.route("**/api/pages/*", (route) =>
+    route.request().method() === "PATCH"
+      ? route.abort("internetdisconnected")
+      : route.continue(),
+  );
+  await editText(page, "Cached draft must not be restored");
+  await expect(
+    page.getByRole("status", { name: "Auto-save status" }),
+  ).toHaveText("Not saved");
+  const recipient = await context.newPage();
+  await recipient.goto("/admin/pages/" + created.id);
+  const recover = recipient.getByRole("button", {
+    name: "Recover device copy",
+    exact: true,
+  });
+  await expect(recover).toBeVisible();
+  const sourceKey = await page.evaluate((id) => {
+    const key = Object.keys(localStorage).find(
+      (key) => key.startsWith("garden-recovery:") && key.includes(id),
+    )!;
+    localStorage.setItem(key, '{"invalidated":"retain these bytes"}');
+    return key;
+  }, created.id);
+  await recover.click();
+  await expect(
+    recipient.getByRole("status", { name: "Auto-save status" }),
+  ).toHaveText("Saved");
+  expect(
+    await recipient.evaluate((key) => localStorage.getItem(key), sourceKey),
+  ).toBe('{"invalidated":"retain these bytes"}');
+  expect(
+    (await (await recipient.request.get("/api/pages/" + created.id)).json())
+      .content.content[0].props.text,
+  ).not.toBe("Cached draft must not be restored");
+});
+
+for (const choice of ["mine", "saved"] as const)
+  test(
+    "recovered page address requires a " +
+      choice +
+      " choice after a remote change",
+    async ({ page }, testInfo) => {
+      const created = await fixture(page),
+        path = "/api/pages/" + created.id + "/address";
+      await page
+        .getByRole("button", { name: "Page details", exact: true })
+        .click();
+      await page.route("**/api/pages/*/address", (route) =>
+        route.abort("internetdisconnected"),
+      );
+      const wanted = "local-rosemary-" + Date.now(),
+        remote = "remote-fern-" + Date.now();
+      await page.getByLabel("Page address", { exact: true }).fill(wanted);
+      await expect(
+        page.getByRole("status", { name: "Address status" }),
+      ).toHaveText("Not saved");
+      expect(
+        (
+          await page.request.patch(path, {
+            headers: { Origin: env.NEXT_PUBLIC_APP_URL },
+            data: { slug: remote, expectedSlug: created.slug },
+          })
+        ).status(),
+      ).toBe(200);
+      await page.unroute("**/api/pages/*/address");
+      await page.reload();
+      await page
+        .getByRole("button", { name: "Page details", exact: true })
+        .click();
+      await expect(
+        page.getByRole("status", { name: "Address status" }),
+      ).toHaveText("Address conflict · unsaved");
+      await expect(
+        page.getByLabel("Page address", { exact: true }),
+      ).toHaveValue(wanted);
+      await expect(
+        page.getByText(
+          "The saved address is /garden/" +
+            remote +
+            ". Your unsaved address is /garden/" +
+            wanted +
+            ".",
+        ),
+      ).toBeVisible();
+      expect(
+        (await (await page.request.get("/api/pages/" + created.id)).json())
+          .slug,
+      ).toBe(remote);
+      await page
+        .locator(".page-address")
+        .screenshot({ path: testInfo.outputPath("address-conflict.png") });
+      await page
+        .getByRole("button", {
+          name: choice === "mine" ? "Keep my address" : "Use saved address",
+          exact: true,
+        })
+        .click();
+      await expect(
+        page.getByRole("status", { name: "Address status" }),
+      ).toHaveText("Saved");
+      expect(
+        (await (await page.request.get("/api/pages/" + created.id)).json())
+          .slug,
+      ).toBe(choice === "mine" ? wanted : remote);
+      expect(
+        await page.evaluate(
+          (id) =>
+            Object.keys(localStorage).filter((key) =>
+              key.includes(id + ":address:"),
+            ),
+          created.id,
+        ),
+      ).toEqual([]);
+    },
+  );
+
+test("address recovery recognizes a lost acknowledgement without another write", async ({
+  page,
+}) => {
+  const created = await fixture(page),
+    wanted = "already-saved-rosemary-" + Date.now();
+  let writes = 0;
+  await page.getByRole("button", { name: "Page details", exact: true }).click();
+  await page.route("**/api/pages/*/address", async (route) => {
+    writes++;
+    expect((await route.fetch()).status()).toBe(200);
+    await route.abort("internetdisconnected");
+  });
+  await page.getByLabel("Page address", { exact: true }).fill(wanted);
+  await expect(page.getByRole("status", { name: "Address status" })).toHaveText(
+    "Not saved",
+  );
+  await page.reload();
+  await page.getByRole("button", { name: "Page details", exact: true }).click();
+  await expect(page.getByLabel("Page address", { exact: true })).toHaveValue(
+    wanted,
+  );
+  await expect(page.getByRole("status", { name: "Address status" })).toHaveText(
+    "Saved",
+  );
+  expect(writes).toBe(1);
+  expect(
+    await page.evaluate(
+      (id) =>
+        Object.keys(localStorage).filter((key) =>
+          key.includes(id + ":address:"),
+        ),
+      created.id,
+    ),
+  ).toEqual([]);
+});
+
+test("an older address acknowledgement cannot clear newer unfinished input", async ({
+  page,
+}) => {
+  const created = await fixture(page),
+    first = "first-address-" + Date.now();
+  let release!: () => void,
+    entered!: () => void,
+    initial = true;
+  const gate = new Promise<void>((resolve) => (release = resolve)),
+    started = new Promise<void>((resolve) => (entered = resolve));
+  await page.route("**/api/pages/*/address", async (route) => {
+    if (!initial) return route.abort("internetdisconnected");
+    initial = false;
+    const response = await route.fetch();
+    entered();
+    await gate;
+    await route.fulfill({ response });
+  });
+  await page.getByRole("button", { name: "Page details", exact: true }).click();
+  await page.getByLabel("Page address", { exact: true }).fill(first);
+  await started;
+  await page
+    .getByLabel("Page address", { exact: true })
+    .fill("new unfinished address-");
+  release();
+  await expect(page.getByRole("status", { name: "Address status" })).toHaveText(
+    "Not saved",
+  );
+  await page.reload();
+  await page.getByRole("button", { name: "Page details", exact: true }).click();
+  await expect(page.getByLabel("Page address", { exact: true })).toHaveValue(
+    "new unfinished address-",
+  );
+  expect(
+    (await (await page.request.get("/api/pages/" + created.id)).json()).slug,
+  ).toBe(first);
+});
+
+test("closed-tab address copies stay account scoped and clear on sign-out before late responses", async ({
+  page,
+  context,
+  browser,
+}) => {
+  const created = await fixture(page),
+    wanted = "closed-tab-address-" + Date.now();
+  await page.getByRole("button", { name: "Page details", exact: true }).click();
+  await page.route("**/api/pages/*/address", (route) =>
+    route.abort("internetdisconnected"),
+  );
+  await page.getByLabel("Page address", { exact: true }).fill(wanted);
+  await expect(page.getByRole("status", { name: "Address status" })).toHaveText(
+    "Not saved",
+  );
+  const addressCopies = await page.evaluate(() =>
+    Object.entries(localStorage).filter(([key]) => key.includes(":address:")),
+  );
+  const otherContext = await browser.newContext(),
+    other = await otherContext.newPage();
+  await otherContext.addInitScript((copies) => {
+    for (const [key, value] of copies) localStorage.setItem(key, value);
+  }, addressCopies);
+  await login(other, "OTHER");
+  await other.goto(env.NEXT_PUBLIC_APP_URL + "/admin/pages/" + created.id);
+  await other
+    .getByRole("button", { name: "Page details", exact: true })
+    .click();
+  await expect(other.getByLabel("Page address", { exact: true })).toHaveValue(
+    created.slug,
+  );
+  await expect(
+    other.getByRole("button", {
+      name: "Recover address device copy",
+      exact: true,
+    }),
+  ).toHaveCount(0);
+  await otherContext.close();
+  await page.close();
+  const recipient = await context.newPage();
+  await recipient.goto("/admin/pages/" + created.id);
+  await recipient
+    .getByRole("button", { name: "Page details", exact: true })
+    .click();
+  let release!: () => void, entered!: () => void;
+  const gate = new Promise<void>((resolve) => (release = resolve)),
+    started = new Promise<void>((resolve) => (entered = resolve));
+  await recipient.route("**/api/pages/*/address", async (route) => {
+    const response = await route.fetch();
+    entered();
+    await gate;
+    try {
+      await route.fulfill({ response });
+    } catch {}
+  });
+  await recipient
+    .getByRole("button", { name: "Recover address device copy", exact: true })
+    .click();
+  await expect(
+    recipient.getByLabel("Page address", { exact: true }),
+  ).toHaveValue(wanted);
+  await started;
+  await recipient
+    .getByLabel("Page address", { exact: true })
+    .fill("new private unfinished address-");
+  const signout = await context.newPage();
+  await signout.goto("/admin/pages");
+  const menu = signout.getByLabel("Open administration menu");
+  if (await menu.isVisible()) await menu.click();
+  await signout.getByRole("button", { name: "Sign out", exact: true }).click();
+  await expect(signout).toHaveURL(/\/login$/);
+  release();
+  await expect(recipient).toHaveURL(/\/login$/);
+  await signout.reload();
+  expect(
+    await signout.evaluate(() =>
+      Object.keys(localStorage).filter((key) =>
+        key.startsWith("garden-recovery:"),
+      ),
+    ),
+  ).toEqual([]);
+});

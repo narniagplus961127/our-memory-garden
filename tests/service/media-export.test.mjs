@@ -17,10 +17,10 @@ export async function call(path, method = "GET", data, cookie) {
     body: data === undefined ? undefined : JSON.stringify(data),
   });
 }
-export async function login() {
+export async function login(prefix = "ADMIN") {
   const r = await call("/api/auth/sign-in/email", "POST", {
-    email: process.env.TEST_ADMIN_EMAIL,
-    password: process.env.TEST_ADMIN_PASSWORD,
+    email: process.env["TEST_" + prefix + "_EMAIL"],
+    password: process.env["TEST_" + prefix + "_PASSWORD"],
   });
   assert.equal(r.status, 200);
   return r.headers
@@ -946,4 +946,61 @@ test("actual history/trash restoration preserves photo bytes and permanent page 
       .status,
     200,
   );
+});
+
+test("retry during failed archive cleanup leaves a downloadable exact independent backup", async () => {
+  const cookie = await login(),
+    other = await login("OTHER"),
+    original = await photo(cookie, "cleanup-race-original.png");
+  let job = await freshExport(cookie);
+  const endpoint = process.env.AWS_ENDPOINT_URL_S3;
+  assert.equal(new URL(endpoint).hostname, "127.0.0.1");
+  assert.equal(
+    (
+      await fetch(endpoint + "/__fixture/archive-cleanup-race", {
+        method: "PUT",
+      })
+    ).status,
+    200,
+  );
+  const first = call("/api/exports/" + job.id + "/prepare", "POST", {}, cookie);
+  try {
+    await assertHeld();
+    const retry = await call(
+      "/api/exports/" + job.id + "/prepare",
+      "POST",
+      {},
+      other,
+    );
+    assert.equal(retry.status, 200);
+    await retry.json();
+  } finally {
+    await fetch(endpoint + "/__fixture/archive-cleanup-race", {
+      method: "DELETE",
+    });
+    assert.equal((await first).status, 200);
+  }
+  job = await prepare(cookie, job);
+  assert.equal(job.status, "ready");
+  const { manifest, files } = await backup(cookie, job);
+  assert.equal(manifest.complete, true);
+  const record = manifest.inventory.find(
+    (record) => record.photo?.id === original.id,
+  );
+  assert.ok(record);
+  assert.deepEqual(files.get(record.photo.file), original.bytes);
+
+  async function assertHeld() {
+    const deadline = Date.now() + 20000;
+    while (Date.now() < deadline) {
+      const state = await (
+        await fetch(endpoint + "/__fixture/archive-cleanup-race")
+      ).json();
+      if (state.held) return;
+      await new Promise((resolve) => setTimeout(resolve, 25));
+    }
+    assert.fail(
+      "failed archive cleanup did not reach the controlled storage gate",
+    );
+  }
 });
