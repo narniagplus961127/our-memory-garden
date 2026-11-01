@@ -81,6 +81,42 @@ export async function restoreVersion(
     if (!r) throw new RequestError(404, "Version not found.");
     const category = r.snapshot.category_id ?? null;
     const cover = r.snapshot.cover_photo_id ?? null;
+    const sharingTitle = Object.hasOwn(r.snapshot, "sharing_title")
+      ? (r.snapshot.sharing_title ?? null)
+      : (page.sharing_title ?? null);
+    const sharingDescription = Object.hasOwn(r.snapshot, "sharing_description")
+      ? (r.snapshot.sharing_description ?? null)
+      : (page.sharing_description ?? null);
+    const sharingCover = Object.hasOwn(r.snapshot, "sharing_cover_photo_id")
+      ? (r.snapshot.sharing_cover_photo_id ?? null)
+      : (page.sharing_cover_photo_id ?? null);
+    const allowIndexing = Object.hasOwn(r.snapshot, "allow_indexing")
+      ? r.snapshot.allow_indexing
+      : (page.allow_indexing ?? true);
+    if (
+      (sharingTitle !== null &&
+        (typeof sharingTitle !== "string" || sharingTitle.length > 200)) ||
+      (sharingDescription !== null &&
+        (typeof sharingDescription !== "string" ||
+          sharingDescription.length > 2000)) ||
+      (sharingCover !== null &&
+        (typeof sharingCover !== "string" || !validId.test(sharingCover))) ||
+      typeof allowIndexing !== "boolean"
+    )
+      throw new RequestError(
+        409,
+        "These saved sharing settings are invalid. Current content is preserved.",
+      );
+    if (
+      sharingCover &&
+      !(
+        await sql`select id from media_photos where id=${sharingCover} and status='ready' for share`
+      ).length
+    )
+      throw new RequestError(
+        409,
+        "This saved sharing cover photo is unavailable. Current content is preserved.",
+      );
     if (
       category &&
       !(
@@ -103,7 +139,7 @@ export async function restoreVersion(
       );
     const [saved] = await sql<
       GardenPage[]
-    >`update pages set title=${r.snapshot.title},content=${sql.json(r.snapshot.content)},page_date=${r.snapshot.page_date ?? null},category_id=${category},cover_photo_id=${cover},metadata_version=metadata_version+1,version=version+1,updated_at=now(),updated_by=${admin.id},edit_reason='restore',edit_group_id=${crypto.randomUUID()},editor_session_id=null where id=${id} returning *`;
+    >`update pages set title=${r.snapshot.title},content=${sql.json(r.snapshot.content)},page_date=${r.snapshot.page_date ?? null},category_id=${category},cover_photo_id=${cover},sharing_title=${sharingTitle},sharing_description=${sharingDescription},sharing_cover_photo_id=${sharingCover},allow_indexing=${allowIndexing},metadata_version=metadata_version+1,version=version+1,updated_at=now(),updated_by=${admin.id},edit_reason='restore',edit_group_id=${crypto.randomUUID()},editor_session_id=null where id=${id} returning *`;
     return saved;
   });
 }

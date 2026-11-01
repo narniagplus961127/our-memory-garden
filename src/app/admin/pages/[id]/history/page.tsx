@@ -90,7 +90,37 @@ export default async function History({
                     {categoryList.find((c) => c.id === selected.category_id)
                       ?.name ?? "No category"}
                   </dd>
+                  <dt>Sharing title</dt>
+                  <dd>
+                    {Object.hasOwn(selected, "sharing_title")
+                      ? (selected.sharing_title ?? "Uses page title")
+                      : "Not recorded; current settings kept"}
+                  </dd>
+                  <dt>Sharing description</dt>
+                  <dd>
+                    {Object.hasOwn(selected, "sharing_description")
+                      ? (selected.sharing_description ??
+                        "Uses garden description")
+                      : "Not recorded; current settings kept"}
+                  </dd>
+                  <dt>Search indexing</dt>
+                  <dd>
+                    {Object.hasOwn(selected, "allow_indexing")
+                      ? selected.allow_indexing
+                        ? "Allowed for public pages"
+                        : "No indexing requested"
+                      : "Not recorded; current settings kept"}
+                  </dd>
                 </dl>
+                {selected.sharing_cover_photo_id && (
+                  <figure className="history-cover">
+                    <img
+                      src={displayPhotoUrl(selected.sharing_cover_photo_id)}
+                      alt="Saved sharing cover"
+                    />
+                    <figcaption>Saved sharing cover photo</figcaption>
+                  </figure>
+                )}
                 {selected.cover_photo_id && (
                   <figure className="history-cover">
                     <img

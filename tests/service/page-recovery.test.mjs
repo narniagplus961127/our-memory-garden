@@ -811,3 +811,258 @@ test("inbound warnings include nested text, button, manual/category grids and me
     );
   }
 });
+test("trusted sharing restoration recovers overrides, false indexing and cover, while explicit null values clear them", async () => {
+  const owner = await login();
+  const sharp = (await import("sharp")).default;
+  const bytes = await sharp({
+    create: { width: 32, height: 24, channels: 3, background: "#769270" },
+  })
+    .jpeg()
+    .toBuffer();
+  const upload = await (
+    await call(
+      "/api/media/uploads",
+      "POST",
+      { name: "sharing-history.jpg", size: bytes.length, type: "image/jpeg" },
+      owner,
+    )
+  ).json();
+  assert.equal(
+    (
+      await fetch(upload.uploadUrl, {
+        method: "PUT",
+        headers: { "Content-Type": "image/jpeg" },
+        body: bytes,
+      })
+    ).status,
+    200,
+  );
+  assert.equal(
+    (await call("/api/media/" + upload.id + "/complete", "POST", {}, owner))
+      .status,
+    200,
+  );
+  let p = await create(owner, "Sharing recovery");
+  const path = "/api/pages/" + p.id;
+  const original = p.version;
+  const details = { date: null, categoryId: null, coverPhotoId: null };
+  p = await (
+    await call(
+      path + "/details",
+      "PATCH",
+      {
+        ...details,
+        metadataVersion: p.metadata_version,
+        sharingTitle: "Earlier sharing title",
+        sharingDescription: "Earlier sharing description",
+        sharingCoverPhotoId: upload.id,
+        allowIndexing: false,
+      },
+      owner,
+    )
+  ).json();
+  const chosen = p.version;
+  p = await (
+    await call(
+      path + "/details",
+      "PATCH",
+      {
+        ...details,
+        metadataVersion: p.metadata_version,
+        sharingTitle: "Current sharing title",
+        sharingDescription: "Current sharing description",
+        sharingCoverPhotoId: null,
+        allowIndexing: true,
+      },
+      owner,
+    )
+  ).json();
+  const epoch = p.metadata_version;
+  const r = await call(
+    path + "/history/" + chosen,
+    "POST",
+    { version: p.version, confirm: true },
+    owner,
+  );
+  assert.equal(r.status, 200);
+  p = await r.json();
+  assert.equal(p.sharing_title, "Earlier sharing title");
+  assert.equal(p.sharing_description, "Earlier sharing description");
+  assert.equal(p.sharing_cover_photo_id, upload.id);
+  assert.equal(p.allow_indexing, false);
+  assert.equal(p.metadata_version, epoch + 1);
+  assert.equal(p.visibility, "private");
+  assert.equal(
+    (await call("/api/media/" + upload.id + "/display")).status,
+    404,
+  );
+  p = await (
+    await call(
+      path,
+      "PATCH",
+      { version: p.version, visibility: "public" },
+      owner,
+    )
+  ).json();
+  assert.equal(
+    (await call("/api/media/" + upload.id + "/display")).status,
+    200,
+  );
+  let html = await (
+    await fetch(base + "/garden/" + p.slug, {
+      headers: { "User-Agent": "Twitterbot" },
+    })
+  ).text();
+  assert.ok(
+    html.includes('property="og:title" content="Earlier sharing title"'),
+  );
+  assert.ok(html.includes('name="robots" content="noindex, follow"'));
+  p = await (
+    await call(
+      path + "/history/" + original,
+      "POST",
+      { version: p.version, confirm: true },
+      owner,
+    )
+  ).json();
+  assert.equal(p.sharing_title, null);
+  assert.equal(p.sharing_description, null);
+  assert.equal(p.sharing_cover_photo_id, null);
+  assert.equal(p.allow_indexing, true);
+  assert.equal(p.visibility, "public");
+  assert.equal(
+    (await call("/api/media/" + upload.id + "/display")).status,
+    404,
+  );
+});
+test("pre-sharing snapshots preserve every current sharing setting without resetting the metadata counter", async () => {
+  const owner = await login();
+  let fixture;
+  try {
+    fixture = JSON.parse(
+      await (
+        await import("node:fs/promises")
+      ).readFile("work/legacy-recovery.json", "utf8"),
+    );
+  } catch (e) {
+    if (e.code !== "ENOENT") throw e;
+    let p = await create(owner, "Legacy sharing fixture");
+    const revision = p.version;
+    p = await (
+      await call(
+        "/api/pages/" + p.id,
+        "PATCH",
+        { version: p.version, text: "Legacy fixture" },
+        owner,
+      )
+    ).json();
+    const url = new URL(process.env.DATABASE_URL);
+    assert.ok(["127.0.0.1", "localhost"].includes(url.hostname));
+    const sql = (await import("postgres")).default(url.href, {
+      max: 1,
+      ssl: false,
+    });
+    try {
+      // Fixture preparation only: reproduce the exact pre-0012 row shape. All behavior is asserted through HTTP.
+      await sql`update page_versions set snapshot=snapshot-array['sharing_title','sharing_description','sharing_cover_photo_id','allow_indexing'] where page_id=${p.id} and version=${revision}`;
+    } finally {
+      await sql.end();
+    }
+    fixture = { id: p.id, revision };
+  }
+  const path = "/api/pages/" + fixture.id;
+  const old = await (
+    await call(path + "/history/" + fixture.revision, "GET", null, owner)
+  ).json();
+  for (const key of [
+    "sharing_title",
+    "sharing_description",
+    "sharing_cover_photo_id",
+    "allow_indexing",
+  ])
+    assert.equal(Object.hasOwn(old.snapshot, key), false);
+  const sharp = (await import("sharp")).default;
+  const bytes = await sharp({
+    create: { width: 24, height: 16, channels: 3, background: "#769270" },
+  })
+    .jpeg()
+    .toBuffer();
+  const upload = await (
+    await call(
+      "/api/media/uploads",
+      "POST",
+      {
+        name: "legacy-sharing-history.jpg",
+        size: bytes.length,
+        type: "image/jpeg",
+      },
+      owner,
+    )
+  ).json();
+  assert.equal(
+    (
+      await fetch(upload.uploadUrl, {
+        method: "PUT",
+        headers: { "Content-Type": "image/jpeg" },
+        body: bytes,
+      })
+    ).status,
+    200,
+  );
+  assert.equal(
+    (await call("/api/media/" + upload.id + "/complete", "POST", {}, owner))
+      .status,
+    200,
+  );
+  let p = await (await call(path, "GET", null, owner)).json();
+  p = await (
+    await call(
+      path + "/details",
+      "PATCH",
+      {
+        date: null,
+        categoryId: null,
+        coverPhotoId: null,
+        metadataVersion: p.metadata_version,
+        sharingTitle: "Keep current sharing title",
+        sharingDescription: "Keep current sharing description",
+        sharingCoverPhotoId: upload.id,
+        allowIndexing: false,
+      },
+      owner,
+    )
+  ).json();
+  const epoch = p.metadata_version;
+  const r = await call(
+    path + "/history/" + fixture.revision,
+    "POST",
+    { version: p.version, confirm: true, snapshot: { allow_indexing: true } },
+    owner,
+  );
+  assert.equal(r.status, 200);
+  const restored = await r.json();
+  assert.equal(restored.sharing_title, "Keep current sharing title");
+  assert.equal(
+    restored.sharing_description,
+    "Keep current sharing description",
+  );
+  assert.equal(restored.sharing_cover_photo_id, upload.id);
+  assert.equal(restored.allow_indexing, false);
+  assert.equal(restored.metadata_version, epoch + 1);
+  assert.equal(
+    (
+      await call(
+        path + "/details",
+        "PATCH",
+        {
+          date: null,
+          categoryId: null,
+          coverPhotoId: null,
+          metadataVersion: epoch,
+        },
+        owner,
+      )
+    ).status,
+    409,
+  );
+});
