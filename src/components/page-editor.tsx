@@ -196,6 +196,7 @@ function Workspace({
         <Link href="/admin/pages" className="editor-back">
           ← Pages
         </Link>
+        <Link href={"/admin/pages/" + page.id + "/history"}>History</Link>
         <div className="editor-page-identity">
           <label className="visually-hidden" htmlFor="page-title">
             Page title
