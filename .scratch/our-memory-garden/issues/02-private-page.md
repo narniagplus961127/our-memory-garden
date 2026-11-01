@@ -44,6 +44,12 @@ Validation: six desktop/mobile browser journeys passed, plus two service tests f
 
 Six matching desktop/mobile password confirmation, new-password and error states were added to FigCraft, and the mobile new-password render was inspected. The disposable Puck experiment remains recoverable on its prototype branch and is removed from the production integration tree. Puck editing itself begins in ticket 04; robust recovery/conflict resolution remains in ticket 09.
 
+### Authentication readiness and native submission — 2026-11-01
+
+A browser probe with JavaScript disabled and dummy credentials reproduced native GET submission of credential fields through the previous form. All three auth modes now declare POST and their matching auth endpoint, and the server-rendered form fields remain disabled until the client submit handler is ready. A no-JavaScript explanation is shown; the existing JSON sign-in and reset behavior is retained. Real credentials were not used for the probe or copied into evidence.
+
+Browser regressions first failed on the enabled server-rendered fields, then passed on both devices. They cover all three no-JavaScript forms and initialization with JavaScript assets held at the browser network boundary. Normal neutral confirmation, one-time password reset and return to sign-in still pass locally. Hosted managed-auth verification remains ticket 13.
+
 ## Answer
 
 Private-page creation, basic editing, password recovery and administrator authorization are implemented and verified locally on desktop/mobile. The hosted schema and first owner allowlist entry are provisioned; production owner sign-in remains an explicit deployment verification item. See `docs/implementation-notes.md` and the checked-in browser/service tests for the implementation handoff.

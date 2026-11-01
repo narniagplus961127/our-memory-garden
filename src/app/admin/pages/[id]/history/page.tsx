@@ -6,7 +6,11 @@ import {
   historicalPage,
   inboundReferences,
 } from "@/lib/server/page-recovery";
-import { RestoreVersion, TrashAction } from "@/components/page-recovery";
+import {
+  RecoveryPage,
+  RestoreVersion,
+  TrashAction,
+} from "@/components/page-recovery";
 import { GardenContent } from "@/components/garden-content";
 import { RequestError } from "@/lib/server/http";
 import { categories } from "@/lib/server/organization";
@@ -36,7 +40,7 @@ export default async function History({
       categories(),
     ]);
     return (
-      <>
+      <RecoveryPage page={page}>
         <Link href="/admin/pages">← Pages</Link>
         <div className="admin-heading">
           <div>
@@ -146,7 +150,7 @@ export default async function History({
           <h2>Page recovery</h2>
           <TrashAction page={page} references={references} />
         </section>
-      </>
+      </RecoveryPage>
     );
   } catch (e) {
     if (e instanceof RequestError && e.status === 404) notFound();

@@ -22,7 +22,7 @@ test("visibility and homepage controls keep visitors in step with saved content"
     .fill(env.TEST_ADMIN_PASSWORD);
   await page.getByRole("button", { name: "Sign in", exact: true }).click();
   await expect(page).toHaveURL(/\/admin\/pages$/);
-  await page.getByRole("button", { name: "Create page", exact: true }).click();
+  await page.getByRole("link", { name: "Create page", exact: true }).click();
   const title = "The gate at dusk " + Date.now();
   await page.getByLabel("Page title", { exact: true }).fill(title);
   await page.getByRole("button", { name: "Create private page" }).click();

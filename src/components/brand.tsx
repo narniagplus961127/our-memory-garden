@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { PublicMenu } from "./public-menu";
 export function Brand() {
   return (
     <Link className="brand" href="/">
@@ -36,14 +37,11 @@ export function PublicHeader({
           Garden dashboard
         </Link>
       </nav>
-      <details className="public-menu">
-        <summary aria-label="Open website menu">☰</summary>
-        <nav aria-label="Mobile navigation">
-          <Link href="/">Our garden</Link>
-          {menu(null)}
-          <Link href="/login">Garden dashboard</Link>
-        </nav>
-      </details>
+      <PublicMenu>
+        <Link href="/">Our garden</Link>
+        {menu(null)}
+        <Link href="/login">Garden dashboard</Link>
+      </PublicMenu>
     </header>
   );
 }

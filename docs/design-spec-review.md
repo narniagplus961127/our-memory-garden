@@ -62,3 +62,23 @@ This completes the listed routine visual-state gap; it does not claim working me
 Do not infer privacy enforcement from hidden navigation or prototype links. Verify server-side administrator authorization, Neon persistence, public/private media boundaries, real network failures and concurrent edits in the application. Use approved design components for the remaining states and resolve material design changes with the owner before implementing the affected interaction.
 
 The owner approved a backend change from Supabase to Neon in Singapore on 2026-10-28. This changes service integration, not the approved visual design. Managed authentication alone does not grant administrator access; the server must enforce the garden's administrator allowlist.
+
+### Delivered application alignment (2026-11-01)
+
+The implementation now follows the five previously omitted native surfaces: Overview 6/14 supplies direct creation and the five most recently updated real page cards; Templates 7/15 opens at `/admin/pages/new` with three existing visual starting points; Pages 726/730 uses stacked, linked cream cards with actual visibility, homepage and update information; sign-in/reset/recovery share the centered cream form surface of 5/13 and the recovery references, with a full-width primary action; mobile website navigation follows full-width parchment frame 1394 with explicit Back.
+
+The ordinary 240 px admin sidebar remains on the template screen; actual page UUID routes keep the Puck workspace. Template names/descriptions and three starting arrangements reflect the real implementation rather than the native sample content. Their schematic previews show blank, banner/columns and banner/photo/text arrangements. Desktop previews retain the native 237 px height; mobile previews use 132 px and stack with the real title/create fields below. All new pages remain private through the existing creation API. Overview and Pages retain real data rather than fixed prototype cards.
+
+The mobile website menu is a full-viewport native dialog, preserving the current page when Back or Escape closes it and returning focus to the opener. Its nested rows come from the existing server-filtered public tree. Menu links close the surface and navigate normally. Parchment/sage/cream, Arial/Georgia, 64 px desktop insets, 28 px mobile gutters and the fluid canvas are preserved. No native FigCraft nodes were edited.
+
+Visual review covers desktop/mobile sign-in, Overview, Pages, Templates and mobile website menu; evidence is retained under ignored `work/design-alignment-evidence/`. This records application alignment and local verification, not production hosted-auth or deployment acceptance; those remain ticket 13.
+
+
+Integration follow-through preserves Trash and each page's History and recovery link alongside the approved cards. A reproduced restore-to-trash race was corrected by sharing acknowledged page revisions while a route refresh is pending. Authentication forms now use explicit POST fallbacks and remain disabled until the client handler is ready, preventing the reproduced native GET credential submission. Both fixes are covered at the existing desktop/mobile browser seam; the design document remains unchanged.
+
+Initial alignment regression: 24 applicable desktop/mobile journeys passed with two intentional device-specific skips (mobile dragging and the desktop-only absence of the mobile menu). After the interaction fixes, all nine authentication/password-recovery checks pass, with one desktop-menu skip, and both held-refresh restore-to-trash checks pass. Final integration checks are recorded below.
+
+
+Final integration includes ticket 11 at `02f64e4`, preserving backup/storage settings, media controls and appended CSS. Fourteen recovery/private-page/template/editor-readiness checks passed after the two interaction fixes; the final merged smoke passed eleven checks with one intentional desktop-menu skip. Two additional held-refresh homepage restoration checks passed on desktop/mobile and verify the derived homepage flag remains protected. Production build, TypeScript, repository formatting and diff checks passed. Authenticated browser checks use development mode because the local auth fixture intentionally refuses production mode; hosted production verification remains ticket 13.
+
+The final fifteen screenshots (1280 × 800 desktop and 390 × 844 mobile) are retained in the shared task artifacts at `C:/Users/QW/.codex/visualizations/2026/10/28/01a1818b-b61d-7d30-b067-bc8107dbaffb/design-alignment-evidence/`, with an `evidence.json` index. The application screenshots include real page data and actual error feedback, while template thumbnails remain schematic starting arrangements.

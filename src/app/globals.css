@@ -209,8 +209,18 @@ a:focus-visible {
   padding: 54px var(--gutter);
 }
 .auth-main {
-  padding: 70px var(--gutter);
-  max-width: 660px;
+  width: calc(100% - 2 * var(--gutter));
+  max-width: 512px;
+  margin: 72px auto;
+  padding: 36px 28px;
+  background: var(--cream);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+.auth-main button[type="submit"] {
+  width: 100%;
+  background: var(--ink);
+  color: var(--cream);
 }
 .auth-main h1 {
   margin-bottom: 20px;
@@ -409,30 +419,58 @@ td:last-child {
   }
   .public-menu {
     display: block;
-    position: relative;
   }
-  .public-menu summary {
+  .public-menu > button {
     min-width: 44px;
-    min-height: 44px;
-    background: var(--leaf);
     padding: 10px 14px;
-    cursor: pointer;
-    list-style: none;
   }
-  .public-menu nav {
-    position: absolute;
-    right: 0;
-    top: 52px;
-    background: var(--cream);
-    padding: 20px;
-    width: 210px;
-    box-shadow: 0 4px 18px #30433718;
+  .website-menu {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    max-width: none;
+    height: 100dvh;
+    max-height: none;
+    margin: 0;
+    padding: 28px;
+    border: 0;
+    background: var(--paper);
+    color: var(--ink);
+    overflow: auto;
+  }
+  .website-menu::backdrop {
+    background: var(--paper);
+  }
+  .website-menu-back {
+    display: flex;
+    padding: 0;
+    background: transparent;
+    border: 0;
+    margin-bottom: 28px;
+  }
+  .website-menu h1 {
+    margin-bottom: 32px;
+  }
+  .website-menu nav {
     display: grid;
-    gap: 18px;
-    z-index: 5;
+    gap: 16px;
+  }
+  .website-menu nav > a,
+  .website-menu .public-menu-items > li > a {
+    padding: 12px 16px;
+    min-height: 48px;
+    background: var(--cream);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    text-decoration: none;
+    overflow-wrap: anywhere;
+  }
+  html:has(.website-menu[open]) {
+    overflow: hidden;
   }
   .auth-main {
-    padding: 48px 28px;
+    margin: 40px auto;
+    padding: 32px 26px;
   }
   .admin-shell {
     display: block;
@@ -1500,6 +1538,230 @@ button.primary {
   width: 20px;
   height: 20px;
   min-height: 20px;
+}
+
+/* Approved dashboard, page list and template starting points. */
+.overview-pages {
+  margin-top: 48px;
+}
+.section-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 20px;
+  flex-wrap: wrap;
+  margin-bottom: 24px;
+}
+.section-heading h2 {
+  margin: 0;
+}
+.section-heading > a {
+  font-size: 14px;
+}
+.create-page-link {
+  margin-bottom: 28px;
+}
+.admin-page-cards {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 16px;
+}
+.admin-page-cards > li {
+  background: var(--cream);
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  overflow: hidden;
+}
+.admin-page-cards > li > a {
+  display: block;
+  min-height: 76px;
+  padding: 16px;
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+.admin-page-card-actions {
+  padding: 0 16px 8px;
+}
+.admin-page-card-actions a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  font-size: 13px;
+}
+.admin-page-cards a:hover {
+  background: var(--paper);
+}
+.admin-page-card-title {
+  display: block;
+  font:
+    20px Georgia,
+    serif;
+  margin-bottom: 6px;
+}
+.admin-page-card-meta {
+  display: block;
+  font-size: 12px;
+  color: var(--muted);
+}
+.template-choices {
+  border: 0;
+  padding: 0;
+  margin: 32px 0;
+  min-width: 0;
+}
+.template-choices legend {
+  margin-bottom: 16px;
+  font-size: 14px;
+}
+.template-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 28px;
+}
+.template-card {
+  position: relative;
+  display: block;
+  padding: 8px 8px 20px;
+  margin: 0;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: var(--cream);
+  cursor: pointer;
+  min-width: 0;
+}
+.template-card:has(input:checked) {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+.template-card input {
+  position: absolute;
+  right: 16px;
+  top: 16px;
+  width: 20px;
+  height: 20px;
+  min-height: 20px;
+  accent-color: var(--ink);
+  z-index: 1;
+}
+.template-preview {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 16px;
+  height: 237px;
+  padding: 30px 20px;
+  background: var(--paper);
+  border: 1px solid var(--line);
+}
+.template-blank-mark {
+  font:
+    44px Georgia,
+    serif;
+  color: var(--muted);
+  text-align: center;
+}
+.template-mini-banner {
+  display: block;
+  height: 52px;
+  background: var(--leaf);
+}
+.template-mini-content {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  align-items: center;
+}
+.template-mini-lines {
+  display: grid;
+  gap: 8px;
+}
+.template-mini-lines i {
+  display: block;
+  height: 4px;
+  background: var(--line);
+}
+.template-mini-lines i:last-child {
+  width: 70%;
+}
+.template-mini-photo {
+  display: grid;
+  place-items: center;
+  height: 70px;
+  background: var(--leaf);
+  font-size: 32px;
+  color: var(--muted);
+}
+.template-preview-journal .template-mini-content {
+  grid-template-columns: 1fr;
+}
+.template-preview-journal .template-mini-content .template-mini-lines {
+  display: none;
+}
+.template-name {
+  display: block;
+  margin: 18px 12px 8px;
+  font:
+    21px Georgia,
+    serif;
+}
+.template-description {
+  display: block;
+  margin: 0 12px;
+  font-size: 13px;
+  color: var(--muted);
+}
+.new-page-title {
+  max-width: 512px;
+}
+.new-page-form > small {
+  display: block;
+  margin-top: 20px;
+}
+@media (max-width: 1000px) {
+  .template-grid {
+    gap: 16px;
+  }
+  .template-preview {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+}
+@media (max-width: 760px) {
+  .template-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 24px;
+  }
+  .overview-pages {
+    margin-top: 40px;
+  }
+}
+
+@media (max-width: 760px) {
+  .template-preview {
+    height: 132px;
+    padding: 12px 20px;
+    gap: 8px;
+  }
+  .template-mini-banner {
+    height: 28px;
+    flex-shrink: 0;
+  }
+  .template-mini-photo {
+    height: 36px;
+    font-size: 24px;
+  }
+  .template-mini-lines {
+    gap: 6px;
+  }
+}
+
+.auth-fields {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
 }
 .backup-settings > h1 {
   margin-top: 40px;
