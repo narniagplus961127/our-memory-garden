@@ -63,6 +63,9 @@
         color: var(--paper);
         border-color: var(--forest);
       }
+      button[aria-pressed="true"]:not(.swatch):hover {
+        background: #3c5344;
+      }
       .quiet {
         border-color: transparent;
         background: transparent;
@@ -110,6 +113,38 @@
           19px Georgia,
           serif;
         flex: 1;
+        min-width: 80px;
+        border: 1px solid transparent;
+        background: transparent;
+        padding: 8px;
+      }
+      .top button {
+        min-height: 44px;
+        white-space: nowrap;
+      }
+      .top .brand {
+        border: 0;
+        padding: 0;
+      }
+      .top .brand span {
+        display: none;
+      }
+      .top .demo-badge {
+        display: none;
+      }
+      .top .title:hover {
+        border-color: var(--line);
+      }
+      .page-note {
+        font-size: 12px;
+        line-height: 1.6;
+        color: var(--muted);
+      }
+      #navigation-dialog {
+        width: min(560px, calc(100vw - 32px));
+      }
+      #navigation-dialog .outline-item {
+        margin: 18px 0;
       }
       .badge {
         font-size: 12px;
@@ -185,12 +220,12 @@
         gap: 10px;
       }
       .tile {
-        height: 80px;
+        height: 64px;
         display: flex;
         align-items: center;
         gap: 12px;
         text-align: left;
-        padding: 14px;
+        padding: 10px;
         background: white;
         border-radius: 6px;
       }
@@ -305,7 +340,52 @@
         border: 1px solid var(--line);
         border-radius: 4px;
         padding: 8px;
-        min-width: 105px;
+        min-width: 140px;
+      }
+      select,
+      .field select,
+      .format select {
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%2359694f' stroke-width='1.6'%3E%3Cpath d='m4 6 4 4 4-4'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 14px center;
+        background-size: 16px;
+        padding-inline-end: 42px;
+        border-radius: 6px;
+      }
+      select:hover {
+        border-color: #91a389;
+      }
+      select:focus {
+        border-color: var(--selected);
+        box-shadow: 0 0 0 3px #50725a20;
+      }
+      .custom-color {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        margin-top: 18px;
+      }
+      .custom-color input[type="color"] {
+        width: 44px;
+        height: 44px;
+        min-width: 44px;
+        padding: 4px;
+        cursor: pointer;
+        border: 1px solid var(--line);
+        border-radius: 5px;
+        background: white;
+      }
+      .custom-color input[type="text"] {
+        min-width: 0;
+        flex: 1;
+        text-transform: uppercase;
+      }
+      .color-error {
+        color: #945246;
+        font-size: 12px;
+        margin-top: 8px;
+        line-height: 1.5;
       }
       .format .divider {
         height: 24px;
@@ -376,6 +456,7 @@
       }
       .selected > .block-actions {
         display: flex;
+        top: -43px;
       }
       .block-actions button {
         height: 34px;
@@ -503,6 +584,80 @@
         padding: 60px;
         text-align: center;
         color: var(--muted);
+      }
+      .tile[draggable="true"],
+      [data-drag-handle] {
+        cursor: grab;
+      }
+      .tile[draggable="true"] {
+        gap: 8px;
+      }
+      .tile[draggable="true"]::after {
+        content: "⠿";
+        margin-left: auto;
+        color: var(--muted);
+      }
+      .tile[draggable="true"]:active,
+      [data-drag-handle]:active {
+        cursor: grabbing;
+      }
+      .drop-line {
+        height: 12px;
+        position: relative;
+        min-width: 30px;
+      }
+      .drop-line::after {
+        content: "";
+        position: absolute;
+        inset: 5px 0;
+        background: transparent;
+      }
+      .dragging .drop-line::after {
+        background: #a6b99e;
+      }
+      .drop-line.drop-active::after {
+        inset: 4px 0;
+        background: var(--selected);
+      }
+      .drop-line.drop-active::before {
+        content: "Drop here";
+        position: absolute;
+        right: 0;
+        top: -24px;
+        z-index: 9;
+        color: white;
+        background: var(--selected);
+        padding: 5px 9px;
+        border-radius: 3px;
+        font-size: 11px;
+      }
+      .cell > .drop-line:only-child {
+        min-height: 110px;
+        border: 1px dashed var(--line);
+      }
+      .canvas > .drop-line:only-child {
+        min-height: 200px;
+        border: 1px dashed var(--line);
+      }
+      .cell:has(> .drop-active) {
+        outline: 1px solid var(--selected);
+      }
+      .dragging [data-field] {
+        pointer-events: none;
+      }
+      [data-drag-handle] {
+        touch-action: none;
+      }
+      .drag-ghost {
+        position: fixed;
+        pointer-events: none;
+        z-index: 30;
+        padding: 14px 20px;
+        background: var(--paper);
+        color: var(--forest);
+        border: 2px solid var(--selected);
+        border-radius: 5px;
+        box-shadow: 0 8px 25px #30433725;
       }
       .review-bar {
         height: 62px;
@@ -652,6 +807,9 @@
         }
       }
       @media (max-width: 640px) {
+        .tile {
+          height: 56px;
+        }
         button,
         select {
           min-height: 44px;
@@ -660,28 +818,30 @@
           min-height: 44px;
         }
         .top {
-          height: 90px;
-          flex-wrap: wrap;
-          padding: 10px 14px;
-          gap: 8px;
+          height: 112px;
+          display: grid;
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+          padding: 6px 12px;
+          gap: 6px;
         }
         .brand {
           display: none;
         }
         .title {
           font-size: 18px;
-          min-width: 60%;
-          flex: 1;
+          min-width: 0;
+          width: 100%;
+          grid-column: 2 / 4;
         }
         .badge {
-          font-size: 11px;
+          display: none;
         }
         .demo-badge {
           width: 100%;
           font-size: 11px;
         }
         .workspace {
-          height: calc(100vh - 146px);
+          height: calc(100vh - 168px);
           min-height: 0;
           display: flex;
           flex-direction: column;
@@ -722,6 +882,9 @@
         }
         .sidebar.open {
           display: block;
+        }
+        .sidebar.page-settings {
+          height: calc(100vh - 230px);
         }
         .panel-head {
           padding: 16px 20px;
@@ -817,6 +980,7 @@
   </head>
   <body>
     <header class="top">
+      <button id="back-pages" aria-label="Back to Pages">← Pages</button>
       <div class="brand">
         <svg viewBox="0 0 24 24">
           <path
@@ -824,9 +988,17 @@
           /></svg
         ><span>Our Memory Garden</span>
       </div>
-      <div class="title">A little note from us</div>
-      <span class="badge">Private</span
-      ><span class="demo-badge"
+      <input
+        class="title"
+        id="page-title"
+        aria-label="Page title"
+        value="A little note from us"
+      />
+      <span class="badge" id="page-visibility">Private</span>
+      <button id="page-settings">Page settings</button>
+      <button id="admin-home" aria-label="Garden dashboard">Dashboard</button>
+      <button id="page-history" aria-label="Page history">History</button>
+      <span class="demo-badge"
         >Review prototype · changes stay in this tab</span
       >
     </header>
@@ -917,6 +1089,7 @@
       ><button class="scenario" data-scenario="columns">
         2. Arrange columns</button
       ><button class="scenario" data-scenario="phone">3. Try mobile</button>
+      <button class="scenario" data-scenario="drag">4. Drag into place</button>
       <div class="review-state" id="state" role="status"></div>
     </footer>
     <div id="notice" class="notice" hidden></div>
@@ -995,6 +1168,27 @@
         ><button class="primary" id="apply-link">Apply link</button>
       </div>
     </dialog>
+    <dialog id="navigation-dialog" aria-labelledby="navigation-title">
+      <div class="dialog-top">
+        <h2 id="navigation-title">Pages</h2>
+        <button data-close="navigation-dialog" aria-label="Return to editor">
+          ×
+        </button>
+      </div>
+      <p id="navigation-note" class="page-note"></p>
+      <button
+        class="outline-item"
+        data-close="navigation-dialog"
+        id="sample-page-link"
+      >
+        A little note from us · Edit page →
+      </button>
+      <button id="navigation-pages">Pages</button>
+      <button id="navigation-dashboard">Garden dashboard</button>
+      <p class="page-note">
+        Sample navigation for review. Your prototype edits remain in this tab.
+      </p>
+    </dialog>
     <script>
       // Disposable prototype: no accounts, network calls, storage or garden data.
       const icons = {
@@ -1042,6 +1236,38 @@
         bg: "transparent",
         sample: "",
       });
+      function newBlock(type) {
+        if (type === "Text") return text("<p>Write a little memory…</p>");
+        if (type === "Image") return photo();
+        if (type === "Banner")
+          return {
+            id: id(),
+            type,
+            heading: "<h2>A little moment, remembered</h2>",
+            description: "<p>Tell the story behind it.</p>",
+            pad: 36,
+            bg: "#e0e7d9",
+          };
+        if (type === "Section")
+          return {
+            id: id(),
+            type,
+            count: 1,
+            ratio: [1],
+            cells: [[text("<p>A new section for your memories.</p>")]],
+            pad: 24,
+            bg: "transparent",
+          };
+        if (type === "Button")
+          return {
+            id: id(),
+            type,
+            label: "<p>Our favourite moments</p>",
+            pad: 24,
+            bg: "transparent",
+          };
+        return { id: id(), type, pad: 24, bg: "transparent" };
+      }
       function initial() {
         return {
           selected: null,
@@ -1049,6 +1275,15 @@
           panel: "content",
           device: "desktop",
           sheet: false,
+          page: {
+            title: "A little note from us",
+            slug: "a-little-note-from-us",
+            visibility: "private",
+            date: "",
+            category: "Everyday",
+            description: "",
+            indexing: "no",
+          },
           blocks: [
             {
               id: id(),
@@ -1126,6 +1361,9 @@
             next.device = action.device;
             next.sheet = false;
             break;
+          case "metadata":
+            next.page[action.key] = action.value;
+            break;
           case "edit": {
             const target = find(next.blocks, action.id);
             if (target) target[action.field] = action.value;
@@ -1141,6 +1379,40 @@
             next.panel = "styles";
             next.sheet = false;
             break;
+          case "place": {
+            const moving = action.moveId
+              ? find(next.blocks, action.moveId)
+              : action.block;
+            if (
+              !moving ||
+              (action.moveId &&
+                action.target.owner !== "root" &&
+                find([moving], action.target.owner))
+            )
+              break;
+            const destination =
+              action.target.owner === "root"
+                ? next.blocks
+                : find(next.blocks, action.target.owner)?.cells?.[
+                    action.target.slot
+                  ];
+            if (!destination) break;
+            let position = Math.min(action.target.index, destination.length);
+            if (action.moveId) {
+              const source = listFor(next.blocks, action.moveId);
+              if (!source) break;
+              const index = source.findIndex(
+                (item) => item.id === action.moveId,
+              );
+              if (source === destination && index < position) position--;
+              source.splice(index, 1);
+            }
+            destination.splice(position, 0, moving);
+            next.selected = moving.id;
+            next.editing = null;
+            next.sheet = false;
+            break;
+          }
           case "move": {
             const list = listFor(next.blocks, next.selected);
             if (list) {
@@ -1195,6 +1467,8 @@
         pendingColumns = { count: 2, ratio: [1, 1], edit: false },
         activeEditable = null,
         savedRange = null;
+      let dragPayload = null,
+        pendingInsert = null;
       const canvas = document.querySelector("#canvas"),
         panel = document.querySelector("#panel");
       function dispatch(action, { paint = true } = {}) {
@@ -1205,7 +1479,7 @@
       function escapeText(value) {
         const node = document.createElement("div");
         node.textContent = value;
-        return node.innerHTML;
+        return node.innerHTML.replaceAll('"', "&quot;");
       }
       function editable(block, field, value) {
         return (
@@ -1256,9 +1530,9 @@
             '">' +
             block.cells
               .map(
-                (cell) =>
+                (cell, index) =>
                   '<div class="cell">' +
-                  cell.map(blockHTML).join("") +
+                  slotHTML(cell, block.id, index) +
                   "</div>",
               )
               .join("") +
@@ -1289,7 +1563,7 @@
           block.type +
           '</span><div class="block-actions" aria-label="' +
           block.type +
-          ' actions"><button data-action="up" aria-label="Move block up">' +
+          ' actions"><button data-drag-handle draggable="true" aria-label="Drag block">⠿</button><button data-action="up" aria-label="Move block up">' +
           svg("up") +
           '</button><button data-action="down" aria-label="Move block down">' +
           svg("down") +
@@ -1302,6 +1576,24 @@
           "</section>"
         );
       }
+      function slotHTML(blocks, owner = "root", slot = 0) {
+        const zone = (index) =>
+          '<div class="drop-line" data-drop-owner="' +
+          owner +
+          '" data-drop-slot="' +
+          slot +
+          '" data-drop-index="' +
+          index +
+          '" aria-label="Insertion position ' +
+          (index + 1) +
+          '"></div>';
+        return (
+          zone(0) +
+          blocks
+            .map((block, index) => blockHTML(block) + zone(index + 1))
+            .join("")
+        );
+      }
       function walk(blocks, depth = 0) {
         return blocks.flatMap((block) => [
           { block, depth },
@@ -1311,20 +1603,63 @@
       function renderPanel() {
         const selected = find(state.blocks, state.selected);
         document.querySelector("#panel-title").textContent =
-          state.panel === "content"
-            ? "Add content"
-            : state.panel === "outline"
-              ? "On this page"
-              : selected
-                ? selected.type + " styles"
-                : "Page styles";
-        if (state.panel === "content") {
+          state.panel === "page"
+            ? "Page settings"
+            : state.panel === "content"
+              ? "Add content"
+              : state.panel === "outline"
+                ? "On this page"
+                : selected
+                  ? selected.type + " styles"
+                  : "Page styles";
+        if (state.panel === "page") {
           panel.innerHTML =
-            '<p style="margin-top:0">Add a block, then write directly on your page.</p><div class="eyebrow">Blocks</div><div class="tiles">' +
+            '<p style="margin-top:0">Page details belong here. Block appearance stays in Styles.</p>' +
+            '<label class="field"><span>Page title</span><input data-meta="title" aria-label="Page settings title" value="' +
+            escapeText(state.page.title) +
+            '"></label>' +
+            '<label class="field"><span>Page URL</span><input data-meta="slug" aria-label="Page URL" value="' +
+            escapeText(state.page.slug) +
+            '"><small class="page-note">/garden/<span id="slug-preview">' +
+            escapeText(state.page.slug) +
+            "</span><br>Changing the address removes the old URL. Internal page links keep working.</small></label>" +
+            '<label class="field"><span>Visibility</span><select data-meta="visibility" aria-label="Page visibility"><option value="private" ' +
+            (state.page.visibility === "private" ? "selected" : "") +
+            '>Private · administrators only</option><option value="public" ' +
+            (state.page.visibility === "public" ? "selected" : "") +
+            ">Public · everyone</option></select></label>" +
+            '<label class="field"><span>Date · optional</span><input type="date" data-meta="date" aria-label="Page date" value="' +
+            state.page.date +
+            '"></label>' +
+            '<label class="field"><span>Category</span><select data-meta="category" aria-label="Page category">' +
+            ["Everyday", "Adventures", "Milestones"]
+              .map(
+                (x) =>
+                  "<option " +
+                  (x === state.page.category ? "selected" : "") +
+                  ">" +
+                  x +
+                  "</option>",
+              )
+              .join("") +
+            "</select></label>" +
+            '<div class="field"><span>Cover photo</span><button id="page-cover">Choose cover photo</button></div>' +
+            '<label class="field"><span>Sharing description</span><input data-meta="description" aria-label="Sharing description" value="' +
+            escapeText(state.page.description) +
+            '"></label>' +
+            '<label class="field"><span>Search indexing · public pages</span><select data-meta="indexing" aria-label="Search indexing"><option value="no" ' +
+            (state.page.indexing === "no" ? "selected" : "") +
+            '>Hide from search engines</option><option value="yes" ' +
+            (state.page.indexing === "yes" ? "selected" : "") +
+            ">Allow indexing when public</option></select></label>" +
+            '<p class="page-note">Sample changes only. In the real editor, valid changes save automatically. The homepage always stays public.</p>';
+        } else if (state.panel === "content") {
+          panel.innerHTML =
+            '<p style="margin-top:0">Drag a block to an insertion line, or click to add. Write directly on your page.</p><div class="eyebrow">Blocks</div><div class="tiles">' +
             ["Text", "Image", "Banner", "Button", "Gallery", "PageGrid"]
               .map(
                 (type) =>
-                  '<button class="tile" data-add="' +
+                  '<button class="tile" draggable="true" data-add="' +
                   type +
                   '">' +
                   svg(type) +
@@ -1337,7 +1672,7 @@
             ["Columns", "Section"]
               .map(
                 (type) =>
-                  '<button class="tile" data-add="' +
+                  '<button class="tile" draggable="true" data-add="' +
                   type +
                   '">' +
                   svg(type) +
@@ -1396,7 +1731,11 @@
                       '"></button>',
                   )
                   .join("") +
-                "</div></label>" +
+                '</div><div class="custom-color"><input type="color" aria-label="Choose custom background colour" value="' +
+                (/^#[\da-f]{6}$/i.test(selected.bg) ? selected.bg : "#fffcf5") +
+                '"><input type="text" aria-label="Custom background hex colour" maxlength="7" value="' +
+                (/^#[\da-f]{6}$/i.test(selected.bg) ? selected.bg : "#fffcf5") +
+                '" placeholder="#A7C4A0"></div><div class="color-error" id="color-error" role="status" hidden></div></label>' +
                 (selected.type === "Columns"
                   ? '<label class="field"><span>Column layout</span><button id="edit-columns">' +
                     selected.count +
@@ -1415,6 +1754,14 @@
         }
       }
       function updateSummary() {
+        document.querySelector("#page-title").value = state.page.title;
+        document.querySelector("#page-visibility").textContent =
+          state.page.visibility === "public" ? "Public" : "Private";
+        document
+          .querySelector("#page-settings")
+          .setAttribute("aria-pressed", String(state.panel === "page"));
+        document.querySelector("#sample-page-link").textContent =
+          state.page.title + " · Edit page →";
         const block = find(state.blocks, state.selected);
         document.querySelector("#state").textContent =
           "Selected: " +
@@ -1434,11 +1781,14 @@
           activeEditable && document.activeElement === activeEditable;
         canvas.classList.toggle("mobile", state.device === "mobile");
         canvas.innerHTML =
-          state.blocks.map(blockHTML).join("") ||
+          slotHTML(state.blocks) ||
           '<div class="empty-note">Choose a block to begin your page.</div>';
         document
           .querySelector(".sidebar")
           .classList.toggle("open", state.sheet);
+        document
+          .querySelector(".sidebar")
+          .classList.toggle("page-settings", state.panel === "page");
         document.querySelector("#format").hidden = !state.editing;
         document
           .querySelector("#desktop")
@@ -1525,9 +1875,172 @@
           updateSummary();
         }
       });
+      function clearDrag() {
+        document.body.classList.remove("dragging");
+        document
+          .querySelectorAll(".drop-active")
+          .forEach((node) => node.classList.remove("drop-active"));
+        dragPayload = null;
+      }
+      function dropZone(event) {
+        const direct = event.target.closest(".drop-line");
+        if (direct && canvas.contains(direct)) return direct;
+        const empty = event.target
+          .closest(".cell")
+          ?.querySelector(":scope > .drop-line:only-child");
+        if (empty) return empty;
+        const block = event.target.closest("[data-block-id]");
+        if (block && canvas.contains(block)) {
+          const bounds = block.getBoundingClientRect();
+          const zone =
+            event.clientY < bounds.top + bounds.height / 2
+              ? block.previousElementSibling
+              : block.nextElementSibling;
+          if (zone?.matches(".drop-line")) return zone;
+        }
+        return event.target === canvas
+          ? canvas.querySelector(":scope > .drop-line:last-child")
+          : null;
+      }
+      let gesture = null,
+        ghost = null,
+        suppressClickUntil = 0;
+      document.addEventListener("dragstart", (event) => {
+        if (event.target.closest("[data-add], [data-drag-handle]"))
+          event.preventDefault();
+      });
+      document.addEventListener("pointerdown", (event) => {
+        if (event.button !== 0) return;
+        const palette = event.target.closest("[data-add]"),
+          handle = event.target.closest("[data-drag-handle]");
+        if ((!palette && !handle) || (palette && event.pointerType === "touch"))
+          return;
+        const source = palette || handle;
+        gesture = {
+          source,
+          pointerId: event.pointerId,
+          x: event.clientX,
+          y: event.clientY,
+          active: false,
+          payload: palette
+            ? { kind: "new", type: palette.dataset.add }
+            : {
+                kind: "move",
+                id: handle.closest("[data-block-id]").dataset.blockId,
+              },
+        };
+        source.setPointerCapture(event.pointerId);
+      });
+      document.addEventListener("pointermove", (event) => {
+        if (!gesture || event.pointerId !== gesture.pointerId) return;
+        if (
+          !gesture.active &&
+          Math.hypot(event.clientX - gesture.x, event.clientY - gesture.y) < 6
+        )
+          return;
+        event.preventDefault();
+        if (!gesture.active) {
+          gesture.active = true;
+          dragPayload = gesture.payload;
+          document.body.classList.add("dragging");
+          ghost = document.createElement("div");
+          ghost.className = "drag-ghost";
+          ghost.textContent =
+            "⠿ " +
+            (dragPayload.type ||
+              find(state.blocks, dragPayload.id)?.type ||
+              "Block");
+          document.body.append(ghost);
+        }
+        ghost.style.left = event.clientX + 14 + "px";
+        ghost.style.top = event.clientY + 14 + "px";
+        const hit = document.elementFromPoint(event.clientX, event.clientY);
+        const zone = hit
+          ? dropZone({ target: hit, clientY: event.clientY })
+          : null;
+        document
+          .querySelectorAll(".drop-active")
+          .forEach((node) => node.classList.remove("drop-active"));
+        if (zone) zone.classList.add("drop-active");
+        const stage = document.querySelector(".stage"),
+          bounds = stage.getBoundingClientRect();
+        if (event.clientX > bounds.left && event.clientX < bounds.right) {
+          if (event.clientY < bounds.top + 60) stage.scrollTop -= 12;
+          if (event.clientY > bounds.bottom - 60) stage.scrollTop += 12;
+        }
+      });
+      document.addEventListener(
+        "click",
+        (event) => {
+          if (Date.now() < suppressClickUntil) {
+            event.preventDefault();
+            event.stopImmediatePropagation();
+          }
+        },
+        true,
+      );
+      function finishGesture() {
+        if (gesture?.source.hasPointerCapture(gesture.pointerId))
+          gesture.source.releasePointerCapture(gesture.pointerId);
+        ghost?.remove();
+        ghost = null;
+        gesture = null;
+        clearDrag();
+      }
+      document.addEventListener("pointercancel", finishGesture);
+      document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape" && gesture?.active) {
+          finishGesture();
+          notice("Drag cancelled. Your sample content is unchanged.");
+        }
+      });
+      document.addEventListener("pointerup", (event) => {
+        if (!gesture || event.pointerId !== gesture.pointerId) return;
+        const payload = gesture.payload,
+          active = gesture.active,
+          hit = document.elementFromPoint(event.clientX, event.clientY);
+        const zone =
+          active && hit
+            ? dropZone({ target: hit, clientY: event.clientY })
+            : null;
+        if (active) suppressClickUntil = Date.now() + 200;
+        finishGesture();
+        if (!zone || !active) return;
+        const target = {
+          owner: zone.dataset.dropOwner,
+          slot: Number(zone.dataset.dropSlot),
+          index: Number(zone.dataset.dropIndex),
+        };
+        if (
+          payload.kind === "move" &&
+          target.owner !== "root" &&
+          find([find(state.blocks, payload.id)], target.owner)
+        ) {
+          notice(
+            "Choose a position outside this block; its contents are kept.",
+          );
+          return;
+        }
+        if (payload.kind === "new" && payload.type === "Columns") {
+          pendingInsert = target;
+          openColumns(false);
+          return;
+        }
+        dispatch({
+          type: "place",
+          target,
+          ...(payload.kind === "move"
+            ? { moveId: payload.id }
+            : { block: newBlock(payload.type) }),
+        });
+        notice(
+          "Block placed at the insertion line. Text stays editable on the page.",
+        );
+      });
       canvas.addEventListener("click", (event) => {
         const block = event.target.closest("[data-block-id]");
         if (!block) return;
+        if (event.target.closest("[data-drag-handle]")) return;
         if (event.target.closest("[data-choose-photo]")) {
           selectCanvas(block.dataset.blockId, null, null);
           document.querySelector("#photo-dialog").showModal();
@@ -1582,6 +2095,33 @@
         dispatch({ type: "device", device: "desktop" });
       document.querySelector("#mobile").onclick = () =>
         dispatch({ type: "device", device: "mobile" });
+      document.querySelector("#page-settings").onclick = () =>
+        dispatch({ type: "panel", panel: "page" });
+      document.querySelector("#page-title").oninput = (event) =>
+        dispatch(
+          { type: "metadata", key: "title", value: event.target.value },
+          { paint: false },
+        );
+      function navigation(where) {
+        document.querySelector("#navigation-title").textContent = where;
+        document.querySelector("#navigation-note").textContent =
+          where === "Pages"
+            ? "Return to your page list. Select the sample page below to reopen the editor."
+            : where === "Page history"
+              ? "The production history screen keeps retained versions and restoration. This prototype only demonstrates the entry point."
+              : "Your admin workspace: Overview, Pages, Media library, Navigation and Settings.";
+        const dialog = document.querySelector("#navigation-dialog");
+        if (!dialog.open) dialog.showModal();
+      }
+      document.querySelector("#back-pages").onclick = () => navigation("Pages");
+      document.querySelector("#admin-home").onclick = () =>
+        navigation("Garden dashboard");
+      document.querySelector("#page-history").onclick = () =>
+        navigation("Page history");
+      document.querySelector("#navigation-pages").onclick = () =>
+        navigation("Pages");
+      document.querySelector("#navigation-dashboard").onclick = () =>
+        navigation("Garden dashboard");
       panel.addEventListener("click", (event) => {
         const add = event.target.closest("[data-add]"),
           select = event.target.closest("[data-select]"),
@@ -1594,45 +2134,11 @@
         if (add) {
           const type = add.dataset.add;
           if (type === "Columns") {
+            pendingInsert = null;
             openColumns(false);
             return;
           }
-          let block =
-            type === "Text"
-              ? text("<p>Write a little memory…</p>")
-              : type === "Image"
-                ? photo()
-                : type === "Banner"
-                  ? {
-                      id: id(),
-                      type,
-                      heading: "<h2>A little moment, remembered</h2>",
-                      description: "<p>Tell the story behind it.</p>",
-                      pad: 36,
-                      bg: "#e0e7d9",
-                    }
-                  : type === "Section"
-                    ? {
-                        id: id(),
-                        type,
-                        count: 1,
-                        ratio: [1],
-                        cells: [
-                          [text("<p>A new section for your memories.</p>")],
-                        ],
-                        pad: 24,
-                        bg: "transparent",
-                      }
-                    : type === "Button"
-                      ? {
-                          id: id(),
-                          type,
-                          label: "<p>Our favourite moments</p>",
-                          pad: 24,
-                          bg: "transparent",
-                        }
-                      : { id: id(), type, pad: 24, bg: "transparent" };
-          dispatch({ type: "add", block });
+          dispatch({ type: "add", block: newBlock(type) });
           notice("Block added. Click its words to write on the page.");
         }
         if (select) {
@@ -1649,6 +2155,24 @@
           });
         if (action) applyAction(action.dataset.panelAction);
         if (event.target.closest("#edit-columns")) openColumns(true);
+        if (event.target.closest("#page-cover"))
+          notice(
+            "The real editor opens the shared media chooser for the page cover. This sample does not upload or save photos.",
+          );
+      });
+      panel.addEventListener("input", (event) => {
+        if (!event.target.dataset.meta) return;
+        dispatch(
+          {
+            type: "metadata",
+            key: event.target.dataset.meta,
+            value: event.target.value,
+          },
+          { paint: false },
+        );
+        if (event.target.dataset.meta === "slug")
+          document.querySelector("#slug-preview").textContent =
+            event.target.value;
       });
       panel.addEventListener("change", (event) => {
         const key = event.target.dataset.property;
@@ -1664,6 +2188,50 @@
               ),
             ),
           });
+      });
+      panel.addEventListener("input", (event) => {
+        const picker = event.target.matches('input[type="color"]'),
+          hex = event.target.matches(
+            '[aria-label="Custom background hex colour"]',
+          );
+        if (!picker && !hex) return;
+        const value = event.target.value,
+          valid = /^#(?:[\da-f]{3}|[\da-f]{6})$/i.test(value);
+        const error = document.querySelector("#color-error");
+        if (error) {
+          error.hidden = valid;
+          error.textContent = valid
+            ? ""
+            : "Enter a hex colour such as #A7C4A0.";
+        }
+        event.target.setAttribute("aria-invalid", String(!valid));
+        if (!valid) return;
+        const normalized =
+          value.length === 4
+            ? "#" + [...value.slice(1)].map((char) => char + char).join("")
+            : value;
+        state = reduce(state, {
+          type: "property",
+          key: "bg",
+          value: normalized,
+        });
+        canvas
+          .querySelector('[data-block-id="' + state.selected + '"]')
+          .style.setProperty("--bg", normalized);
+        if (picker)
+          panel.querySelector(
+            '[aria-label="Custom background hex colour"]',
+          ).value = normalized;
+        else panel.querySelector('input[type="color"]').value = normalized;
+        panel
+          .querySelectorAll("[data-background]")
+          .forEach((button) =>
+            button.setAttribute(
+              "aria-pressed",
+              button.dataset.background === normalized,
+            ),
+          );
+        updateSummary();
       });
       document
         .querySelector("#format")
@@ -1825,7 +2393,9 @@
           dispatch({ type: "columns", ...pendingColumns });
         else
           dispatch({
-            type: "add",
+            ...(pendingInsert
+              ? { type: "place", target: pendingInsert }
+              : { type: "add" }),
             block: {
               id: id(),
               type: "Columns",
@@ -1841,6 +2411,7 @@
               bg: "transparent",
             },
           });
+        pendingInsert = null;
         document.querySelector("#columns-dialog").close();
         notice("Layout applied to this sample. Content is preserved.");
       };
@@ -1877,13 +2448,22 @@
               state.panel = "styles";
               render();
               openColumns(true);
-            } else {
+            } else if (button.dataset.scenario === "phone") {
               state.device = "mobile";
               state.selected = state.blocks[1].cells[0][1].id;
               state.panel = "styles";
               render();
               notice(
                 "A phone-sized canvas. Styles opens a sheet on small screens.",
+              );
+            } else {
+              state.selected = state.blocks[1].cells[0][1].id;
+              render();
+              canvas
+                .querySelector('[data-block-id="' + state.selected + '"]')
+                .scrollIntoView({ block: "center" });
+              notice(
+                "Drag a palette card to a line, or use the selected block’s ⠿ handle.",
               );
             }
           }),
