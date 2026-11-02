@@ -1,6 +1,6 @@
 # Our Memory Garden specification
 
-Status: resolved
+Status: claimed — released baseline complete; ticket 14 editor refinement is in design review
 
 ## Problem Statement
 
@@ -70,6 +70,10 @@ Create a botanical garden-themed website with a public-facing garden and a share
 56. As an administrator, I want the media library to show photo usage and accessibility, so that I understand where a photo appears.
 57. As a project owner, I want to try a local Puck experiment with sample content before design approval, so that we can validate the editing experience.
 58. As a project owner, I want the admin workspace to be visually distinct from the public site, so that I can tell when I am editing.
+59. As an administrator, I want to write directly in text, banner, button and caption widgets on the canvas, so that I do not need to open Settings just to change words.
+60. As an administrator, I want contextual formatting and selected-block actions near my content, so that editing and arranging a page is easier to understand.
+61. As an administrator, I want visual column-count and proportion choices that preserve existing content, so that I can adjust a layout safely.
+62. As a project owner, I want to review the refined inline editor in FigCraft and a disposable interaction prototype before it changes the released editor.
 
 ## Implementation Decisions
 
@@ -106,5 +110,7 @@ Create a botanical garden-themed website with a public-facing garden and a share
 Public registration, visitor comments or reactions, a separate story content type, a template editor in the first version, dark mode, full real-time collaborative text editing, separate Preview or Publish controls, undo/redo controls, Cloudflare infrastructure and Vercel preview deployments.
 
 ## Further Notes
+
+The released baseline through ticket 13 is complete. On 2026-11-02 the owner requested a Klaviyo-inspired refinement with direct canvas editing. [Ticket 14](issues/14-inline-editor-experience.md) and [the inline design proposal](../../docs/editor-inline-design.md) describe this additional scope. Existing design approval does not imply approval of the new interaction; review its concrete desktop/mobile proposal before production implementation. Existing pages, private media, autosave, recovery, conflicts and history remain required compatibility boundaries.
 
 Use sample content in the prototype; the homepage uses a plant image placeholder. The project has a FigCraft design, documentation, tickets and a working disposable Puck experiment on the prototype branch. Ticket 00 is owner accepted; its local-storage and sample-data limitations do not establish production persistence or security. Ticket 01 includes desktop/mobile saving, failure, conflict, password-reset and not-found designs. The owner approved the design and core editor flow on 2026-10-28, based on commit `e11a9c0`; ticket 01 is resolved and ticket 02 is unblocked. See `docs/design-spec-review.md` for review routes, validation evidence and later-ticket design follow-through.
