@@ -36,6 +36,17 @@ test("formatting row keeps the canvas still across text selection, hover and non
   isMobile,
 }) => {
   const frame = await openEditor(page);
+  if (!isMobile) {
+    await page
+      .getByRole("button", { name: "Close panel", exact: true })
+      .click();
+    expect(
+      (await page.locator(".garden-canvas-workspace").boundingBox())!.width,
+    ).toBeGreaterThan(500);
+    await page
+      .getByRole("button", { name: "Open content panel", exact: true })
+      .click();
+  }
   const canvas = page.locator(".garden-canvas-scroll");
   const top = (await canvas.boundingBox())!.y;
   const heading = frame.getByRole("textbox", { name: "Heading", exact: true });
@@ -44,6 +55,31 @@ test("formatting row keeps the canvas still across text selection, hover and non
     page.getByRole("button", { name: "Bold", exact: true }),
   ).toBeVisible();
   expect((await canvas.boundingBox())!.y).toBe(top);
+  const more = page.getByRole("region", {
+    name: "More text formatting",
+    exact: true,
+  });
+  await page
+    .getByRole("button", { name: "More text formatting", exact: true })
+    .click();
+  await expect(more).toBeVisible();
+  const bounds = (await more.boundingBox())!,
+    viewport = page.viewportSize()!;
+  expect(bounds.x).toBeGreaterThanOrEqual(0);
+  expect(bounds.y).toBeGreaterThanOrEqual(0);
+  expect(bounds.x + bounds.width).toBeLessThanOrEqual(viewport.width);
+  expect(bounds.y + bounds.height).toBeLessThanOrEqual(viewport.height);
+  expect((await canvas.boundingBox())!.y).toBe(top);
+  await page.keyboard.press("Escape");
+  await expect(more).not.toBeVisible();
+  await expect(heading).toBeFocused();
+  await heading.click();
+  await page
+    .getByRole("button", { name: "More text formatting", exact: true })
+    .click();
+  await page.locator(".editor-canvas-top").click({ position: { x: 4, y: 4 } });
+  await expect(more).not.toBeVisible();
+  await heading.click();
   if (!isMobile) {
     await frame
       .getByRole("textbox", { name: "Text content", exact: true })

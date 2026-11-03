@@ -65,6 +65,14 @@ Review evidence and CLI audit are retained under the task's `editor-inline/` art
 
 ## Implemented integration
 
+### Compact toolbar and typography — ticket 19
+
+The owner supplied a newer Klaviyo toolbar reference and explicitly requested fonts and line height on 2026-11-03. Keep a single stable 64 px row with Body/H1–H4/Small, font family, size, colour, Bold and Link. A labelled More action opens an anchored top-layer popover for italic, underline, alignment, letter spacing, paragraph line height and reset. It contains 44 px controls and short helper text, adjusts its placement on resize, stays bounded on short screens and keeps its trigger reachable at the mobile toolbar's right edge. Escape and the explicit close action return focus to the selected text; outside dismissal leaves focus with the clicked destination. The original selected range remains the formatting target.
+
+Font options are Site default, Arial, Helvetica, Georgia and Verdana, using installed fonts/browser fallback without network font requests. Line height is a 1–3 unitless multiplier on paragraphs/headings; blank restores inherited line height. Font family is an allowlisted inline mark attribute. Paragraph CSS accepts only supported alignment and line height. Reset removes font/colour/size/letter spacing from selected words and restores paragraph line height.
+
+The review also reproduced and fixed a zero-width desktop canvas when the sidebar closed: an explicitly placed third grid column keeps the canvas visible when the hidden panel leaves grid flow. Existing typography, styling and page navigation remain intact. No Preview, Undo or Redo is introduced. Native FigCraft frames have not been redrawn for this extension; these implementation notes and the [desktop](evidence/ticket19/toolbar-desktop.png) / [mobile](evidence/ticket19/toolbar-mobile.png) evidence record the latest owner-requested controls.
+
 ### Text appearance and spacing refinement — ticket 17
 
 The owner requested this extension on 2026-11-03. The persistent toolbar adds labelled font-size and letter-spacing fields, a text-colour action and a reset for those three appearance settings. Numeric edits apply on Enter or blur, Escape cancels, and invalid values revert to the current value. Text colour opens a centred responsive dialog with garden swatches, a native picker and typed hex input; Apply is disabled for invalid colours. Styling affects the selected words or subsequent typing, preserving the selection when controls take focus. Existing H1–H4/paragraph/small, bold/italic/underline, alignment and safe links remain available.

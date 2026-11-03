@@ -54,7 +54,7 @@ export function validRichText(
           name === "style" &&
           ["p", "h1", "h2", "h3", "h4"].includes(node.tagName)
         )
-          return /^text-align:\s*(left|center);?$/.test(value);
+          return validTextStyle(value, true);
         if (node.tagName !== "a") return false;
         if (name === "href") return isRichLink(value);
         if (name === "target") return ["_blank", "_self"].includes(value);

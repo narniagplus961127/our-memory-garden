@@ -1,7 +1,12 @@
 import { Extension, Mark } from "@tiptap/core";
 import type { RichtextField } from "@puckeditor/core";
 import { InlineEditorBridge } from "./inline-editing";
-import { textColour, textPixels } from "@/lib/text-appearance";
+import {
+  textColour,
+  textPixels,
+  textFont,
+  textLineHeight,
+} from "@/lib/text-appearance";
 
 const TextAppearance = Mark.create({
   name: "gardenTextStyle",
@@ -11,6 +16,7 @@ const TextAppearance = Mark.create({
         [
           ["color", "color", (v: string) => textColour(v)],
           ["fontSize", "font-size", (v: string) => textPixels(v, 8, 120)],
+          ["fontFamily", "font-family", textFont],
           [
             "letterSpacing",
             "letter-spacing",
@@ -35,6 +41,27 @@ const TextAppearance = Mark.create({
   },
   parseHTML: () => [{ tag: "span[style]" }],
   renderHTML: ({ HTMLAttributes }) => ["span", HTMLAttributes, 0],
+});
+const ParagraphAppearance = Extension.create({
+  name: "gardenParagraphStyle",
+  addGlobalAttributes() {
+    return [
+      {
+        types: ["heading", "paragraph"],
+        attributes: {
+          lineHeight: {
+            default: null,
+            parseHTML: (element: HTMLElement) =>
+              textLineHeight(element.style.lineHeight),
+            renderHTML: (attributes: Record<string, string>) => {
+              const value = textLineHeight(attributes.lineHeight ?? "");
+              return value ? { style: "line-height: " + value } : {};
+            },
+          },
+        },
+      },
+    ];
+  },
 });
 
 const Small = Mark.create({
@@ -76,6 +103,7 @@ export function richField(label: string): RichtextField {
       extensions: [
         Small,
         TextAppearance,
+        ParagraphAppearance,
         Extension.create({
           name: "gardenFieldLabel",
           onCreate() {

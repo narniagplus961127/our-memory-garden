@@ -1,8 +1,10 @@
 # Our Memory Garden specification
 
-Status: resolved — released baseline and tickets 14–17 editor/sidebar refinements implemented and verified
+Status: resolved — released baseline and editor/sidebar refinements in tickets 14–17 and 19 implemented and verified; overall UI/UX review recorded in ticket 18
 
 Ticket 17 refinement (owner requested 2026-11-03): Inline text supports custom colour by picker or hex, font size (8–120 px), letter spacing (−2–20 px) and reset to inherited appearance, while preserving the selected words. Every block supports separate top/right/bottom/left padding and margin (0–120 px); blank sides inherit the template or legacy block default. Controls explain inside versus outside spacing and provide separate resets. Palette cards and dedicated block handles show grab/grabbing cursors, with non-selectable palette labels and selectable canvas text. Keep the fixed formatting row, centred dialogs, mobile scrolling toolbar and movement alternatives. Validate only the supported text CSS and numeric spacing server-side; preserve autosave, history and public/private boundaries.
+
+Ticket 19 refinement (owner requested and font/line-height scope confirmed 2026-11-03): Use the compact reference toolbar with a More formatting popover. Add Site default/Arial/Helvetica/Georgia/Verdana font selection and unitless paragraph/heading line height from 1–3, with safe allowlists and inherited defaults. Keep everyday controls visible; place italic/underline/alignment/letter spacing/line height/reset in More. Preserve selected words, fixed canvas position, keyboard dismissal/focus return, mobile reachability and viewport bounds. Closing a desktop sidebar must leave the canvas visible at the expanded width. The broader website review in ticket 18 records recommendations without implementing a general redesign.
 
 ## Problem Statement
 
