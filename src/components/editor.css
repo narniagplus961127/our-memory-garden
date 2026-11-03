@@ -232,6 +232,7 @@
   padding-bottom: 16px;
 }
 .editor-inline .garden-canvas-workspace {
+  grid-column: 3;
   padding: 0;
   min-width: 0;
   min-height: 0;
@@ -309,6 +310,72 @@
   min-height: 44px;
   padding-top: 8px;
   padding-bottom: 8px;
+}
+.inline-format-bar > select[aria-label="Text style"] {
+  width: 110px;
+}
+.inline-format-bar > .format-more-trigger {
+  position: sticky;
+  right: 0;
+  z-index: 2;
+  box-shadow: -6px 0 10px var(--cream);
+}
+.format-more {
+  position: fixed;
+  inset: auto;
+  margin: 0;
+  width: min(360px, calc(100vw - 16px));
+  max-height: calc(100dvh - 16px);
+  overflow: auto;
+  background: var(--cream);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 16px;
+  box-shadow: 0 10px 32px #30433725;
+}
+.format-more:popover-open {
+  display: grid;
+  gap: 14px;
+}
+.format-more-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.format-more-heading button {
+  width: 44px;
+  height: 44px;
+  padding: 4px;
+  background: transparent;
+}
+.format-more-actions {
+  display: flex;
+  gap: 8px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--line);
+}
+.format-more-actions button {
+  min-width: 44px;
+}
+.format-more-spacing {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+.format-more .format-pixels {
+  font-size: 12px;
+  gap: 8px;
+}
+.format-more .format-pixels input {
+  height: 44px;
+  min-height: 44px;
+}
+.format-more p {
+  margin: 0;
+  font-size: 12px;
+  color: var(--muted);
 }
 .inline-format-bar > button {
   width: auto;

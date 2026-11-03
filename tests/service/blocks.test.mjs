@@ -47,7 +47,7 @@ test("explicit rich text and custom colours round-trip, while legacy markup stay
           id: "formatted",
           text: "A bold memory",
           textRich:
-            '<h2>A <strong>bold</strong> <span style="color: rgb(167, 91, 67); font-size: 28px; letter-spacing: 1.5px">memory</span></h2>',
+            '<h2 style="text-align: center; line-height: 1.8">A <strong>bold</strong> <span style="color: rgb(167, 91, 67); font-size: 28px; letter-spacing: 1.5px; font-family: Georgia">memory</span></h2>',
           style: "h2",
           backgroundColor: "#a7c4a0",
           padding: 24,
@@ -90,6 +90,8 @@ test("explicit rich text and custom colours round-trip, while legacy markup stay
   const html = await (await fetch(base + "/p/" + page.id)).text();
   assert.match(html, /<strong>bold<\/strong>/);
   assert.ok(/font-size:\s*28px/.test(html), "Public font size is rendered");
+  assert.ok(/font-family:\s*Georgia/.test(html), "Public font is rendered");
+  assert.ok(/line-height:\s*1.8/.test(html), "Public line height is rendered");
   assert.ok(
     /letter-spacing:\s*1.5px/.test(html),
     "Public letter spacing is rendered",
@@ -121,6 +123,10 @@ test("explicit rich text and custom colours round-trip, while legacy markup stay
     '<span style="color: #123456 !important">Unsafe</span>',
     '<span onclick="alert(1)">Unsafe</span>',
     '<span style="color: rgb(999, 0, 0)">Unsafe</span>',
+    '<span style="font-family: url(https://example.com)">Unsafe</span>',
+    '<span style="font-family: UnapprovedFont">Unsafe</span>',
+    '<p style="line-height: 999">Unsafe</p>',
+    '<p style="line-height: 1.8; position: fixed">Unsafe</p>',
   ]) {
     const invalid = structuredClone(content);
     invalid.content[0].props.textRich = bad;

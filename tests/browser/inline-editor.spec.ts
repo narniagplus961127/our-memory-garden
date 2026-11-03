@@ -71,11 +71,41 @@ test("write and format directly on the canvas, autosave, reload and render the p
   await expect(text.locator("span")).toHaveCSS("font-size", "28px");
   await expect(text.locator("span")).toHaveCSS("color", "rgb(167, 91, 67)");
   await page
+    .getByRole("combobox", { name: "Font family", exact: true })
+    .selectOption("Georgia");
+  await expect(text.locator("span")).toHaveCSS("font-family", "Georgia");
+  await page
+    .getByRole("button", { name: "More text formatting", exact: true })
+    .click();
+  await page
     .getByRole("spinbutton", { name: "Letter spacing", exact: true })
     .fill("1.5");
   await page
     .getByRole("spinbutton", { name: "Letter spacing", exact: true })
     .press("Enter");
+  if (
+    !(await page
+      .getByRole("region", { name: "More text formatting", exact: true })
+      .isVisible())
+  )
+    await page
+      .getByRole("button", { name: "More text formatting", exact: true })
+      .click();
+  await page
+    .getByRole("spinbutton", { name: "Line height", exact: true })
+    .fill("1.8");
+  await page
+    .getByRole("spinbutton", { name: "Line height", exact: true })
+    .press("Enter");
+  await expect(text.locator("span")).toHaveCSS("line-height", "50.4px");
+  if (
+    await page
+      .getByRole("region", { name: "More text formatting", exact: true })
+      .isVisible()
+  )
+    await page
+      .getByRole("button", { name: "Close more formatting", exact: true })
+      .click();
   await expect(text.locator("span")).toHaveCSS("letter-spacing", "1.5px");
   await page
     .getByRole("spinbutton", { name: "Font size", exact: true })
@@ -147,6 +177,14 @@ test("write and format directly on the canvas, autosave, reload and render the p
   await expect(view.locator(".garden-text span")).toHaveCSS(
     "letter-spacing",
     "1.5px",
+  );
+  await expect(view.locator(".garden-text span")).toHaveCSS(
+    "font-family",
+    "Georgia",
+  );
+  await expect(view.locator(".garden-text span")).toHaveCSS(
+    "line-height",
+    "50.4px",
   );
   await expect(view.locator(".garden-text")).toHaveCSS(
     "padding",
@@ -471,6 +509,9 @@ test("formatting-only conflicts show both formatted versions before a choice", a
     selection.removeAllRanges();
     selection.addRange(range);
   });
+  await page
+    .getByRole("button", { name: "More text formatting", exact: true })
+    .click();
   await page.getByRole("button", { name: "Italic", exact: true }).click();
   const comparison = page.getByRole("region", {
     name: "Resolve editing conflicts",

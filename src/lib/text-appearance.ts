@@ -25,7 +25,20 @@ export function textPixels(
   const number = Number(value.slice(0, -2));
   return number >= min && number <= max ? number + "px" : null;
 }
-export function validTextStyle(style: string): boolean {
+export const textFonts = ["Arial", "Helvetica", "Georgia", "Verdana"] as const;
+export function textFont(value: string): string | null {
+  const unquoted = value.replace(/^(["'])(.*)\1$/, "$2");
+  return (
+    textFonts.find((font) => font.toLowerCase() === unquoted.toLowerCase()) ??
+    null
+  );
+}
+export function textLineHeight(value: string): string | null {
+  if (!/^\d(?:\.\d{1,2})?$/.test(value)) return null;
+  const number = Number(value);
+  return number >= 1 && number <= 3 ? String(number) : null;
+}
+export function validTextStyle(style: string, paragraph = false): boolean {
   const declarations = style.split(";").filter((part) => part.trim());
   const seen = new Set<string>();
   return (
@@ -36,13 +49,21 @@ export function validTextStyle(style: string): boolean {
       const [name, value] = pair.map((s) => s.trim());
       if (seen.has(name)) return false;
       seen.add(name);
+      if (paragraph)
+        return name === "text-align"
+          ? ["left", "center"].includes(value)
+          : name === "line-height"
+            ? !!textLineHeight(value)
+            : false;
       return name === "color"
         ? !!textColour(value)
         : name === "font-size"
           ? !!textPixels(value, 8, 120)
           : name === "letter-spacing"
             ? !!textPixels(value, -2, 20)
-            : false;
+            : name === "font-family"
+              ? !!textFont(value)
+              : false;
     })
   );
 }
