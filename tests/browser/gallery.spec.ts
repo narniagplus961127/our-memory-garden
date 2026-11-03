@@ -1,3 +1,4 @@
+import { setVisibility } from "./editor-controls";
 import { test, expect } from "@playwright/test";
 import { readFile } from "node:fs/promises";
 import sharp from "sharp";
@@ -116,9 +117,7 @@ test("compose an ordered captioned gallery and use the enlarged viewer with touc
       exact: true,
     }),
   ).toBeVisible();
-  await page
-    .getByLabel("Page visibility", { exact: true })
-    .selectOption("public");
+  await setVisibility(page, "public");
   await expect(
     page.getByRole("status", { name: "Auto-save status" }),
   ).toHaveText("Saved");
@@ -173,9 +172,9 @@ test("compose an ordered captioned gallery and use the enlarged viewer with touc
     expect(bounds?.width).toBeGreaterThanOrEqual(44);
   }
   const image = dialog.getByRole("img");
-  expect(await image.evaluate((el: HTMLImageElement) => el.naturalWidth)).toBe(
-    640,
-  );
+  await expect
+    .poll(() => image.evaluate((el: HTMLImageElement) => el.naturalWidth))
+    .toBe(640);
   expect(
     await dialog.evaluate((el) => el.scrollWidth <= el.clientWidth),
   ).toBeTruthy();

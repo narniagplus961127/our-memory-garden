@@ -1,3 +1,4 @@
+import { selectBlock } from "./editor-controls";
 import { test, expect } from "@playwright/test";
 import fs from "node:fs";
 const env = Object.fromEntries(
@@ -35,13 +36,17 @@ test("failed and unfinished page details recover after refresh and clear after r
       body: JSON.stringify({ error: "The connection is unavailable." }),
     }),
   );
-  await page.getByRole("button", { name: "Page details", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Page settings", exact: true })
+    .click();
   await page.getByLabel("Page date", { exact: true }).fill("2026-10-29");
   await expect(
     page.getByRole("status", { name: "Page details status" }),
   ).toHaveText("Unsaved · Retry");
   await page.reload();
-  await page.getByRole("button", { name: "Page details", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Page settings", exact: true })
+    .click();
   await expect(page.getByLabel("Page date", { exact: true })).toHaveValue(
     "2026-10-29",
   );
@@ -68,7 +73,9 @@ test("failed and unfinished page details recover after refresh and clear after r
   // Refresh before the debounce expires: recovery must already hold the edit.
   await page.getByLabel("Page date", { exact: true }).fill("2026-10-28");
   await page.reload();
-  await page.getByRole("button", { name: "Page details", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Page settings", exact: true })
+    .click();
   await expect(page.getByLabel("Page date", { exact: true })).toHaveValue(
     "2026-10-28",
   );
@@ -127,7 +134,9 @@ test("concurrent page details preserve independent changes and require a choice 
     })
   ).json();
   await page.goto("/admin/pages/" + p.id);
-  await page.getByRole("button", { name: "Page details", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Page settings", exact: true })
+    .click();
   await page.getByLabel("Page date", { exact: true }).fill("2026-10-28");
   await expect(
     page.getByRole("status", { name: "Page details status" }),
@@ -259,7 +268,7 @@ test("two tabs keep separate details recovery copies through refresh and acknowl
       }),
     );
     await tab
-      .getByRole("button", { name: "Page details", exact: true })
+      .getByRole("button", { name: "Page settings", exact: true })
       .click();
     await tab.getByLabel("Page date", { exact: true }).fill(date);
     await expect(
@@ -282,7 +291,7 @@ test("two tabs keep separate details recovery copies through refresh and acknowl
   ] as const) {
     await tab.reload();
     await tab
-      .getByRole("button", { name: "Page details", exact: true })
+      .getByRole("button", { name: "Page settings", exact: true })
       .click();
     await expect(tab.getByLabel("Page date", { exact: true })).toHaveValue(
       date,
@@ -300,7 +309,7 @@ test("two tabs keep separate details recovery copies through refresh and acknowl
   ).toHaveText("Saved");
   await second.reload();
   await second
-    .getByRole("button", { name: "Page details", exact: true })
+    .getByRole("button", { name: "Page settings", exact: true })
     .click();
   await expect(second.getByLabel("Page date", { exact: true })).toHaveValue(
     "2026-10-29",
@@ -370,7 +379,9 @@ test("sign-out clears pending details recovery before a late response can rewrit
       await route.fulfill({ response });
     } catch {}
   });
-  await page.getByRole("button", { name: "Page details", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Page settings", exact: true })
+    .click();
   await page.getByLabel("Page date", { exact: true }).fill("2026-10-29");
   await started;
   const signout = await context.newPage();
@@ -442,7 +453,9 @@ test("page details autosave and categories can be created and renamed", async ({
     ).status(),
   ).toBe(200);
   await page.goto("/admin/pages/" + p.id);
-  await page.getByRole("button", { name: "Page details", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Page settings", exact: true })
+    .click();
   await page.getByLabel("Page date", { exact: true }).fill("2026-10-30");
   await expect(
     page.getByRole("status", { name: "Page details status" }),
@@ -480,7 +493,9 @@ test("page details autosave and categories can be created and renamed", async ({
     fullPage: true,
   });
   await page.reload();
-  await page.getByRole("button", { name: "Page details", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Page settings", exact: true })
+    .click();
   await expect(page.getByLabel("Page date", { exact: true })).toHaveValue(
     "2026-10-30",
   );
@@ -594,9 +609,7 @@ test("nested page grids select, order and filter pages in actual desktop and mob
     })
   ).json();
   await page.goto("/admin/pages/" + source.id);
-  await page
-    .getByRole("button", { name: "Select Page grid 1", exact: true })
-    .click();
+  await selectBlock(page, "Select Page grid 1");
   await page.getByRole("button", { name: "Open settings panel" }).click();
   for (const p of targets) {
     await page
@@ -669,9 +682,7 @@ test("nested page grids select, order and filter pages in actual desktop and mob
     page.getByRole("status", { name: "Auto-save status" }),
   ).toHaveText("Saved");
   await page.reload();
-  await page
-    .getByRole("button", { name: "Select Page grid 1", exact: true })
-    .click();
+  await selectBlock(page, "Select Page grid 1");
   await page.getByRole("button", { name: "Open settings panel" }).click();
   await expect(page.getByLabel("Grid selection", { exact: true })).toHaveValue(
     "category",

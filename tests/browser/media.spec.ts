@@ -1,3 +1,4 @@
+import { selectBlock, setVisibility } from "./editor-controls";
 import { test, expect } from "@playwright/test";
 import { readFile } from "node:fs/promises";
 import sharp from "sharp";
@@ -88,14 +89,27 @@ test("upload with per-file feedback, inspect protected details and reuse a photo
   const garden = await created.json();
   await page.goto("/admin/pages/" + garden.id);
   await page.getByRole("button", { name: "Open content panel" }).click();
+  await selectBlock(page, "Select Image 1");
+  const close = page.getByRole("button", { name: "Close panel", exact: true });
+  if (isMobile && (await close.isVisible())) await close.click();
   await page
-    .getByRole("button", { name: "Select Image 1", exact: true })
+    .frameLocator("iframe")
+    .getByRole("button", { name: "Choose photo", exact: true })
     .click();
-  await page.getByRole("button", { name: "Open settings panel" }).click();
-  await page.getByRole("button", { name: "Choose photo", exact: true }).click();
-  await page
+  const chooser = page.getByRole("dialog", {
+    name: "Choose a photo",
+    exact: true,
+  });
+  await chooser
     .getByRole("button", { name: "Use photo " + name, exact: true })
     .click();
+  await expect(chooser).not.toBeVisible();
+  await expect(
+    page
+      .frameLocator("iframe")
+      .getByRole("button", { name: "Replace photo", exact: true }),
+  ).toBeFocused();
+  await page.getByRole("button", { name: "Open settings panel" }).click();
   await page
     .getByLabel("Alternative text", { exact: true })
     .fill("Rosemary in the sun");
@@ -106,18 +120,16 @@ test("upload with per-file feedback, inspect protected details and reuse a photo
     .frameLocator("iframe")
     .getByRole("img", { name: "Rosemary in the sun", exact: true });
   await expect(image).toBeVisible();
-  expect(await image.evaluate((el: HTMLImageElement) => el.naturalWidth)).toBe(
-    640,
-  );
+  await expect
+    .poll(() => image.evaluate((el: HTMLImageElement) => el.naturalWidth))
+    .toBe(640);
   await page.reload();
   await expect(
     page
       .frameLocator("iframe")
       .getByRole("img", { name: "Rosemary in the sun", exact: true }),
   ).toBeVisible();
-  await page
-    .getByLabel("Page visibility", { exact: true })
-    .selectOption("public");
+  await setVisibility(page, "public");
   await expect(
     page.getByRole("status", { name: "Auto-save status" }),
   ).toHaveText("Saved");
@@ -127,11 +139,13 @@ test("upload with per-file feedback, inspect protected details and reuse a photo
   await expect(
     publicPage.getByRole("img", { name: "Rosemary in the sun", exact: true }),
   ).toBeVisible();
-  expect(
-    await publicPage
-      .getByRole("img", { name: "Rosemary in the sun", exact: true })
-      .evaluate((el: HTMLImageElement) => el.naturalWidth),
-  ).toBe(640);
+  await expect
+    .poll(() =>
+      publicPage
+        .getByRole("img", { name: "Rosemary in the sun", exact: true })
+        .evaluate((el: HTMLImageElement) => el.naturalWidth),
+    )
+    .toBe(640);
   await visitor.close();
   await page.goto("/admin/media");
   await page

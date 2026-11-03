@@ -1,4 +1,5 @@
 import "server-only";
+import { richFields, richPageReferences } from "../rich-text";
 import { database } from "./db";
 import { RequestError } from "./http";
 import type { Administrator } from "./pages";
@@ -157,6 +158,22 @@ export async function inboundReferences(id: string) {
   function scan(value: unknown, page: GardenPage) {
     if (!value || typeof value !== "object") return;
     const v = value as Record<string, unknown>;
+    if (typeof v.type === "string" && v.props && typeof v.props === "object") {
+      const props = v.props as Record<string, unknown>;
+      if (
+        Object.values(richFields[v.type] ?? {}).some(
+          (key) =>
+            typeof props[key] === "string" &&
+            richPageReferences(props[key] as string).includes(id),
+        )
+      )
+        refs.push({
+          id: page.id,
+          title: page.title,
+          kind: "Text or button link",
+        });
+      if (v.type === "Text" && typeof props.textRich === "string") return;
+    }
     if (v.kind === "page" && v.pageId === id)
       refs.push({
         id: page.id,

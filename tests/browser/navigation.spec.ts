@@ -1,3 +1,9 @@
+import {
+  canvasField,
+  writeCanvas,
+  selectBlock,
+  setVisibility,
+} from "./editor-controls";
 import { test, expect } from "@playwright/test";
 import fs from "node:fs";
 const env = Object.fromEntries(
@@ -103,7 +109,9 @@ test("manage nested navigation and change addresses through desktop and mobile c
     fullPage: true,
   });
   await page.goto("/admin/pages/" + p.id);
-  await page.getByRole("button", { name: "Page details", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Page settings", exact: true })
+    .click();
   await page
     .getByLabel("Page address", { exact: true })
     .fill("rosemary-" + p.id);
@@ -177,27 +185,42 @@ test("text and button page pickers keep private links visible, follow changed ad
     data: { visibility: "public", version: source.version },
   });
   await page.goto("/admin/pages/" + source.id);
-  await page
-    .getByRole("button", { name: "Select Text 1", exact: true })
-    .click();
+  await selectBlock(page, "Select Text 1");
   await page.getByRole("button", { name: "Open settings panel" }).click();
-  await page
-    .getByLabel("Text content", { exact: true })
-    .fill("Visit our quiet rosemary today.");
-  await page.getByLabel("Linked text", { exact: true }).fill("quiet rosemary");
-  await page
+  await writeCanvas(page, "Text content", "Visit our quiet rosemary today.");
+  const close = page.getByRole("button", { name: "Close panel", exact: true });
+  if ((page.viewportSize()?.width ?? 1280) <= 760 && (await close.isVisible()))
+    await close.click();
+  await canvasField(page, "Text content").evaluate((element) => {
+    const text = element.querySelector("p")!.firstChild!;
+    const range = element.ownerDocument.createRange();
+    range.setStart(text, 10);
+    range.setEnd(text, 24);
+    (element as HTMLElement).focus();
+    const selection = element.ownerDocument.getSelection()!;
+    selection.removeAllRanges();
+    selection.addRange(range);
+  });
+  await page.getByRole("button", { name: "Add a link", exact: true }).click();
+  const linkDialog = page.getByRole("dialog", {
+    name: "Link text to a page or website",
+  });
+  await linkDialog
     .getByLabel("Destination type", { exact: true })
     .selectOption("page");
-  await page.getByLabel("Garden page", { exact: true }).selectOption(target.id);
+  await linkDialog
+    .getByLabel("Garden page", { exact: true })
+    .selectOption(target.id);
+  await linkDialog
+    .getByRole("button", { name: "Apply link", exact: true })
+    .click();
   await expect(
     page.getByRole("status", { name: "Auto-save status" }),
   ).toHaveText("Saved");
   await page.getByRole("button", { name: "Open content panel" }).click();
   await page.getByRole("button", { name: "Add Button", exact: true }).click();
   await page.getByRole("button", { name: "Open settings panel" }).click();
-  await page
-    .getByLabel("Button label", { exact: true })
-    .fill("Another garden path");
+  await writeCanvas(page, "Button label", "Another garden path");
   await page
     .getByLabel("Destination type", { exact: true })
     .selectOption("page");
@@ -219,7 +242,9 @@ test("text and button page pickers keep private links visible, follow changed ad
     pub.getByRole("heading", { name: "Page not found", exact: true }),
   ).toBeVisible();
   await page.goto("/admin/pages/" + target.id);
-  await page.getByRole("button", { name: "Page details", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Page settings", exact: true })
+    .click();
   const address = page.getByLabel("Page address", { exact: true });
   await address.fill("Invalid address");
   await address.blur();
@@ -236,7 +261,7 @@ test("text and button page pickers keep private links visible, follow changed ad
   await expect(page.getByRole("status", { name: "Address status" })).toHaveText(
     "Saved",
   );
-  await page.getByLabel("Page visibility").selectOption("public");
+  await setVisibility(page, "public");
   await expect(
     page.getByRole("status", { name: "Auto-save status" }),
   ).toHaveText("Saved");
@@ -253,7 +278,9 @@ test("text and button page pickers keep private links visible, follow changed ad
     pub.getByRole("heading", { name: target.title, exact: true }),
   ).toBeVisible();
   await page.getByRole("button", { name: "Open content panel" }).click();
-  await page.getByRole("button", { name: "Page details", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Page settings", exact: true })
+    .click();
   await expect(address).toHaveValue("quiet-" + target.id);
   await visitor.close();
 });

@@ -32,6 +32,51 @@ const text = (id, value) => ({
   props: { id, text: value, style: "p" },
 });
 const doc = (...content) => ({ root: { props: {} }, content });
+test("reducing columns conflicts with a simultaneous new child in a removed column", async () => {
+  const columns = {
+    type: "Columns",
+    props: {
+      id: "columns",
+      count: 4,
+      ratio: "equal",
+      left: [text("a", "First")],
+      right: [],
+      third: [text("c", "Third")],
+      fourth: [],
+    },
+  };
+  const { owner, other, path, page } = await fixture(doc(columns));
+  const reduced = structuredClone(page.content);
+  reduced.content[0].props.count = 1;
+  reduced.content[0].props.left.push(...reduced.content[0].props.third);
+  reduced.content[0].props.third = [];
+  assert.equal(
+    (
+      await call(
+        path,
+        "PATCH",
+        { content: reduced, version: page.version },
+        owner,
+      )
+    ).status,
+    200,
+  );
+  const extended = structuredClone(page.content);
+  extended.content[0].props.third.push(
+    text("new", "Never discard this memory"),
+  );
+  assert.equal(
+    (
+      await call(
+        path,
+        "PATCH",
+        { content: extended, version: page.version },
+        other,
+      )
+    ).status,
+    409,
+  );
+});
 async function fixture(content) {
   const owner = await login(),
     other = await login("OTHER");

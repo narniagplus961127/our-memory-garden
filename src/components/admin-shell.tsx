@@ -1,6 +1,7 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useState } from "react";
 import { Brand } from "./brand";
 import { signOutEditors } from "@/lib/editor-recovery";
 const navigation = [
@@ -18,6 +19,8 @@ export function AdminShell({
   accountId: string;
 }) {
   const pathname = usePathname();
+  const [signingOut, setSigningOut] = useState(false),
+    [signOutError, setSignOutError] = useState("");
   if (/^\/admin\/pages\/[0-9a-f-]{36}$/i.test(pathname))
     return <main className="editor-admin-main">{children}</main>;
   const links = navigation.map(([label, path]) => (
@@ -40,9 +43,32 @@ export function AdminShell({
       <form
         action="/api/auth/logout"
         method="post"
-        onSubmit={() => signOutEditors(accountId)}
+        onSubmit={async (event) => {
+          event.preventDefault();
+          setSigningOut(true);
+          setSignOutError("");
+          try {
+            const response = await fetch("/api/auth/sign-out", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: "{}",
+            });
+            if (!response.ok) throw new Error();
+            // Other tabs can now visit /login without an active session redirecting them back.
+            signOutEditors(accountId);
+            window.location.assign("/login");
+          } catch {
+            setSigningOut(false);
+            setSignOutError(
+              "Could not sign out. Check your connection and retry.",
+            );
+          }
+        }}
       >
-        <button type="submit">Sign out</button>
+        <button type="submit" disabled={signingOut}>
+          {signingOut ? "Signing out…" : "Sign out"}
+        </button>
+        {signOutError && <p role="alert">{signOutError}</p>}
       </form>
     </>
   );

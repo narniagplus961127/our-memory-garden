@@ -1,6 +1,6 @@
 # Our Memory Garden specification
 
-Status: resolved
+Status: resolved — released baseline and approved ticket 14 editor refinement implemented and verified
 
 ## Problem Statement
 
@@ -70,6 +70,13 @@ Create a botanical garden-themed website with a public-facing garden and a share
 56. As an administrator, I want the media library to show photo usage and accessibility, so that I understand where a photo appears.
 57. As a project owner, I want to try a local Puck experiment with sample content before design approval, so that we can validate the editing experience.
 58. As a project owner, I want the admin workspace to be visually distinct from the public site, so that I can tell when I am editing.
+59. As an administrator, I want to write directly in text, banner, button and caption widgets on the canvas, so that I do not need to open Settings just to change words.
+60. As an administrator, I want contextual formatting and selected-block actions near my content, so that editing and arranging a page is easier to understand.
+61. As an administrator, I want visual column-count and proportion choices that preserve existing content, so that I can adjust a layout safely.
+62. As a project owner, I want to review the refined inline editor in FigCraft and a disposable interaction prototype before it changes the released editor.
+63. As an administrator, I want to drag new and existing blocks into specific page, section and column positions, with visible destinations and non-drag alternatives.
+64. As an administrator, I want custom background colours through a picker or typed hex value, compact palette cards and consistently styled select controls.
+65. As an administrator, I want an editable page title, a distinct Page settings entry for URL and metadata, and persistent Pages, Dashboard and History controls, so that I can manage the page and leave the editor easily.
 
 ## Implementation Decisions
 
@@ -83,6 +90,7 @@ Create a botanical garden-themed website with a public-facing garden and a share
 - **Puck editor:** Register the garden's own React blocks and render saved page data with those same components. Persist page structure through authenticated application code in Neon PostgreSQL. Keep database and object-storage credentials server-only; enforce public/private filtering in the server data boundary and administrator authorization on mutations. Theme and compose the editor to match the approved FigCraft design. Puck overrides and plugins may be experimental; isolate customizations and verify compatibility on upgrades. Validate mobile editing, accessible non-drag controls, nested layouts, device views, auto-save recovery and concurrency rather than assuming the library supplies them.
 - **Blocks and templates:** Support text, banner, image, gallery, button and page-grid blocks plus section and column layouts. Administrators can add, select, edit content and style, move, duplicate and remove blocks. Templates supply an initial layout; pages created from them are independent. Prepare the initial templates during development; a template editor is out of scope.
 - **Editor presentation:** On desktop, show a block palette or contextual block settings beside a large page canvas. On mobile, use a compact editor bar and a touch-friendly opening content/settings panel, with tap-to-add and move-up/down alternatives. Provide desktop/mobile canvas view controls and show page visibility and save status. The live canvas is the editing view: no separate Preview or Publish button, and no undo/redo controls.
+- **Approved editor refinement (ticket 14, owner approved 2026-11-02):** Write directly in canvas widgets with contextual formatting; use the sidebar for block appearance. Palette cards are approximately 64 px desktop / 56 px mobile, with labelled grips and 44 px touch targets. Allow dragging new/existing blocks into visible nested insertion positions, rejecting self/descendant destinations. Custom backgrounds accept any valid RGB colour via native picker or #RGB / #RRGGBB input; invalid/incomplete text does not replace the last valid colour. Shared selects retain native semantics with an inset chevron and sufficient trailing padding. Keep Page settings separate from block Styles, expose title/URL/visibility/date/category/cover/sharing/indexing, and retain always-visible Pages, Dashboard and History controls. Valid metadata changes retain existing server validation and serialized autosave; leaving while unsaved, failed or conflicted must preserve the existing recovery/leave behavior.
 - **Auto-save and recovery:** Auto-save changes without a save button; saved changes to public pages become visible immediately. The canvas can show local unsaved changes, but must clearly display saving, saved and failure states. Retain unsaved work for retry and attempt recovery after refresh or closure on the same device; mark recovered edits unsaved until persistence succeeds. Clear device-local recovery copies after successful saving or sign-out. Production persistence and recovery require verification beyond the local experiment.
 - **Concurrent edits and history:** Preserve independent edits to different blocks where safe. For conflicting edits to the same text block, retain the second administrator's local text and offer their version and the saved version, with choices to keep local, accept saved, or copy and edit manually. Durably preserve the saved version before replacing it. Contested moves or deletion of the same block require a choice without discarding unsaved work. Group adjacent edits into useful versions and offer history and restoration; full live collaborative text editing is not required.
 - **Page deletion:** Warn about inbound links before deleting a page. Keep deleted pages in trash until an administrator explicitly deletes them permanently. Restored pages return as private.
@@ -106,5 +114,7 @@ Create a botanical garden-themed website with a public-facing garden and a share
 Public registration, visitor comments or reactions, a separate story content type, a template editor in the first version, dark mode, full real-time collaborative text editing, separate Preview or Publish controls, undo/redo controls, Cloudflare infrastructure and Vercel preview deployments.
 
 ## Further Notes
+
+The released baseline through ticket 13 is complete. On 2026-11-02 the owner requested a Klaviyo-inspired refinement with direct canvas editing. [Ticket 14](issues/14-inline-editor-experience.md) and [the inline design proposal](../../docs/editor-inline-design.md) describe this additional scope. Existing design approval does not imply approval of the new interaction; review its concrete desktop/mobile proposal before production implementation. Existing pages, private media, autosave, recovery, conflicts and history remain required compatibility boundaries.
 
 Use sample content in the prototype; the homepage uses a plant image placeholder. The project has a FigCraft design, documentation, tickets and a working disposable Puck experiment on the prototype branch. Ticket 00 is owner accepted; its local-storage and sample-data limitations do not establish production persistence or security. Ticket 01 includes desktop/mobile saving, failure, conflict, password-reset and not-found designs. The owner approved the design and core editor flow on 2026-10-28, based on commit `e11a9c0`; ticket 01 is resolved and ticket 02 is unblocked. See `docs/design-spec-review.md` for review routes, validation evidence and later-ticket design follow-through.

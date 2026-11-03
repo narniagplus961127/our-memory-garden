@@ -1,3 +1,4 @@
+import { writeCanvas, selectBlock, setVisibility } from "./editor-controls";
 import { test, expect } from "@playwright/test";
 import { readFile } from "node:fs/promises";
 const env = Object.fromEntries(
@@ -29,17 +30,13 @@ test("visibility and homepage controls keep visitors in step with saved content"
   await expect(page).toHaveURL(/\/admin\/pages\/[0-9a-f-]+$/);
   const id = page.url().split("/").pop()!;
   await page.getByRole("button", { name: "Open content panel" }).click();
-  await page
-    .getByRole("button", { name: "Select Text 1", exact: true })
-    .click();
+  await selectBlock(page, "Select Text 1");
   await page.getByRole("button", { name: "Open settings panel" }).click();
-  await page
-    .getByRole("textbox", { name: "Text content", exact: true })
-    .fill("A robin visited the garden gate.");
+  await writeCanvas(page, "Text content", "A robin visited the garden gate.");
   await expect(
     page.getByRole("status", { name: "Auto-save status" }),
   ).toHaveText("Saved");
-  await page.getByLabel("Page visibility").selectOption("public");
+  await setVisibility(page, "public");
   await expect(
     page.getByRole("status", { name: "Auto-save status" }),
   ).toHaveText("Saved");
@@ -49,12 +46,12 @@ test("visibility and homepage controls keep visitors in step with saved content"
   await expect(
     publicPage.getByText("A robin visited the garden gate."),
   ).toBeVisible();
-  await page.getByLabel("Page visibility").selectOption("private");
+  await setVisibility(page, "private");
   await expect(
     page.getByRole("status", { name: "Auto-save status" }),
   ).toHaveText("Saved");
   expect((await publicPage.goto(baseURL + "/p/" + id))?.status()).toBe(404);
-  await page.getByLabel("Page visibility").selectOption("public");
+  await setVisibility(page, "public");
   await expect(
     page.getByRole("status", { name: "Auto-save status" }),
   ).toHaveText("Saved");
@@ -70,13 +67,9 @@ test("visibility and homepage controls keep visitors in step with saved content"
   await page.getByRole("link", { name: "Edit homepage", exact: true }).click();
   await expect(page.getByLabel("Page visibility")).toBeDisabled();
   await page.getByRole("button", { name: "Open content panel" }).click();
-  await page
-    .getByRole("button", { name: "Select Text 1", exact: true })
-    .click();
+  await selectBlock(page, "Select Text 1");
   await page.getByRole("button", { name: "Open settings panel" }).click();
-  await page
-    .getByRole("textbox", { name: "Text content", exact: true })
-    .fill("The robin returned for breakfast.");
+  await writeCanvas(page, "Text content", "The robin returned for breakfast.");
   await expect(
     page.getByRole("status", { name: "Auto-save status" }),
   ).toHaveText("Saved");

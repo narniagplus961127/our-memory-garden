@@ -294,7 +294,10 @@ test("text and button links store page IDs and remain visible when their private
   assert.equal(r.status, 200);
   let html = await (await fetch(base + "/garden/" + source.slug)).text();
   assert.match(html, /href="\/p\/[^"]+">quiet rosemary<\/a>/);
-  assert.match(html, /href="\/p\/[^"]+">Our secret garden<\/a>/);
+  assert.match(
+    html,
+    /href="\/p\/[^"]+">(?:(?!<\/a>)[\s\S])*Our secret garden(?:(?!<\/a>)[\s\S])*<\/a>/,
+  );
   assert.equal((await fetch(base + "/p/" + target.id)).status, 404);
   r = await call(
     "/api/pages/" + target.id,

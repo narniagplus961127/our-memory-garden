@@ -1,3 +1,11 @@
+import { chooseAddTarget } from "./editor-controls";
+import {
+  canvasField,
+  writeCanvas,
+  selectBlock,
+  setVisibility,
+  addColumns,
+} from "./editor-controls";
 import { test, expect, type Locator } from "@playwright/test";
 import { readFile } from "node:fs/promises";
 const env = Object.fromEntries(
@@ -34,46 +42,30 @@ test("compose nested blocks with taps, retain selection through moves and save i
   await expect(page).toHaveURL(/\/admin\/pages\/[0-9a-f-]{36}$/);
   await press(page.getByRole("button", { name: "Open content panel" }));
   await press(page.getByRole("button", { name: "Add Section", exact: true }));
-  await page
-    .getByLabel("Add to")
-    .selectOption({ label: "Section 1 · content" });
-  await press(page.getByRole("button", { name: "Add Columns", exact: true }));
-  await page
-    .getByLabel("Add to")
-    .selectOption({ label: "Columns 1 · left column" });
+  await chooseAddTarget(page, "Section 1 · content");
+  await addColumns(page);
+  await chooseAddTarget(page, "Columns 1 · left column");
   await press(page.getByRole("button", { name: "Add Text", exact: true }));
   await press(page.getByRole("button", { name: "Open settings panel" }));
-  await page
-    .getByRole("textbox", { name: "Text content", exact: true })
-    .fill("First rosemary");
+  await writeCanvas(page, "Text content", "First rosemary");
   await press(page.getByRole("button", { name: "Open content panel" }));
   await press(page.getByRole("button", { name: "Add Text", exact: true }));
   await press(page.getByRole("button", { name: "Open settings panel" }));
-  await page
-    .getByRole("textbox", { name: "Text content", exact: true })
-    .fill("Second rosemary");
+  await writeCanvas(page, "Text content", "Second rosemary");
   await press(page.getByRole("button", { name: "Move block up", exact: true }));
-  await expect(
-    page.getByRole("textbox", { name: "Text content", exact: true }),
-  ).toHaveValue("Second rosemary");
+  await expect(canvasField(page, "Text content")).toHaveText("Second rosemary");
   await expect(
     page.getByRole("button", { name: "Move block up", exact: true }),
   ).toBeDisabled();
   await press(
     page.getByRole("button", { name: "Move block down", exact: true }),
   );
-  await expect(
-    page.getByRole("textbox", { name: "Text content", exact: true }),
-  ).toHaveValue("Second rosemary");
+  await expect(canvasField(page, "Text content")).toHaveText("Second rosemary");
   await press(page.getByRole("button", { name: "Open content panel" }));
-  await page
-    .getByLabel("Add to")
-    .selectOption({ label: "Columns 1 · right column" });
+  await chooseAddTarget(page, "Columns 1 · right column");
   await press(page.getByRole("button", { name: "Add Banner", exact: true }));
   await press(page.getByRole("button", { name: "Open settings panel" }));
-  await page
-    .getByRole("textbox", { name: "Heading", exact: true })
-    .fill("The right hand garden");
+  await writeCanvas(page, "Heading", "The right hand garden");
   await expect(
     page.getByRole("status", { name: "Auto-save status" }),
   ).toHaveText("Saved");
@@ -95,9 +87,7 @@ test("compose nested blocks with taps, retain selection through moves and save i
     page.getByRole("status", { name: "Auto-save status" }),
   ).toHaveText("Saved");
   await press(page.getByRole("button", { name: "Open content panel" }));
-  await press(
-    page.getByRole("button", { name: "Select Section 1", exact: true }),
-  );
+  await selectBlock(page, "Select Section 1");
   await press(page.getByRole("button", { name: "Open settings panel" }));
   await press(
     page.getByRole("button", { name: "Duplicate block", exact: true }),
@@ -115,7 +105,7 @@ test("compose nested blocks with taps, retain selection through moves and save i
   );
   await press(page.getByRole("button", { name: "Remove block", exact: true }));
   await expect(
-    page.getByRole("heading", { name: "Page settings", exact: true }),
+    page.getByRole("heading", { name: "Block styles", exact: true }),
   ).toBeVisible();
   expect(browserErrors).toEqual([]);
   await expect(
@@ -173,13 +163,9 @@ test("templates start independently and the device controls resize the actual re
   await expect(page).toHaveURL(/\/admin\/pages\/[0-9a-f-]{36}$/);
   const id = page.url().split("/").pop();
   const first = await (await page.request.get("/api/pages/" + id)).json();
-  await page
-    .getByRole("button", { name: "Select Banner 1", exact: true })
-    .click();
+  await selectBlock(page, "Select Banner 1");
   await page.getByRole("button", { name: "Open settings panel" }).click();
-  await page
-    .getByRole("textbox", { name: "Heading", exact: true })
-    .fill("Our independent welcome");
+  await writeCanvas(page, "Heading", "Our independent welcome");
   await expect(
     page.getByRole("status", { name: "Auto-save status" }),
   ).toHaveText("Saved");
@@ -202,7 +188,7 @@ test("templates start independently and the device controls resize the actual re
   await page.getByRole("button", { name: "Mobile", exact: true }).click();
   await expect
     .poll(() => frame.locator("body").evaluate((el) => el.clientWidth))
-    .toBe(390);
+    .toBe(isMobile ? page.viewportSize()!.width - 24 : 390);
   await expect
     .poll(() =>
       frame
@@ -215,7 +201,13 @@ test("templates start independently and the device controls resize the actual re
   await page.getByRole("button", { name: "Desktop", exact: true }).click();
   await expect
     .poll(() => frame.locator("body").evaluate((el) => el.clientWidth))
-    .toBe(1280);
+    .toBe(
+      Math.round(
+        await page
+          .locator(".garden-canvas-frame")
+          .evaluate((el) => el.clientWidth),
+      ),
+    );
   await expect
     .poll(() =>
       frame
@@ -276,14 +268,9 @@ test("autosave keeps the latest edit during a slow write and preserves failures 
     .fill("Saving rosemary " + Date.now());
   await page.getByRole("button", { name: "Create private page" }).click();
   await expect(page).toHaveURL(/\/admin\/pages\/[0-9a-f-]{36}$/);
-  await page
-    .getByRole("button", { name: "Select Text 1", exact: true })
-    .click();
+  await selectBlock(page, "Select Text 1");
   await page.getByRole("button", { name: "Open settings panel" }).click();
-  const field = page.getByRole("textbox", {
-    name: "Text content",
-    exact: true,
-  });
+  const field = canvasField(page, "Text content");
   let release!: () => void, arrived!: () => void;
   const held = new Promise<void>((resolve) => (release = resolve)),
     started = new Promise<void>((resolve) => (arrived = resolve));
@@ -308,11 +295,9 @@ test("autosave keeps the latest edit during a slow write and preserves failures 
   ).toHaveText("Saved");
   await page.unroute("**/api/pages/*");
   await page.reload();
-  await page
-    .getByRole("button", { name: "Select Text 1", exact: true })
-    .click();
+  await selectBlock(page, "Select Text 1");
   await page.getByRole("button", { name: "Open settings panel" }).click();
-  await expect(field).toHaveValue("The latest rosemary survives");
+  await expect(field).toHaveText("The latest rosemary survives");
   await page.route("**/api/pages/*", async (route) => {
     if (route.request().method() === "PATCH") await route.abort("failed");
     else await route.continue();
@@ -321,18 +306,16 @@ test("autosave keeps the latest edit during a slow write and preserves failures 
   await expect(
     page.getByRole("status", { name: "Auto-save status" }),
   ).toHaveText("Not saved");
-  await expect(field).toHaveValue("A retryable garden memory");
+  await expect(field).toHaveText("A retryable garden memory");
   await page.unroute("**/api/pages/*");
   await page.getByRole("button", { name: "Retry save", exact: true }).click();
   await expect(
     page.getByRole("status", { name: "Auto-save status" }),
   ).toHaveText("Saved");
   await page.reload();
-  await page
-    .getByRole("button", { name: "Select Text 1", exact: true })
-    .click();
+  await selectBlock(page, "Select Text 1");
   await page.getByRole("button", { name: "Open settings panel" }).click();
-  await expect(field).toHaveValue("A retryable garden memory");
+  await expect(field).toHaveText("A retryable garden memory");
 });
 
 test("drag a nested text block into an empty column and persist its new location", async ({
@@ -357,32 +340,47 @@ test("drag a nested text block into an empty column and persist its new location
     .fill("A movable moment " + Date.now());
   await page.getByRole("button", { name: "Create private page" }).click();
   await expect(page).toHaveURL(/\/admin\/pages\/[0-9a-f-]{36}$/);
-  await page.getByRole("button", { name: "Add Columns", exact: true }).click();
+  await addColumns(page);
   await page
-    .getByLabel("Add to")
-    .selectOption({ label: "Columns 1 · left column" });
-  await page.getByRole("button", { name: "Add Text", exact: true }).click();
-  const frame = page.frameLocator("iframe");
-  const source = frame
-    .locator(".garden-columns > div")
-    .first()
-    .getByRole("button", { name: "Write a little memory…", exact: true });
-  const destination = frame.locator(".garden-columns > div").nth(1);
-  const from = await source.boundingBox(),
-    to = await destination.boundingBox();
-  expect(from).toBeTruthy();
-  expect(to).toBeTruthy();
-  await page.mouse.move(from!.x + from!.width / 2, from!.y + from!.height / 2);
-  await page.mouse.down();
-  await page.mouse.move(
-    from!.x + from!.width / 2 + 12,
-    from!.y + from!.height / 2,
-    { steps: 5 },
+    .getByRole("button", { name: "Open content panel", exact: true })
+    .click();
+  const frame = page.frameLocator("iframe"),
+    left = frame.locator(".garden-columns > div").first(),
+    destination = frame.locator(".garden-columns > div").nth(1);
+  async function dragBetween(source: Locator, target: Locator) {
+    await source.scrollIntoViewIfNeeded();
+    await target.scrollIntoViewIfNeeded();
+    const from = await source.boundingBox(),
+      to = await target.boundingBox();
+    expect(from).toBeTruthy();
+    expect(to).toBeTruthy();
+    await page.mouse.move(
+      from!.x + from!.width / 2,
+      from!.y + from!.height / 2,
+    );
+    await page.mouse.down();
+    await page.mouse.move(
+      from!.x + from!.width / 2 + 12,
+      from!.y + from!.height / 2,
+      { steps: 5 },
+    );
+    await page.mouse.move(to!.x + to!.width / 2, to!.y + to!.height / 2, {
+      steps: 30,
+    });
+    await page.mouse.up();
+  }
+  const palette = page
+    .getByRole("complementary", { name: "Page content", exact: true })
+    .getByRole("button", { name: "Text", exact: true });
+  await dragBetween(palette, left);
+  await expect(
+    left.getByText("Write a little memory…", { exact: true }),
+  ).toBeVisible();
+  await selectBlock(page, "Select Text 2");
+  await dragBetween(
+    frame.getByRole("button", { name: "Drag to reorder", exact: true }),
+    destination,
   );
-  await page.mouse.move(to!.x + to!.width / 2, to!.y + to!.height / 2, {
-    steps: 30,
-  });
-  await page.mouse.up();
   await expect(
     destination.getByText("Write a little memory…", { exact: true }),
   ).toBeVisible();
@@ -408,6 +406,16 @@ test("drag a nested text block into an empty column and persist its new location
       .nth(1)
       .getByText("Write a little memory…", { exact: true }),
   ).toBeVisible();
+  const baseline = (await (await page.request.get("/api/pages/" + id)).json())
+    .content;
+  await selectBlock(page, "Select Columns 1");
+  await dragBetween(
+    frame.getByRole("button", { name: "Drag to reorder", exact: true }),
+    destination,
+  );
+  expect(
+    (await (await page.request.get("/api/pages/" + id)).json()).content,
+  ).toEqual(baseline);
 });
 
 test("image and button settings appear through the same public blocks after autosave", async ({
@@ -431,16 +439,12 @@ test("image and button settings appear through the same public blocks after auto
     .check();
   await page.getByRole("button", { name: "Create private page" }).click();
   await expect(page).toHaveURL(/\/admin\/pages\/[0-9a-f-]{36}$/);
-  await page
-    .getByRole("button", { name: "Select Image 1", exact: true })
-    .click();
+  await selectBlock(page, "Select Image 1");
   await page.getByRole("button", { name: "Open settings panel" }).click();
   await page
     .getByRole("textbox", { name: "Alternative text", exact: true })
     .fill("Rosemary leaves in the morning");
-  await page
-    .getByRole("textbox", { name: "Caption", exact: true })
-    .fill("Our first spring");
+  await writeCanvas(page, "Caption", "Our first spring");
   await page
     .getByRole("combobox", { name: "Photo width", exact: true })
     .selectOption({ label: "Full width" });
@@ -448,12 +452,10 @@ test("image and button settings appear through the same public blocks after auto
     .getByRole("combobox", { name: "Photo fit", exact: true })
     .selectOption({ label: "Contain" });
   await page.getByRole("button", { name: "Open content panel" }).click();
-  await page.getByLabel("Add to").selectOption({ label: "Page" });
+  await chooseAddTarget(page, "Page");
   await page.getByRole("button", { name: "Add Button", exact: true }).click();
   await page.getByRole("button", { name: "Open settings panel" }).click();
-  await page
-    .getByRole("textbox", { name: "Button label", exact: true })
-    .fill("Read our journal");
+  await writeCanvas(page, "Button label", "Read our journal");
   await page
     .getByRole("textbox", { name: "External web address", exact: true })
     .fill("https://example.com/garden");
@@ -463,7 +465,7 @@ test("image and button settings appear through the same public blocks after auto
   await page
     .getByRole("combobox", { name: "Alignment", exact: true })
     .selectOption({ label: "Centre" });
-  await page.getByLabel("Page visibility").selectOption("public");
+  await setVisibility(page, "public");
   await expect(
     page.getByRole("status", { name: "Auto-save status" }),
   ).toHaveText("Saved");

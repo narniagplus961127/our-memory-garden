@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { GardenPage } from "@/lib/pages";
 import { slotNames, slotContent, type PageBlock } from "@/lib/blocks";
+import { plainHtml } from "@/lib/rich-text";
 import {
   snapshot,
   equal,
@@ -348,9 +349,20 @@ export function usePageAutosave(page: GardenPage, accountId: string) {
     function walk(blocks: PageBlock[]): PageBlock[] {
       return blocks.map((block) => {
         if (block.props.id === conflict!.blockId)
-          return { ...block, props: { ...block.props, text } };
+          return {
+            ...block,
+            props: {
+              ...block.props,
+              text,
+              ...(block.props.textRich !== undefined
+                ? {
+                    textRich: plainHtml(text, String(block.props.style ?? "p")),
+                  }
+                : {}),
+            },
+          };
         const props = { ...block.props };
-        for (const slot of slotNames(block.type))
+        for (const slot of slotNames(block.type, block.props.count))
           props[slot] = walk(slotContent(block, slot));
         return { ...block, props };
       });
@@ -371,7 +383,18 @@ export function usePageAutosave(page: GardenPage, accountId: string) {
               ...item,
               local: {
                 ...(item.local as PageBlock),
-                props: { ...(item.local as PageBlock).props, text },
+                props: {
+                  ...(item.local as PageBlock).props,
+                  text,
+                  ...((item.local as PageBlock).props.textRich !== undefined
+                    ? {
+                        textRich: plainHtml(
+                          text,
+                          String((item.local as PageBlock).props.style ?? "p"),
+                        ),
+                      }
+                    : {}),
+                },
               },
             }
           : item,

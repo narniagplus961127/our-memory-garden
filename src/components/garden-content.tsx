@@ -7,13 +7,14 @@ import { gridPages } from "@/lib/server/organization";
 import { currentAdministrator } from "@/lib/server/auth";
 import { slotNames, slotContent, type PageBlock } from "@/lib/blocks";
 import type { GridSelection } from "@/lib/organization";
+import { inlinePageData } from "@/lib/rich-text";
 export async function GardenContent({ data }: { data: PageData }) {
   const administrator = await currentAdministrator();
   async function resolve(blocks: PageBlock[]): Promise<PageBlock[]> {
     return Promise.all(
       blocks.map(async (block) => {
         const props = { ...block.props };
-        for (const slot of slotNames(block.type))
+        for (const slot of slotNames(block.type, block.props.count))
           props[slot] = await resolve(slotContent(block, slot));
         if (block.type === "PageGrid") {
           const selection = props.selection as GridSelection;
@@ -30,7 +31,10 @@ export async function GardenContent({ data }: { data: PageData }) {
     <Render
       config={gardenConfig}
       data={
-        { ...data, content: await resolve(data.content) } as Data<GardenBlocks>
+        {
+          ...data,
+          content: await resolve(inlinePageData(data).content),
+        } as Data<GardenBlocks>
       }
     />
   );
