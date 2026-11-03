@@ -292,6 +292,13 @@ test("custom colours, preserved column contents and page settings work with touc
   await page.getByRole("button", { name: "Apply layout", exact: true }).click();
   await chooseAddTarget(page, "Columns 1 · third column");
   await page.getByRole("button", { name: "Add Text", exact: true }).click();
+  await expect(
+    page
+      .frameLocator("iframe")
+      .locator(".garden-columns > div")
+      .nth(2)
+      .getByRole("textbox", { name: "Text content", exact: true }),
+  ).toBeVisible();
   await writeCanvas(page, "Text content", "A memory in the third column");
   await selectBlock(page, "Select Columns 1");
   await page

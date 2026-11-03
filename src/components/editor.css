@@ -320,6 +320,10 @@
   z-index: 2;
   box-shadow: -6px 0 10px var(--cream);
 }
+.inline-format-bar > .format-more-trigger:disabled {
+  opacity: 1;
+  color: var(--line);
+}
 .format-more {
   position: fixed;
   inset: auto;
@@ -405,6 +409,85 @@
   height: 32px;
   padding: 4px 8px;
   font-size: 14px;
+}
+.format-pixels-compact {
+  display: flex;
+  align-items: center;
+  flex: 0 0 100px;
+  height: 44px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--cream);
+  gap: 0;
+  overflow: hidden;
+}
+.format-pixels-compact input {
+  flex: 1;
+  min-width: 0;
+  width: 0;
+  height: 42px;
+  min-height: 42px;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  font-size: 16px;
+  appearance: textfield;
+}
+.format-pixels-compact input::-webkit-inner-spin-button,
+.format-pixels-compact input::-webkit-outer-spin-button {
+  appearance: none;
+  margin: 0;
+}
+.format-pixels-compact input:focus {
+  outline: none;
+}
+.format-pixels-compact:focus-within {
+  outline: 2px solid var(--muted);
+  outline-offset: 3px;
+}
+.format-pixels-compact:has(input[aria-invalid="true"]) {
+  border-color: var(--clay);
+}
+.format-number-unit {
+  padding-right: 10px;
+  font-size: 13px;
+  color: var(--muted);
+}
+.editor-block-arrangement {
+  display: grid;
+  gap: 16px;
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--line);
+}
+.editor-property-fields {
+  display: grid;
+  gap: 24px;
+  margin-top: 20px;
+}
+.editor-property-field {
+  min-width: 0;
+}
+.editor-property-field label:has(> input, > textarea, > div > select) {
+  margin: 0;
+}
+.editor-inline .editor-block-arrangement h3 {
+  margin: 0;
+}
+.editor-block-arrangement .block-move-controls {
+  margin: 0;
+}
+.editor-move-field {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+.editor-inline .editor-move-field label {
+  margin: 0;
+}
+.editor-move-submit {
+  width: 100%;
 }
 .appearance-label {
   margin: 0 0 12px;
@@ -640,6 +723,24 @@
   top: 14px;
   right: 14px;
   z-index: 2;
+  max-width: calc(100% - 28px);
+}
+.canvas-photo-action > button {
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+@container garden-image (max-width: 240px) {
+  .canvas-photo-action {
+    position: static;
+    max-width: none;
+    margin-top: 8px;
+  }
+  .canvas-photo-action > button {
+    width: 100%;
+    padding: 8px 10px;
+    font-size: 13px;
+  }
 }
 .garden-columns-count-1 {
   grid-template-columns: minmax(0, 1fr);
@@ -672,6 +773,16 @@
   }
 }
 @media (max-width: 760px) {
+  .canvas-photo-action {
+    position: static;
+    max-width: none;
+    margin-top: 8px;
+  }
+  .canvas-photo-action > button {
+    width: calc(100% - 64px);
+    padding: 8px 10px;
+    font-size: 13px;
+  }
   .desktop-canvas-hint {
     display: none;
   }

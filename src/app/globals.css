@@ -218,7 +218,16 @@ a:focus-visible {
 .public-nav {
   display: flex;
   gap: 24px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  min-width: 0;
+}
+.public-nav > a:not(.button),
+.public-nav > .public-menu-items > li > a {
+  display: flex;
   align-items: center;
+  min-height: 48px;
 }
 .page-content {
   padding: 54px var(--gutter);
@@ -715,14 +724,19 @@ button.primary {
 }
 .garden-image {
   margin: 24px 0;
+  min-width: 0;
+  container: garden-image / inline-size;
 }
 .garden-image-inset {
   margin-left: var(--gutter);
   margin-right: var(--gutter);
 }
 .garden-photo-placeholder {
-  min-height: 320px;
+  width: 100%;
+  min-width: 0;
+  min-height: clamp(112px, 45cqi, 320px);
   aspect-ratio: 16/9;
+  padding: 12px;
   background: #d9dfcc;
   color: #6a7b5b;
   display: flex;
@@ -730,14 +744,21 @@ button.primary {
   align-items: center;
   justify-content: center;
   gap: 8px;
+  text-align: center;
+  overflow-wrap: anywhere;
+  font-size: clamp(12px, 5cqi, 16px);
 }
 .garden-photo-placeholder svg {
-  width: 150px;
-  height: 150px;
+  width: min(150px, 45%);
+  height: auto;
+  flex-shrink: 0;
 }
 .garden-fit-contain {
   background: var(--sage);
   padding: 36px;
+}
+.garden-photo-placeholder.garden-fit-contain {
+  padding: clamp(8px, 6cqi, 36px);
 }
 .garden-image figcaption {
   padding: 12px 0;
@@ -970,9 +991,6 @@ button.primary {
   }
   .garden-banner {
     padding: 44px var(--gutter);
-  }
-  .garden-photo-placeholder {
-    min-height: 230px;
   }
   .garden-section.garden-space-spacious {
     padding-top: 40px;

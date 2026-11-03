@@ -147,6 +147,15 @@ function CanvasMoveActions() {
 }
 const editorOverrides: Partial<Overrides<typeof gardenConfig>> = {
   iframe: EditorFrame,
+  fields: ({ fields, isLoading }) => (
+    <div className="editor-property-fields" aria-busy={isLoading}>
+      {Object.entries(fields).map(([name, field]) => (
+        <div className="editor-property-field" key={name}>
+          {field}
+        </div>
+      ))}
+    </div>
+  ),
   actionBar: ({ children, label, parentAction, dragHandleRef }) => (
     <div className="garden-canvas-actions">
       <ActionBar label={label}>
@@ -708,77 +717,92 @@ function Workspace({
                       Change column layout
                     </button>
                   )}
-                  <Puck.Fields />
-                  <h3>Arrange this block</h3>
-                  <div className="block-move-controls">
-                    <button
-                      className="secondary"
-                      aria-label="Move block up"
-                      disabled={!selection || selection.index === 0}
-                      onClick={() => action("up")}
-                    >
-                      ↑ Move up
-                    </button>
-                    <button
-                      className="secondary"
-                      aria-label="Move block down"
-                      disabled={
-                        !selection || selection.index >= siblings.length - 1
-                      }
-                      onClick={() => action("down")}
-                    >
-                      ↓ Move down
-                    </button>
-                    <button
-                      className="secondary"
-                      aria-label="Duplicate block"
-                      onClick={() => action("duplicate")}
-                    >
-                      Duplicate
-                    </button>
-                    <button
-                      className="secondary"
-                      aria-label="Remove block"
-                      onClick={() => action("remove")}
-                    >
-                      Remove
-                    </button>
-                  </div>
-                  <label htmlFor="move-target">Move to</label>
-                  <select
-                    id="move-target"
-                    value={moveDestination.zone}
-                    onChange={(e) => {
-                      setMoveTarget(e.target.value);
-                      setMoveIndex(0);
-                    }}
+                  <Puck.Fields wrapFields={false} />
+                  <section
+                    className="editor-block-arrangement"
+                    aria-label="Arrange selected block"
                   >
-                    {safeTargets.map((item) => (
-                      <option key={item.zone} value={item.zone}>
-                        {item.label}
-                      </option>
-                    ))}
-                  </select>
-                  <label htmlFor="move-position">Position</label>
-                  <select
-                    id="move-position"
-                    value={Math.min(moveIndex, moveDestination.items.length)}
-                    onChange={(e) => setMoveIndex(Number(e.target.value))}
-                  >
-                    {Array.from(
-                      { length: moveDestination.items.length + 1 },
-                      (_, i) => (
-                        <option key={i} value={i}>
-                          {i === moveDestination.items.length
-                            ? "At the end"
-                            : "Before block " + (i + 1)}
-                        </option>
-                      ),
-                    )}
-                  </select>
-                  <button className="secondary" onClick={moveHere}>
-                    Move block here
-                  </button>
+                    <h3>Arrange this block</h3>
+                    <div className="block-move-controls">
+                      <button
+                        className="secondary"
+                        aria-label="Move block up"
+                        disabled={!selection || selection.index === 0}
+                        onClick={() => action("up")}
+                      >
+                        ↑ Move up
+                      </button>
+                      <button
+                        className="secondary"
+                        aria-label="Move block down"
+                        disabled={
+                          !selection || selection.index >= siblings.length - 1
+                        }
+                        onClick={() => action("down")}
+                      >
+                        ↓ Move down
+                      </button>
+                      <button
+                        className="secondary"
+                        aria-label="Duplicate block"
+                        onClick={() => action("duplicate")}
+                      >
+                        Duplicate
+                      </button>
+                      <button
+                        className="secondary"
+                        aria-label="Remove block"
+                        onClick={() => action("remove")}
+                      >
+                        Remove
+                      </button>
+                    </div>
+                    <div className="editor-move-field">
+                      <label htmlFor="move-target">Move to</label>
+                      <select
+                        id="move-target"
+                        value={moveDestination.zone}
+                        onChange={(e) => {
+                          setMoveTarget(e.target.value);
+                          setMoveIndex(0);
+                        }}
+                      >
+                        {safeTargets.map((item) => (
+                          <option key={item.zone} value={item.zone}>
+                            {item.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="editor-move-field">
+                      <label htmlFor="move-position">Position</label>
+                      <select
+                        id="move-position"
+                        value={Math.min(
+                          moveIndex,
+                          moveDestination.items.length,
+                        )}
+                        onChange={(e) => setMoveIndex(Number(e.target.value))}
+                      >
+                        {Array.from(
+                          { length: moveDestination.items.length + 1 },
+                          (_, i) => (
+                            <option key={i} value={i}>
+                              {i === moveDestination.items.length
+                                ? "At the end"
+                                : "Before block " + (i + 1)}
+                            </option>
+                          ),
+                        )}
+                      </select>
+                    </div>
+                    <button
+                      className="secondary editor-move-submit"
+                      onClick={moveHere}
+                    >
+                      Move block here
+                    </button>
+                  </section>
                 </>
               ) : (
                 <p className="muted">
