@@ -370,7 +370,7 @@ export function usePageAutosave(page: GardenPage, accountId: string) {
     apply({
       ...s.working,
       content: {
-        root: { props: {} },
+        root: s.working.content.root,
         content: walk(s.working.content.content),
       },
     });

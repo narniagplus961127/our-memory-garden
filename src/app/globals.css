@@ -63,6 +63,8 @@
   --line: #d0dacb;
   --clay: #a76b50;
   --gutter: 64px;
+  --control-height: 44px;
+  --control-radius: 6px;
   color-scheme: light;
 }
 * {
@@ -115,11 +117,11 @@ select {
 button,
 .button {
   border: 1px solid var(--line);
-  border-radius: 5px;
+  border-radius: var(--control-radius);
   background: var(--leaf);
   color: var(--ink);
-  padding: 11px 16px;
-  min-height: 44px;
+  padding: 9px 14px;
+  min-height: var(--control-height);
   cursor: pointer;
   text-decoration: none;
   display: inline-flex;
@@ -133,7 +135,7 @@ button:hover,
 }
 button:disabled {
   opacity: 0.55;
-  cursor: wait;
+  cursor: not-allowed;
 }
 button.secondary,
 .button.secondary {
@@ -145,11 +147,11 @@ select {
   display: block;
   width: 100%;
   border: 1px solid var(--line);
-  border-radius: 4px;
+  border-radius: var(--control-radius);
   background: var(--cream);
-  padding: 12px;
+  padding: 9px 12px;
   color: var(--ink);
-  min-height: 46px;
+  min-height: var(--control-height);
 }
 select {
   appearance: none;
@@ -168,6 +170,10 @@ select:disabled {
 }
 textarea {
   resize: vertical;
+}
+input[type="checkbox"],
+input[type="radio"] {
+  accent-color: var(--ink);
 }
 label {
   display: block;
@@ -228,6 +234,31 @@ a:focus-visible {
   display: flex;
   align-items: center;
   min-height: 48px;
+}
+.garden-dashboard-fab {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 25;
+  width: 48px;
+  height: 48px;
+  padding: 12px;
+  border-radius: 50%;
+  border-color: var(--ink);
+  background: var(--ink);
+  color: var(--cream);
+  box-shadow: 0 4px 16px #30433725;
+}
+.garden-dashboard-fab svg {
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+}
+.public-page {
+  padding-bottom: calc(88px + env(safe-area-inset-bottom));
+}
+.public-homepage .garden-banner > .eyebrow {
+  display: none;
 }
 .page-content {
   padding: 54px var(--gutter);
@@ -451,6 +482,10 @@ td:last-child {
   }
   .public-header {
     padding: 16px 28px;
+  }
+  .garden-dashboard-fab {
+    right: 16px;
+    bottom: calc(16px + env(safe-area-inset-bottom));
   }
   .brand {
     font-size: 17px;

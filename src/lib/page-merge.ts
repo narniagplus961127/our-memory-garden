@@ -14,7 +14,7 @@ export type MergeResult = { draft: PageSnapshot; conflicts: PageConflict[] };
 export function snapshot(page: PageSnapshot): PageSnapshot {
   return {
     title: page.title,
-    content: { root: { props: {} }, content: page.content.content },
+    content: { root: page.content.root, content: page.content.content },
     visibility: page.visibility,
   };
 }
@@ -262,6 +262,17 @@ export function mergePage(
     useLayout();
     content = build("root");
   }
+  const showTitle = choose(
+    "showTitle",
+    "metadata",
+    "Show page title",
+    base.content.root.props.showTitle !== false,
+    local.content.root.props.showTitle !== false,
+    saved.content.root.props.showTitle !== false,
+  );
+  const hasTitleSetting = [base, local, saved].some(
+    (page) => page.content.root.props.showTitle !== undefined,
+  );
   return {
     draft: {
       title: choose(
@@ -280,7 +291,10 @@ export function mergePage(
         local.visibility,
         saved.visibility,
       ),
-      content: { root: { props: {} }, content },
+      content: {
+        root: { props: hasTitleSetting ? { showTitle } : {} },
+        content,
+      },
     },
     conflicts,
   };

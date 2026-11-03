@@ -34,7 +34,7 @@ export async function GardenContent({ data }: { data: PageData }) {
         {
           ...data,
           content: await resolve(inlinePageData(data).content),
-        } as Data<GardenBlocks>
+        } as Data<GardenBlocks, { showTitle?: boolean }>
       }
     />
   );

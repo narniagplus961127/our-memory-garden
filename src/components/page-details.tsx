@@ -79,67 +79,78 @@ export function PageDetails({
   }
   return (
     <div className="page-details field">
-      <label htmlFor="page-date">
-        Page date <small>(optional)</small>
-      </label>
-      <input
-        id="page-date"
-        aria-label="Page date"
-        type="date"
-        min="0001-01-01"
-        max="9999-12-31"
-        value={details.date ?? ""}
-        onChange={(e) => change({ date: e.target.value || null })}
-      />
-      <label htmlFor="page-category">
-        Page category <small>(optional)</small>
-      </label>
-      <select
-        id="page-category"
-        aria-label="Page category"
-        value={details.categoryId ?? ""}
-        onChange={(e) => {
-          change({ categoryId: e.target.value || null });
-          setName(list.find((c) => c.id === e.target.value)?.name ?? "");
-        }}
-      >
-        <option value="">No category</option>
-        {list.map((c) => (
-          <option key={c.id} value={c.id}>
-            {c.name}
-          </option>
-        ))}
-      </select>
-      <label htmlFor="category-name">Category name</label>
-      <input
-        id="category-name"
-        maxLength={100}
-        value={name}
-        onChange={(e) => setName(e.target.value)}
-      />
-      <div className="actions">
-        <button
-          className="secondary"
-          disabled={categoryBusy || !name.trim()}
-          onClick={() => void category(false)}
-        >
-          Create category
-        </button>
-        <button
-          className="secondary"
-          disabled={categoryBusy || !details.categoryId || !name.trim()}
-          onClick={() => void category(true)}
-        >
-          Rename category
-        </button>
+      <div className="settings-field">
+        <label htmlFor="page-date">
+          Page date <small>(optional)</small>
+        </label>
+        <input
+          id="page-date"
+          aria-label="Page date"
+          type="date"
+          min="0001-01-01"
+          max="9999-12-31"
+          value={details.date ?? ""}
+          onChange={(e) => change({ date: e.target.value || null })}
+        />
       </div>
-      <span className="field-label">
-        Cover photo <small>(optional)</small>
-      </span>
-      <PhotoPicker
-        value={details.coverPhotoId ?? ""}
-        onChange={(value) => change({ coverPhotoId: value || null })}
-      />
+      <div className="settings-field">
+        <label htmlFor="page-category">
+          Page category <small>(optional)</small>
+        </label>
+        <select
+          id="page-category"
+          aria-label="Page category"
+          value={details.categoryId ?? ""}
+          onChange={(e) => {
+            change({ categoryId: e.target.value || null });
+            setName(list.find((c) => c.id === e.target.value)?.name ?? "");
+          }}
+        >
+          <option value="">No category</option>
+          {list.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.name}
+            </option>
+          ))}
+        </select>
+      </div>
+      <div className="settings-field">
+        <label htmlFor="category-name">Category name</label>
+        <input
+          id="category-name"
+          maxLength={100}
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+        />
+        <div className="actions category-actions">
+          <button
+            className="secondary"
+            aria-label="Create category"
+            disabled={categoryBusy || !name.trim()}
+            onClick={() => void category(false)}
+          >
+            Create
+          </button>
+          <button
+            className="secondary"
+            aria-label="Rename category"
+            disabled={categoryBusy || !details.categoryId || !name.trim()}
+            onClick={() => void category(true)}
+          >
+            Rename
+          </button>
+        </div>
+      </div>
+      <div className="settings-field">
+        <span className="field-label">
+          Cover photo <small>(optional)</small>
+        </span>
+        <PhotoPicker
+          hideLabel
+          value={details.coverPhotoId ?? ""}
+          onChange={(value) => change({ coverPhotoId: value || null })}
+        />
+      </div>
       <h3>Search and sharing</h3>
       {visibility === "private" && (
         <p className="muted">
@@ -152,38 +163,47 @@ export function PageDetails({
         disabled={visibility !== "public"}
         aria-label="Search and sharing"
       >
-        <label htmlFor="sharing-title">
-          Sharing title <small>(optional)</small>
-        </label>
-        <input
-          id="sharing-title"
-          aria-label="Sharing title"
-          maxLength={200}
-          value={details.sharingTitle ?? ""}
-          placeholder={page.title}
-          onChange={(e) => change({ sharingTitle: e.target.value || null })}
-        />
-        <p className="muted">
-          <small>Leave blank to use the page title.</small>
-        </p>
-        <label htmlFor="sharing-description">
-          Sharing description <small>(optional)</small>
-        </label>
-        <textarea
-          id="sharing-description"
-          aria-label="Sharing description"
-          maxLength={2000}
-          value={details.sharingDescription ?? ""}
-          onChange={(e) =>
-            change({ sharingDescription: e.target.value || null })
-          }
-        />
-        <div role="group" aria-label="Sharing cover photo">
+        <div className="settings-field">
+          <label htmlFor="sharing-title">
+            Sharing title <small>(optional)</small>
+          </label>
+          <input
+            id="sharing-title"
+            aria-label="Sharing title"
+            maxLength={200}
+            value={details.sharingTitle ?? ""}
+            placeholder={page.title}
+            onChange={(e) => change({ sharingTitle: e.target.value || null })}
+          />
+          <p className="muted">
+            <small>Leave blank to use the page title.</small>
+          </p>
+        </div>
+        <div className="settings-field">
+          <label htmlFor="sharing-description">
+            Sharing description <small>(optional)</small>
+          </label>
+          <textarea
+            id="sharing-description"
+            aria-label="Sharing description"
+            maxLength={2000}
+            value={details.sharingDescription ?? ""}
+            onChange={(e) =>
+              change({ sharingDescription: e.target.value || null })
+            }
+          />
+        </div>
+        <div
+          className="settings-field"
+          role="group"
+          aria-label="Sharing cover photo"
+        >
           <span className="field-label">
             Sharing cover photo <small>(optional)</small>
           </span>
           <PhotoPicker
             label="Sharing cover photo"
+            hideLabel
             value={details.sharingCoverPhotoId ?? ""}
             onChange={(value) => change({ sharingCoverPhotoId: value || null })}
           />
@@ -194,21 +214,23 @@ export function PageDetails({
             </small>
           </p>
         </div>
-        <label className="sharing-indexing" htmlFor="allow-indexing">
-          <input
-            id="allow-indexing"
-            type="checkbox"
-            checked={details.allowIndexing}
-            onChange={(e) => change({ allowIndexing: e.target.checked })}
-          />
-          Allow search indexing
-        </label>
-        <p className="muted">
-          <small>
-            Search engines may take time to update. Turning indexing off does
-            not make a public page private.
-          </small>
-        </p>
+        <div className="settings-field">
+          <label className="sharing-indexing" htmlFor="allow-indexing">
+            <input
+              id="allow-indexing"
+              type="checkbox"
+              checked={details.allowIndexing}
+              onChange={(e) => change({ allowIndexing: e.target.checked })}
+            />
+            Allow search indexing
+          </label>
+          <p className="muted">
+            <small>
+              Search engines may take time to update. Turning indexing off does
+              not make a public page private.
+            </small>
+          </p>
+        </div>
       </fieldset>
       {save.copies.map((copy) => (
         <div className="editor-recovery-notice" key={copy.key}>

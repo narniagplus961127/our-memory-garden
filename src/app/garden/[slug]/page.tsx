@@ -26,7 +26,13 @@ export default async function GardenPage({
     <>
       <GardenHeader />
       <main className="public-page">
-        <div className="page-content">
+        <div
+          className="page-content public-page-heading"
+          style={{
+            display:
+              page.content.root.props.showTitle === false ? "none" : undefined,
+          }}
+        >
           <h1>{page.title}</h1>
         </div>
         <GardenContent data={page.content} />

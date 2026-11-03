@@ -195,8 +195,19 @@ const spacing = {
     { label: "Spacious", value: "spacious" },
   ],
 };
-export const gardenConfig: Config<GardenBlocks> = {
+export const gardenConfig: Config<GardenBlocks, { showTitle?: boolean }> = {
   root: {
+    fields: {
+      showTitle: {
+        type: "radio",
+        visible: false,
+        label: "Show page title",
+        options: [
+          { label: "Show", value: true },
+          { label: "Hide", value: false },
+        ],
+      },
+    },
     render: ({ children }) => <div className="garden-document">{children}</div>,
   },
   components: {
@@ -630,7 +641,8 @@ export const gardenConfig: Config<GardenBlocks> = {
           }
           style={blockStyle(surface)}
         >
-          <Content minEmptyHeight={100} />
+          {/* Slot callbacks change with their content; invoking them keeps child editors mounted. */}
+          {Content({ minEmptyHeight: 100 })}
         </section>
       ),
     },
@@ -685,24 +697,10 @@ export const gardenConfig: Config<GardenBlocks> = {
           }
           style={blockStyle(surface)}
         >
-          <div>
-            <Left minEmptyHeight={120} />
-          </div>
-          {count > 1 && (
-            <div>
-              <Right minEmptyHeight={120} />
-            </div>
-          )}
-          {count > 2 && Third && (
-            <div>
-              <Third minEmptyHeight={120} />
-            </div>
-          )}
-          {count > 3 && Fourth && (
-            <div>
-              <Fourth minEmptyHeight={120} />
-            </div>
-          )}
+          <div>{Left({ minEmptyHeight: 120 })}</div>
+          {count > 1 && <div>{Right({ minEmptyHeight: 120 })}</div>}
+          {count > 2 && Third && <div>{Third({ minEmptyHeight: 120 })}</div>}
+          {count > 3 && Fourth && <div>{Fourth({ minEmptyHeight: 120 })}</div>}
         </div>
       ),
     },

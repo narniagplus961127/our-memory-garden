@@ -523,15 +523,17 @@ export function PhotoPicker({
   value,
   onChange,
   label = "Photo",
+  hideLabel = false,
 }: {
   value?: string;
   label?: string;
+  hideLabel?: boolean;
   onChange: (value: string) => void;
 }) {
   const [open, setOpen] = useState(false);
   return (
     <div className="photo-picker">
-      <span className="field-label">{label}</span>
+      {!hideLabel && <span className="field-label">{label}</span>}
       {value && (
         <img
           src={displayPhotoUrl(value)}

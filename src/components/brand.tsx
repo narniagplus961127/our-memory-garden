@@ -28,21 +28,38 @@ export function PublicHeader({
     );
   }
   return (
-    <header className="public-header">
-      <Brand />
-      <nav className="public-nav" aria-label="Main navigation">
-        <Link href="/">Our garden</Link>
-        {menu(null)}
-        <Link className="button secondary" href="/admin">
-          Garden dashboard
-        </Link>
-      </nav>
-      <PublicMenu>
-        <Link href="/">Our garden</Link>
-        {menu(null)}
-        <Link href="/admin">Garden dashboard</Link>
-      </PublicMenu>
-    </header>
+    <>
+      <header className="public-header">
+        <Brand />
+        <nav className="public-nav" aria-label="Main navigation">
+          <Link href="/">Our garden</Link>
+          {menu(null)}
+        </nav>
+        <PublicMenu>
+          <Link href="/">Our garden</Link>
+          {menu(null)}
+        </PublicMenu>
+      </header>
+      <Link
+        className="button garden-dashboard-fab"
+        href="/admin"
+        title="Garden dashboard"
+      >
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.7"
+          aria-hidden="true"
+        >
+          <rect x="3" y="3" width="7" height="7" rx="1.5" />
+          <rect x="14" y="3" width="7" height="7" rx="1.5" />
+          <rect x="3" y="14" width="7" height="7" rx="1.5" />
+          <rect x="14" y="14" width="7" height="7" rx="1.5" />
+        </svg>
+        <span className="visually-hidden">Garden dashboard</span>
+      </Link>
+    </>
   );
 }
 export function GardenCat() {

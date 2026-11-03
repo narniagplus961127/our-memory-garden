@@ -83,7 +83,7 @@ export async function savePage(
       };
     if (input.text !== undefined)
       local.content = {
-        root: { props: {} },
+        root: base.content.root,
         content: [
           {
             type: "Text",

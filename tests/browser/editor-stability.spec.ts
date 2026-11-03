@@ -49,10 +49,27 @@ test("formatting row keeps the canvas still across text selection, hover and non
   }
   const canvas = page.locator(".garden-canvas-scroll");
   const top = (await canvas.boundingBox())!.y;
+  const documentTop = (await frame.locator(".garden-document").boundingBox())!
+    .y;
+  await expect(page.locator("#garden-inline-format")).toHaveCSS(
+    "position",
+    "absolute",
+  );
+  await expect(page.locator("#garden-inline-format")).toHaveAttribute(
+    "aria-hidden",
+    "true",
+  );
   const heading = frame
     .getByRole("textbox", { name: "Text content", exact: true })
     .first();
   await heading.click();
+  await expect(page.locator("#garden-inline-format")).toHaveAttribute(
+    "aria-hidden",
+    "false",
+  );
+  expect((await frame.locator(".garden-document").boundingBox())!.y).toBe(
+    documentTop,
+  );
   await expect(
     page.getByRole("button", { name: "Bold", exact: true }),
   ).toBeVisible();
@@ -107,9 +124,10 @@ test("formatting row keeps the canvas still across text selection, hover and non
     .click();
   expect((await canvas.boundingBox())!.y).toBe(top);
   // Formatting must not modify a previously selected text block while a photo is selected.
-  await expect(
-    page.getByRole("button", { name: "Bold", exact: true }),
-  ).toBeDisabled();
+  await expect(page.locator("#garden-inline-format")).toHaveAttribute(
+    "aria-hidden",
+    "true",
+  );
 });
 test("link dialog is centered, evenly spaced and keeps the selected words when applied", async ({
   page,

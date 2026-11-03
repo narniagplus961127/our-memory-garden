@@ -145,7 +145,6 @@ test("signed-in gardeners return from the public website to their dashboard", as
   if (isMobile) await page.getByLabel("Open administration menu").click();
   await page.getByRole("link", { name: "View website ↗", exact: true }).click();
   await expect(page).toHaveURL(/\/$/);
-  if (isMobile) await page.getByLabel("Open website menu").click();
   await page
     .getByRole("link", { name: "Garden dashboard", exact: true })
     .click();
@@ -162,10 +161,8 @@ test("signed-in gardeners return from the public website to their dashboard", as
 
 test("anonymous garden dashboard navigation still asks for sign in", async ({
   page,
-  isMobile,
 }) => {
   await page.goto("/");
-  if (isMobile) await page.getByLabel("Open website menu").click();
   const dashboard = page.getByRole("link", {
     name: "Garden dashboard",
     exact: true,

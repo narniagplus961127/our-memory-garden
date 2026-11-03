@@ -71,10 +71,11 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
-  padding: 12px 6px;
+  padding: 12px 5px;
   background: #f4f5ee;
   border-right: 1px solid var(--line);
   overflow-y: auto;
+  overflow-x: hidden;
 }
 .editor-rail button {
   padding: 8px;
@@ -253,6 +254,7 @@
   padding-bottom: 16px;
 }
 .editor-inline .garden-canvas-workspace {
+  position: relative;
   grid-column: 3;
   padding: 0;
   min-width: 0;
@@ -290,8 +292,26 @@
 .editor-inline .garden-canvas-scroll {
   flex: 1;
   min-height: 0;
-  padding: 40px 44px 100px;
+  margin-top: 72px;
+  padding: 32px 44px 100px;
+  scroll-padding-top: 16px;
   overflow: auto;
+}
+#garden-inline-format {
+  position: absolute;
+  top: 72px;
+  left: 12px;
+  right: 12px;
+  z-index: 15;
+}
+#garden-inline-format.format-hidden {
+  visibility: hidden;
+  pointer-events: none;
+}
+#garden-inline-format .inline-format-bar {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: 0 4px 14px #30433718;
 }
 .editor-inline .garden-canvas-frame {
   min-height: 650px;
@@ -577,17 +597,93 @@
   font-size: 12px;
   min-height: 44px;
 }
-.editor-page-settings > label {
-  margin-top: 20px;
+.editor-page-settings,
+.editor-page-settings .page-details,
+.editor-page-settings .sharing-fields {
+  display: grid;
+  gap: 24px;
+  min-width: 0;
 }
+.editor-page-settings[hidden] {
+  display: none;
+}
+.editor-page-settings .settings-field,
 .editor-page-settings .page-address {
-  margin-top: 24px;
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+.editor-page-settings :is(label, p, .field-label, .field) {
+  margin: 0;
+}
+.editor-page-settings :is(label, .field-label) {
+  font-size: 14px;
+  line-height: 20px;
+}
+.editor-page-settings .muted,
+.editor-page-settings [role="status"] {
+  font-size: 13px;
+  line-height: 20px;
+  overflow-wrap: anywhere;
 }
 .editor-page-settings .page-details {
-  margin-top: 28px;
+  padding-top: 24px;
+  border-top: 1px solid var(--line);
 }
-.editor-page-settings .page-details .actions {
-  flex-wrap: wrap;
+.editor-page-settings h3 {
+  padding-top: 24px;
+  border-top: 1px solid var(--line);
+  margin: 0;
+  font:
+    600 16px/24px Arial,
+    sans-serif;
+}
+.editor-page-settings .sharing-fields {
+  border: 0;
+  padding: 0;
+}
+.editor-page-settings .category-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+.editor-page-settings .photo-picker .actions {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+}
+.editor-page-settings textarea {
+  min-height: 112px;
+}
+.editor-page-settings .page-title-visibility {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 44px;
+}
+.editor-page-settings .page-title-visibility input {
+  width: 20px;
+  height: 20px;
+  min-height: 20px;
+  flex-shrink: 0;
+}
+.editor-inline
+  .garden-editor-panel
+  :is(
+    input:not([type="checkbox"]):not([type="radio"]):not([type="color"]),
+    select,
+    textarea
+  ) {
+  font:
+    400 16px/24px Arial,
+    sans-serif;
+  border-radius: var(--control-radius);
+  min-height: var(--control-height);
+}
+.editor-inline .garden-editor-panel button {
+  font-size: 14px;
+  line-height: 20px;
+  min-height: var(--control-height);
 }
 .colour-presets {
   display: flex;
@@ -886,7 +982,7 @@
     border-right: 0;
     border-bottom: 1px solid var(--line);
     flex-shrink: 0;
-    overflow-x: auto;
+    overflow-x: hidden;
   }
   .editor-rail button {
     display: flex;
@@ -942,7 +1038,12 @@
     margin-left: 0;
   }
   .editor-inline .garden-canvas-scroll {
-    padding: 24px 12px 100px;
+    padding: 16px 12px 100px;
+  }
+  #garden-inline-format {
+    top: 62px;
+    left: 6px;
+    right: 6px;
   }
   .editor-inline .garden-canvas-frame {
     min-height: 600px;
