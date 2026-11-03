@@ -1,6 +1,6 @@
 # Our Memory Garden specification
 
-Status: claimed — released baseline complete; approved ticket 14 implementation is in final verification
+Status: resolved — released baseline and approved ticket 14 editor refinement implemented and verified
 
 ## Problem Statement
 

@@ -1,6 +1,6 @@
 # Inline editor refinement
 
-Status: approved on 2026-11-02; implemented, final verification in progress. Ticket: [14](../.scratch/our-memory-garden/issues/14-inline-editor-experience.md).
+Status: approved on 2026-11-02; implemented and verified on 2026-11-03. Ticket: [14](../.scratch/our-memory-garden/issues/14-inline-editor-experience.md).
 
 The owner requested a Klaviyo-like editor that allows writing directly in the widget. This refinement changes the main editing interaction; the existing released application and its completed tickets remain the baseline. The native FigCraft proposal and disposable HTML interaction prototype are review artifacts, not a claim of production implementation.
 
@@ -74,3 +74,5 @@ Page settings preserves the existing address/details recovery hooks. The header 
 Conflict comparison treats equivalent legacy/inline text equally, displays formatting and link changes, and couples a changed column count with all its slot lists. A saved-layout choice cannot hide another editor's third/fourth-column additions. Sign-out notification follows successful server revocation, preventing other tabs from returning to the dashboard during logout. A photo-library response cannot replace a photo uploaded while that response was in flight.
 
 Desktop/mobile screenshots use synthetic local fixture content. Composition events and caret retention are browser-tested; actual operating-system IME keyboards and OS colour-picker appearance remain device-dependent. Mobile pointer dragging is supplemented by the verified tap and move controls.
+
+Verification: all 128 applicable desktop/mobile browser cases pass across the complete 130-case run and targeted photo rechecks. The complete run reported 125 passes, three immediate-image-dimension assertion failures and two intentional device skips; all four gallery/media cases passed after waiting for image loading. Sequential hex typing also passes on both devices. All 64 API cases are verified across the complete run and the isolated 12-case export rerun. TypeScript, Prettier and the optimized production build pass. [Implementation review](editor-inline-review.md), [desktop evidence](evidence/ticket14/editor-desktop.png), [mobile evidence](evidence/ticket14/editor-mobile.png).
