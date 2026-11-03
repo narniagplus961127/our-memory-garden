@@ -46,3 +46,6 @@ Ticket 25 adds a Categories destination to both administration menus using the e
 Current 14 px implementation evidence: [Categories desktop](evidence/ticket26/categories-desktop.png), [Categories mobile](evidence/ticket26/categories-mobile.png), [new-page URL desktop](evidence/ticket26/page-url-desktop.png), [new-page URL mobile](evidence/ticket26/page-url-mobile.png).
 
 The native document and rendered samples are audited with the FigCraft CLI; evidence paths and final counts are recorded in `docs/design-spec-review.md`. Validate server authorization, media accessibility, durable conflict preservation, export generation and actual storage measurement through the application. The old approved prototype routes remain unchanged. Category creation/rename, validation, confirmation and errors use the same labelled field, 44 px action and inline status patterns shown here; no additional screen per small variant is implied. Material new direction still requires owner review.
+# Image links and alignment (ticket 29)
+
+Image Styles includes an optional Link group with None, Garden page and External URL destinations. Saved website images are linked; captions remain separate. Alignment controls include Left, Centre and Right for blocks and inline paragraphs.

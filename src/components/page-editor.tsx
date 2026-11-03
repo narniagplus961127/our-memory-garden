@@ -177,6 +177,9 @@ function InspectorFields({
             : null;
   const groups = [
     ...(content ? [{ id: "content", ...content }] : []),
+    ...(type === "Image"
+      ? [{ id: "link", title: "Link", keys: ["destination"] }]
+      : []),
     {
       id: "layout",
       title:

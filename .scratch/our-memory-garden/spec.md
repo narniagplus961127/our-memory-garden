@@ -139,6 +139,8 @@ Public registration, visitor comments or reactions, a separate story content typ
 
 ## Further Notes
 
+Image blocks may link to a garden page by stable ID or a validated external HTTP(S) URL. Only the image is linked on the website; editor photo/caption controls remain interactive. Block and inline paragraph alignment support Left, Centre and Right (ticket 29).
+
 The released baseline through ticket 13 is complete. The owner approved the concrete Klaviyo-inspired proposal on 2026-11-02; [ticket 14](issues/14-inline-editor-experience.md) delivered direct canvas editing. [Ticket 15](issues/15-editor-toolbar-dialog-stability.md) corrects the toolbar flicker and dialog positioning reported on 2026-11-03. [The inline design reference](../../docs/editor-inline-design.md) records both interactions. Existing pages, private media, autosave, recovery, conflicts and history remain required compatibility boundaries.
 
 Use sample content in the prototype; the homepage uses a plant image placeholder. The project has a FigCraft design, documentation, tickets and a working disposable Puck experiment on the prototype branch. Ticket 00 is owner accepted; its local-storage and sample-data limitations do not establish production persistence or security. Ticket 01 includes desktop/mobile saving, failure, conflict, password-reset and not-found designs. The owner approved the design and core editor flow on 2026-10-28, based on commit `e11a9c0`; ticket 01 is resolved and ticket 02 is unblocked. See `docs/design-spec-review.md` for review routes, validation evidence and later-ticket design follow-through.

@@ -833,6 +833,10 @@ button.primary {
   margin-left: var(--gutter);
   margin-right: var(--gutter);
 }
+.garden-image-link {
+  display: block;
+  text-decoration: none;
+}
 .garden-photo-placeholder {
   width: 100%;
   min-width: 0;

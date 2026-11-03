@@ -272,11 +272,14 @@ export function TrashAction({
                   ))}
                 </ul>
               ) : (
-                <p>No current inbound menu, text, button or page grid links.</p>
+                <p>
+                  No current inbound menu, text, button, image or page grid
+                  links.
+                </p>
               )}
               <p>
-                Existing text and button links will lead to not found; menus and
-                grids hide this page.
+                Existing text, button and image links will lead to not found;
+                menus and grids hide this page.
               </p>
             </>
           )}

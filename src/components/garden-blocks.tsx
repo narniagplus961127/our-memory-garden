@@ -31,7 +31,7 @@ type GardenBlockProps = {
     text: string;
     textRich?: RichText;
     style: TextStyle;
-    align?: "left" | "center";
+    align?: "left" | "center" | "right";
     linkText?: string;
     destination?: Destination | null;
   };
@@ -41,9 +41,10 @@ type GardenBlockProps = {
     descriptionRich?: RichText;
     description: string;
     background?: "paper" | "sage" | "clay";
-    align?: "left" | "center";
+    align?: "left" | "center" | "right";
   };
   Image: {
+    destination?: Destination | null;
     photoId?: string;
     alt: string;
     caption?: string;
@@ -58,7 +59,7 @@ type GardenBlockProps = {
     href?: string;
     destination?: Destination | null;
     variant?: "primary" | "secondary";
-    align?: "left" | "center";
+    align?: "left" | "center" | "right";
     width?: "fit" | "full";
     buttonColor?: string;
     textColor?: string;
@@ -113,6 +114,30 @@ function RichContent({
     </CanvasRichText>
   ) : (
     children
+  );
+}
+function ImageLink({
+  children,
+  destination,
+  editing,
+  alt,
+}: {
+  children: ReactNode;
+  destination?: Destination | null;
+  editing: boolean;
+  alt: string;
+}) {
+  const href = destinationHref(destination ?? undefined);
+  return href && !editing ? (
+    <a
+      className="garden-image-link"
+      href={href}
+      aria-label={alt || "Open image link"}
+    >
+      {children}
+    </a>
+  ) : (
+    <>{children}</>
   );
 }
 const appearance = {
@@ -175,6 +200,7 @@ const alignment = {
   options: [
     { label: "Left", value: "left" },
     { label: "Centre", value: "center" },
+    { label: "Right", value: "right" },
   ],
 };
 const backgrounds = {
@@ -371,6 +397,13 @@ export const gardenConfig: Config<GardenBlocks, { showTitle?: boolean }> = {
       label: "Image",
       fields: {
         ...appearance,
+        destination: {
+          type: "custom",
+          label: "Image link",
+          render: ({ value, onChange }) => (
+            <DestinationPicker value={value} onChange={onChange} optional />
+          ),
+        },
         photoId: {
           type: "custom",
           label: "Photo",
@@ -408,6 +441,7 @@ export const gardenConfig: Config<GardenBlocks, { showTitle?: boolean }> = {
       render: ({
         id,
         photoId,
+        destination,
         alt,
         caption,
         captionRich,
@@ -420,31 +454,37 @@ export const gardenConfig: Config<GardenBlocks, { showTitle?: boolean }> = {
           className={"garden-image garden-image-" + (width ?? "inset")}
           style={blockStyle(surface)}
         >
-          {photoId ? (
-            <img
-              className={"garden-photo garden-fit-" + (fit ?? "cover")}
-              src={displayPhotoUrl(photoId)}
-              alt={alt}
-            />
-          ) : (
-            <div
-              role="img"
-              aria-label={alt || "Photo placeholder"}
-              className={
-                "garden-photo-placeholder garden-fit-" + (fit ?? "cover")
-              }
-            >
-              <svg viewBox="0 0 200 150" aria-hidden="true">
-                <path
-                  d="M100 140V60M100 100C40 100 35 55 35 55c50-5 65 45 65 45ZM100 80c55 0 65-50 65-50-50-5-65 50-65 50ZM100 60C60 40 85 10 85 10s35 20 15 50Z"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="3"
-                />
-              </svg>
-              <span>Photo placeholder</span>
-            </div>
-          )}
+          <ImageLink
+            destination={destination}
+            editing={puck.isEditing}
+            alt={alt}
+          >
+            {photoId ? (
+              <img
+                className={"garden-photo garden-fit-" + (fit ?? "cover")}
+                src={displayPhotoUrl(photoId)}
+                alt={alt}
+              />
+            ) : (
+              <div
+                role="img"
+                aria-label={alt || "Photo placeholder"}
+                className={
+                  "garden-photo-placeholder garden-fit-" + (fit ?? "cover")
+                }
+              >
+                <svg viewBox="0 0 200 150" aria-hidden="true">
+                  <path
+                    d="M100 140V60M100 100C40 100 35 55 35 55c50-5 65 45 65 45ZM100 80c55 0 65-50 65-50-50-5-65 50-65 50ZM100 60C60 40 85 10 85 10s35 20 15 50Z"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="3"
+                  />
+                </svg>
+                <span>Photo placeholder</span>
+              </div>
+            )}
+          </ImageLink>
           {puck.isEditing && (
             <CanvasPhotoAction id={id} hasPhoto={Boolean(photoId)} />
           )}

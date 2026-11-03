@@ -25,6 +25,7 @@ test("website navigation keeps custom links and returns with Back and Escape", a
   isMobile,
 }, testInfo) => {
   const env = parseEnv(readFileSync(".env.test", "utf8"));
+  if (!env.NEXT_PUBLIC_APP_URL) throw Error("Missing local app URL");
   const admin = await browser.newContext();
   const headers = { Origin: env.NEXT_PUBLIC_APP_URL };
   await admin.request.post(

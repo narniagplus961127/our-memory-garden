@@ -109,7 +109,7 @@ export function validPageData(
         const allowed: Record<BlockName, string[]> = {
           Text: ["text", "style", "align", "linkText", "destination"],
           Banner: ["heading", "description", "background", "align"],
-          Image: ["photoId", "alt", "caption", "fit", "width"],
+          Image: ["photoId", "alt", "caption", "fit", "width", "destination"],
           PageGrid: ["selection", "showDate"],
           Gallery: ["photos"],
           Button: [
@@ -206,7 +206,7 @@ export function validPageData(
               (options.allowIncomplete || props[key].length <= max);
         const opt = (key: string, values: string[], required = false) =>
           props[key] === undefined ? !required : values.includes(props[key]);
-        if (!opt("align", ["left", "center"])) return false;
+        if (!opt("align", ["left", "center", "right"])) return false;
         switch (type) {
           case "PageGrid":
             return (
@@ -229,6 +229,7 @@ export function validPageData(
             );
           case "Image":
             return (
+              (props.destination == null || destination(props.destination)) &&
               (props.photoId === undefined ||
                 props.photoId === "" ||
                 (typeof props.photoId === "string" &&
