@@ -14,6 +14,7 @@ export function CanvasRichText({
   const selected = useEditor((state) => state.selectedItem?.props.id === id);
   return (
     <div
+      data-garden-block-id={id}
       role="group"
       aria-label={(selected ? "Selected " : "") + type + " block"}
     >

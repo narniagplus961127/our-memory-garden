@@ -1,6 +1,6 @@
 import { Extension, Mark } from "@tiptap/core";
 import type { RichtextField } from "@puckeditor/core";
-import { InlineFormatMenu } from "./inline-format-menu";
+import { InlineEditorBridge } from "./inline-editing";
 
 const Small = Mark.create({
   name: "gardenSmall",
@@ -50,7 +50,7 @@ export function richField(label: string): RichtextField {
     },
     renderMenu: () => null,
     renderInlineMenu: ({ editor }) => (
-      <InlineFormatMenu editor={editor} allowLinks={allowLinks} />
+      <InlineEditorBridge editor={editor} allowLinks={allowLinks} />
     ),
   };
 }
