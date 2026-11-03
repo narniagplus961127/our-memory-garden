@@ -776,6 +776,14 @@ button.primary {
   background: var(--ink);
   color: var(--cream);
 }
+.garden-button-block > .button {
+  max-width: 100%;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.garden-button-block > .button > * {
+  min-width: 0;
+}
 .editor-admin-main {
   min-height: 100vh;
   background: var(--sage);

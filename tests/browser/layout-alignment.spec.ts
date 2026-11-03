@@ -95,7 +95,10 @@ test("font size lines up with toolbar inputs and movement settings have clear ga
 }) => {
   await sample(page);
   const frame = page.frameLocator("iframe");
-  await frame.getByRole("textbox", { name: "Heading", exact: true }).click();
+  await frame
+    .getByRole("textbox", { name: "Text content", exact: true })
+    .first()
+    .click();
   const size = page.getByRole("spinbutton", { name: "Font size", exact: true });
   await expect(size).toBeEnabled();
   const sizeBox = (await size.boundingBox())!,

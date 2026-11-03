@@ -8,9 +8,13 @@ const normalColour = (colour: string) =>
 export function BackgroundColour({
   value,
   onChange,
+  label = "Background colour",
+  defaultLabel = "None",
 }: {
   value?: string;
   onChange: (value: string) => void;
+  label?: string;
+  defaultLabel?: string;
 }) {
   const [draft, setDraft] = useState(value ?? "");
   const id = useId();
@@ -25,19 +29,23 @@ export function BackgroundColour({
   const valid = !draft || /^#(?:[\da-f]{3}|[\da-f]{6})$/i.test(draft);
   return (
     <div className="background-colour">
-      <p className="appearance-label">Background colour</p>
-      <div className="colour-presets" aria-label="Garden background colours">
+      <p className="appearance-label">{label}</p>
+      <div className="colour-presets" aria-label={label + " presets"}>
         {[
           ["Paper", "#fffcf5"],
           ["Sage", "#e0e7d9"],
           ["Clay", "#e5c7b7"],
-          ["None", ""],
-        ].map(([label, colour]) => (
+          [defaultLabel, ""],
+        ].map(([preset, colour]) => (
           <button
-            key={label}
+            key={preset}
             type="button"
-            title={label}
-            aria-label={label + " background"}
+            title={preset}
+            aria-label={
+              label === "Background colour"
+                ? preset + " background"
+                : preset + " · " + label
+            }
             aria-pressed={value === colour}
             style={{ backgroundColor: colour || "transparent" }}
             onClick={() => {
@@ -50,7 +58,11 @@ export function BackgroundColour({
       <div className="colour-inputs">
         <input
           type="color"
-          aria-label="Choose custom background colour"
+          aria-label={
+            label === "Background colour"
+              ? "Choose custom background colour"
+              : "Choose " + label.toLowerCase()
+          }
           value={value ? normalColour(value) : "#fffcf5"}
           onChange={(e) => {
             setDraft(e.target.value);
@@ -58,7 +70,11 @@ export function BackgroundColour({
           }}
         />
         <input
-          aria-label="Custom background hex colour"
+          aria-label={
+            label === "Background colour"
+              ? "Custom background hex colour"
+              : label + " hex"
+          }
           placeholder="#A7C4A0"
           value={draft}
           maxLength={7}

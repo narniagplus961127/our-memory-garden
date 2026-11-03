@@ -59,6 +59,9 @@ type GardenBlockProps = {
     destination?: Destination | null;
     variant?: "primary" | "secondary";
     align?: "left" | "center";
+    width?: "fit" | "full";
+    buttonColor?: string;
+    textColor?: string;
   };
   Section: {
     background?: "paper" | "sage" | "clay";
@@ -468,7 +471,6 @@ export const gardenConfig: Config<GardenBlocks> = {
     Button: {
       label: "Button",
       fields: {
-        ...appearance,
         label: { type: "text", label: "Button label", visible: false },
         labelRich: richField("Button label"),
         destination: {
@@ -488,7 +490,58 @@ export const gardenConfig: Config<GardenBlocks> = {
             { label: "Secondary", value: "secondary" },
           ],
         },
+        width: {
+          type: "custom",
+          label: "Button width",
+          render: ({ value, onChange }) => (
+            <fieldset className="button-width-control">
+              <legend>Button width</legend>
+              <div>
+                {(
+                  [
+                    ["fit", "Fit content"],
+                    ["full", "Full width"],
+                  ] as const
+                ).map(([width, label]) => (
+                  <button
+                    type="button"
+                    key={width}
+                    aria-pressed={(value ?? "fit") === width}
+                    onClick={() => onChange(width)}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </fieldset>
+          ),
+        },
+        buttonColor: {
+          type: "custom",
+          label: "Button background",
+          render: ({ value, onChange }) => (
+            <BackgroundColour
+              value={value}
+              onChange={onChange}
+              label="Button background"
+              defaultLabel="Default"
+            />
+          ),
+        },
+        textColor: {
+          type: "custom",
+          label: "Button text colour",
+          render: ({ value, onChange }) => (
+            <BackgroundColour
+              value={value}
+              onChange={onChange}
+              label="Button text colour"
+              defaultLabel="Default"
+            />
+          ),
+        },
         align: alignment,
+        ...appearance,
       },
       resolveFields: (data, { fields }) => ({
         ...fields,
@@ -507,6 +560,7 @@ export const gardenConfig: Config<GardenBlocks> = {
         labelRich: "<p>Explore a little more</p>",
         href: "https://example.com",
         variant: "primary",
+        width: "fit",
         align: "left",
       },
       render: ({
@@ -518,6 +572,9 @@ export const gardenConfig: Config<GardenBlocks> = {
         destination,
         variant,
         align,
+        width,
+        buttonColor,
+        textColor,
         ...surface
       }) => (
         <div
@@ -526,6 +583,12 @@ export const gardenConfig: Config<GardenBlocks> = {
         >
           <a
             className={"button " + (variant ?? "primary")}
+            style={{
+              width: width === "full" ? "100%" : undefined,
+              backgroundColor: buttonColor || undefined,
+              borderColor: buttonColor || undefined,
+              color: textColor || undefined,
+            }}
             href={destinationHref(destination ?? undefined, href)}
           >
             <RichContent id={id} puck={puck} type="Button">

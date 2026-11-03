@@ -492,17 +492,15 @@ function Workspace({
             {status}
           </span>
         </div>
-        <button
-          className="secondary page-settings-toggle"
-          aria-pressed={panel === "page"}
-          onPointerDown={rememberCanvasFocus}
-          onClick={() => setPanel("page")}
+        <a
+          className="button secondary editor-view-link"
+          href={page.is_homepage ? "/" : "/p/" + page.id}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="View page (opens in a new tab)"
         >
-          Page settings
-        </button>
-        <Link className="button secondary editor-dashboard-link" href="/admin">
-          Dashboard
-        </Link>
+          View page <span aria-hidden="true">↗</span>
+        </a>
         <Link
           className="button secondary editor-history-link"
           href={"/admin/pages/" + page.id + "/history"}
@@ -523,6 +521,7 @@ function Workspace({
             ["content", "＋", "Content"],
             ["settings", "◌", "Styles"],
             ["outline", "☷", "Outline"],
+            ["page", "⚙︎", "Page settings"],
           ].map(([key, icon, label]) => (
             <button
               key={key}
@@ -532,13 +531,16 @@ function Workspace({
                   ? "Open content panel"
                   : key === "settings"
                     ? "Open settings panel"
-                    : "Open outline panel"
+                    : key === "outline"
+                      ? "Open outline panel"
+                      : "Page settings"
               }
+              title={label}
               aria-pressed={panel === key}
               aria-expanded={panel === key}
               onPointerDown={rememberCanvasFocus}
               onClick={() =>
-                setPanel(key as "content" | "settings" | "outline")
+                setPanel(key as "content" | "settings" | "outline" | "page")
               }
             >
               <span aria-hidden="true">{icon}</span>
@@ -625,14 +627,7 @@ function Workspace({
               <Drawer>
                 <div className="palette-heading">Blocks</div>
                 <div className="garden-palette">
-                  {[
-                    "Text",
-                    "Image",
-                    "Banner",
-                    "Button",
-                    "Gallery",
-                    "PageGrid",
-                  ].map((name) => (
+                  {["Text", "Image", "Button", "PageGrid"].map((name) => (
                     <div className="palette-card" key={name}>
                       <Drawer.Item name={name}>
                         {() => (
