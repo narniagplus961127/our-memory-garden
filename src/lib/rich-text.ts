@@ -152,7 +152,7 @@ export function inlinePageData(data: PageData): PageData {
       return { ...block, props };
     });
   }
-  return { root: { props: {} }, content: walk(data.content) };
+  return { root: data.root, content: walk(data.content) };
 }
 export function richPageData(data: PageData): PageData {
   function walk(blocks: PageData["content"]): PageData["content"] {
@@ -167,7 +167,7 @@ export function richPageData(data: PageData): PageData {
       return { ...block, props };
     });
   }
-  return { root: { props: {} }, content: walk(data.content) };
+  return { root: data.root, content: walk(data.content) };
 }
 export function editedPageData(data: PageData, previous: PageData): PageData {
   const existing = new Map<string, PageData["content"][number]>();
@@ -204,7 +204,7 @@ export function editedPageData(data: PageData, previous: PageData): PageData {
       return { ...block, props };
     });
   }
-  return { root: { props: {} }, content: walk(richPageData(data).content) };
+  return { root: data.root, content: walk(richPageData(data).content) };
 }
 export function richLinks(value: string): string[] {
   const links: string[] = [];

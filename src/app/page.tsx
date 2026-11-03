@@ -13,9 +13,14 @@ export default async function HomePage() {
   return (
     <>
       <GardenHeader />
-      <main className="public-page">
-        <div className="page-content">
-          <p className="eyebrow">Our garden</p>
+      <main className="public-page public-homepage">
+        <div
+          className="page-content public-page-heading"
+          style={{
+            display:
+              page?.content.root.props.showTitle === false ? "none" : undefined,
+          }}
+        >
           <h1>{page?.title ?? "Our Memory Garden"}</h1>
         </div>
         {page ? (

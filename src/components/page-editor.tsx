@@ -34,9 +34,19 @@ import { inlinePageData, richPageData, editedPageData } from "@/lib/rich-text";
 const useGardenPuck = createUsePuck<typeof gardenConfig>();
 const blockLabel = (type: string) => (type === "PageGrid" ? "Page grid" : type);
 type Snapshot = import("@/lib/page-merge").PageSnapshot;
-function documentData(data: Data): PageData {
+function documentData(
+  data: Data<
+    Record<string, Record<string, unknown>>,
+    { title?: string; showTitle?: boolean }
+  >,
+): PageData {
   return richPageData({
-    root: { props: {} },
+    root: {
+      props:
+        data.root?.props?.showTitle === undefined
+          ? {}
+          : { showTitle: data.root.props.showTitle },
+    },
     content: data.content as PageBlock[],
   });
 }
@@ -226,6 +236,13 @@ function Workspace({
     getPuck = useGetPuck();
   const { targets, items } = documentOutline(data.content as PageBlock[]);
   const activeText = useActiveInlineText();
+  const formatEditor =
+    (panel === null || panel === "settings") &&
+    activeText &&
+    activeText.blockId === selected?.props.id &&
+    !activeText.editor.isDestroyed
+      ? activeText.editor
+      : null;
   useEffect(() => {
     if (panelRef.current) panelRef.current.scrollTop = 0;
   }, [panel]);
@@ -583,34 +600,63 @@ function Workspace({
             </button>
           </div>
           <div hidden={panel !== "page"} className="editor-page-settings">
-            <label htmlFor="page-settings-title">Title</label>
-            <input
-              id="page-settings-title"
-              aria-label="Page settings title"
-              value={title}
-              maxLength={200}
-              onChange={(e) => onMetadata({ title: e.target.value })}
-            />
+            <div className="settings-field">
+              <label htmlFor="page-settings-title">Title</label>
+              <input
+                id="page-settings-title"
+                aria-label="Page settings title"
+                value={title}
+                maxLength={200}
+                onChange={(e) => onMetadata({ title: e.target.value })}
+              />
+            </div>
+            <div className="settings-field">
+              <label className="page-title-visibility">
+                <input
+                  type="checkbox"
+                  checked={data.root?.props?.showTitle !== false}
+                  onChange={(event) => {
+                    const api = getPuck();
+                    onMetadata({
+                      content: {
+                        ...editedPageData(
+                          documentData(api.appState.data),
+                          page.content,
+                        ),
+                        root: { props: { showTitle: event.target.checked } },
+                      },
+                    });
+                  }}
+                />
+                Show page title
+              </label>
+              <p className="muted page-title-help">
+                Show the heading on the website. The page name and sharing title
+                stay the same.
+              </p>
+            </div>
             <PageAddress page={page} accountId={accountId} />
-            <label htmlFor="page-visibility">Visibility</label>
-            <select
-              id="page-visibility"
-              aria-label="Page visibility"
-              value={visibility}
-              disabled={page.is_homepage}
-              onChange={(e) =>
-                onMetadata({
-                  visibility:
-                    e.target.value === "public" ? "public" : "private",
-                })
-              }
-            >
-              <option value="private">Private · administrators only</option>
-              <option value="public">Public · everyone</option>
-            </select>
-            {page.is_homepage && (
-              <small>The homepage always stays public.</small>
-            )}
+            <div className="settings-field">
+              <label htmlFor="page-visibility">Visibility</label>
+              <select
+                id="page-visibility"
+                aria-label="Page visibility"
+                value={visibility}
+                disabled={page.is_homepage}
+                onChange={(e) =>
+                  onMetadata({
+                    visibility:
+                      e.target.value === "public" ? "public" : "private",
+                  })
+                }
+              >
+                <option value="private">Private · administrators only</option>
+                <option value="public">Public · everyone</option>
+              </select>
+              {page.is_homepage && (
+                <small>The homepage always stays public.</small>
+              )}
+            </div>
             <PageDetails
               page={{ ...page, title }}
               accountId={accountId}
@@ -847,15 +893,14 @@ function Workspace({
               <span className="mobile-canvas-hint">Swipe tools for more →</span>
             </small>
           </div>
-          <div id="garden-inline-format">
+          <div
+            id="garden-inline-format"
+            className={formatEditor ? "" : "format-hidden"}
+            aria-hidden={!formatEditor}
+            inert={!formatEditor}
+          >
             <InlineFormatMenu
-              editor={
-                activeText &&
-                activeText.blockId === selected?.props.id &&
-                !activeText.editor.isDestroyed
-                  ? activeText.editor
-                  : null
-              }
+              editor={formatEditor}
               allowLinks={activeText?.allowLinks ?? true}
             />
           </div>

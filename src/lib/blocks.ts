@@ -44,7 +44,9 @@ export function validPageData(
     !root.props ||
     typeof root.props !== "object" ||
     Array.isArray(root.props) ||
-    Object.keys(root.props).length
+    Object.entries(root.props).some(
+      ([key, value]) => key !== "showTitle" || typeof value !== "boolean",
+    )
   )
     return false;
   if (
