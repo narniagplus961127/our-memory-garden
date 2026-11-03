@@ -30,6 +30,7 @@ import {
 import type { GardenPage, PageData } from "@/lib/pages";
 import { usePageAutosave } from "./use-page-autosave";
 import { SaveFeedback } from "./save-feedback";
+import { Toast } from "./toast";
 import { equal } from "@/lib/page-merge";
 import { inlinePageData, richPageData, editedPageData } from "@/lib/rich-text";
 const useGardenPuck = createUsePuck<typeof gardenConfig>();
@@ -592,10 +593,12 @@ function Workspace({
         </Link>
       </header>
       {error && (
-        <div role="alert" className="editor-save-error">
-          <span>{error} Your edits remain in this editor.</span>
-          <button onClick={retry}>Retry save</button>
-        </div>
+        <Toast
+          message={error + " Your edits remain in this editor."}
+          tone="error"
+          actionLabel="Retry save"
+          onAction={retry}
+        />
       )}
       <div className="editor-feedback">{feedback}</div>
       <div className="garden-editor-body">

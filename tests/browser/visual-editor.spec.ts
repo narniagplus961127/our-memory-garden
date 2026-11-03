@@ -300,6 +300,9 @@ test("autosave keeps the latest edit during a slow write and preserves failures 
   await selectBlock(page, "Select Text 1");
   await page.getByRole("button", { name: "Open settings panel" }).click();
   await expect(field).toHaveText("The latest rosemary survives");
+  const canvasBeforeFailure = (await page
+    .locator(".garden-canvas-scroll")
+    .boundingBox())!;
   await page.route("**/api/pages/*", async (route) => {
     if (route.request().method() === "PATCH") await route.abort("failed");
     else await route.continue();
@@ -308,12 +311,19 @@ test("autosave keeps the latest edit during a slow write and preserves failures 
   await expect(
     page.getByRole("status", { name: "Auto-save status" }),
   ).toHaveText("Not saved");
+  const toast = page.locator(".garden-toast-error");
+  await expect(toast).toBeVisible();
+  await expect(toast).toHaveCSS("position", "fixed");
+  expect((await page.locator(".garden-canvas-scroll").boundingBox())!.y).toBe(
+    canvasBeforeFailure.y,
+  );
   await expect(field).toHaveText("A retryable garden memory");
   await page.unroute("**/api/pages/*");
   await page.getByRole("button", { name: "Retry save", exact: true }).click();
   await expect(
     page.getByRole("status", { name: "Auto-save status" }),
   ).toHaveText("Saved");
+  await expect(toast).toHaveCount(0);
   await page.reload();
   await selectBlock(page, "Select Text 1");
   await page.getByRole("button", { name: "Open settings panel" }).click();

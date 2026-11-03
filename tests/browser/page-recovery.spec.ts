@@ -9,6 +9,93 @@ const env = Object.fromEntries(
       return [l.slice(0, i), l.slice(i + 1)];
     }),
 );
+
+test("recovery popups are centered, trap focus, cancel safely and stay open during a request", async ({
+  page,
+}, testInfo) => {
+  const headers = { Origin: env.NEXT_PUBLIC_APP_URL };
+  await page.request.post("/api/auth/sign-in/email", {
+    headers,
+    data: { email: env.TEST_ADMIN_EMAIL, password: env.TEST_ADMIN_PASSWORD },
+  });
+  const created = await (
+    await page.request.post("/api/pages", {
+      headers,
+      data: { title: "A memory to keep " + Date.now() },
+    })
+  ).json();
+  await page.goto("/admin/pages/" + created.id + "/history");
+  const trigger = page.getByRole("button", {
+    name: "Move to trash",
+    exact: true,
+  });
+  const dialog = page.getByRole("dialog", { name: /^Move .* to trash\?$/ });
+  await trigger.click();
+  await expect(
+    dialog.getByRole("button", { name: "Cancel", exact: true }),
+  ).toBeFocused();
+  const box = (await dialog.boundingBox())!,
+    viewport = page.viewportSize()!;
+  expect(Math.abs(box.x + box.width / 2 - viewport.width / 2)).toBeLessThan(10);
+  expect(Math.abs(box.y + box.height / 2 - viewport.height / 2)).toBeLessThan(
+    10,
+  );
+  expect(box.width).toBeLessThanOrEqual(viewport.width - 32);
+  await page.keyboard.press("Tab");
+  await expect(
+    dialog.getByRole("button", { name: "Confirm move to trash", exact: true }),
+  ).toBeFocused();
+  await page.keyboard.press("Tab");
+  await page.keyboard.press("Tab");
+  await expect(
+    dialog.getByRole("button", { name: "Cancel", exact: true }),
+  ).toBeFocused();
+  await page.screenshot({
+    path: testInfo.outputPath("confirmation-popup.png"),
+  });
+  await page.keyboard.press("Escape");
+  await expect(dialog).toHaveCount(0);
+  await expect(trigger).toBeFocused();
+  await trigger.click();
+  await dialog.getByRole("button", { name: "Cancel", exact: true }).click();
+  await expect(dialog).toHaveCount(0);
+  expect(
+    (await (await page.request.get("/api/pages/" + created.id)).json())
+      .deleted_at,
+  ).toBeNull();
+  let release = () => {},
+    started = () => {};
+  const held = new Promise<void>((resolve) => {
+      release = resolve;
+    }),
+    arrived = new Promise<void>((resolve) => {
+      started = resolve;
+    });
+  await page.route("**/api/pages/" + created.id + "/trash", async (route) => {
+    started();
+    await held;
+    await route.continue();
+  });
+  try {
+    await trigger.click();
+    await dialog
+      .getByRole("button", { name: "Confirm move to trash", exact: true })
+      .click();
+    await arrived;
+    await page.keyboard.press("Escape");
+    await expect(dialog).toBeVisible();
+    await expect(
+      dialog.getByRole("button", { name: "Cancel", exact: true }),
+    ).toBeDisabled();
+  } finally {
+    release();
+  }
+  await expect(dialog).toHaveCount(0);
+  await expect(
+    page.getByRole("status").filter({ hasText: "Page moved to trash." }),
+  ).toBeVisible();
+  await page.unrouteAll({ behavior: "wait" });
+});
 test("administrator reviews history, confirms restore and safely recovers a trashed page", async ({
   page,
 }) => {
@@ -65,7 +152,7 @@ test("administrator reviews history, confirms restore and safely recovers a tras
       .getByRole("button", { name: "Restore this version", exact: true })
       .click();
     await expect(
-      page.getByRole("region", { name: "Confirm version restoration" }),
+      page.getByRole("dialog", { name: /^Restore version/ }),
     ).toContainText("current saved version will be kept");
     await page
       .getByRole("button", { name: "Confirm restore version", exact: true })
@@ -78,7 +165,7 @@ test("administrator reviews history, confirms restore and safely recovers a tras
       .getByRole("button", { name: "Move to trash", exact: true })
       .click();
     await expect(
-      page.getByRole("region", { name: "Confirm page action" }),
+      page.getByRole("dialog", { name: /^Move .* to trash\?$/ }),
     ).toContainText("Links to this page");
     await page
       .getByRole("button", { name: "Confirm move to trash", exact: true })
@@ -120,7 +207,7 @@ test("administrator reviews history, confirms restore and safely recovers a tras
     .getByRole("button", { name: "Delete permanently", exact: true })
     .click();
   await expect(
-    card.getByRole("region", { name: "Confirm page action" }),
+    card.getByRole("dialog", { name: /^Permanently delete/ }),
   ).toContainText("cannot be undone");
   await card.getByRole("button", { name: "Cancel", exact: true }).click();
   await expect(card).toBeVisible();

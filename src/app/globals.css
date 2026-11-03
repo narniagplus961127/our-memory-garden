@@ -1670,7 +1670,6 @@ button.primary {
   min-height: 44px;
   margin: 4px;
 }
-.recovery-confirm,
 .trash-card {
   border: 1px solid var(--line);
   background: var(--paper);
@@ -1683,14 +1682,137 @@ button.primary {
   border-top: 1px solid var(--line);
   padding-top: 24px;
 }
+.confirmation-dialog {
+  position: fixed;
+  inset: 0;
+  margin: auto;
+  width: min(640px, calc(100vw - 32px));
+  max-height: calc(100dvh - 32px);
+  height: fit-content;
+  overflow: auto;
+  overscroll-behavior: contain;
+  padding: 0;
+  background: var(--cream);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  box-shadow: 0 16px 64px #20312830;
+}
+.confirmation-dialog::backdrop {
+  background: #20312870;
+}
+.confirmation-dialog > header {
+  padding: 24px 24px 16px;
+}
+.confirmation-dialog h2 {
+  margin: 0;
+  font-size: 26px;
+  overflow-wrap: anywhere;
+}
+.confirmation-dialog-content {
+  padding: 0 24px 24px;
+  display: grid;
+  gap: 16px;
+  overflow-wrap: anywhere;
+}
+.confirmation-dialog-content :is(p, h3, ul) {
+  margin: 0;
+}
+.confirmation-dialog-content h3 {
+  font-size: 20px;
+}
+.confirmation-dialog-content ul {
+  padding-left: 20px;
+}
+.confirmation-dialog > footer {
+  position: sticky;
+  bottom: 0;
+  padding: 16px 24px;
+  margin: 0;
+  background: var(--cream);
+  border-top: 1px solid var(--line);
+  justify-content: flex-end;
+  gap: 12px;
+}
+.confirmation-dialog button {
+  margin: 0;
+}
+.confirmation-dialog-error {
+  display: grid;
+  gap: 12px;
+}
+.confirmation-dialog-error button {
+  justify-self: start;
+}
+:root:has(.confirmation-dialog[open]) {
+  overflow: hidden;
+  scrollbar-gutter: stable;
+}
+.garden-toast {
+  position: fixed;
+  right: 24px;
+  bottom: calc(24px + env(safe-area-inset-bottom));
+  z-index: 80;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: min(440px, calc(100vw - 32px));
+  max-height: 35dvh;
+  overflow: auto;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--muted);
+  border-radius: 10px;
+  box-shadow: 0 6px 28px #20312828;
+  color: var(--ink);
+  background: var(--cream);
+  font-size: 14px;
+  line-height: 21px;
+}
+.garden-toast p {
+  margin: 0;
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.garden-toast-error {
+  border-left-color: var(--clay);
+}
+.garden-toast button {
+  flex-shrink: 0;
+  font-size: 14px;
+}
+.garden-toast .toast-dismiss {
+  width: 44px;
+  height: 44px;
+  padding: 8px;
+  font-size: 22px;
+}
 @media (max-width: 760px) {
   .history-layout {
     grid-template-columns: 1fr;
     gap: 20px;
   }
-  .recovery-confirm,
   .trash-card {
     padding: 20px;
+  }
+  .garden-toast {
+    right: 16px;
+    bottom: calc(16px + env(safe-area-inset-bottom));
+    gap: 8px;
+    padding: 12px;
+  }
+  .confirmation-dialog > header {
+    padding: 20px 20px 16px;
+  }
+  .confirmation-dialog h2 {
+    font-size: 24px;
+  }
+  .confirmation-dialog-content {
+    padding: 0 20px 20px;
+  }
+  .confirmation-dialog > footer {
+    padding: 16px 20px;
   }
   .history-layout nav {
     max-height: 320px;

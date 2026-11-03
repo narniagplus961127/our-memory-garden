@@ -28,6 +28,8 @@ Routine follow-through within the owner-approved Sunlit Garden direction, added 
 
 ## Shared interaction rules
 
+Ticket 27 replaces inline recovery confirmation cards with centred native popup dialogs, bounded to the viewport with scrollable content and sticky actions. Cancel/Escape dismiss safely and return focus; request progress blocks dismissal. Failed actions retain their warnings and retry/reload controls inside the popup. Routine editor notices and save errors use fixed bottom-right toasts; mobile uses 16 px side/safe-area clearance. Error toasts persist with Retry save; short notices expire after six seconds, paused for mouse/keyboard interaction. Persistent recovery/conflict decisions stay in their existing review surface. Native FigCraft frames are not redrawn for this owner-requested refinement.
+
 Ticket 26 sets root/body text to 14 px using `--body-font-size`, shared with form controls. Standard button text inherits it, and administration links match it. Heading sizes and explicitly authored font sizes retain their own hierarchy. This supersedes the original 16 px body default.
 
 - Settings changes update the live canvas and autosave; show Autosaving… / Saved / Unsaved · Retry from actual persistence. No Save, Publish, Preview or Undo/Redo controls. Opening or closing a panel and switching device width do not change content.

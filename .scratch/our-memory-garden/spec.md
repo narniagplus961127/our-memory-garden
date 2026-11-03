@@ -22,6 +22,8 @@ Ticket 26 typography refinement (owner requested 2026-11-03): Set root and body 
 
 ## Problem Statement
 
+Ticket 27 feedback refinement (owner requested 2026-11-03): Move page trash, private restoration, permanent deletion and saved-version restoration confirmations into centred responsive native dialogs. Preserve warnings, inbound references, explicit confirmation, in-flight locking and failure retry/reload. Cancel initially receives focus; Cancel/Escape restore the trigger without mutation. Short editor notices use dismissible toasts with six-second expiry paused during hover/focus. Save errors use persistent Retry save toasts without shifting the canvas; save state and recovery/conflict choices remain visible until resolved.
+
 Two partners want a personal website to preserve and share their lives through photographs and written content. They need to shape the site themselves on mobile and desktop, keeping selected pages private without relying on a developer for every change.
 
 ## Solution

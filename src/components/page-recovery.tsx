@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import type { GardenPage } from "@/lib/pages";
 import type { InboundReference } from "@/lib/server/page-recovery";
+import { ConfirmationDialog } from "./confirmation-dialog";
 
 const RecoveryPageContext = createContext<{
   page: GardenPage;
@@ -57,6 +58,7 @@ export function RestoreVersion({
     [error, setError] = useState(""),
     [success, setSuccess] = useState("");
   async function restore() {
+    if (busy) return;
     setBusy(true);
     setError("");
     try {
@@ -86,43 +88,32 @@ export function RestoreVersion({
         onClick={() => {
           setConfirm(true);
           setSuccess("");
+          setError("");
         }}
         disabled={busy || Boolean(page.deleted_at)}
       >
         Restore this version
       </button>
       {confirm && (
-        <div
-          className="recovery-confirm"
-          role="region"
-          aria-label="Confirm version restoration"
-        >
-          <h3>Restore version {revision}?</h3>
-          <p>
-            The current saved version will be kept in history. This page’s
-            current visibility and address stay unchanged. Unsaved editor work
-            is not included.
-          </p>
-          <button className="button" disabled={busy} onClick={restore}>
-            {busy ? "Restoring…" : "Confirm restore version"}
-          </button>
-          <button
-            className="button secondary"
-            disabled={busy}
-            onClick={() => setConfirm(false)}
-          >
-            Cancel
-          </button>
-        </div>
-      )}
-      {error && (
-        <p role="alert">
-          {error}{" "}
-          <button onClick={restore} disabled={busy}>
-            Retry restore
-          </button>{" "}
-          <button onClick={() => router.refresh()}>Reload history</button>
-        </p>
+        <ConfirmationDialog
+          title={"Restore version " + revision + "?"}
+          description="The current saved version will be kept in history. This page’s current visibility and address stay unchanged. Unsaved editor work is not included."
+          busy={busy}
+          error={error}
+          confirmLabel="Confirm restore version"
+          retryLabel="Retry restore"
+          reloadLabel="Reload history"
+          onConfirm={() => void restore()}
+          onCancel={() => {
+            setConfirm(false);
+            setError("");
+          }}
+          onReload={() => {
+            setConfirm(false);
+            setError("");
+            router.refresh();
+          }}
+        />
       )}
       {success && <p role="status">{success}</p>}
     </div>
@@ -148,7 +139,7 @@ export function TrashAction({
     [error, setError] = useState(""),
     [success, setSuccess] = useState("");
   async function submit() {
-    if (!action) return;
+    if (!action || busy) return;
     setBusy(true);
     setError("");
     try {
@@ -209,7 +200,11 @@ export function TrashAction({
         <>
           <button
             className="button secondary"
-            onClick={() => setAction("trash")}
+            onClick={() => {
+              setAction("trash");
+              setError("");
+              setSuccess("");
+            }}
             disabled={page.is_homepage || busy}
           >
             Move to trash
@@ -223,28 +218,46 @@ export function TrashAction({
         </>
       )}
       {action && (
-        <div
-          className="recovery-confirm"
-          role="region"
-          aria-label="Confirm page action"
-        >
-          <h3>
-            {action === "delete"
+        <ConfirmationDialog
+          title={
+            action === "delete"
               ? "Permanently delete " + page.title + "?"
               : action === "restore"
                 ? "Restore " + page.title + " as private?"
-                : "Move " + page.title + " to trash?"}
-          </h3>
-          <p>
-            {action === "delete"
+                : "Move " + page.title + " to trash?"
+          }
+          description={
+            action === "delete"
               ? "This cannot be undone. This page and its version history will be removed. Other pages and photos will be kept."
               : action === "restore"
                 ? "The page keeps its stable links and returns private for review."
-                : "The page will be hidden from visitors. You can restore it from trash."}
-          </p>
+                : "The page will be hidden from visitors. You can restore it from trash."
+          }
+          busy={busy}
+          error={error}
+          confirmLabel={
+            action === "delete"
+              ? "Confirm permanent deletion"
+              : action === "restore"
+                ? "Confirm restore as private"
+                : "Confirm move to trash"
+          }
+          retryLabel="Retry action"
+          reloadLabel="Reload page"
+          onConfirm={() => void submit()}
+          onCancel={() => {
+            setAction(null);
+            setError("");
+          }}
+          onReload={() => {
+            setAction(null);
+            setError("");
+            router.refresh();
+          }}
+        >
           {action === "trash" && (
             <>
-              <h4>Links to this page</h4>
+              <h3>Links to this page</h3>
               {references.length ? (
                 <ul>
                   {references.map((r, i) => (
@@ -267,35 +280,7 @@ export function TrashAction({
               </p>
             </>
           )}
-          <button className="button" disabled={busy} onClick={submit}>
-            {busy
-              ? "Working…"
-              : action === "delete"
-                ? "Confirm permanent deletion"
-                : action === "restore"
-                  ? "Confirm restore as private"
-                  : "Confirm move to trash"}
-          </button>
-          <button
-            className="button secondary"
-            disabled={busy}
-            onClick={() => {
-              setAction(null);
-              setError("");
-            }}
-          >
-            Cancel
-          </button>
-        </div>
-      )}
-      {error && (
-        <p role="alert">
-          {error}{" "}
-          <button disabled={busy} onClick={submit}>
-            Retry action
-          </button>{" "}
-          <button onClick={() => router.refresh()}>Reload page</button>
-        </p>
+        </ConfirmationDialog>
       )}
       {success && <p role="status">{success}</p>}
     </div>
