@@ -68,9 +68,28 @@ test("compose an ordered captioned gallery and use the enlarged viewer with touc
     data: { title: "Gallery browser " + Date.now() },
   });
   const garden = await created.json();
+  // Existing galleries remain editable even though new pages use image/column blocks.
+  expect(
+    (
+      await page.request.patch("/api/pages/" + garden.id, {
+        headers,
+        data: {
+          version: garden.version,
+          content: {
+            root: { props: {} },
+            content: [
+              { type: "Gallery", props: { id: "legacy-gallery", photos: [] } },
+            ],
+          },
+        },
+      })
+    ).ok(),
+  ).toBeTruthy();
   await page.goto("/admin/pages/" + garden.id);
-  await page.getByRole("button", { name: "Open content panel" }).click();
-  await page.getByRole("button", { name: "Add Gallery", exact: true }).click();
+  await page.getByRole("button", { name: "Open outline panel" }).click();
+  await page
+    .getByRole("button", { name: "Select Gallery 1", exact: true })
+    .click();
   await page.getByRole("button", { name: "Open settings panel" }).click();
   for (const name of names) {
     await page

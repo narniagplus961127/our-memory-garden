@@ -110,7 +110,16 @@ export function validPageData(
           Image: ["photoId", "alt", "caption", "fit", "width"],
           PageGrid: ["selection", "showDate"],
           Gallery: ["photos"],
-          Button: ["label", "href", "destination", "variant", "align"],
+          Button: [
+            "label",
+            "href",
+            "destination",
+            "variant",
+            "align",
+            "width",
+            "buttonColor",
+            "textColor",
+          ],
           Section: ["background", "spacing", "content"],
           Columns: [
             "ratio",
@@ -253,6 +262,14 @@ export function validPageData(
             );
           case "Button":
             return (
+              opt("width", ["fit", "full"]) &&
+              ["buttonColor", "textColor"].every(
+                (key) =>
+                  props[key] === undefined ||
+                  props[key] === "" ||
+                  (typeof props[key] === "string" &&
+                    /^#(?:[\da-f]{3}|[\da-f]{6})$/i.test(props[key])),
+              ) &&
               str("label", 200, true) &&
               (props.destination
                 ? destination(props.destination)
@@ -305,7 +322,7 @@ export const templates = [
   {
     id: "journal",
     label: "Garden journal",
-    description: "A gentle banner, photograph and written moment.",
+    description: "A welcome, photograph and written moment.",
   },
 ] as const;
 export type TemplateId = (typeof templates)[number]["id"];
@@ -323,18 +340,20 @@ export function templateData(template: TemplateId = "blank"): PageData {
       fit: "cover",
       width: "inset",
     });
-  const banner = () =>
-    block("Banner", {
-      heading: "The moments we grow together",
-      description: "Little stories, gathered with love.",
+  const welcome = () =>
+    block("Section", {
       background: "sage",
-      align: "left",
+      spacing: "spacious",
+      content: [
+        text("The moments we grow together", "h1"),
+        text("Little stories, gathered with love."),
+      ],
     });
   if (template === "story")
     return {
       root: { props: {} },
       content: [
-        banner(),
+        welcome(),
         block("Section", {
           background: "paper",
           spacing: "comfortable",
@@ -356,7 +375,7 @@ export function templateData(template: TemplateId = "blank"): PageData {
     return {
       root: { props: {} },
       content: [
-        banner(),
+        welcome(),
         image(),
         text("A day to remember", "h2"),
         text("Write about the things you noticed today."),

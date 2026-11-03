@@ -402,8 +402,15 @@ test("custom colours, preserved column contents and page settings work with touc
   await expect(page.getByLabel("Page title", { exact: true })).toHaveValue(
     "A renamed garden page",
   );
-  await page.getByRole("link", { name: "Dashboard", exact: true }).click();
-  await expect(page).toHaveURL(/\/admin$/);
+  await expect(
+    page.getByRole("link", {
+      name: "View page (opens in a new tab)",
+      exact: true,
+    }),
+  ).toHaveAttribute("href", "/p/" + id);
+  await expect(
+    page.getByRole("link", { name: "Dashboard", exact: true }),
+  ).toHaveCount(0);
 });
 
 test("choosing the saved column layout retains children added in a removed column", async ({

@@ -49,7 +49,9 @@ test("formatting row keeps the canvas still across text selection, hover and non
   }
   const canvas = page.locator(".garden-canvas-scroll");
   const top = (await canvas.boundingBox())!.y;
-  const heading = frame.getByRole("textbox", { name: "Heading", exact: true });
+  const heading = frame
+    .getByRole("textbox", { name: "Text content", exact: true })
+    .first();
   await heading.click();
   await expect(
     page.getByRole("button", { name: "Bold", exact: true }),
@@ -92,7 +94,8 @@ test("formatting row keeps the canvas still across text selection, hover and non
       page.getByRole("combobox", { name: "Text style", exact: true }),
     ).toHaveValue("h1");
     await frame
-      .getByRole("textbox", { name: "Description", exact: true })
+      .getByRole("textbox", { name: "Text content", exact: true })
+      .nth(1)
       .hover();
     expect((await canvas.boundingBox())!.y).toBe(top);
   }
@@ -113,7 +116,9 @@ test("link dialog is centered, evenly spaced and keeps the selected words when a
   isMobile,
 }, testInfo) => {
   const frame = await openEditor(page);
-  const heading = frame.getByRole("textbox", { name: "Heading", exact: true });
+  const heading = frame
+    .getByRole("textbox", { name: "Text content", exact: true })
+    .first();
   await heading.click();
   await heading.fill("Our linked memory");
   await heading.evaluate((element) => {

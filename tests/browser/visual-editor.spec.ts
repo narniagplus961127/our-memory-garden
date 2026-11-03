@@ -63,9 +63,9 @@ test("compose nested blocks with taps, retain selection through moves and save i
   await expect(canvasField(page, "Text content")).toHaveText("Second rosemary");
   await press(page.getByRole("button", { name: "Open content panel" }));
   await chooseAddTarget(page, "Columns 1 · right column");
-  await press(page.getByRole("button", { name: "Add Banner", exact: true }));
+  await press(page.getByRole("button", { name: "Add Text", exact: true }));
   await press(page.getByRole("button", { name: "Open settings panel" }));
-  await writeCanvas(page, "Heading", "The right hand garden");
+  await writeCanvas(page, "Text content", "The right hand garden");
   await expect(
     page.getByRole("status", { name: "Auto-save status" }),
   ).toHaveText("Saved");
@@ -79,7 +79,7 @@ test("compose nested blocks with taps, retain selection through moves and save i
       (b: { props: { text: string } }) => b.props.text,
     ),
   ).toEqual(["First rosemary", "Second rosemary"]);
-  expect(section.props.content[0].props.right[0].props.heading).toBe(
+  expect(section.props.content[0].props.right[0].props.text).toBe(
     "The right hand garden",
   );
   await page.reload();
@@ -124,6 +124,8 @@ test("templates start independently and the device controls resize the actual re
   page,
   isMobile,
 }, testInfo) => {
+  // Includes template editing, both device sizes and several admin/history routes.
+  test.setTimeout(120000);
   await page.goto("/login");
   await expect(page.getByLabel("Email address")).toBeEnabled();
   await page.screenshot({
@@ -163,9 +165,9 @@ test("templates start independently and the device controls resize the actual re
   await expect(page).toHaveURL(/\/admin\/pages\/[0-9a-f-]{36}$/);
   const id = page.url().split("/").pop();
   const first = await (await page.request.get("/api/pages/" + id)).json();
-  await selectBlock(page, "Select Banner 1");
+  await selectBlock(page, "Select Text 1");
   await page.getByRole("button", { name: "Open settings panel" }).click();
-  await writeCanvas(page, "Heading", "Our independent welcome");
+  await writeCanvas(page, "Text content", "Our independent welcome");
   await expect(
     page.getByRole("status", { name: "Auto-save status" }),
   ).toHaveText("Saved");
@@ -175,7 +177,7 @@ test("templates start independently and the device controls resize the actual re
       headers: { Origin: new URL(page.url()).origin },
     })
   ).json();
-  expect(second.content.content[0].props.heading).toBe(
+  expect(second.content.content[0].props.content[0].props.text).toBe(
     "The moments we grow together",
   );
   expect(second.content.content[0].props.id).not.toBe(
