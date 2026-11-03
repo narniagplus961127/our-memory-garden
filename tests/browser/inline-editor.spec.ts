@@ -30,6 +30,16 @@ test("write and format directly on the canvas, autosave, reload and render the p
   });
   expect(created.ok()).toBeTruthy();
   const garden = await created.json();
+  // Preserve older documents that used one padding value when side overrides reset.
+  garden.content.content[0].props.padding = 30;
+  expect(
+    (
+      await page.request.patch("/api/pages/" + garden.id, {
+        headers: { Origin: baseURL! },
+        data: { content: garden.content, version: garden.version },
+      })
+    ).ok(),
+  ).toBeTruthy();
   await page.goto("/admin/pages/" + garden.id);
   const text = page
     .frameLocator("iframe")
@@ -51,6 +61,57 @@ test("write and format directly on the canvas, autosave, reload and render the p
   await expect(text.locator("strong")).toHaveText(
     "A memory written in our garden",
   );
+  // Switch straight from a size edit into the colour dialog without pressing Enter.
+  await page
+    .getByRole("spinbutton", { name: "Font size", exact: true })
+    .fill("28");
+  await page.getByRole("button", { name: "Text colour", exact: true }).click();
+  await page.getByLabel("Custom hex colour", { exact: true }).fill("#a75b43");
+  await page.getByRole("button", { name: "Apply colour", exact: true }).click();
+  await expect(text.locator("span")).toHaveCSS("font-size", "28px");
+  await expect(text.locator("span")).toHaveCSS("color", "rgb(167, 91, 67)");
+  await page
+    .getByRole("spinbutton", { name: "Letter spacing", exact: true })
+    .fill("1.5");
+  await page
+    .getByRole("spinbutton", { name: "Letter spacing", exact: true })
+    .press("Enter");
+  await expect(text.locator("span")).toHaveCSS("letter-spacing", "1.5px");
+  await page
+    .getByRole("spinbutton", { name: "Font size", exact: true })
+    .fill("64");
+  await page
+    .getByRole("spinbutton", { name: "Font size", exact: true })
+    .press("Escape");
+  await expect(text.locator("span")).toHaveCSS("font-size", "28px");
+  await page
+    .getByRole("button", { name: "Open settings panel", exact: true })
+    .click();
+  await page
+    .getByRole("spinbutton", { name: "Padding top", exact: true })
+    .fill("12");
+  await page
+    .getByRole("button", { name: "Reset padding", exact: true })
+    .click();
+  await expect(page.frameLocator("iframe").locator(".garden-text")).toHaveCSS(
+    "padding",
+    "30px",
+  );
+  for (const [name, value] of Object.entries({
+    "Padding top": "12",
+    "Padding right": "16",
+    "Padding bottom": "20",
+    "Padding left": "24",
+    "Margin top": "4",
+    "Margin right": "8",
+    "Margin bottom": "12",
+    "Margin left": "16",
+  }))
+    await page.getByRole("spinbutton", { name, exact: true }).fill(value);
+  if (isMobile)
+    await page
+      .getByRole("button", { name: "Close panel", exact: true })
+      .click();
   await expect(
     page.getByRole("status", { name: "Auto-save status" }),
   ).toHaveText("Saved");
@@ -58,6 +119,8 @@ test("write and format directly on the canvas, autosave, reload and render the p
   await expect(text.locator("strong")).toHaveText(
     "A memory written in our garden",
   );
+  await expect(text.locator("span")).toHaveCSS("font-size", "28px");
+  await expect(text.locator("span")).toHaveCSS("letter-spacing", "1.5px");
   await page
     .getByRole("button", { name: "Page settings", exact: true })
     .click();
@@ -72,6 +135,26 @@ test("write and format directly on the canvas, autosave, reload and render the p
   await view.goto(baseURL + "/p/" + garden.id);
   await expect(view.locator(".garden-text strong")).toHaveText(
     "A memory written in our garden",
+  );
+  await expect(view.locator(".garden-text span")).toHaveCSS(
+    "color",
+    "rgb(167, 91, 67)",
+  );
+  await expect(view.locator(".garden-text span")).toHaveCSS(
+    "font-size",
+    "28px",
+  );
+  await expect(view.locator(".garden-text span")).toHaveCSS(
+    "letter-spacing",
+    "1.5px",
+  );
+  await expect(view.locator(".garden-text")).toHaveCSS(
+    "padding",
+    "12px 16px 20px 24px",
+  );
+  await expect(view.locator(".garden-text")).toHaveCSS(
+    "margin",
+    "4px 8px 12px 16px",
   );
   await visitor.close();
 });

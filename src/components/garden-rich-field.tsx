@@ -1,6 +1,41 @@
 import { Extension, Mark } from "@tiptap/core";
 import type { RichtextField } from "@puckeditor/core";
 import { InlineEditorBridge } from "./inline-editing";
+import { textColour, textPixels } from "@/lib/text-appearance";
+
+const TextAppearance = Mark.create({
+  name: "gardenTextStyle",
+  addAttributes() {
+    return Object.fromEntries(
+      (
+        [
+          ["color", "color", (v: string) => textColour(v)],
+          ["fontSize", "font-size", (v: string) => textPixels(v, 8, 120)],
+          [
+            "letterSpacing",
+            "letter-spacing",
+            (v: string) => textPixels(v, -2, 20),
+          ],
+        ] as const
+      ).map(([key, property, safe]) => {
+        return [
+          key,
+          {
+            default: null,
+            parseHTML: (element: HTMLElement) =>
+              safe(element.style.getPropertyValue(property)),
+            renderHTML: (attributes: Record<string, string>) => {
+              const value = safe(attributes[key] ?? "");
+              return value ? { style: property + ": " + value } : {};
+            },
+          },
+        ];
+      }),
+    );
+  },
+  parseHTML: () => [{ tag: "span[style]" }],
+  renderHTML: ({ HTMLAttributes }) => ["span", HTMLAttributes, 0],
+});
 
 const Small = Mark.create({
   name: "gardenSmall",
@@ -40,6 +75,7 @@ export function richField(label: string): RichtextField {
     tiptap: {
       extensions: [
         Small,
+        TextAppearance,
         Extension.create({
           name: "gardenFieldLabel",
           onCreate() {

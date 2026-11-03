@@ -371,14 +371,16 @@ test("drag a nested text block into an empty column and persist its new location
   }
   const palette = page
     .getByRole("complementary", { name: "Page content", exact: true })
-    .getByRole("button", { name: "Text", exact: true });
+    .getByTestId("drawer-item:Text");
+  await expect(palette).toHaveCSS("cursor", "grab");
+  await expect(palette).toHaveCSS("user-select", "none");
   await dragBetween(palette, left);
   await expect(
     left.getByText("Write a little memory…", { exact: true }),
   ).toBeVisible();
   await selectBlock(page, "Select Text 2");
   await dragBetween(
-    frame.getByRole("button", { name: "Drag to reorder", exact: true }),
+    frame.getByRole("button", { name: "Drag block", exact: true }),
     destination,
   );
   await expect(
@@ -410,7 +412,7 @@ test("drag a nested text block into an empty column and persist its new location
     .content;
   await selectBlock(page, "Select Columns 1");
   await dragBetween(
-    frame.getByRole("button", { name: "Drag to reorder", exact: true }),
+    frame.getByRole("button", { name: "Drag block", exact: true }),
     destination,
   );
   expect(
