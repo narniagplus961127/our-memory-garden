@@ -1,6 +1,7 @@
 import { parseFragment, type DefaultTreeAdapterMap } from "parse5";
 import { destinationHref, isWebUrl, type Destination } from "./destinations";
 import type { PageData } from "./pages";
+import { validTextStyle } from "./text-appearance";
 
 type Node = DefaultTreeAdapterMap["node"];
 const tags = new Set([
@@ -17,6 +18,7 @@ const tags = new Set([
   "u",
   "br",
   "a",
+  "span",
 ]);
 export const richFields: Record<string, Record<string, string>> = {
   Text: { text: "textRich" },
@@ -46,6 +48,8 @@ export function validRichText(
     if (node.tagName === "a" && !allowLinks) return false;
     if (
       !node.attrs.every(({ name, value }) => {
+        if (name === "style" && node.tagName === "span")
+          return validTextStyle(value);
         if (
           name === "style" &&
           ["p", "h1", "h2", "h3", "h4"].includes(node.tagName)

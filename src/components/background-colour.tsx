@@ -25,6 +25,7 @@ export function BackgroundColour({
   const valid = !draft || /^#(?:[\da-f]{3}|[\da-f]{6})$/i.test(draft);
   return (
     <div className="background-colour">
+      <p className="appearance-label">Background colour</p>
       <div className="colour-presets" aria-label="Garden background colours">
         {[
           ["Paper", "#fffcf5"],

@@ -65,6 +65,16 @@ Review evidence and CLI audit are retained under the task's `editor-inline/` art
 
 ## Implemented integration
 
+### Text appearance and spacing refinement — ticket 17
+
+The owner requested this extension on 2026-11-03. The persistent toolbar adds labelled font-size and letter-spacing fields, a text-colour action and a reset for those three appearance settings. Numeric edits apply on Enter or blur, Escape cancels, and invalid values revert to the current value. Text colour opens a centred responsive dialog with garden swatches, a native picker and typed hex input; Apply is disabled for invalid colours. Styling affects the selected words or subsequent typing, preserving the selection when controls take focus. Existing H1–H4/paragraph/small, bold/italic/underline, alignment and safe links remain available.
+
+Styles shows explicitly labelled Background colour, Padding and Margin. Each spacing group has Top/Right/Bottom/Left inputs, a short inside/outside explanation and its own reset. Blank means inherited template styling; legacy all-side padding remains effective and is explained when present. Nonnegative spacing is limited to 120 px. This retains existing defaults and avoids converting old pages merely by opening them.
+
+The entire palette card's draggable surface uses grab/grabbing and disables text selection; its separate Add action retains a pointer cursor. Canvas text retains a text cursor and normal selection. Existing blocks move with the labelled dedicated grip. The formatting row still reserves 64 px, and mobile exposes a “Swipe tools for more” hint. A scrolling bottom sheet keeps each spacing control reachable without widening the page. The garden document contains outer margins so the canvas measures the complete content height.
+
+These changes extend the approved native FigCraft states; the native file itself has not been redrawn in this refinement. Current implementation evidence: [desktop](evidence/ticket17/editor-desktop.png), [mobile colour dialog](evidence/ticket17/text-colour-mobile.png), [mobile spacing](evidence/ticket17/spacing-mobile.png).
+
 The application now uses Puck 0.24's native inline rich-text fields and dedicated drag handles. Writing and formatting operate on the canvas; shared appearance fields remain in Styles. Native drag destinations support nested sections and one to four columns. Add buttons, sibling movement and explicit destination/position controls provide keyboard and touch alternatives.
 
 Ticket 15 corrects the workspace stability reported on 2026-11-03. The formatting row reserves 64 px at all times and retains its focused editor across native contextual-menu hover changes. Its controls are disabled when the selected block has no active text field. Native block actions continue to belong to their canvas blocks. Link, column and photo dialogs use explicit viewport centering and bounded scrollable heights. Toolbar control rules apply only to direct children, preserving full-width dialog fields and consistent label/action spacing.

@@ -7,6 +7,7 @@ import { displayPhotoUrl } from "@/lib/media";
 import { DestinationPicker } from "./destination-picker";
 import { destinationHref, type Destination } from "@/lib/destinations";
 import { BackgroundColour } from "./background-colour";
+import { BlockSpacingControl, type BlockSpacing } from "./block-spacing";
 import { richField } from "./garden-rich-field";
 import { CanvasPhotoAction } from "./canvas-photo-action";
 import { CanvasRichText } from "./canvas-rich-text";
@@ -16,6 +17,8 @@ import type { TextStyle } from "@/lib/pages";
 type Appearance = {
   backgroundColor?: string;
   padding?: number;
+  paddingSides?: BlockSpacing;
+  marginSides?: BlockSpacing;
   radius?: number;
 };
 type GardenBlockProps = {
@@ -79,7 +82,14 @@ export type GardenBlocks = {
 function blockStyle(value: Appearance): CSSProperties {
   return {
     backgroundColor: value.backgroundColor || undefined,
-    padding: value.padding,
+    paddingTop: value.paddingSides?.top ?? value.padding,
+    paddingRight: value.paddingSides?.right ?? value.padding,
+    paddingBottom: value.paddingSides?.bottom ?? value.padding,
+    paddingLeft: value.paddingSides?.left ?? value.padding,
+    marginTop: value.marginSides?.top,
+    marginRight: value.marginSides?.right,
+    marginBottom: value.marginSides?.bottom,
+    marginLeft: value.marginSides?.left,
     borderRadius: value.radius,
   };
 }
@@ -116,10 +126,37 @@ const appearance = {
   },
   padding: {
     type: "number" as const,
-    label: "Block padding · px",
+    label: "All sides padding · px",
     min: 0,
     max: 120,
     step: 1,
+    visible: false,
+  },
+  paddingSides: {
+    type: "custom" as const,
+    label: "Padding",
+    render: ({
+      value,
+      onChange,
+    }: {
+      value?: BlockSpacing;
+      onChange: (value: BlockSpacing) => void;
+    }) => (
+      <BlockSpacingControl label="Padding" value={value} onChange={onChange} />
+    ),
+  },
+  marginSides: {
+    type: "custom" as const,
+    label: "Margin",
+    render: ({
+      value,
+      onChange,
+    }: {
+      value?: BlockSpacing;
+      onChange: (value: BlockSpacing) => void;
+    }) => (
+      <BlockSpacingControl label="Margin" value={value} onChange={onChange} />
+    ),
   },
   radius: {
     type: "number" as const,

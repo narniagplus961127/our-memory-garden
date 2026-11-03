@@ -46,10 +46,13 @@ test("explicit rich text and custom colours round-trip, while legacy markup stay
         props: {
           id: "formatted",
           text: "A bold memory",
-          textRich: "<h2>A <strong>bold</strong> memory</h2>",
+          textRich:
+            '<h2>A <strong>bold</strong> <span style="color: rgb(167, 91, 67); font-size: 28px; letter-spacing: 1.5px">memory</span></h2>',
           style: "h2",
           backgroundColor: "#a7c4a0",
           padding: 24,
+          paddingSides: { top: 12, right: 16, bottom: 20, left: 0 },
+          marginSides: { top: 8, right: 4, bottom: 24, left: 12 },
           radius: 8,
         },
       },
@@ -86,6 +89,19 @@ test("explicit rich text and custom colours round-trip, while legacy markup stay
   assert.deepEqual(page.content, content);
   const html = await (await fetch(base + "/p/" + page.id)).text();
   assert.match(html, /<strong>bold<\/strong>/);
+  assert.ok(/font-size:\s*28px/.test(html), "Public font size is rendered");
+  assert.ok(
+    /letter-spacing:\s*1.5px/.test(html),
+    "Public letter spacing is rendered",
+  );
+  assert.match(
+    html,
+    /padding-top:12px;padding-right:16px;padding-bottom:20px;padding-left:0/,
+  );
+  assert.match(
+    html,
+    /margin-top:8px;margin-right:4px;margin-bottom:24px;margin-left:12px/,
+  );
   assert.match(html, /&lt;img src=x onerror=alert\(1\)&gt;/);
   assert.match(
     html,
@@ -98,6 +114,13 @@ test("explicit rich text and custom colours round-trip, while legacy markup stay
     '<p style="background:url(https://example.com)">Unsafe</p>',
     "<h5>Unsupported</h5>",
     "<svg><script>alert(1)</script></svg>",
+    '<span style="color: red; position: fixed">Unsafe</span>',
+    '<span style="color: url(https://example.com)">Unsafe</span>',
+    '<span style="font-size: 999px">Unsafe</span>',
+    '<span style="letter-spacing: -3px">Unsafe</span>',
+    '<span style="color: #123456 !important">Unsafe</span>',
+    '<span onclick="alert(1)">Unsafe</span>',
+    '<span style="color: rgb(999, 0, 0)">Unsafe</span>',
   ]) {
     const invalid = structuredClone(content);
     invalid.content[0].props.textRich = bad;
@@ -106,6 +129,21 @@ test("explicit rich text and custom colours round-trip, while legacy markup stay
   const invalid = structuredClone(content);
   invalid.content[0].props.backgroundColor = "url(https://example.com)";
   assert.equal((await update(invalid)).status, 400);
+  for (const value of [
+    { top: -1 },
+    { left: 121 },
+    { right: 1.5 },
+    { top: "12" },
+    { position: 1 },
+    null,
+    [],
+  ]) {
+    for (const key of ["paddingSides", "marginSides"]) {
+      const badSpacing = structuredClone(content);
+      badSpacing.content[0].props[key] = value;
+      assert.equal((await update(badSpacing)).status, 400);
+    }
+  }
   const nestedButtonLink = {
     root: { props: {} },
     content: [

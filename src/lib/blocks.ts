@@ -131,6 +131,8 @@ export function validPageData(
                 ...Object.values(richFields[type] ?? {}),
                 "backgroundColor",
                 "padding",
+                "paddingSides",
+                "marginSides",
                 "radius",
               ].includes(key),
           )
@@ -151,6 +153,24 @@ export function validPageData(
               props[key] > (key === "padding" ? 120 : 24))
           )
             return false;
+        for (const key of ["paddingSides", "marginSides"]) {
+          const sides = props[key];
+          if (
+            sides !== undefined &&
+            (!sides ||
+              typeof sides !== "object" ||
+              Array.isArray(sides) ||
+              Object.entries(sides).some(
+                ([side, n]) =>
+                  !["top", "right", "bottom", "left"].includes(side) ||
+                  typeof n !== "number" ||
+                  !Number.isInteger(n) ||
+                  n < 0 ||
+                  n > 120,
+              ))
+          )
+            return false;
+        }
         const richLimits: Record<string, number> = {
           text: 100000,
           heading: 1000,

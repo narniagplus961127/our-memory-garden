@@ -150,6 +150,36 @@
   border-radius: 6px;
   background: #fff;
   overflow: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: grab;
+}
+.palette-card [data-puck-drawer-item],
+.palette-card [data-puck-drawer-item] * {
+  cursor: grab;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.palette-card [data-puck-drawer-item]:active,
+.palette-card [data-puck-drawer-item]:active * {
+  cursor: grabbing;
+}
+[data-garden-drag-handle] {
+  cursor: grab !important;
+  touch-action: none;
+  user-select: none;
+}
+[data-garden-drag-handle]:active {
+  cursor: grabbing !important;
+}
+[data-puck-entry][data-puck-dragging="true"] * {
+  cursor: grabbing !important;
+}
+[contenteditable="true"] {
+  cursor: text;
+}
+.palette-card .palette-add {
+  cursor: pointer;
 }
 .palette-card > div {
   width: 100%;
@@ -225,6 +255,9 @@
   font-size: 12px;
   color: var(--muted);
 }
+.mobile-canvas-hint {
+  display: none;
+}
 .editor-canvas-top .device-controls {
   margin-left: auto;
 }
@@ -289,6 +322,89 @@
 .inline-format-bar > button[aria-pressed="true"] {
   background: var(--leaf);
   color: var(--ink);
+}
+.format-pixels {
+  flex: 0 0 94px;
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  font-size: 10px;
+  line-height: 1;
+  white-space: nowrap;
+}
+.format-pixels input {
+  width: 100%;
+  min-height: 32px;
+  height: 32px;
+  padding: 4px 8px;
+  font-size: 14px;
+}
+.appearance-label {
+  margin: 0 0 12px;
+  font-size: 14px;
+  font-weight: 600;
+}
+.text-colour-icon {
+  border-bottom: 4px solid;
+  padding: 0 3px;
+}
+.text-colour-presets {
+  display: flex;
+  gap: 10px;
+  margin: 20px 0;
+}
+.text-colour-presets button {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  padding: 0;
+  border: 1px solid var(--line);
+}
+.text-colour-dialog > p {
+  margin: 16px 0;
+}
+.text-colour-dialog > small {
+  display: block;
+  margin: 10px 0 24px;
+}
+.text-colour-dialog .colour-inputs {
+  margin-top: 8px;
+}
+.block-spacing {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
+}
+.block-spacing legend {
+  font-weight: 600;
+  font-size: 14px;
+  padding: 0;
+}
+.block-spacing .editor-panel-hint {
+  margin: 8px 0 12px;
+  font-size: 12px;
+}
+.spacing-sides {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.spacing-sides label {
+  margin: 0;
+  font-size: 12px;
+  display: grid;
+  gap: 6px;
+}
+.spacing-sides input {
+  width: 100%;
+  min-width: 0;
+}
+.block-spacing .spacing-reset {
+  margin-top: 12px;
+  padding: 8px 12px;
+  font-size: 12px;
+  min-height: 44px;
 }
 .editor-page-settings > label {
   margin-top: 20px;
@@ -489,6 +605,12 @@
   }
 }
 @media (max-width: 760px) {
+  .desktop-canvas-hint {
+    display: none;
+  }
+  .mobile-canvas-hint {
+    display: inline;
+  }
   .garden-canvas-actions > div {
     flex-direction: column;
     align-items: stretch;

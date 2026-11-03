@@ -147,11 +147,18 @@ function CanvasMoveActions() {
 }
 const editorOverrides: Partial<Overrides<typeof gardenConfig>> = {
   iframe: EditorFrame,
-  actionBar: ({ children, label, parentAction, dragHandle }) => (
+  actionBar: ({ children, label, parentAction, dragHandleRef }) => (
     <div className="garden-canvas-actions">
       <ActionBar label={label}>
         {parentAction}
-        {dragHandle}
+        {dragHandleRef && (
+          <ActionBar.DragHandle
+            ref={dragHandleRef}
+            label="Drag block"
+            aria-label="Drag block"
+            data-garden-drag-handle
+          />
+        )}
         <CanvasMoveActions />
         {children}
       </ActionBar>
@@ -814,7 +821,12 @@ function Workspace({
                 Mobile
               </button>
             </div>
-            <small>Fit to workspace · live canvas</small>
+            <small>
+              <span className="desktop-canvas-hint">
+                Fit to workspace · live canvas
+              </span>
+              <span className="mobile-canvas-hint">Swipe tools for more →</span>
+            </small>
           </div>
           <div id="garden-inline-format">
             <InlineFormatMenu

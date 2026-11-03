@@ -593,6 +593,7 @@ button.primary {
   color: var(--cream);
 }
 .garden-document {
+  display: flow-root;
   background: var(--paper);
   color: var(--ink);
   min-height: 300px;
