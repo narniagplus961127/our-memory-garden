@@ -28,6 +28,8 @@ Routine follow-through within the owner-approved Sunlit Garden direction, added 
 
 ## Shared interaction rules
 
+Ticket 27 replaces inline recovery confirmation cards with centred native popup dialogs, bounded to the viewport with scrollable content and sticky actions. Cancel/Escape dismiss safely and return focus; request progress blocks dismissal. Failed actions retain their warnings and retry/reload controls inside the popup. Routine editor notices and save errors use fixed bottom-right toasts; mobile uses 16 px side/safe-area clearance. Error toasts persist with Retry save; short notices expire after six seconds, paused for mouse/keyboard interaction. Persistent recovery/conflict decisions stay in their existing review surface. Native FigCraft frames are not redrawn for this owner-requested refinement.
+
 Ticket 26 sets root/body text to 14 px using `--body-font-size`, shared with form controls. Standard button text inherits it, and administration links match it. Heading sizes and explicitly authored font sizes retain their own hierarchy. This supersedes the original 16 px body default.
 
 - Settings changes update the live canvas and autosave; show Autosaving… / Saved / Unsaved · Retry from actual persistence. No Save, Publish, Preview or Undo/Redo controls. Opening or closing a panel and switching device width do not change content.
@@ -44,3 +46,10 @@ Ticket 25 adds a Categories destination to both administration menus using the e
 Current 14 px implementation evidence: [Categories desktop](evidence/ticket26/categories-desktop.png), [Categories mobile](evidence/ticket26/categories-mobile.png), [new-page URL desktop](evidence/ticket26/page-url-desktop.png), [new-page URL mobile](evidence/ticket26/page-url-mobile.png).
 
 The native document and rendered samples are audited with the FigCraft CLI; evidence paths and final counts are recorded in `docs/design-spec-review.md`. Validate server authorization, media accessibility, durable conflict preservation, export generation and actual storage measurement through the application. The old approved prototype routes remain unchanged. Category creation/rename, validation, confirmation and errors use the same labelled field, 44 px action and inline status patterns shown here; no additional screen per small variant is implied. Material new direction still requires owner review.
+## Image links and alignment (ticket 29)
+
+Image Styles includes an optional Link group with None, Garden page and External URL destinations. Saved website images are linked; captions remain separate. Alignment controls include Left, Centre and Right for blocks and inline paragraphs.
+
+## Section-first layouts (ticket 30)
+
+Blank canvas → Add Section → add blocks or Columns inside it. Section has its own Styles groups for background image, content background (Auto/Custom/None), Section colour, border, spacing and vertical column alignment. Root drag accepts Sections; child slots reject Sections; Add/Move targets follow the same hierarchy. Existing root blocks remain compatible. Desktop/mobile implementation screenshots and browser checks are recorded in ticket 30; these incremental owner requests supersede the older native frame's unrestricted root insertion.

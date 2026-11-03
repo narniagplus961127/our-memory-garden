@@ -1,4 +1,9 @@
-import { writeCanvas, selectBlock, setVisibility } from "./editor-controls";
+import {
+  writeCanvas,
+  selectBlock,
+  setVisibility,
+  startWithText,
+} from "./editor-controls";
 import { test, expect } from "@playwright/test";
 import { readFile } from "node:fs/promises";
 const env = Object.fromEntries(
@@ -29,6 +34,7 @@ test("visibility and homepage controls keep visitors in step with saved content"
   await page.getByRole("button", { name: "Create private page" }).click();
   await expect(page).toHaveURL(/\/admin\/pages\/[0-9a-f-]+$/);
   const id = page.url().split("/").pop()!;
+  await startWithText(page);
   await page.getByRole("button", { name: "Open content panel" }).click();
   await selectBlock(page, "Select Text 1");
   await page.getByRole("button", { name: "Open settings panel" }).click();

@@ -5,6 +5,7 @@ import {
   selectBlock,
   setVisibility,
   addColumns,
+  startWithText,
 } from "./editor-controls";
 import { test, expect, type Locator } from "@playwright/test";
 import { readFile } from "node:fs/promises";
@@ -242,10 +243,8 @@ test("templates start independently and the device controls resize the actual re
   await page.goto("/admin/pages");
   await page.getByRole("link", { name: new RegExp(second.title) }).click();
   await expect(page).toHaveURL("/admin/pages/" + second.id);
-  await page.goto("/admin/pages");
-  await page
-    .locator('a[href="/admin/pages/' + second.id + '/history"]')
-    .click();
+  await expect(page.getByLabel("Page title", { exact: true })).toBeEnabled();
+  await page.getByRole("link", { name: "History", exact: true }).click();
   await expect(
     page.getByRole("heading", { name: "Version history", exact: true }),
   ).toBeVisible();
@@ -270,6 +269,7 @@ test("autosave keeps the latest edit during a slow write and preserves failures 
     .fill("Saving rosemary " + Date.now());
   await page.getByRole("button", { name: "Create private page" }).click();
   await expect(page).toHaveURL(/\/admin\/pages\/[0-9a-f-]{36}$/);
+  await startWithText(page);
   await selectBlock(page, "Select Text 1");
   await page.getByRole("button", { name: "Open settings panel" }).click();
   const field = canvasField(page, "Text content");
@@ -300,6 +300,9 @@ test("autosave keeps the latest edit during a slow write and preserves failures 
   await selectBlock(page, "Select Text 1");
   await page.getByRole("button", { name: "Open settings panel" }).click();
   await expect(field).toHaveText("The latest rosemary survives");
+  const canvasBeforeFailure = (await page
+    .locator(".garden-canvas-scroll")
+    .boundingBox())!;
   await page.route("**/api/pages/*", async (route) => {
     if (route.request().method() === "PATCH") await route.abort("failed");
     else await route.continue();
@@ -308,12 +311,19 @@ test("autosave keeps the latest edit during a slow write and preserves failures 
   await expect(
     page.getByRole("status", { name: "Auto-save status" }),
   ).toHaveText("Not saved");
+  const toast = page.locator(".garden-toast-error");
+  await expect(toast).toBeVisible();
+  await expect(toast).toHaveCSS("position", "fixed");
+  expect((await page.locator(".garden-canvas-scroll").boundingBox())!.y).toBe(
+    canvasBeforeFailure.y,
+  );
   await expect(field).toHaveText("A retryable garden memory");
   await page.unroute("**/api/pages/*");
   await page.getByRole("button", { name: "Retry save", exact: true }).click();
   await expect(
     page.getByRole("status", { name: "Auto-save status" }),
   ).toHaveText("Saved");
+  await expect(toast).toHaveCount(0);
   await page.reload();
   await selectBlock(page, "Select Text 1");
   await page.getByRole("button", { name: "Open settings panel" }).click();
@@ -342,6 +352,13 @@ test("drag a nested text block into an empty column and persist its new location
     .fill("A movable moment " + Date.now());
   await page.getByRole("button", { name: "Create private page" }).click();
   await expect(page).toHaveURL(/\/admin\/pages\/[0-9a-f-]{36}$/);
+  await page
+    .getByRole("button", { name: "Open content panel", exact: true })
+    .click();
+  await page.getByRole("button", { name: "Add Section", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Open content panel", exact: true })
+    .click();
   await addColumns(page);
   await page
     .getByRole("button", { name: "Open content panel", exact: true })
@@ -380,7 +397,7 @@ test("drag a nested text block into an empty column and persist its new location
   await expect(
     left.getByText("Write a little memory…", { exact: true }),
   ).toBeVisible();
-  await selectBlock(page, "Select Text 2");
+  await selectBlock(page, "Select Text 1");
   await dragBetween(
     frame.getByRole("button", { name: "Drag block", exact: true }),
     destination,
@@ -394,12 +411,12 @@ test("drag a nested text block into an empty column and persist its new location
   const id = page.url().split("/").pop();
   const saved = await (await page.request.get("/api/pages/" + id)).json();
   expect(
-    saved.content.content.find(
+    saved.content.content[0].props.content.find(
       (block: { type: string }) => block.type === "Columns",
     ).props.left,
   ).toHaveLength(0);
   expect(
-    saved.content.content.find(
+    saved.content.content[0].props.content.find(
       (block: { type: string }) => block.type === "Columns",
     ).props.right[0].props.text,
   ).toBe("Write a little memory…");
@@ -456,7 +473,7 @@ test("image and button settings appear through the same public blocks after auto
     .getByRole("combobox", { name: "Photo fit", exact: true })
     .selectOption({ label: "Contain" });
   await page.getByRole("button", { name: "Open content panel" }).click();
-  await chooseAddTarget(page, "Page");
+  await chooseAddTarget(page, "Section 2 · content");
   await page.getByRole("button", { name: "Add Button", exact: true }).click();
   await page.getByRole("button", { name: "Open settings panel" }).click();
   await writeCanvas(page, "Button label", "Read our journal");

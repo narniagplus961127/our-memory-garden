@@ -4,6 +4,7 @@ import type { usePageAutosave } from "./use-page-autosave";
 import type { PageBlock } from "@/lib/blocks";
 import { slotNames, slotContent } from "@/lib/blocks";
 import { inlinePageData, richLinks, validRichText } from "@/lib/rich-text";
+import { Toast } from "./toast";
 type Save = ReturnType<typeof usePageAutosave>;
 function FormattedComparison({
   label,
@@ -224,7 +225,7 @@ export function SaveFeedback({ save }: { save: Save }) {
               </fieldset>
             );
           })}
-          {notice && <p role="status">{notice}</p>}
+          {notice && <Toast message={notice} onDismiss={() => setNotice("")} />}
         </section>
       )}
     </>

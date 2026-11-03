@@ -3,6 +3,7 @@ import {
   writeCanvas,
   selectBlock,
   setVisibility,
+  seedLegacyTextPage,
 } from "./editor-controls";
 import { test, expect, type Page } from "@playwright/test";
 import { readFile } from "node:fs/promises";
@@ -28,12 +29,13 @@ async function login(page: Page, prefix = "ADMIN") {
 }
 async function fixture(page: Page) {
   await login(page);
-  const created = await (
+  let created = await (
     await page.request.post("/api/pages", {
       headers: { Origin: env.NEXT_PUBLIC_APP_URL },
       data: { title: "Recovery garden " + Date.now() },
     })
   ).json();
+  created = await seedLegacyTextPage(page, created, env.NEXT_PUBLIC_APP_URL);
   await page.goto("/admin/pages/" + created.id);
   return created;
 }

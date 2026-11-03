@@ -31,14 +31,14 @@ export function PublicHeader({
     <>
       <header className="public-header">
         <Brand />
-        <nav className="public-nav" aria-label="Main navigation">
-          <Link href="/">Our garden</Link>
-          {menu(null)}
-        </nav>
-        <PublicMenu>
-          <Link href="/">Our garden</Link>
-          {menu(null)}
-        </PublicMenu>
+        {items.length > 0 && (
+          <>
+            <nav className="public-nav" aria-label="Main navigation">
+              {menu(null)}
+            </nav>
+            <PublicMenu>{menu(null)}</PublicMenu>
+          </>
+        )}
       </header>
       <Link
         className="button garden-dashboard-fab"

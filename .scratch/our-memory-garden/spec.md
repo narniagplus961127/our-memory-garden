@@ -22,6 +22,10 @@ Ticket 26 typography refinement (owner requested 2026-11-03): Set root and body 
 
 ## Problem Statement
 
+Ticket 28 navigation refinement (owner requested 2026-11-03): Remove the automatic Our garden link from desktop/mobile public menus. The logo remains the homepage link, and owner-managed menu links remain intact. Hide empty menus and title the mobile navigation popup Menu.
+
+Ticket 27 feedback refinement (owner requested 2026-11-03): Move page trash, private restoration, permanent deletion and saved-version restoration confirmations into centred responsive native dialogs. Preserve warnings, inbound references, explicit confirmation, in-flight locking and failure retry/reload. Cancel initially receives focus; Cancel/Escape restore the trigger without mutation. Short editor notices use dismissible toasts with six-second expiry paused during hover/focus. Save errors use persistent Retry save toasts without shifting the canvas; save state and recovery/conflict choices remain visible until resolved.
+
 Two partners want a personal website to preserve and share their lives through photographs and written content. They need to shape the site themselves on mobile and desktop, keeping selected pages private without relying on a developer for every change.
 
 ## Solution
@@ -92,11 +96,13 @@ Create a botanical garden-themed website with a public-facing garden and a share
 60. As an administrator, I want contextual formatting and selected-block actions near my content, so that editing and arranging a page is easier to understand.
 61. As an administrator, I want visual column-count and proportion choices that preserve existing content, so that I can adjust a layout safely.
 62. As a project owner, I want to review the refined inline editor in FigCraft and a disposable interaction prototype before it changes the released editor.
-63. As an administrator, I want to drag new and existing blocks into specific page, section and column positions, with visible destinations and non-drag alternatives.
+63. As an administrator, I want to drag Sections into page-level positions and blocks/Columns into Sections or their columns, with visible destinations and non-drag alternatives.
 64. As an administrator, I want custom background colours through a picker or typed hex value, compact palette cards and consistently styled select controls.
 65. As an administrator, I want an editable page title, a distinct sidebar Page settings entry for URL and metadata, and persistent Pages, View page and History controls, so that I can manage the page and visit its saved website view easily.
 
 ## Implementation Decisions
+
+- **Section-first layouts (ticket 30, owner requested 2026-11-03):** Blank pages start empty. Add a Section before adding blocks or Columns. New Sections belong at page level; blocks and Columns belong within a Section, directly or in its descendant columns. Add/Move targets and native drag destinations enforce this in the editor. Templates use Sections at page level. Each Section exposes background image from the shared library, content background Auto/Custom/None, garden/custom Section colour, border width/colour/radius, four-side padding/margin and top/centre/bottom column content alignment. Auto content background uses theme paper; None is transparent; Custom accepts safe hex colours. A Section's background image fills/covers its area. The content background sits behind its blocks, independently of the outer Section colour/image. Existing root blocks and historic layouts continue rendering and editing without conversion on open/save; stored-data validation retains legacy compatibility. New optional properties participate in the existing autosave, merge, history and backup paths. Background images use nested `photoId` references so all media privacy, usage, retention and deletion guards apply.
 
 - **Design and validation gate:** The desktop and mobile FigCraft screens, general styles, logo and favicon are the visual reference, subject to owner approval. First create a disposable local Puck experiment using sample content and local storage; test text editing, image placeholders, sections, columns, block movement, device views, and simulated saving and recovery on desktop and mobile. Review it with the corrected FigCraft prototype before approving the design and beginning full implementation. Do not treat placeholder data or simulated controls as working application behavior. Resolve missing or conflicting design states before implementing the affected behavior.
 - **Stack and deployment:** Use React, TypeScript, Tailwind CSS, Next.js, Neon PostgreSQL, managed Better Auth and Neon Object Storage, and Puck's open-source React editor. Use the Singapore region (`aws-ap-southeast-1`). Plan to store the source in GitHub and deploy the frontend to Vercel production, without preview deployments. Start on free hosting and monitor storage; the owner may upgrade later. The owner approved replacing Supabase with Neon on 2026-10-28 after Supabase rejected a third active free project.
@@ -134,6 +140,8 @@ Create a botanical garden-themed website with a public-facing garden and a share
 Public registration, visitor comments or reactions, a separate story content type, a template editor in the first version, dark mode, full real-time collaborative text editing, separate Preview or Publish controls, undo/redo controls, Cloudflare infrastructure and Vercel preview deployments.
 
 ## Further Notes
+
+Image blocks may link to a garden page by stable ID or a validated external HTTP(S) URL. Only the image is linked on the website; editor photo/caption controls remain interactive. Block and inline paragraph alignment support Left, Centre and Right (ticket 29).
 
 The released baseline through ticket 13 is complete. The owner approved the concrete Klaviyo-inspired proposal on 2026-11-02; [ticket 14](issues/14-inline-editor-experience.md) delivered direct canvas editing. [Ticket 15](issues/15-editor-toolbar-dialog-stability.md) corrects the toolbar flicker and dialog positioning reported on 2026-11-03. [The inline design reference](../../docs/editor-inline-design.md) records both interactions. Existing pages, private media, autosave, recovery, conflicts and history remain required compatibility boundaries.
 

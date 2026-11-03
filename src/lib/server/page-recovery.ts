@@ -178,7 +178,7 @@ export async function inboundReferences(id: string) {
       refs.push({
         id: page.id,
         title: page.title,
-        kind: "Text or button link",
+        kind: "Text, button or image link",
       });
     if (v.type === "PageGrid") {
       const props = (v.props as Record<string, unknown>)?.selection as Record<

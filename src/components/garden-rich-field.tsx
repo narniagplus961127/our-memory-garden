@@ -88,7 +88,7 @@ export function richField(label: string): RichtextField {
       strike: false,
       textAlign: {
         types: ["heading", "paragraph"],
-        alignments: ["left", "center"],
+        alignments: ["left", "center", "right"],
       },
       link: allowLinks
         ? {

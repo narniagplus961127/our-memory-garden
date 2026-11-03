@@ -26,7 +26,7 @@ export function PublicMenu({ children }: { children: ReactNode }) {
         >
           ← Back
         </button>
-        <h1 id="website-menu-heading">Our garden</h1>
+        <h1 id="website-menu-heading">Menu</h1>
         <nav
           aria-label="Mobile navigation"
           onClick={(event) => {

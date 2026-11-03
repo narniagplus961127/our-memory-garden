@@ -19,31 +19,95 @@ test("administrators see sign in and password recovery, with no registration ent
   ).toBeVisible();
 });
 
-test("website menu returns to the current page with Back and Escape", async ({
+test("website navigation keeps custom links and returns with Back and Escape", async ({
   page,
+  browser,
   isMobile,
 }, testInfo) => {
-  test.skip(!isMobile, "The website menu is the mobile navigation surface.");
-  await page.goto("/login");
-  const opener = page.getByRole("button", { name: "Open website menu" });
-  await opener.click();
-  const menu = page.getByRole("dialog", { name: "Our garden" });
-  await expect(menu).toBeVisible();
-  await expect(
-    menu.getByRole("link", { name: "Our garden", exact: true }),
-  ).toBeVisible();
-  await page.screenshot({
-    path: testInfo.outputPath("website-menu.png"),
-    fullPage: true,
-  });
-  await menu.getByRole("button", { name: "Back", exact: true }).click();
-  await expect(menu).not.toBeVisible();
-  await expect(opener).toBeFocused();
-  await expect(page).toHaveURL(/\/login$/);
-  await opener.click();
-  await page.keyboard.press("Escape");
-  await expect(menu).not.toBeVisible();
-  await expect(opener).toBeFocused();
+  const env = parseEnv(readFileSync(".env.test", "utf8"));
+  if (!env.NEXT_PUBLIC_APP_URL) throw Error("Missing local app URL");
+  const admin = await browser.newContext();
+  const headers = { Origin: env.NEXT_PUBLIC_APP_URL };
+  await admin.request.post(
+    env.NEXT_PUBLIC_APP_URL + "/api/auth/sign-in/email",
+    {
+      headers,
+      data: { email: env.TEST_ADMIN_EMAIL, password: env.TEST_ADMIN_PASSWORD },
+    },
+  );
+  const original = await (
+    await admin.request.get(env.NEXT_PUBLIC_APP_URL + "/api/navigation")
+  ).json();
+  async function setItems(items: unknown[]) {
+    const current = await (
+      await admin.request.get(env.NEXT_PUBLIC_APP_URL + "/api/navigation")
+    ).json();
+    expect(
+      (
+        await admin.request.put(env.NEXT_PUBLIC_APP_URL + "/api/navigation", {
+          headers,
+          data: { items, version: current.version },
+        })
+      ).ok(),
+    ).toBeTruthy();
+  }
+  try {
+    await setItems([
+      {
+        id: crypto.randomUUID(),
+        label: "Our adventures",
+        parentId: null,
+        destination: {
+          kind: "external",
+          url: "https://example.com/adventures",
+        },
+      },
+    ]);
+    await page.goto("/login");
+    await expect(
+      page.getByRole("link", { name: "Our garden", exact: true }),
+    ).toHaveCount(0);
+    await expect(
+      page.getByRole("link", { name: "Our Memory Garden", exact: true }),
+    ).toHaveAttribute("href", "/");
+    if (isMobile) {
+      const opener = page.getByRole("button", { name: "Open website menu" });
+      await opener.click();
+      const menu = page.getByRole("dialog", { name: "Menu", exact: true });
+      await expect(
+        menu.getByRole("link", { name: "Our adventures", exact: true }),
+      ).toHaveAttribute("href", "https://example.com/adventures");
+      await page.screenshot({
+        path: testInfo.outputPath("website-menu.png"),
+        fullPage: true,
+      });
+      await menu.getByRole("button", { name: "Back", exact: true }).click();
+      await expect(menu).not.toBeVisible();
+      await expect(opener).toBeFocused();
+      await expect(page).toHaveURL(/\/login$/);
+      await opener.click();
+      await page.keyboard.press("Escape");
+      await expect(menu).not.toBeVisible();
+      await expect(opener).toBeFocused();
+    } else {
+      await expect(
+        page
+          .getByRole("navigation", { name: "Main navigation" })
+          .getByRole("link", { name: "Our adventures", exact: true }),
+      ).toHaveAttribute("href", "https://example.com/adventures");
+    }
+    await setItems([]);
+    await page.reload();
+    await expect(
+      page.getByRole("button", { name: "Open website menu" }),
+    ).toHaveCount(0);
+    await expect(
+      page.getByRole("navigation", { name: "Main navigation" }),
+    ).toHaveCount(0);
+  } finally {
+    await setItems(original.items);
+    await admin.close();
+  }
 });
 
 test("authentication forms stay inactive without JavaScript and have a private native submission", async ({

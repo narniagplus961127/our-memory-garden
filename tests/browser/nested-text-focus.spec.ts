@@ -37,6 +37,10 @@ test("typing the first character inside a new column retains focus through autos
   await page
     .getByRole("button", { name: "Open content panel", exact: true })
     .click();
+  await page.getByRole("button", { name: "Add Section", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Open content panel", exact: true })
+    .click();
   await page.getByRole("button", { name: "Add Columns", exact: true }).click();
   await page.getByRole("button", { name: "Apply layout", exact: true }).click();
   await chooseAddTarget(page, "Columns 1 · left column");

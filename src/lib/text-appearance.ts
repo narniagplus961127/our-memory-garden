@@ -51,7 +51,7 @@ export function validTextStyle(style: string, paragraph = false): boolean {
       seen.add(name);
       if (paragraph)
         return name === "text-align"
-          ? ["left", "center"].includes(value)
+          ? ["left", "center", "right"].includes(value)
           : name === "line-height"
             ? !!textLineHeight(value)
             : false;

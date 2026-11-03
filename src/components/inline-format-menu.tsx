@@ -405,6 +405,26 @@ export function InlineFormatMenu({
           >
             ☰
           </button>
+          <button
+            disabled={disabled}
+            type="button"
+            aria-label="Align right"
+            title="Align right"
+            aria-pressed={editor?.isActive({ textAlign: "right" }) ?? false}
+            onClick={() => command()?.setTextAlign("right").run()}
+          >
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.7"
+              aria-hidden="true"
+            >
+              <path d="M4 5h16M9 10h11M4 15h16M9 20h11" />
+            </svg>
+          </button>
         </div>
         <div className="format-more-spacing">
           <TextNumberControl

@@ -1,5 +1,10 @@
 import { test, expect, type Page } from "@playwright/test";
-import { selectBlock, chooseAddTarget, writeCanvas } from "./editor-controls";
+import {
+  selectBlock,
+  chooseAddTarget,
+  writeCanvas,
+  legacyTextContent,
+} from "./editor-controls";
 import { readFile } from "node:fs/promises";
 const env = Object.fromEntries(
   (await readFile(".env.test", "utf8"))
@@ -30,6 +35,7 @@ test("write and format directly on the canvas, autosave, reload and render the p
   });
   expect(created.ok()).toBeTruthy();
   const garden = await created.json();
+  garden.content = legacyTextContent();
   // Preserve older documents that used one padding value when side overrides reset.
   garden.content.content[0].props.padding = 30;
   expect(
@@ -197,7 +203,7 @@ test("write and format directly on the canvas, autosave, reload and render the p
   await visitor.close();
 });
 
-async function fixture(page: Page, content?: unknown) {
+async function fixture(page: Page, content: unknown = legacyTextContent()) {
   const origin = env.NEXT_PUBLIC_APP_URL;
   expect(
     (
@@ -287,6 +293,10 @@ test("custom colours, preserved column contents and page settings work with touc
   await page
     .getByRole("button", { name: "Open content panel", exact: true })
     .click();
+  await page.getByRole("button", { name: "Add Section", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Open content panel", exact: true })
+    .click();
   await page.getByRole("button", { name: "Add Columns", exact: true }).click();
   await page.getByRole("button", { name: "3 columns", exact: true }).click();
   await page.getByRole("button", { name: "Apply layout", exact: true }).click();
@@ -325,9 +335,9 @@ test("custom colours, preserved column contents and page settings work with touc
   ).toHaveText("Saved");
   const id = page.url().split("/").pop();
   let saved = await (await page.request.get("/api/pages/" + id)).json();
-  const columns = saved.content.content.find(
-    (b: { type: string }) => b.type === "Columns",
-  );
+  const columns = saved.content.content
+    .find((b: { type: string }) => b.type === "Section")
+    .props.content.find((b: { type: string }) => b.type === "Columns");
   expect(columns.props.count).toBe(1);
   expect(columns.props.left[0].props.text).toBe("A memory in the third column");
   expect(columns.props.left[0].props.backgroundColor).toBe("#77aadd");
@@ -338,9 +348,9 @@ test("custom colours, preserved column contents and page settings work with touc
     page.getByRole("status", { name: "Auto-save status" }),
   ).toHaveText("Saved");
   expect(
-    (
-      await (await page.request.get("/api/pages/" + id)).json()
-    ).content.content.find((b: { type: string }) => b.type === "Columns").props
+    (await (await page.request.get("/api/pages/" + id)).json()).content.content
+      .find((b: { type: string }) => b.type === "Section")
+      .props.content.find((b: { type: string }) => b.type === "Columns").props
       .left[0].props.backgroundColor,
   ).toBe("#a7c4a0");
   await colour.fill("#7ad");
@@ -353,14 +363,14 @@ test("custom colours, preserved column contents and page settings work with touc
     page.getByText("Enter a hex colour such as #A7C4A0.", { exact: true }),
   ).toBeVisible();
   expect(
-    (
-      await (await page.request.get("/api/pages/" + id)).json()
-    ).content.content.find((b: { type: string }) => b.type === "Columns").props
+    (await (await page.request.get("/api/pages/" + id)).json()).content.content
+      .find((b: { type: string }) => b.type === "Section")
+      .props.content.find((b: { type: string }) => b.type === "Columns").props
       .left[0].props.backgroundColor,
   ).toBe("#77aadd");
   await page
     .getByLabel("Move to", { exact: true })
-    .selectOption({ label: "Page" });
+    .selectOption({ label: "Section 1 · content" });
   await page
     .getByLabel("Position", { exact: true })
     .selectOption({ label: "At the end" });
@@ -371,9 +381,11 @@ test("custom colours, preserved column contents and page settings work with touc
     page.getByRole("status", { name: "Auto-save status" }),
   ).toHaveText("Saved");
   saved = await (await page.request.get("/api/pages/" + id)).json();
-  expect(saved.content.content.at(-1).props.text).toBe(
-    "A memory in the third column",
-  );
+  expect(
+    saved.content.content
+      .find((b: { type: string }) => b.type === "Section")
+      .props.content.at(-1).props.text,
+  ).toBe("A memory in the third column");
   await page
     .getByRole("button", { name: "Page settings", exact: true })
     .click();

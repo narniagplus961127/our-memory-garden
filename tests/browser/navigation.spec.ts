@@ -182,7 +182,27 @@ test("text and button page pickers keep private links visible, follow changed ad
   ).json();
   await page.request.patch("/api/pages/" + source.id, {
     headers: { Origin: origin },
-    data: { visibility: "public", version: source.version },
+    data: {
+      visibility: "public",
+      version: source.version,
+      content: {
+        root: { props: {} },
+        content: [
+          {
+            type: "Section",
+            props: {
+              id: "linked-section",
+              content: [
+                {
+                  type: "Text",
+                  props: { id: "linked-text", text: "", style: "p" },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
   });
   await page.goto("/admin/pages/" + source.id);
   await selectBlock(page, "Select Text 1");

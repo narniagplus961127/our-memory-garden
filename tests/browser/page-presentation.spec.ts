@@ -1,5 +1,6 @@
 import { test, expect, type Page } from "@playwright/test";
 import { readFile } from "node:fs/promises";
+import { legacyTextContent } from "./editor-controls";
 const env = Object.fromEntries(
   (await readFile(".env.test", "utf8"))
     .split(/\r?\n/)
@@ -28,7 +29,11 @@ async function fixture(page: Page) {
   garden = await (
     await page.request.patch("/api/pages/" + garden.id, {
       headers,
-      data: { version: garden.version, visibility: "public" },
+      data: {
+        version: garden.version,
+        visibility: "public",
+        content: legacyTextContent(),
+      },
     })
   ).json();
   await page.goto("/admin/pages/" + garden.id);

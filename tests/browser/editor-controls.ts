@@ -1,4 +1,42 @@
 import { type Page } from "@playwright/test";
+import type { GardenPage, PageData } from "../../src/lib/pages";
+
+// Explicit historic fixture: recovery and compatibility tests must not depend
+// on today's empty blank-page template.
+export function legacyTextContent(): PageData {
+  return {
+    root: { props: {} },
+    content: [
+      {
+        type: "Text",
+        props: { id: crypto.randomUUID(), text: "", style: "p" },
+      },
+    ],
+  };
+}
+export async function seedLegacyTextPage(
+  page: Page,
+  garden: GardenPage,
+  origin: string,
+) {
+  const response = await page.request.patch("/api/pages/" + garden.id, {
+    headers: { Origin: origin },
+    data: { version: garden.version, content: legacyTextContent() },
+  });
+  if (!response.ok())
+    throw new Error("Could not seed legacy text fixture: " + response.status());
+  return (await response.json()) as GardenPage;
+}
+export async function startWithText(page: Page) {
+  await page
+    .getByRole("button", { name: "Open content panel", exact: true })
+    .click();
+  await page.getByRole("button", { name: "Add Section", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Open content panel", exact: true })
+    .click();
+  await page.getByRole("button", { name: "Add Text", exact: true }).click();
+}
 
 export function canvasField(page: Page, label: string) {
   const type =

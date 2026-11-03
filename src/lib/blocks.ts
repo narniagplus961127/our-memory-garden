@@ -109,7 +109,7 @@ export function validPageData(
         const allowed: Record<BlockName, string[]> = {
           Text: ["text", "style", "align", "linkText", "destination"],
           Banner: ["heading", "description", "background", "align"],
-          Image: ["photoId", "alt", "caption", "fit", "width"],
+          Image: ["photoId", "alt", "caption", "fit", "width", "destination"],
           PageGrid: ["selection", "showDate"],
           Gallery: ["photos"],
           Button: [
@@ -122,7 +122,16 @@ export function validPageData(
             "buttonColor",
             "textColor",
           ],
-          Section: ["background", "spacing", "content"],
+          Section: [
+            "background",
+            "spacing",
+            "content",
+            "backgroundImage",
+            "contentBackground",
+            "borderWidth",
+            "borderColor",
+            "columnAlignment",
+          ],
           Columns: [
             "ratio",
             "gap",
@@ -206,7 +215,7 @@ export function validPageData(
               (options.allowIncomplete || props[key].length <= max);
         const opt = (key: string, values: string[], required = false) =>
           props[key] === undefined ? !required : values.includes(props[key]);
-        if (!opt("align", ["left", "center"])) return false;
+        if (!opt("align", ["left", "center", "right"])) return false;
         switch (type) {
           case "PageGrid":
             return (
@@ -229,6 +238,7 @@ export function validPageData(
             );
           case "Image":
             return (
+              (props.destination == null || destination(props.destination)) &&
               (props.photoId === undefined ||
                 props.photoId === "" ||
                 (typeof props.photoId === "string" &&
@@ -282,6 +292,41 @@ export function validPageData(
             );
           case "Section":
             return (
+              (props.backgroundImage === undefined ||
+                (props.backgroundImage &&
+                  typeof props.backgroundImage === "object" &&
+                  !Array.isArray(props.backgroundImage) &&
+                  Object.keys(props.backgroundImage).length === 1 &&
+                  typeof props.backgroundImage.photoId === "string" &&
+                  (props.backgroundImage.photoId === "" ||
+                    /^[\da-f]{8}-[\da-f]{4}-[\da-f]{4}-[\da-f]{4}-[\da-f]{12}$/i.test(
+                      props.backgroundImage.photoId,
+                    )))) &&
+              (props.contentBackground === undefined ||
+                (props.contentBackground &&
+                  typeof props.contentBackground === "object" &&
+                  !Array.isArray(props.contentBackground) &&
+                  Object.keys(props.contentBackground).every((key) =>
+                    ["mode", "colour"].includes(key),
+                  ) &&
+                  ["auto", "custom", "none"].includes(
+                    props.contentBackground.mode,
+                  ) &&
+                  (props.contentBackground.colour === undefined ||
+                    props.contentBackground.colour === "" ||
+                    (typeof props.contentBackground.colour === "string" &&
+                      /^#(?:[\da-f]{3}|[\da-f]{6})$/i.test(
+                        props.contentBackground.colour,
+                      ))))) &&
+              (props.borderWidth === undefined ||
+                (Number.isInteger(props.borderWidth) &&
+                  props.borderWidth >= 0 &&
+                  props.borderWidth <= 12)) &&
+              (props.borderColor === undefined ||
+                props.borderColor === "" ||
+                (typeof props.borderColor === "string" &&
+                  /^#(?:[\da-f]{3}|[\da-f]{6})$/i.test(props.borderColor))) &&
+              opt("columnAlignment", ["top", "center", "bottom"]) &&
               opt("background", ["paper", "sage", "clay"]) &&
               opt("spacing", ["compact", "comfortable", "spacious"]) &&
               list(props.content, depth + 1)
@@ -378,10 +423,16 @@ export function templateData(template: TemplateId = "blank"): PageData {
       root: { props: {} },
       content: [
         welcome(),
-        image(),
-        text("A day to remember", "h2"),
-        text("Write about the things you noticed today."),
+        block("Section", {
+          background: "paper",
+          spacing: "comfortable",
+          content: [
+            image(),
+            text("A day to remember", "h2"),
+            text("Write about the things you noticed today."),
+          ],
+        }),
       ],
     };
-  return { root: { props: {} }, content: [text("")] };
+  return { root: { props: {} }, content: [] };
 }

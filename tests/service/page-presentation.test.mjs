@@ -29,7 +29,7 @@ async function call(path, method, data, cookie) {
 }
 test("page title presentation merges with concurrent content, restores with history and rejects unsupported root settings", async () => {
   const cookie = await login();
-  const original = await (
+  let original = await (
     await call(
       "/api/pages",
       "POST",
@@ -38,6 +38,25 @@ test("page title presentation merges with concurrent content, restores with hist
     )
   ).json();
   const path = "/api/pages/" + original.id;
+  original = await (
+    await call(
+      path,
+      "PATCH",
+      {
+        version: original.version,
+        content: {
+          root: { props: {} },
+          content: [
+            {
+              type: "Text",
+              props: { id: "historic-text", text: "", style: "p" },
+            },
+          ],
+        },
+      },
+      cookie,
+    )
+  ).json();
   const hidden = structuredClone(original.content);
   hidden.root.props.showTitle = false;
   let r = await call(

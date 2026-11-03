@@ -11,7 +11,17 @@ import { BlockSpacingControl, type BlockSpacing } from "./block-spacing";
 import { richField } from "./garden-rich-field";
 import { CanvasPhotoAction } from "./canvas-photo-action";
 import { CanvasRichText } from "./canvas-rich-text";
-import type { CSSProperties, ReactNode } from "react";
+import {
+  cloneElement,
+  isValidElement,
+  type CSSProperties,
+  type ReactNode,
+} from "react";
+import {
+  SectionContentBackground,
+  SectionColumnAlignment,
+  type ContentBackground,
+} from "./section-settings";
 import type { Config, Slot, RichText, PuckContext } from "@puckeditor/core";
 import type { TextStyle } from "@/lib/pages";
 type Appearance = {
@@ -31,7 +41,7 @@ type GardenBlockProps = {
     text: string;
     textRich?: RichText;
     style: TextStyle;
-    align?: "left" | "center";
+    align?: "left" | "center" | "right";
     linkText?: string;
     destination?: Destination | null;
   };
@@ -41,9 +51,10 @@ type GardenBlockProps = {
     descriptionRich?: RichText;
     description: string;
     background?: "paper" | "sage" | "clay";
-    align?: "left" | "center";
+    align?: "left" | "center" | "right";
   };
   Image: {
+    destination?: Destination | null;
     photoId?: string;
     alt: string;
     caption?: string;
@@ -58,7 +69,7 @@ type GardenBlockProps = {
     href?: string;
     destination?: Destination | null;
     variant?: "primary" | "secondary";
-    align?: "left" | "center";
+    align?: "left" | "center" | "right";
     width?: "fit" | "full";
     buttonColor?: string;
     textColor?: string;
@@ -67,6 +78,11 @@ type GardenBlockProps = {
     background?: "paper" | "sage" | "clay";
     spacing?: "compact" | "comfortable" | "spacious";
     content: Slot;
+    backgroundImage?: { photoId: string };
+    contentBackground?: ContentBackground;
+    borderWidth?: number;
+    borderColor?: string;
+    columnAlignment?: "top" | "center" | "bottom";
   };
   Columns: {
     count?: number;
@@ -113,6 +129,30 @@ function RichContent({
     </CanvasRichText>
   ) : (
     children
+  );
+}
+function ImageLink({
+  children,
+  destination,
+  editing,
+  alt,
+}: {
+  children: ReactNode;
+  destination?: Destination | null;
+  editing: boolean;
+  alt: string;
+}) {
+  const href = destinationHref(destination ?? undefined);
+  return href && !editing ? (
+    <a
+      className="garden-image-link"
+      href={href}
+      aria-label={alt || "Open image link"}
+    >
+      {children}
+    </a>
+  ) : (
+    <>{children}</>
   );
 }
 const appearance = {
@@ -175,6 +215,7 @@ const alignment = {
   options: [
     { label: "Left", value: "left" },
     { label: "Centre", value: "center" },
+    { label: "Right", value: "right" },
   ],
 };
 const backgrounds = {
@@ -208,7 +249,15 @@ export const gardenConfig: Config<GardenBlocks, { showTitle?: boolean }> = {
         ],
       },
     },
-    render: ({ children }) => <div className="garden-document">{children}</div>,
+    render: ({ children, puck }) => (
+      <div className="garden-document">
+        {/* Puck supplies its root drop area as children. Restrict that existing area;
+            nested content uses Slot allow lists, without adding deprecated DropZones. */}
+        {puck.isEditing && isValidElement<{ allow?: string[] }>(children)
+          ? cloneElement(children, { allow: ["Section"] })
+          : children}
+      </div>
+    ),
   },
   components: {
     PageGrid: {
@@ -371,6 +420,13 @@ export const gardenConfig: Config<GardenBlocks, { showTitle?: boolean }> = {
       label: "Image",
       fields: {
         ...appearance,
+        destination: {
+          type: "custom",
+          label: "Image link",
+          render: ({ value, onChange }) => (
+            <DestinationPicker value={value} onChange={onChange} optional />
+          ),
+        },
         photoId: {
           type: "custom",
           label: "Photo",
@@ -408,6 +464,7 @@ export const gardenConfig: Config<GardenBlocks, { showTitle?: boolean }> = {
       render: ({
         id,
         photoId,
+        destination,
         alt,
         caption,
         captionRich,
@@ -420,31 +477,37 @@ export const gardenConfig: Config<GardenBlocks, { showTitle?: boolean }> = {
           className={"garden-image garden-image-" + (width ?? "inset")}
           style={blockStyle(surface)}
         >
-          {photoId ? (
-            <img
-              className={"garden-photo garden-fit-" + (fit ?? "cover")}
-              src={displayPhotoUrl(photoId)}
-              alt={alt}
-            />
-          ) : (
-            <div
-              role="img"
-              aria-label={alt || "Photo placeholder"}
-              className={
-                "garden-photo-placeholder garden-fit-" + (fit ?? "cover")
-              }
-            >
-              <svg viewBox="0 0 200 150" aria-hidden="true">
-                <path
-                  d="M100 140V60M100 100C40 100 35 55 35 55c50-5 65 45 65 45ZM100 80c55 0 65-50 65-50-50-5-65 50-65 50ZM100 60C60 40 85 10 85 10s35 20 15 50Z"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="3"
-                />
-              </svg>
-              <span>Photo placeholder</span>
-            </div>
-          )}
+          <ImageLink
+            destination={destination}
+            editing={puck.isEditing}
+            alt={alt}
+          >
+            {photoId ? (
+              <img
+                className={"garden-photo garden-fit-" + (fit ?? "cover")}
+                src={displayPhotoUrl(photoId)}
+                alt={alt}
+              />
+            ) : (
+              <div
+                role="img"
+                aria-label={alt || "Photo placeholder"}
+                className={
+                  "garden-photo-placeholder garden-fit-" + (fit ?? "cover")
+                }
+              >
+                <svg viewBox="0 0 200 150" aria-hidden="true">
+                  <path
+                    d="M100 140V60M100 100C40 100 35 55 35 55c50-5 65 45 65 45ZM100 80c55 0 65-50 65-50-50-5-65 50-65 50ZM100 60C60 40 85 10 85 10s35 20 15 50Z"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="3"
+                  />
+                </svg>
+                <span>Photo placeholder</span>
+              </div>
+            )}
+          </ImageLink>
           {puck.isEditing && (
             <CanvasPhotoAction id={id} hasPhoto={Boolean(photoId)} />
           )}
@@ -619,17 +682,67 @@ export const gardenConfig: Config<GardenBlocks, { showTitle?: boolean }> = {
         ...appearance,
         background: backgrounds,
         spacing,
-        content: { type: "slot" },
+        backgroundImage: {
+          type: "custom",
+          label: "Background image",
+          render: ({ value, onChange }) => (
+            <PhotoPicker
+              label="Background image"
+              value={value?.photoId}
+              onChange={(photoId) => onChange({ photoId })}
+            />
+          ),
+        },
+        contentBackground: {
+          type: "custom",
+          label: "Content background",
+          render: ({ value, onChange }) => (
+            <SectionContentBackground value={value} onChange={onChange} />
+          ),
+        },
+        borderWidth: {
+          type: "number",
+          label: "Border width · px",
+          min: 0,
+          max: 12,
+          step: 1,
+        },
+        borderColor: {
+          type: "custom",
+          label: "Border colour",
+          render: ({ value, onChange }) => (
+            <BackgroundColour
+              label="Border colour"
+              defaultLabel="Garden green"
+              value={value}
+              onChange={onChange}
+            />
+          ),
+        },
+        columnAlignment: {
+          type: "custom",
+          label: "Column content alignment",
+          render: ({ value, onChange }) => (
+            <SectionColumnAlignment value={value} onChange={onChange} />
+          ),
+        },
+        content: { type: "slot", disallow: ["Section"] },
       },
       defaultProps: {
         background: "paper",
         spacing: "comfortable",
         content: [],
+        columnAlignment: "top",
       },
       render: ({
         background,
         spacing: space,
         content: Content,
+        backgroundImage,
+        contentBackground,
+        borderWidth,
+        borderColor,
+        columnAlignment,
         ...surface
       }) => (
         <section
@@ -639,10 +752,38 @@ export const gardenConfig: Config<GardenBlocks, { showTitle?: boolean }> = {
             " garden-space-" +
             (space ?? "comfortable")
           }
-          style={blockStyle(surface)}
+          style={
+            {
+              ...blockStyle(surface),
+              backgroundImage: backgroundImage?.photoId
+                ? `url("${displayPhotoUrl(backgroundImage.photoId)}")`
+                : undefined,
+              border: borderWidth
+                ? `${borderWidth}px solid ${borderColor || "#304337"}`
+                : undefined,
+              "--section-column-alignment":
+                columnAlignment === "center"
+                  ? "center"
+                  : columnAlignment === "bottom"
+                    ? "end"
+                    : "start",
+            } as CSSProperties
+          }
         >
           {/* Slot callbacks change with their content; invoking them keeps child editors mounted. */}
-          {Content({ minEmptyHeight: 100 })}
+          <div
+            className="garden-section-content"
+            style={{
+              backgroundColor:
+                contentBackground?.mode === "auto"
+                  ? "var(--paper)"
+                  : contentBackground?.mode === "custom"
+                    ? contentBackground.colour || "var(--paper)"
+                    : undefined,
+            }}
+          >
+            {Content({ minEmptyHeight: 100 })}
+          </div>
         </section>
       ),
     },
@@ -662,10 +803,10 @@ export const gardenConfig: Config<GardenBlocks, { showTitle?: boolean }> = {
           ],
         },
         gap: spacing,
-        left: { type: "slot" },
-        right: { type: "slot" },
-        third: { type: "slot" },
-        fourth: { type: "slot" },
+        left: { type: "slot", disallow: ["Section"] },
+        right: { type: "slot", disallow: ["Section"] },
+        third: { type: "slot", disallow: ["Section"] },
+        fourth: { type: "slot", disallow: ["Section"] },
       },
       defaultProps: {
         count: 2,
