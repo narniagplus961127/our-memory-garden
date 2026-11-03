@@ -33,30 +33,35 @@ export function BlockSpacingControl({
         {(["top", "right", "bottom", "left"] as const).map((side) => (
           <label key={side} htmlFor={id + side}>
             {side[0].toUpperCase() + side.slice(1)}
-            <input
-              id={id + side}
-              aria-label={label + " " + side}
-              type="number"
-              min={0}
-              max={120}
-              step={1}
-              placeholder={
-                label === "Padding" && typeof legacyPadding === "number"
-                  ? String(legacyPadding)
-                  : "Auto"
-              }
-              value={value?.[side] ?? ""}
-              onChange={(event) => {
-                const next = { ...value };
-                if (event.target.value === "") delete next[side];
-                else {
-                  const n = Number(event.target.value);
-                  if (!Number.isInteger(n) || n < 0 || n > 120) return;
-                  next[side] = n;
+            <span className="spacing-value">
+              <input
+                id={id + side}
+                aria-label={label + " " + side}
+                type="number"
+                min={0}
+                max={120}
+                step={1}
+                placeholder={
+                  label === "Padding" && typeof legacyPadding === "number"
+                    ? String(legacyPadding)
+                    : "Auto"
                 }
-                onChange(next);
-              }}
-            />
+                value={value?.[side] ?? ""}
+                onChange={(event) => {
+                  const next = { ...value };
+                  if (event.target.value === "") delete next[side];
+                  else {
+                    const n = Number(event.target.value);
+                    if (!Number.isInteger(n) || n < 0 || n > 120) return;
+                    next[side] = n;
+                  }
+                  onChange(next);
+                }}
+              />
+              <span className="spacing-unit" aria-hidden="true">
+                px
+              </span>
+            </span>
           </label>
         ))}
       </div>

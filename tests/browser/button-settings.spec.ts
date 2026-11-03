@@ -100,6 +100,18 @@ test("button width and custom colours autosave, render publicly, reset and rejec
     buttonColor: "#a75b43",
     textColor: "#ffffff",
   });
+  const styleSection = page.locator(
+    '.inspector-section[data-section="layout"] > summary',
+  );
+  await styleSection.press("Enter");
+  await expect(
+    page.getByRole("textbox", { name: "Button background hex", exact: true }),
+  ).toBeHidden();
+  await styleSection.press("Enter");
+  await expect(
+    page.getByRole("textbox", { name: "Button background hex", exact: true }),
+  ).toHaveValue("#a75b43");
+  await expect(button).toHaveCSS("background-color", "rgb(167, 91, 67)");
   await page.reload();
   await expect(button).toHaveCSS("background-color", "rgb(167, 91, 67)");
   const visitor = await browser.newContext({ viewport: page.viewportSize()! });

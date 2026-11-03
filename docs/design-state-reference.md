@@ -29,7 +29,7 @@ Routine follow-through within the owner-approved Sunlit Garden direction, added 
 ## Shared interaction rules
 
 - Settings changes update the live canvas and autosave; show Autosaving… / Saved / Unsaved · Retry from actual persistence. No Save, Publish, Preview or Undo/Redo controls. Opening or closing a panel and switching device width do not change content.
-- Desktop editor owns its toolbar and 320 px settings panel. Mobile opens a full-width settings surface below the compact live canvas; Close returns to canvas without discarding edits. Long forms scroll. Touch actions are at least 44 px high.
+- Desktop editor owns its toolbar and a 352 px inspector track (ticket 24 replaces the original 320 px panel). White rounded inspector/workspace surfaces, subtle section dividers and forest accents follow the owner's Klaviyo reference. Mobile opens a full-width settings surface below the compact live canvas; Close returns to canvas without discarding edits. Long forms scroll. Touch actions are at least 44 px high.
 - Admin desktop keeps its 240 px sidebar, equal 64 px sidebar insets and content at x=304. Mobile keeps 28 px gutters. Public/rendered blocks use warm paper; admin surfaces use sage. Arial/Georgia, approved forest/sage/clay palette and placeholder photos only.
 - Button and text destinations share Garden page / External URL controls. Use page IDs for internal references; validate URL and address fields inline while retaining entered values. New empty fields use their labels rather than relying on placeholders.
 - Gallery viewer uses the existing Desktop / Gallery and Mobile / Gallery references for image presentation. Functional Previous / Next / Close, keyboard escape/arrows, focus return and optional captions require application verification.

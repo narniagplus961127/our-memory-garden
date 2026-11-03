@@ -13,6 +13,7 @@ import {
 import "@puckeditor/core/puck.css";
 import "./editor.css";
 import { EditorFrame } from "./editor-frame";
+import { EditorIcon } from "./editor-icons";
 import { InlineEditingProvider, useActiveInlineText } from "./inline-editing";
 import { InlineFormatMenu } from "./inline-format-menu";
 import { ColumnLayoutPicker, type ColumnRatio } from "./column-layout-picker";
@@ -155,17 +156,82 @@ function CanvasMoveActions() {
     </>
   );
 }
+function InspectorFields({
+  fields,
+  isLoading,
+}: {
+  fields: Record<string, React.ReactNode>;
+  isLoading: boolean;
+}) {
+  const type = useGardenPuck((state) => state.selectedItem?.type);
+  const content =
+    type === "Image"
+      ? { title: "Image", keys: ["photoId", "alt"] }
+      : type === "Button"
+        ? { title: "Link", keys: ["destination"] }
+        : type === "PageGrid"
+          ? { title: "Pages", keys: ["selection", "showDate"] }
+          : type === "Gallery"
+            ? { title: "Photos", keys: ["photos"] }
+            : null;
+  const groups = [
+    ...(content ? [{ id: "content", ...content }] : []),
+    {
+      id: "layout",
+      title:
+        type === "Button"
+          ? "Button style"
+          : type === "Image"
+            ? "Image layout"
+            : "Layout",
+      keys: [
+        "variant",
+        "width",
+        "fit",
+        "align",
+        "background",
+        "spacing",
+        "gap",
+        "buttonColor",
+        "textColor",
+      ],
+    },
+    { id: "background", title: "Block background", keys: ["backgroundColor"] },
+    { id: "spacing", title: "Spacing", keys: ["paddingSides", "marginSides"] },
+    { id: "corners", title: "Corners", keys: ["radius"] },
+  ];
+  const assigned = new Set(groups.flatMap((group) => group.keys));
+  const others = Object.keys(fields).filter((key) => !assigned.has(key));
+  if (others.length)
+    groups.push({ id: "other", title: "Other settings", keys: others });
+  return (
+    <div className="editor-property-fields" aria-busy={isLoading}>
+      {groups.map((group) => {
+        const keys = group.keys.filter((key) => fields[key]);
+        return keys.length ? (
+          <details
+            className="inspector-section"
+            data-section={group.id}
+            key={group.id}
+            open
+          >
+            <summary>{group.title}</summary>
+            <div className="inspector-section-body">
+              {keys.map((key) => (
+                <div className="editor-property-field" key={key}>
+                  {fields[key]}
+                </div>
+              ))}
+            </div>
+          </details>
+        ) : null;
+      })}
+    </div>
+  );
+}
 const editorOverrides: Partial<Overrides<typeof gardenConfig>> = {
   iframe: EditorFrame,
-  fields: ({ fields, isLoading }) => (
-    <div className="editor-property-fields" aria-busy={isLoading}>
-      {Object.entries(fields).map(([name, field]) => (
-        <div className="editor-property-field" key={name}>
-          {field}
-        </div>
-      ))}
-    </div>
-  ),
+  fields: InspectorFields,
   actionBar: ({ children, label, parentAction, dragHandleRef }) => (
     <div className="garden-canvas-actions">
       <ActionBar label={label}>
@@ -535,11 +601,11 @@ function Workspace({
       <div className="garden-editor-body">
         <nav className="editor-rail" aria-label="Editor panels">
           {[
-            ["content", "＋", "Content"],
-            ["settings", "◌", "Styles"],
-            ["outline", "☷", "Outline"],
-            ["page", "⚙︎", "Page settings"],
-          ].map(([key, icon, label]) => (
+            ["content", "Content"],
+            ["settings", "Styles"],
+            ["outline", "Outline"],
+            ["page", "Page settings"],
+          ].map(([key, label]) => (
             <button
               key={key}
               className="secondary"
@@ -560,7 +626,7 @@ function Workspace({
                 setPanel(key as "content" | "settings" | "outline" | "page")
               }
             >
-              <span aria-hidden="true">{icon}</span>
+              <EditorIcon name={key} />
               <span className="rail-label">{label}</span>
             </button>
           ))}
@@ -580,12 +646,21 @@ function Workspace({
           hidden={!panel}
         >
           <div className="panel-heading">
+            {panel === "settings" && (
+              <button
+                className="inspector-back"
+                aria-label="Back to content"
+                onClick={() => setPanel("content")}
+              >
+                <EditorIcon name="back" />
+              </button>
+            )}
             <h2>
               {panel === "page"
                 ? "Page settings"
                 : panel === "settings"
                   ? selected
-                    ? blockLabel(selected.type) + " styles"
+                    ? blockLabel(selected.type)
                     : "Block styles"
                   : panel === "outline"
                     ? "On this page"
@@ -596,7 +671,7 @@ function Workspace({
               aria-label="Close panel"
               onClick={closePanel}
             >
-              Done
+              <EditorIcon name="close" />
             </button>
           </div>
           <div hidden={panel !== "page"} className="editor-page-settings">
@@ -739,12 +814,6 @@ function Workspace({
           {panel === "outline" && outline}
           {panel === "settings" && (
             <>
-              <button
-                className="editor-back-content"
-                onClick={() => setPanel("content")}
-              >
-                ← Back to content
-              </button>
               {selected ? (
                 <>
                   <p className="muted editor-panel-hint">
@@ -877,13 +946,15 @@ function Workspace({
                 aria-pressed={device === "desktop"}
                 onClick={() => setDevice("desktop")}
               >
-                Desktop
+                <EditorIcon name="desktop" />
+                <span className="visually-hidden">Desktop</span>
               </button>
               <button
                 aria-pressed={device === "mobile"}
                 onClick={() => setDevice("mobile")}
               >
-                Mobile
+                <EditorIcon name="mobile" />
+                <span className="visually-hidden">Mobile</span>
               </button>
             </div>
             <small>
