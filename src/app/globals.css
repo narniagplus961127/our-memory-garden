@@ -127,7 +127,9 @@
   --gutter: 64px;
   --control-height: 44px;
   --control-radius: 6px;
-  --control-font-size: 14px;
+  --body-font-size: 14px;
+  --control-font-size: var(--body-font-size);
+  font-size: var(--body-font-size);
   color-scheme: light;
 }
 * {
@@ -138,7 +140,7 @@ body {
   background: var(--paper);
   color: var(--ink);
   font-family: Arial, sans-serif;
-  font-size: 16px;
+  font-size: 1rem;
   line-height: 1.5;
 }
 h1,
@@ -413,7 +415,7 @@ a:focus-visible {
   padding: 9px 0;
   text-decoration: none;
   white-space: nowrap;
-  font-size: 15px;
+  font-size: var(--body-font-size);
 }
 .admin-sidebar nav a[aria-current="page"] {
   text-decoration: underline;
@@ -846,7 +848,7 @@ button.primary {
   gap: 8px;
   text-align: center;
   overflow-wrap: anywhere;
-  font-size: clamp(12px, 5cqi, 16px);
+  font-size: clamp(12px, 5cqi, var(--body-font-size));
 }
 .garden-photo-placeholder svg {
   width: min(150px, 45%);
