@@ -65,6 +65,7 @@
   --gutter: 64px;
   --control-height: 44px;
   --control-radius: 6px;
+  --control-font-size: 14px;
   color-scheme: light;
 }
 * {
@@ -145,6 +146,8 @@ input,
 textarea,
 select {
   display: block;
+  font-size: var(--control-font-size);
+  line-height: 20px;
   width: 100%;
   border: 1px solid var(--line);
   border-radius: var(--control-radius);
@@ -852,8 +855,8 @@ button.primary {
 .editor-page-identity input {
   border-color: transparent;
   background: transparent;
-  font-family: Georgia, serif;
-  font-size: 21px;
+  font-family: Arial, sans-serif;
+  font-size: var(--control-font-size);
 }
 .garden-workspace-bar select {
   width: auto;
@@ -1048,7 +1051,6 @@ button.primary {
     flex-basis: calc(100% - 90px);
   }
   .editor-page-identity input {
-    font-size: 18px;
     padding: 8px;
   }
   .garden-workspace-bar select {

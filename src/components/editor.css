@@ -26,7 +26,6 @@
 }
 .editor-inline .editor-page-identity input {
   padding: 8px;
-  font-size: 20px;
 }
 .editor-header-state {
   display: flex;
@@ -472,7 +471,7 @@
   border: 0;
   border-radius: 0;
   background: transparent;
-  font-size: 16px;
+  font-size: var(--control-font-size);
   appearance: textfield;
 }
 .format-pixels-compact input::-webkit-inner-spin-button,
@@ -675,7 +674,7 @@
     textarea
   ) {
   font:
-    400 16px/24px Arial,
+    400 var(--control-font-size)/20px Arial,
     sans-serif;
   border-radius: var(--control-radius);
   min-height: var(--control-height);
@@ -939,9 +938,6 @@
     grid-row: 1;
     grid-column: 2 / 4;
     min-width: 0;
-  }
-  .editor-inline .editor-page-identity input {
-    font-size: 18px;
   }
   .editor-inline .editor-view-link {
     grid-row: 2;
