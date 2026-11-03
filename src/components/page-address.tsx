@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import type { GardenPage } from "@/lib/pages";
+import { validSlug } from "@/lib/page-address";
 import {
   clearAccountRecovery,
   logoutSignal,
@@ -16,10 +17,6 @@ type AddressCopy = {
   slug: string;
   source?: { key: string; value: string };
 };
-const validSlug = (value: unknown): value is string =>
-  typeof value === "string" &&
-  value.length <= 100 &&
-  /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(value);
 export function PageAddress({
   page,
   accountId,

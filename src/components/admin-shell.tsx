@@ -1,12 +1,13 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Brand } from "./brand";
 import { signOutEditors } from "@/lib/editor-recovery";
 const navigation = [
   ["Overview", "/admin"],
   ["Pages", "/admin/pages"],
+  ["Categories", "/admin/categories"],
   ["Media library", "/admin/media"],
   ["Navigation", "/admin/navigation"],
   ["Settings", "/admin/settings"],
@@ -19,6 +20,7 @@ export function AdminShell({
   accountId: string;
 }) {
   const pathname = usePathname();
+  const mobileMenu = useRef<HTMLDetailsElement>(null);
   const [signingOut, setSigningOut] = useState(false),
     [signOutError, setSignOutError] = useState("");
   if (/^\/admin\/pages\/[0-9a-f-]{36}$/i.test(pathname))
@@ -91,9 +93,19 @@ export function AdminShell({
       </aside>
       <header className="admin-mobile-bar">
         <Brand />
-        <details>
+        <details ref={mobileMenu}>
           <summary aria-label="Open administration menu">☰</summary>
-          <nav aria-label="Mobile administration">
+          <nav
+            aria-label="Mobile administration"
+            onClick={(event) => {
+              if (
+                event.target instanceof Element &&
+                event.target.closest("a") &&
+                mobileMenu.current
+              )
+                mobileMenu.current.open = false;
+            }}
+          >
             {links}
             {bottom}
           </nav>

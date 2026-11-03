@@ -37,4 +37,6 @@ Routine follow-through within the owner-approved Sunlit Garden direction, added 
 
 ## Verification and limits
 
+Ticket 25 adds a Categories destination to both administration menus using the existing admin shell. Its create form and rename rows reuse labelled fields, 44 px actions, inline errors and persistence status. The page-creation form adds a title-derived editable URL with a `/garden/` prefix, Use title reset and duplicate error below the address. Title and URL share the same maximum field width. Pages cards now contain only their title/status/update link; History remains inside the editor. These owner-requested implementation refinements have not been redrawn in the native FigCraft file.
+
 The native document and rendered samples are audited with the FigCraft CLI; evidence paths and final counts are recorded in `docs/design-spec-review.md`. Validate server authorization, media accessibility, durable conflict preservation, export generation and actual storage measurement through the application. The old approved prototype routes remain unchanged. Category creation/rename, validation, confirmation and errors use the same labelled field, 44 px action and inline status patterns shown here; no additional screen per small variant is implied. Material new direction still requires owner review.

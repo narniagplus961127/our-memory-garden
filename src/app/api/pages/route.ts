@@ -36,6 +36,7 @@ export async function POST(request: Request) {
         admin,
         pageTitle(body.title),
         body.template as TemplateId | undefined,
+        body.slug,
       ),
       { status: 201, headers: { "Cache-Control": "private, no-store" } },
     );
