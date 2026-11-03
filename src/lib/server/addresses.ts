@@ -3,10 +3,8 @@ import { database } from "./db";
 import { RequestError } from "./http";
 import type { Administrator } from "./pages";
 import type { GardenPage } from "../pages";
-export const validSlug = (value: unknown): value is string =>
-  typeof value === "string" &&
-  /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(value) &&
-  value.length <= 100;
+import { validSlug } from "../page-address";
+export { validSlug } from "../page-address";
 export async function changeAddress(
   id: string,
   slug: unknown,

@@ -22,7 +22,7 @@ export default async function Pages() {
         </Link>
       </div>
       {pages.length ? (
-        <AdminPageCards pages={pages} recoveryLinks />
+        <AdminPageCards pages={pages} />
       ) : (
         <div className="empty-state">
           <h2>Your first page starts here</h2>

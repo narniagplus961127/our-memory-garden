@@ -3,14 +3,24 @@ import { templates } from "@/lib/blocks";
 import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { addressFromTitle, validSlug } from "@/lib/page-address";
 export function NewPageForm() {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
+  const [title, setTitle] = useState(""),
+    [customSlug, setCustomSlug] = useState<string | null>(null),
+    [slugError, setSlugError] = useState("");
+  const slug = customSlug ?? addressFromTitle(title);
   const router = useRouter();
   async function create(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (!validSlug(slug)) {
+      setSlugError("Use 1–100 lowercase letters, numbers and single hyphens.");
+      return;
+    }
     setPending(true);
     setError("");
+    setSlugError("");
     try {
       const form = new FormData(event.currentTarget);
       const title = form.get("title"),
@@ -18,11 +28,12 @@ export function NewPageForm() {
       const response = await fetch("/api/pages", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title, template }),
+        body: JSON.stringify({ title, template, slug }),
       });
       const result = await response.json();
       if (!response.ok) {
-        setError(result.error ?? "Could not create the page.");
+        if (response.status === 409) setSlugError(result.error);
+        else setError(result.error ?? "Could not create the page.");
         return;
       }
       router.push("/admin/pages/" + result.id);
@@ -35,7 +46,7 @@ export function NewPageForm() {
   }
   return (
     <form onSubmit={create} className="new-page-form">
-      <fieldset className="template-choices">
+      <fieldset className="template-choices" disabled={pending}>
         <legend>Start from a template</legend>
         <div className="template-grid">
           {templates.map((template) => (
@@ -83,7 +94,66 @@ export function NewPageForm() {
       </fieldset>
       <div className="field new-page-title">
         <label htmlFor="new-title">Page title</label>
-        <input id="new-title" name="title" required maxLength={200} />
+        <input
+          id="new-title"
+          name="title"
+          required
+          maxLength={200}
+          disabled={pending}
+          value={title}
+          onChange={(event) => {
+            setTitle(event.target.value);
+            if (customSlug === null) setSlugError("");
+          }}
+        />
+      </div>
+      <div className="field new-page-url">
+        <label htmlFor="new-slug">Page URL</label>
+        <div className="page-url-input">
+          <span aria-hidden="true">/garden/</span>
+          <input
+            id="new-slug"
+            name="slug"
+            value={slug}
+            required
+            maxLength={100}
+            disabled={pending}
+            aria-describedby="new-slug-help new-slug-error"
+            aria-invalid={Boolean(slugError)}
+            autoCapitalize="none"
+            autoCorrect="off"
+            spellCheck={false}
+            onChange={(event) => {
+              setCustomSlug(event.target.value);
+              setSlugError("");
+            }}
+          />
+        </div>
+        <div className="page-url-help">
+          <small id="new-slug-help" className="muted">
+            Lowercase letters, numbers and hyphens. You can change this later in
+            Page settings.
+          </small>
+          <button
+            type="button"
+            className="secondary"
+            disabled={pending || customSlug === null}
+            onClick={() => {
+              setCustomSlug(null);
+              setSlugError("");
+            }}
+          >
+            Use title
+          </button>
+        </div>
+        <p
+          id="new-slug-error"
+          role={slugError ? "alert" : undefined}
+          className="error"
+          hidden={!slugError}
+        >
+          {slugError}
+        </p>
       </div>
       <div className="actions">
         <button disabled={pending}>Create private page</button>

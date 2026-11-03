@@ -46,13 +46,20 @@ export function BackgroundColour({
                 ? preset + " background"
                 : preset + " · " + label
             }
-            aria-pressed={value === colour}
-            style={{ backgroundColor: colour || "transparent" }}
+            aria-pressed={(value ?? "") === colour}
             onClick={() => {
               setDraft(colour);
               onChange(colour);
             }}
-          />
+          >
+            <span
+              className="colour-swatch"
+              style={{ backgroundColor: colour || "transparent" }}
+              aria-hidden="true"
+            >
+              {colour ? "" : "↺"}
+            </span>
+          </button>
         ))}
       </div>
       <div className="colour-inputs">

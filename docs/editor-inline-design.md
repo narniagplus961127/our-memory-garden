@@ -73,6 +73,14 @@ Review evidence and CLI audit are retained under the task's `editor-inline/` art
 
 ## Implemented integration
 
+### Inspector visual refinement — ticket 24
+
+The owner requested the appearance of the [Klaviyo editor reference](https://www.klaviyo.com/email-template-editor/Sa5Cu7) on 2026-11-03. The application now uses a white, rounded desktop inspector and workspace, soft mint canvas surround, subtle dividers and forest active accents. The 352 px inspector track provides consistent 20 px internal gutters; mobile retains the bounded scrollable sheet. Existing properties are grouped into initially expanded native disclosures for content/link, layout, background, spacing and corners. Hidden fields remain hidden, and future ungrouped visible fields retain a fallback section.
+
+Button width uses an inset segmented tray; colour controls join the native picker and hex input, with smaller visual swatches inside 44 px targets. Four-side spacing fields show inline px units. Consistent SVG rail, back/collapse and device icons replace mixed character symbols. New block cards are 56 px on both devices. The selected block actions use a lighter surface, retaining the dedicated drag handle and movement controls. The absolute formatting bar and its separately clipped canvas viewport retain stable clearance on both devices.
+
+This implements the owner's requested reference in the application. The native FigCraft file has not been redrawn. No extra email, crop, AI, undo/redo or preview features are implied. Evidence uses synthetic local content: [desktop](evidence/ticket24/inspector-desktop.png), [mobile](evidence/ticket24/inspector-mobile.png).
+
 ### Alignment and responsive placeholders — ticket 20
 
 The owner's 2026-11-03 screenshots identified mismatched public-header baselines, a crowded move action, uneven native field gutters, the raised font-size label and overflowing placeholders. Root navigation links now share a 48 px text row with the dashboard action. The editor uses Puck's fields override and disables its extra wrapper padding, so native and custom properties share the same panel gutters. Labels and inputs retain their associations; movement groups use 8 px internal gaps and 16 px spacing before the move action.

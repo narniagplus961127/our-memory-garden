@@ -28,13 +28,19 @@ Routine follow-through within the owner-approved Sunlit Garden direction, added 
 
 ## Shared interaction rules
 
+Ticket 26 sets root/body text to 14 px using `--body-font-size`, shared with form controls. Standard button text inherits it, and administration links match it. Heading sizes and explicitly authored font sizes retain their own hierarchy. This supersedes the original 16 px body default.
+
 - Settings changes update the live canvas and autosave; show Autosaving… / Saved / Unsaved · Retry from actual persistence. No Save, Publish, Preview or Undo/Redo controls. Opening or closing a panel and switching device width do not change content.
-- Desktop editor owns its toolbar and 320 px settings panel. Mobile opens a full-width settings surface below the compact live canvas; Close returns to canvas without discarding edits. Long forms scroll. Touch actions are at least 44 px high.
+- Desktop editor owns its toolbar and a 352 px inspector track (ticket 24 replaces the original 320 px panel). White rounded inspector/workspace surfaces, subtle section dividers and forest accents follow the owner's Klaviyo reference. Mobile opens a full-width settings surface below the compact live canvas; Close returns to canvas without discarding edits. Long forms scroll. Touch actions are at least 44 px high.
 - Admin desktop keeps its 240 px sidebar, equal 64 px sidebar insets and content at x=304. Mobile keeps 28 px gutters. Public/rendered blocks use warm paper; admin surfaces use sage. Arial/Georgia, approved forest/sage/clay palette and placeholder photos only.
 - Button and text destinations share Garden page / External URL controls. Use page IDs for internal references; validate URL and address fields inline while retaining entered values. New empty fields use their labels rather than relying on placeholders.
 - Gallery viewer uses the existing Desktop / Gallery and Mobile / Gallery references for image presentation. Functional Previous / Next / Close, keyboard escape/arrows, focus return and optional captions require application verification.
 - These are static state references. Back/menu links return to existing frames; status labels and example fields do not simulate authentication, persistence, upload, export or security. Newly illustrated primary actions require implementation, not prototype-click acceptance.
 
 ## Verification and limits
+
+Ticket 25 adds a Categories destination to both administration menus using the existing admin shell. Its create form and rename rows reuse labelled fields, 44 px actions, inline errors and persistence status. The page-creation form adds a title-derived editable URL with a `/garden/` prefix, Use title reset and duplicate error below the address. Title and URL share the same maximum field width. Pages cards now contain only their title/status/update link; History remains inside the editor. These owner-requested implementation refinements have not been redrawn in the native FigCraft file.
+
+Current 14 px implementation evidence: [Categories desktop](evidence/ticket26/categories-desktop.png), [Categories mobile](evidence/ticket26/categories-mobile.png), [new-page URL desktop](evidence/ticket26/page-url-desktop.png), [new-page URL mobile](evidence/ticket26/page-url-mobile.png).
 
 The native document and rendered samples are audited with the FigCraft CLI; evidence paths and final counts are recorded in `docs/design-spec-review.md`. Validate server authorization, media accessibility, durable conflict preservation, export generation and actual storage measurement through the application. The old approved prototype routes remain unchanged. Category creation/rename, validation, confirmation and errors use the same labelled field, 44 px action and inline status patterns shown here; no additional screen per small variant is implied. Material new direction still requires owner review.

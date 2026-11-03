@@ -4,6 +4,7 @@ import type { GardenPage, PageData } from "../pages";
 import { templateData, validPageData, type TemplateId } from "../blocks";
 import { mergePage, snapshot, equal, type PageSnapshot } from "../page-merge";
 import { RequestError } from "./http";
+import { validSlug } from "../page-address";
 export type Administrator = { id: string; email: string; name: string };
 const validId =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -29,12 +30,32 @@ export async function createPrivatePage(
   administrator: Administrator,
   title: string,
   template: TemplateId = "blank",
+  slug?: unknown,
 ): Promise<GardenPage> {
+  if (slug !== undefined && !validSlug(slug))
+    throw new RequestError(
+      400,
+      "Use 1–100 lowercase letters, numbers and single hyphens for the page URL.",
+    );
   const id = crypto.randomUUID();
-  const rows = await database()<
-    GardenPage[]
-  >`insert into pages(id,title,slug,content,created_by,updated_by) values (${id},${title},${"page-" + id},${database().json(templateData(template))},${administrator.id},${administrator.id}) returning *`;
-  return JSON.parse(JSON.stringify(rows[0]));
+  try {
+    const rows = await database()<
+      GardenPage[]
+    >`insert into pages(id,title,slug,content,created_by,updated_by) values (${id},${title},${slug === undefined ? "page-" + id : (slug as string)},${database().json(templateData(template))},${administrator.id},${administrator.id}) returning *`;
+    return JSON.parse(JSON.stringify(rows[0]));
+  } catch (error) {
+    if (
+      error &&
+      typeof error === "object" &&
+      "code" in error &&
+      error.code === "23505"
+    )
+      throw new RequestError(
+        409,
+        "This page URL is already in use. Choose another URL.",
+      );
+    throw error;
+  }
 }
 type SaveInput = Partial<PageSnapshot> & {
   version: number;

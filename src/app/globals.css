@@ -35,6 +35,68 @@
 .page-details {
   margin-top: 28px;
 }
+.page-url-input {
+  display: flex;
+  align-items: center;
+  border: 1px solid var(--line);
+  border-radius: var(--control-radius);
+  background: var(--cream);
+  min-width: 0;
+}
+.page-url-input > span {
+  padding-left: 12px;
+  color: var(--muted);
+  font-size: var(--control-font-size);
+}
+.page-url-input input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+}
+.page-url-help {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 8px;
+}
+.page-url-help button {
+  flex-shrink: 0;
+}
+.new-page-url > .error {
+  margin: 12px 0 0;
+}
+.category-manager {
+  max-width: 820px;
+}
+.category-manager > [role="status"]:empty {
+  display: none;
+}
+.category-list ul {
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 12px;
+}
+.category-list li {
+  padding: 16px;
+  background: var(--cream);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+.category-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+.category-row > span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.category-row > button {
+  flex-shrink: 0;
+}
 .details-cover {
   width: 100%;
   aspect-ratio: 4 / 3;
@@ -65,7 +127,9 @@
   --gutter: 64px;
   --control-height: 44px;
   --control-radius: 6px;
-  --control-font-size: 14px;
+  --body-font-size: 14px;
+  --control-font-size: var(--body-font-size);
+  font-size: var(--body-font-size);
   color-scheme: light;
 }
 * {
@@ -76,7 +140,7 @@ body {
   background: var(--paper);
   color: var(--ink);
   font-family: Arial, sans-serif;
-  font-size: 16px;
+  font-size: 1rem;
   line-height: 1.5;
 }
 h1,
@@ -351,7 +415,7 @@ a:focus-visible {
   padding: 9px 0;
   text-decoration: none;
   white-space: nowrap;
-  font-size: 15px;
+  font-size: var(--body-font-size);
 }
 .admin-sidebar nav a[aria-current="page"] {
   text-decoration: underline;
@@ -784,7 +848,7 @@ button.primary {
   gap: 8px;
   text-align: center;
   overflow-wrap: anywhere;
-  font-size: clamp(12px, 5cqi, 16px);
+  font-size: clamp(12px, 5cqi, var(--body-font-size));
 }
 .garden-photo-placeholder svg {
   width: min(150px, 45%);
@@ -1713,15 +1777,6 @@ button.primary {
   text-decoration: none;
   overflow-wrap: anywhere;
 }
-.admin-page-card-actions {
-  padding: 0 16px 8px;
-}
-.admin-page-card-actions a {
-  display: inline-flex;
-  align-items: center;
-  min-height: 44px;
-  font-size: 13px;
-}
 .admin-page-cards a:hover {
   background: var(--paper);
 }
@@ -1844,7 +1899,8 @@ button.primary {
   font-size: 13px;
   color: var(--muted);
 }
-.new-page-title {
+.new-page-title,
+.new-page-url {
   max-width: 512px;
 }
 .new-page-form > small {

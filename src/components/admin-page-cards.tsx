@@ -1,12 +1,6 @@
 import Link from "next/link";
 import type { GardenPage } from "@/lib/pages";
-export function AdminPageCards({
-  pages,
-  recoveryLinks = false,
-}: {
-  pages: GardenPage[];
-  recoveryLinks?: boolean;
-}) {
+export function AdminPageCards({ pages }: { pages: GardenPage[] }) {
   return (
     <ul className="admin-page-cards">
       {pages.map((page) => (
@@ -25,13 +19,6 @@ export function AdminPageCards({
               </span>
             </span>
           </Link>
-          {recoveryLinks && (
-            <div className="admin-page-card-actions">
-              <Link href={"/admin/pages/" + page.id + "/history"}>
-                History and recovery
-              </Link>
-            </div>
-          )}
         </li>
       ))}
     </ul>
