@@ -65,6 +65,16 @@ Review evidence and CLI audit are retained under the task's `editor-inline/` art
 
 ## Implemented integration
 
+### Alignment and responsive placeholders — ticket 20
+
+The owner's 2026-11-03 screenshots identified mismatched public-header baselines, a crowded move action, uneven native field gutters, the raised font-size label and overflowing placeholders. Root navigation links now share a 48 px text row with the dashboard action. The editor uses Puck's fields override and disables its extra wrapper padding, so native and custom properties share the same panel gutters. Labels and inputs retain their associations; movement groups use 8 px internal gaps and 16 px spacing before the move action.
+
+The font-size field is a single 44 px control with an inline `px` suffix and an accessible label. It aligns with adjacent selects, keeps visible keyboard focus and preserves existing numeric commit/cancel behaviour. More's pinned mobile trigger has an opaque disabled background so scrolled content does not show through it.
+
+Photo placeholders take their block's actual width. Their minimum height, artwork, text and contain-mode padding respond to the image container, avoiding the old aspect-ratio/minimum-height combination that expanded a placeholder beyond its column. Choose/replace actions move below narrow placeholders; mobile leaves room beside the native floating block controls. The same placeholder styles are used publicly. This is a correction to the approved fluid layout, without changing saved content or image data.
+
+Evidence: [desktop columns](evidence/ticket20/placeholder-desktop.png), [desktop settings](evidence/ticket20/settings-desktop.png), [mobile settings](evidence/ticket20/settings-mobile.png).
+
 ### Compact toolbar and typography — ticket 19
 
 The owner supplied a newer Klaviyo toolbar reference and explicitly requested fonts and line height on 2026-11-03. Keep a single stable 64 px row with Body/H1–H4/Small, font family, size, colour, Bold and Link. A labelled More action opens an anchored top-layer popover for italic, underline, alignment, letter spacing, paragraph line height and reset. It contains 44 px controls and short helper text, adjusts its placement on resize, stays bounded on short screens and keeps its trigger reachable at the mobile toolbar's right edge. Escape and the explicit close action return focus to the selected text; outside dismissal leaves focus with the clicked destination. The original selected range remains the formatting target.

@@ -14,6 +14,7 @@ function TextNumberControl({
   disabled,
   onCommit,
   unit = "px",
+  compact = false,
 }: {
   label: string;
   value: string;
@@ -23,6 +24,7 @@ function TextNumberControl({
   disabled: boolean;
   onCommit: (value: string | null) => void;
   unit?: "px" | "×";
+  compact?: boolean;
 }) {
   const [draft, setDraft] = useState(value);
   const cancelled = useRef(false);
@@ -34,8 +36,10 @@ function TextNumberControl({
       Number(draft) >= min &&
       Number(draft) <= max);
   return (
-    <label className="format-pixels">
-      <span>
+    <label
+      className={"format-pixels" + (compact ? " format-pixels-compact" : "")}
+    >
+      <span className={compact ? "visually-hidden" : undefined}>
         {label} · {unit}
       </span>
       <input
@@ -84,6 +88,11 @@ function TextNumberControl({
           }
         }}
       />
+      {compact && (
+        <span className="format-number-unit" aria-hidden="true">
+          {unit}
+        </span>
+      )}
     </label>
   );
 }
@@ -254,6 +263,7 @@ export function InlineFormatMenu({
       <TextNumberControl
         key={(editor?.instanceId ?? "none") + "size"}
         label="Font size"
+        compact
         value={String(attributes.fontSize ?? "").replace(/px$/, "")}
         min={8}
         max={120}
