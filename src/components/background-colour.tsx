@@ -1,5 +1,9 @@
 "use client";
 import { useEffect, useId, useState } from "react";
+const normalColour = (colour: string) =>
+  colour.length === 4
+    ? "#" + [...colour.slice(1)].map((c) => c + c).join("")
+    : colour;
 
 export function BackgroundColour({
   value,
@@ -10,12 +14,15 @@ export function BackgroundColour({
 }) {
   const [draft, setDraft] = useState(value ?? "");
   const id = useId();
-  useEffect(() => setDraft(value ?? ""), [value]);
+  useEffect(() => {
+    // An applied #RGB value must not replace the user's partially typed #RRGGBB.
+    setDraft((current) =>
+      normalColour(current).toLowerCase() === (value ?? "").toLowerCase()
+        ? current
+        : (value ?? ""),
+    );
+  }, [value]);
   const valid = !draft || /^#(?:[\da-f]{3}|[\da-f]{6})$/i.test(draft);
-  const normal = (colour: string) =>
-    colour.length === 4
-      ? "#" + [...colour.slice(1)].map((c) => c + c).join("")
-      : colour;
   return (
     <div className="background-colour">
       <div className="colour-presets" aria-label="Garden background colours">
@@ -43,7 +50,7 @@ export function BackgroundColour({
         <input
           type="color"
           aria-label="Choose custom background colour"
-          value={value ? normal(value) : "#fffcf5"}
+          value={value ? normalColour(value) : "#fffcf5"}
           onChange={(e) => {
             setDraft(e.target.value);
             onChange(e.target.value);
@@ -60,7 +67,7 @@ export function BackgroundColour({
             const next = e.target.value;
             setDraft(next);
             if (!next || /^#(?:[\da-f]{3}|[\da-f]{6})$/i.test(next))
-              onChange(next ? normal(next) : "");
+              onChange(next ? normalColour(next) : "");
           }}
         />
       </div>

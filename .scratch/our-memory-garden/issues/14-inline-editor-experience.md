@@ -40,6 +40,8 @@ Prepare and review the updated FigCraft desktop/mobile states and disposable int
 
 2026-11-03: Separate Standards and Spec reviews are recorded in `docs/editor-inline-review.md`. All four Spec findings were fixed and re-reviewed; no material concern remains. Browser regressions reproduce and verify saved column-layout preservation, equivalent legacy/rich conflict convergence, formatting comparisons, linked small typography, cross-tab logout and mobile panel access during recovery. The prototype remains on its separate branch.
 
+2026-11-03: An additional real typing regression exposed premature #RGB expansion: typing `#a7c4a0` stopped at `#aa77cc`. The field now preserves the user's editable short form while applying its normalized value. Desktop and mobile sequential-keyboard checks pass for six-digit entry, short hex, invalid input and reload persistence. Production build, type checks and formatting checks pass.
+
 2026-11-02: The owner approved the concrete FigCraft/interaction proposal at `57406c8` and explicitly requested implementation. The design gate is satisfied. Implement on `codex/ticket-14-inline-editor`, preserving the disposable HTML on `prototype/editor-inline-experience`. Existing browser journeys and authenticated API boundaries are the previously agreed test seams.
 
 2026-11-02: claimed for reference inspection, specification alignment and the design proposal. Production implementation awaits owner review of the concrete proposed interaction.

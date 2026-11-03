@@ -203,6 +203,22 @@ test("custom colours, preserved column contents and page settings work with touc
   expect(columns.props.count).toBe(1);
   expect(columns.props.left[0].props.text).toBe("A memory in the third column");
   expect(columns.props.left[0].props.backgroundColor).toBe("#77aadd");
+  await colour.fill("");
+  await colour.pressSequentially("#a7c4a0");
+  await expect(colour).toHaveValue("#a7c4a0");
+  await expect(
+    page.getByRole("status", { name: "Auto-save status" }),
+  ).toHaveText("Saved");
+  expect(
+    (
+      await (await page.request.get("/api/pages/" + id)).json()
+    ).content.content.find((b: { type: string }) => b.type === "Columns").props
+      .left[0].props.backgroundColor,
+  ).toBe("#a7c4a0");
+  await colour.fill("#7ad");
+  await expect(
+    page.getByRole("status", { name: "Auto-save status" }),
+  ).toHaveText("Saved");
   await colour.fill("#nope");
   await expect(colour).toHaveValue("#nope");
   await expect(
