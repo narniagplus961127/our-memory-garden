@@ -35,6 +35,10 @@ export function InlineFormatMenu({
     if (link) dialog.current?.showModal();
   }, [link]);
   const disabled = !editor || editor.isDestroyed;
+  function closeLink() {
+    selection.current = null;
+    setLink(false);
+  }
   const command = () => {
     if (!editor || editor.isDestroyed) return null;
     const range = selection.current;
@@ -152,8 +156,8 @@ export function InlineFormatMenu({
           ref={dialog}
           className="inline-link-dialog"
           aria-label="Link text to a page or website"
-          onClose={() => setLink(false)}
-          onCancel={() => setLink(false)}
+          onClose={closeLink}
+          onCancel={closeLink}
         >
           <h2>Link your words</h2>
           <DestinationPicker

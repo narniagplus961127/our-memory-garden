@@ -164,4 +164,34 @@ test("link dialog is centered, evenly spaced and keeps the selected words when a
     "href",
     "https://example.com/garden",
   );
+  await heading.click();
+  await heading.evaluate((element) => {
+    const range = element.ownerDocument.createRange();
+    range.selectNodeContents(element);
+    const selection = element.ownerDocument.getSelection()!;
+    selection.removeAllRanges();
+    selection.addRange(range);
+  });
+  await page.getByRole("button", { name: "Add a link", exact: true }).click();
+  await page
+    .getByRole("dialog", { name: "Link text to a page or website" })
+    .getByRole("button", { name: "Cancel", exact: true })
+    .click();
+  await heading.evaluate((element) => {
+    const text = element.querySelector("a")!.firstChild!;
+    const range = element.ownerDocument.createRange();
+    range.setStart(text, 11);
+    range.setEnd(text, 17);
+    (element as HTMLElement).focus();
+    const selection = element.ownerDocument.getSelection()!;
+    selection.removeAllRanges();
+    selection.addRange(range);
+  });
+  await page.getByRole("button", { name: "Bold", exact: true }).press("Enter");
+  await expect(heading.locator("strong")).toHaveText("memory");
+  await expect(
+    page.getByRole("status", { name: "Auto-save status" }),
+  ).toHaveText("Saved");
+  await page.reload();
+  await expect(heading.locator("strong")).toHaveText("memory");
 });

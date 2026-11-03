@@ -1,6 +1,6 @@
 # Our Memory Garden specification
 
-Status: resolved — released baseline and approved ticket 14 editor refinement implemented and verified
+Status: resolved — released baseline, ticket 14 editor refinement and ticket 15 stability fixes implemented and verified
 
 ## Problem Statement
 
@@ -116,6 +116,6 @@ Public registration, visitor comments or reactions, a separate story content typ
 
 ## Further Notes
 
-The released baseline through ticket 13 is complete. On 2026-11-02 the owner requested a Klaviyo-inspired refinement with direct canvas editing. [Ticket 14](issues/14-inline-editor-experience.md) and [the inline design proposal](../../docs/editor-inline-design.md) describe this additional scope. Existing design approval does not imply approval of the new interaction; review its concrete desktop/mobile proposal before production implementation. Existing pages, private media, autosave, recovery, conflicts and history remain required compatibility boundaries.
+The released baseline through ticket 13 is complete. The owner approved the concrete Klaviyo-inspired proposal on 2026-11-02; [ticket 14](issues/14-inline-editor-experience.md) delivered direct canvas editing. [Ticket 15](issues/15-editor-toolbar-dialog-stability.md) corrects the toolbar flicker and dialog positioning reported on 2026-11-03. [The inline design reference](../../docs/editor-inline-design.md) records both interactions. Existing pages, private media, autosave, recovery, conflicts and history remain required compatibility boundaries.
 
 Use sample content in the prototype; the homepage uses a plant image placeholder. The project has a FigCraft design, documentation, tickets and a working disposable Puck experiment on the prototype branch. Ticket 00 is owner accepted; its local-storage and sample-data limitations do not establish production persistence or security. Ticket 01 includes desktop/mobile saving, failure, conflict, password-reset and not-found designs. The owner approved the design and core editor flow on 2026-10-28, based on commit `e11a9c0`; ticket 01 is resolved and ticket 02 is unblocked. See `docs/design-spec-review.md` for review routes, validation evidence and later-ticket design follow-through.
