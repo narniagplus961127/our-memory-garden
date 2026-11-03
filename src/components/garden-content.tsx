@@ -31,7 +31,10 @@ export async function GardenContent({ data }: { data: PageData }) {
     <Render
       config={gardenConfig}
       data={
-        { ...data, content: await resolve(inlinePageData(data).content) } as Data<GardenBlocks>
+        {
+          ...data,
+          content: await resolve(inlinePageData(data).content),
+        } as Data<GardenBlocks>
       }
     />
   );

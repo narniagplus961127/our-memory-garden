@@ -1,5 +1,6 @@
 import type { GardenPage, PageData } from "./pages";
-import { slotNames, slotContent, type PageBlock } from "./blocks";
+import { slotNames, slotContent, columnSlots, type PageBlock } from "./blocks";
+import { inlinePageData, richPageData } from "./rich-text";
 export type PageSnapshot = Pick<GardenPage, "title" | "content" | "visibility">;
 export type PageConflict = {
   key: string;
@@ -54,6 +55,8 @@ function flatten(data: PageData): Tree {
       originals.set(block.props.id, block);
       parents.set(block.props.id, zone);
       const props = { ...block.props };
+      if (block.type === "Columns")
+        for (const slot of columnSlots) delete props[slot];
       for (const slot of slotNames(block.type, block.props.count)) {
         delete props[slot];
         walk(slotContent(block, slot), block.props.id + ":" + slot);
@@ -80,8 +83,26 @@ export function mergePage(
     s: T,
     blockId?: string,
   ): T {
-    if (equal(l, b)) return s;
-    if (equal(s, b) || equal(l, s)) return l;
+    const equivalent = (a: T, other: T) => {
+      if (kind !== "block" || !a || !other) return equal(a, other);
+      const canonical = (value: T) => {
+        const block = richPageData(
+          inlinePageData({
+            root: { props: {} },
+            content: [value as PageBlock],
+          }),
+        ).content[0];
+        if (block.type === "Text") {
+          delete block.props.linkText;
+          delete block.props.destination;
+          delete block.props.style;
+        }
+        return block;
+      };
+      return equal(canonical(a), canonical(other));
+    };
+    if (equivalent(l, b)) return s;
+    if (equivalent(s, b) || equivalent(l, s)) return l;
     if (!choices[key])
       conflicts.push({ key, kind, label, blockId, local: l, saved: s });
     return choices[key] === "saved" ? s : l;
@@ -169,6 +190,29 @@ export function mergePage(
     const source = choices[key] === "saved" ? s : l;
     const zones =
       scope ?? new Set(trees.flatMap((tree) => [...tree.lists.keys()]));
+    // Column topology belongs to the layout choice, together with every cell.
+    // Restoring a third/fourth cell with a locally reduced count would hide its children.
+    for (const [id, node] of nodes) {
+      if (node.type !== "Columns") continue;
+      const localCount = l.nodes.get(id)?.props.count ?? 2,
+        savedCount = s.nodes.get(id)?.props.count ?? 2;
+      if (
+        localCount === savedCount ||
+        !columnSlots.some((slot) => zones.has(id + ":" + slot))
+      )
+        continue;
+      for (const slot of columnSlots) zones.add(id + ":" + slot);
+      const chosen = source.nodes.get(id);
+      if (chosen)
+        nodes.set(id, {
+          ...node,
+          props: {
+            ...node.props,
+            count: chosen.props.count ?? 2,
+            ratio: chosen.props.ratio ?? "equal",
+          },
+        });
+    }
     for (const zone of zones) lists.set(zone, source.lists.get(zone) ?? []);
     for (let i = conflicts.length - 1; i >= 0; i--) {
       const c = conflicts[i];
@@ -204,6 +248,10 @@ export function mergePage(
         props = { ...node.props };
       for (const slot of slotNames(node.type, node.props.count))
         props[slot] = build(id + ":" + slot, seen);
+      if (node.type === "Columns" && node.props.count !== undefined)
+        for (const slot of columnSlots)
+          if (!slotNames(node.type, node.props.count).includes(slot))
+            props[slot] = [];
       return { type: node.type, props };
     });
   }

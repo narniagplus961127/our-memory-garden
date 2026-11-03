@@ -61,6 +61,16 @@ test("explicit rich text and custom colours round-trip, while legacy markup stay
           style: "p",
         },
       },
+      {
+        type: "Text",
+        props: {
+          id: "small-link",
+          text: "A little path",
+          style: "small",
+          linkText: "path",
+          destination: { kind: "external", url: "https://example.com/garden" },
+        },
+      },
     ],
   };
   const update = (data) =>
@@ -77,6 +87,10 @@ test("explicit rich text and custom colours round-trip, while legacy markup stay
   const html = await (await fetch(base + "/p/" + page.id)).text();
   assert.match(html, /<strong>bold<\/strong>/);
   assert.match(html, /&lt;img src=x onerror=alert\(1\)&gt;/);
+  assert.match(
+    html,
+    /<small>A little <\/small><a href="https:\/\/example.com\/garden"><small>path<\/small><\/a>/,
+  );
   for (const bad of [
     "<img src=x onerror=alert(1)>",
     '<p onclick="alert(1)">Memory</p>',

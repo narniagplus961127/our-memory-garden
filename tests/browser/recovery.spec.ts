@@ -935,6 +935,8 @@ test("other device recovery waits until current unsaved and in-flight work is sa
   ).json();
   acknowledged.content.content[0].props.text =
     "Remote lily after acknowledgement";
+  // This request represents a legacy plain-text client rather than an inline edit.
+  delete acknowledged.content.content[0].props.textRich;
   expect(
     (
       await current.request.patch("/api/pages/" + created.id, {

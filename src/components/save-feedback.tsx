@@ -3,7 +3,30 @@ import { useState } from "react";
 import type { usePageAutosave } from "./use-page-autosave";
 import type { PageBlock } from "@/lib/blocks";
 import { slotNames, slotContent } from "@/lib/blocks";
+import { inlinePageData, richLinks, validRichText } from "@/lib/rich-text";
 type Save = ReturnType<typeof usePageAutosave>;
+function FormattedComparison({
+  label,
+  block,
+}: {
+  label: string;
+  block: PageBlock;
+}) {
+  const html = inlinePageData({ root: { props: {} }, content: [block] })
+    .content[0].props.textRich;
+  if (!validRichText(html)) return null;
+  const links = richLinks(html);
+  return (
+    <div aria-label={label} className="conflict-formatted">
+      <strong>{label}</strong>
+      <div
+        onClick={(event) => event.preventDefault()}
+        dangerouslySetInnerHTML={{ __html: html }}
+      />
+      {links.length > 0 && <p>Links: {links.join(", ")}</p>}
+    </div>
+  );
+}
 function arrangement(blocks: PageBlock[], depth = 0): string {
   return blocks
     .map(
@@ -119,6 +142,20 @@ export function SaveFeedback({ save }: { save: Save }) {
                     />
                   </label>
                 </div>
+                {text &&
+                  (conflict.local as PageBlock).props.textRich !==
+                    (conflict.saved as PageBlock).props.textRich && (
+                    <div className="conflict-comparison">
+                      <FormattedComparison
+                        label="Your formatting and links"
+                        block={conflict.local as PageBlock}
+                      />
+                      <FormattedComparison
+                        label="Saved formatting and links"
+                        block={conflict.saved as PageBlock}
+                      />
+                    </div>
+                  )}
                 {manual[conflict.key] !== undefined && (
                   <label>
                     Combined text

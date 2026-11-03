@@ -98,6 +98,7 @@
   border-right: 1px solid var(--line);
   background: var(--cream);
   overflow: auto;
+  scroll-padding-top: 90px;
 }
 .editor-inline .panel-heading {
   position: sticky;
@@ -524,6 +525,7 @@
     display: flex;
     flex-direction: column;
     min-height: 0;
+    position: relative;
   }
   .editor-rail {
     flex-direction: row;
@@ -548,13 +550,13 @@
     font-size: 13px;
   }
   .editor-inline .garden-editor-panel {
-    position: fixed;
+    position: absolute;
     bottom: 0;
     left: 0;
     right: 0;
     width: 100%;
     height: 52dvh;
-    max-height: calc(100dvh - 198px);
+    max-height: calc(100% - 58px);
     border: 1px solid var(--line);
     border-radius: 14px 14px 0 0;
     z-index: 20;

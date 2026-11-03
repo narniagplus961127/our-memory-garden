@@ -261,3 +261,134 @@ test("custom colours, preserved column contents and page settings work with touc
   await page.getByRole("link", { name: "Dashboard", exact: true }).click();
   await expect(page).toHaveURL(/\/admin$/);
 });
+
+test("choosing the saved column layout retains children added in a removed column", async ({
+  page,
+}) => {
+  const text = (id: string, value: string) => ({
+    type: "Text",
+    props: { id, text: value, style: "p" },
+  });
+  const garden = await fixture(page, {
+    root: { props: {} },
+    content: [
+      {
+        type: "Columns",
+        props: {
+          id: "columns",
+          count: 4,
+          ratio: "equal",
+          left: [text("first", "First path")],
+          right: [],
+          third: [text("third", "Third path")],
+          fourth: [],
+        },
+      },
+    ],
+  });
+  const origin = env.NEXT_PUBLIC_APP_URL;
+  const latest = await (
+    await page.request.get("/api/pages/" + garden.id)
+  ).json();
+  latest.content.content[0].props.third.push(
+    text("new", "Another gardener's memory"),
+  );
+  expect(
+    (
+      await page.request.patch("/api/pages/" + garden.id, {
+        headers: { Origin: origin },
+        data: { version: latest.version, content: latest.content },
+      })
+    ).ok(),
+  ).toBeTruthy();
+  await selectBlock(page, "Select Columns 1");
+  await page
+    .getByRole("button", { name: "Open settings panel", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "Change column layout", exact: true })
+    .click();
+  await page.getByRole("button", { name: "1 column", exact: true }).click();
+  await page.getByRole("button", { name: "Apply layout", exact: true }).click();
+  const comparison = page.getByRole("region", {
+    name: "Resolve editing conflicts",
+  });
+  await expect(comparison).toBeVisible();
+  await comparison
+    .getByRole("button", { name: "Use saved layout", exact: true })
+    .click();
+  await expect(
+    page.getByRole("status", { name: "Auto-save status" }),
+  ).toHaveText("Saved");
+  const saved = await (
+    await page.request.get("/api/pages/" + garden.id)
+  ).json();
+  expect(saved.content.content[0].props.count).toBe(4);
+  expect(
+    saved.content.content[0].props.third.map(
+      (block: { props: { text: string } }) => block.props.text,
+    ),
+  ).toEqual(["Third path", "Another gardener's memory"]);
+});
+
+test("formatting-only conflicts show both formatted versions before a choice", async ({
+  page,
+}) => {
+  const garden = await fixture(page, {
+    root: { props: {} },
+    content: [
+      {
+        type: "Text",
+        props: {
+          id: "format",
+          text: "Our memory",
+          style: "p",
+          textRich: "<p>Our memory</p>",
+        },
+      },
+    ],
+  });
+  const latest = await (
+    await page.request.get("/api/pages/" + garden.id)
+  ).json();
+  latest.content.content[0].props.textRich =
+    "<p><strong>Our memory</strong></p>";
+  expect(
+    (
+      await page.request.patch("/api/pages/" + garden.id, {
+        headers: { Origin: env.NEXT_PUBLIC_APP_URL },
+        data: { version: latest.version, content: latest.content },
+      })
+    ).ok(),
+  ).toBeTruthy();
+  const field = page
+    .frameLocator("iframe")
+    .getByRole("textbox", { name: "Text content", exact: true });
+  await field.click();
+  await field.evaluate((element) => {
+    const range = element.ownerDocument.createRange();
+    range.selectNodeContents(element);
+    const selection = element.ownerDocument.getSelection()!;
+    selection.removeAllRanges();
+    selection.addRange(range);
+  });
+  await page.getByRole("button", { name: "Italic", exact: true }).click();
+  const comparison = page.getByRole("region", {
+    name: "Resolve editing conflicts",
+  });
+  await expect(comparison).toBeVisible();
+  await expect(
+    comparison.locator('[aria-label="Your formatting and links"] em'),
+  ).toHaveText("Our memory");
+  await expect(
+    comparison
+      .locator('[aria-label="Saved formatting and links"] strong')
+      .last(),
+  ).toHaveText("Our memory");
+  await comparison
+    .getByRole("button", { name: "Use saved version", exact: true })
+    .click();
+  await expect(
+    page.getByRole("status", { name: "Auto-save status" }),
+  ).toHaveText("Saved");
+});

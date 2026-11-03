@@ -1,6 +1,6 @@
 # Inline editor refinement
 
-Status: approved on 2026-11-02; implementation under verification. Ticket: [14](../.scratch/our-memory-garden/issues/14-inline-editor-experience.md).
+Status: approved on 2026-11-02; implemented, final verification in progress. Ticket: [14](../.scratch/our-memory-garden/issues/14-inline-editor-experience.md).
 
 The owner requested a Klaviyo-like editor that allows writing directly in the widget. This refinement changes the main editing interaction; the existing released application and its completed tickets remain the baseline. The native FigCraft proposal and disposable HTML interaction prototype are review artifacts, not a claim of production implementation.
 
@@ -62,3 +62,15 @@ Fifteen new editor states sit in an aligned second row below the existing editor
 The CLI authoring pass adds 180 navigation interactions (including a drag transition) and two named prototype flows. Font validation reports no missing families. The preservation audit retains all 2,669 approved nodes, modifying only General styles' appended children and the two admin pages' appended children/flows. The complete native file has 3,612 nodes and 651 navigation actions, all targeting valid frames. The native states illustrate selection, toolbars and sheets; typing, colour input, nested drag movement and column preservation are demonstrated in the separate HTML prototype. The owner approved these states and the interaction prototype at commit `57406c8` on 2026-11-02. They replace the previous editor interaction as the implementation reference.
 
 Review evidence and CLI audit are retained under the task's `editor-inline/` artifact directory. Real Chrome checks confirmed palette insertion, cross-column movement, self-drop rejection, custom/invalid hex values, metadata controls and mobile navigation with no page-wide horizontal overflow. This is interaction-design evidence; the backend and released Puck editor are unaffected.
+
+## Implemented integration
+
+The application now uses Puck 0.24's native inline rich-text fields and dedicated drag handles. Writing and formatting operate on the canvas; shared appearance fields remain in Styles. Native drag destinations support nested sections and one to four columns. Add buttons, sibling movement and explicit destination/position controls provide keyboard and touch alternatives.
+
+An explicit allowlisted HTML field accompanies each edited plain-text field. Legacy strings stay literal, and simply opening a legacy page does not save a conversion. The public renderer uses the same block configuration. The server validates formatting, colour, spacing, safe destinations and active column contents before accepting a save. Inline links use stable page IDs. Removing an inline link removes its obsolete legacy reference too.
+
+Page settings preserves the existing address/details recovery hooks. The header exposes title, visibility/save status and Pages, Dashboard and History. Mobile sheets sit below their panel controls, reset their scroll position when switching panels and restore the editing selection on dismissal. The canvas expands to fit its content and uses one outer scroll area.
+
+Conflict comparison treats equivalent legacy/inline text equally, displays formatting and link changes, and couples a changed column count with all its slot lists. A saved-layout choice cannot hide another editor's third/fourth-column additions. Sign-out notification follows successful server revocation, preventing other tabs from returning to the dashboard during logout. A photo-library response cannot replace a photo uploaded while that response was in flight.
+
+Desktop/mobile screenshots use synthetic local fixture content. Composition events and caret retention are browser-tested; actual operating-system IME keyboards and OS colour-picker appearance remain device-dependent. Mobile pointer dragging is supplemented by the verified tap and move controls.

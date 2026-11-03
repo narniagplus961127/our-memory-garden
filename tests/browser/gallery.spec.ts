@@ -172,9 +172,9 @@ test("compose an ordered captioned gallery and use the enlarged viewer with touc
     expect(bounds?.width).toBeGreaterThanOrEqual(44);
   }
   const image = dialog.getByRole("img");
-  expect(await image.evaluate((el: HTMLImageElement) => el.naturalWidth)).toBe(
-    640,
-  );
+  await expect
+    .poll(() => image.evaluate((el: HTMLImageElement) => el.naturalWidth))
+    .toBe(640);
   expect(
     await dialog.evaluate((el) => el.scrollWidth <= el.clientWidth),
   ).toBeTruthy();

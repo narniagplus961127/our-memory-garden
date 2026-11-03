@@ -12,7 +12,7 @@ Improve the Puck editor using the owner-supplied Klaviyo screenshots and live ed
 
 Prepare and review the updated FigCraft desktop/mobile states and disposable interaction prototype before production implementation, following the owner's design-first instruction. The existing released editor remains the accepted baseline until this proposal is approved. This ticket is not complete when the prototype is complete.
 
-## Proposed acceptance criteria
+## Acceptance criteria
 
 - [ ] Click text on the canvas to select it and enter inline editing without opening Settings. Support Text, banner heading/description, button labels and image captions. An image/placeholder offers an adjacent Choose/Replace action.
 - [ ] Show a contextual text toolbar for H1–H4, paragraph and small; bold, italic, underline, alignment and safe links. Keep the shared typography and palette. Keep appearance controls separate from writing.
@@ -31,10 +31,14 @@ Prepare and review the updated FigCraft desktop/mobile states and disposable int
 ## Reference and research
 
 - Owner reference: https://www.klaviyo.com/email-template-editor/Sa5Cu7, inspected in the owner's Chrome session on 2026-11-02. Text editing exposes an editable canvas field and formatting toolbar; the sidebar retains padding/background/border controls. Image selection reveals replacement, dimensions and fit controls. The content palette separates Blocks and Layout. The supplied column modal shows count/proportion choices.
-- Puck 0.23.0 is already pinned. Its native rich-text field supports inline editing; prefer that integration over a second independent editor. [Official inline-editing guide](https://puckeditor.com/docs/integrating-puck/rich-text-editing).
+- The released baseline used Puck 0.23.0; this implementation pins 0.24.0 for native dedicated drag handles and inline rich-text fields. [Official inline-editing guide](https://puckeditor.com/docs/integrating-puck/rich-text-editing), [0.24 upgrade guide](https://puckeditor.com/blog/upgrading-to-puck-024).
 - Native proposal and prototype routes are recorded in `docs/editor-inline-design.md` after generation. Prototype source stays on `prototype/editor-inline-experience`; it uses in-memory sample content and no garden account or backend.
 
 ## Comments
+
+2026-11-03: Resumed implementation after usage interruption. Native inline writing/formatting, canvas photo selection, nested dragging, touch/keyboard movement, column chooser, custom colours, compact palette, shared selects, metadata and return navigation are implemented. The full desktop/mobile browser suite is running. TypeScript and formatting checks pass. All 64 API cases have been exercised: the complete run passed 62, then all 12 export cases passed in isolation after overlapping diagnostic exports were stopped and missing local fixture files were restored. The two failures in the complete run were fixture interference rather than editor failures. No production data was used or changed.
+
+2026-11-03: Separate Standards and Spec reviews are recorded in `docs/editor-inline-review.md`. All four Spec findings were fixed and re-reviewed; no material concern remains. Browser regressions reproduce and verify saved column-layout preservation, equivalent legacy/rich conflict convergence, formatting comparisons, linked small typography, cross-tab logout and mobile panel access during recovery. The prototype remains on its separate branch.
 
 2026-11-02: The owner approved the concrete FigCraft/interaction proposal at `57406c8` and explicitly requested implementation. The design gate is satisfied. Implement on `codex/ticket-14-inline-editor`, preserving the disposable HTML on `prototype/editor-inline-experience`. Existing browser journeys and authenticated API boundaries are the previously agreed test seams.
 

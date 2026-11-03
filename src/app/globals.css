@@ -159,8 +159,13 @@ select {
   background-repeat: no-repeat;
   background-position: right 14px center;
 }
-select:hover { border-color: var(--muted); }
-select:disabled { opacity: .6; cursor: not-allowed; }
+select:hover {
+  border-color: var(--muted);
+}
+select:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
 textarea {
   resize: vertical;
 }
@@ -600,7 +605,9 @@ button.primary {
   max-width: 65ch;
 }
 .garden-banner > .garden-rich-text + .garden-rich-text,
-.garden-banner [role="group"] > .garden-rich-text + .garden-rich-text { margin-top:24px; }
+.garden-banner [role="group"] > .garden-rich-text + .garden-rich-text {
+  margin-top: 24px;
+}
 .garden-banner[style*="center"] h1,
 .garden-banner[style*="center"] p {
   margin-left: auto;
@@ -638,14 +645,36 @@ button.primary {
 .garden-columns-wide-right {
   grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
 }
-.garden-columns-count-1 { grid-template-columns:minmax(0,1fr); }
-.garden-columns-count-3 { grid-template-columns:repeat(3,minmax(0,1fr)); }
-.garden-columns-count-4 { grid-template-columns:repeat(4,minmax(0,1fr)); }
-.garden-columns-quarter-left { grid-template-columns:minmax(0,1fr) minmax(0,3fr); }
-.garden-columns-quarter-right { grid-template-columns:minmax(0,3fr) minmax(0,1fr); }
-.garden-rich-text p:last-child, .garden-rich-text h1:last-child, .garden-rich-text h2:last-child, .garden-rich-text h3:last-child, .garden-rich-text h4:last-child { margin-bottom:0; }
-@media(max-width:760px) {
-  .garden-columns-count-1, .garden-columns-count-3, .garden-columns-count-4, .garden-columns-quarter-left, .garden-columns-quarter-right { grid-template-columns:minmax(0,1fr); }
+.garden-columns-count-1 {
+  grid-template-columns: minmax(0, 1fr);
+}
+.garden-columns-count-3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.garden-columns-count-4 {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+.garden-columns-quarter-left {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 3fr);
+}
+.garden-columns-quarter-right {
+  grid-template-columns: minmax(0, 3fr) minmax(0, 1fr);
+}
+.garden-rich-text p:last-child,
+.garden-rich-text h1:last-child,
+.garden-rich-text h2:last-child,
+.garden-rich-text h3:last-child,
+.garden-rich-text h4:last-child {
+  margin-bottom: 0;
+}
+@media (max-width: 760px) {
+  .garden-columns-count-1,
+  .garden-columns-count-3,
+  .garden-columns-count-4,
+  .garden-columns-quarter-left,
+  .garden-columns-quarter-right {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 .garden-columns > div {
   min-width: 0;

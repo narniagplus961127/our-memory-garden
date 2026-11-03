@@ -127,6 +127,7 @@ export function inlinePageData(data: PageData): PageData {
               "<" +
               tag +
               ">" +
+              (style === "small" ? "<small>" : "") +
               escapeHtml(text.slice(0, index)) +
               '<a href="' +
               escapeHtml(href) +
@@ -134,6 +135,7 @@ export function inlinePageData(data: PageData): PageData {
               escapeHtml(link) +
               "</a>" +
               escapeHtml(text.slice(index + link.length)) +
+              (style === "small" ? "</small>" : "") +
               "</" +
               tag +
               ">";
@@ -200,15 +202,20 @@ export function editedPageData(data: PageData, previous: PageData): PageData {
   }
   return { root: { props: {} }, content: walk(richPageData(data).content) };
 }
-export function richPageReferences(value: string): string[] {
-  const ids: string[] = [];
+export function richLinks(value: string): string[] {
+  const links: string[] = [];
   function walk(node: Node) {
     if ("tagName" in node && node.tagName === "a") {
       const href = node.attrs.find((a) => a.name === "href")?.value;
-      if (href?.startsWith("/p/")) ids.push(href.slice(3));
+      if (href && isRichLink(href)) links.push(href);
     }
     if ("childNodes" in node) node.childNodes.forEach(walk);
   }
   parseFragment(value).childNodes.forEach(walk);
-  return ids;
+  return links;
+}
+export function richPageReferences(value: string): string[] {
+  return richLinks(value)
+    .filter((href) => href.startsWith("/p/"))
+    .map((href) => href.slice(3));
 }

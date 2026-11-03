@@ -262,7 +262,14 @@ export function MediaLibrary({
       .then(async (response) => {
         const data = await response.json();
         if (!response.ok) throw new Error(data.error);
-        setPhotos(data);
+        // An upload can finish before this initial library request returns.
+        // Keep those newly available photos rather than replace them with an older snapshot.
+        setPhotos((current) => [
+          ...current.filter(
+            (photo) => !data.some((loaded: Photo) => loaded.id === photo.id),
+          ),
+          ...data,
+        ]);
       })
       .catch((error) => {
         if (error.name !== "AbortError") setError(error.message);

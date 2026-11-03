@@ -120,9 +120,9 @@ test("upload with per-file feedback, inspect protected details and reuse a photo
     .frameLocator("iframe")
     .getByRole("img", { name: "Rosemary in the sun", exact: true });
   await expect(image).toBeVisible();
-  expect(await image.evaluate((el: HTMLImageElement) => el.naturalWidth)).toBe(
-    640,
-  );
+  await expect
+    .poll(() => image.evaluate((el: HTMLImageElement) => el.naturalWidth))
+    .toBe(640);
   await page.reload();
   await expect(
     page
@@ -139,11 +139,13 @@ test("upload with per-file feedback, inspect protected details and reuse a photo
   await expect(
     publicPage.getByRole("img", { name: "Rosemary in the sun", exact: true }),
   ).toBeVisible();
-  expect(
-    await publicPage
-      .getByRole("img", { name: "Rosemary in the sun", exact: true })
-      .evaluate((el: HTMLImageElement) => el.naturalWidth),
-  ).toBe(640);
+  await expect
+    .poll(() =>
+      publicPage
+        .getByRole("img", { name: "Rosemary in the sun", exact: true })
+        .evaluate((el: HTMLImageElement) => el.naturalWidth),
+    )
+    .toBe(640);
   await visitor.close();
   await page.goto("/admin/media");
   await page

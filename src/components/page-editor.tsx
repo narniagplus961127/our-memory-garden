@@ -188,6 +188,7 @@ function Workspace({
     [moveTarget, setMoveTarget] = useState("root:default-zone"),
     [moveIndex, setMoveIndex] = useState(0);
   const lastSelected = useRef<string | null>(null),
+    panelRef = useRef<HTMLElement>(null),
     canvasFocus = useRef<{ element: HTMLElement; range: Range | null } | null>(
       null,
     );
@@ -206,6 +207,9 @@ function Workspace({
     selected = useGardenPuck((state) => state.selectedItem),
     getPuck = useGetPuck();
   const { targets, items } = documentOutline(data.content as PageBlock[]);
+  useEffect(() => {
+    if (panelRef.current) panelRef.current.scrollTop = 0;
+  }, [panel]);
   useEffect(() => {
     const pending = pendingLayout.current;
     if (!pending) return;
@@ -524,6 +528,7 @@ function Workspace({
           ))}
         </nav>
         <aside
+          ref={panelRef}
           className="garden-editor-panel"
           aria-label={
             panel === "page"
