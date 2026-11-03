@@ -1,6 +1,5 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import { createPortal } from "react-dom";
 import type { Editor } from "@tiptap/core";
 import { DestinationPicker } from "./destination-picker";
 import { destinationHref, type Destination } from "@/lib/destinations";
@@ -12,34 +11,43 @@ export function InlineFormatMenu({
   editor: Editor | null;
   allowLinks?: boolean;
 }) {
-  const [target, setTarget] = useState<HTMLElement | null>(null),
-    [link, setLink] = useState(false),
+  const [link, setLink] = useState(false),
     [destination, setDestination] = useState<Destination>({
       kind: "external",
       url: "https://",
     });
   const dialog = useRef<HTMLDialogElement>(null);
   const selection = useRef<{ from: number; to: number } | null>(null);
-  useEffect(
-    () => setTarget(document.getElementById("garden-inline-format")),
-    [],
-  );
+  const [, refresh] = useState(0);
+  useEffect(() => {
+    if (!editor) return;
+    const update = () => refresh((value) => value + 1);
+    editor.on("transaction", update);
+    return () => {
+      editor.off("transaction", update);
+    };
+  }, [editor]);
+  useEffect(() => {
+    setLink(false);
+    selection.current = null;
+  }, [editor]);
   useEffect(() => {
     if (link) dialog.current?.showModal();
   }, [link]);
-  if (!editor || !target) return null;
+  const disabled = !editor || editor.isDestroyed;
   const command = () => {
+    if (!editor || editor.isDestroyed) return null;
     const range = selection.current;
     selection.current = null;
     return range
       ? editor.chain().focus().setTextSelection(range)
       : editor.chain().focus();
   };
-  const small = editor.isActive("gardenSmall"),
+  const small = editor?.isActive("gardenSmall"),
     style = small
       ? "small"
-      : [1, 2, 3, 4].find((n) => editor.isActive("heading", { level: n }));
-  return createPortal(
+      : [1, 2, 3, 4].find((n) => editor?.isActive("heading", { level: n }));
+  return (
     <div
       className="inline-format-bar"
       aria-label="Inline text formatting"
@@ -47,6 +55,7 @@ export function InlineFormatMenu({
       onPointerDown={(event) => {
         event.stopPropagation();
         if ((event.target as HTMLElement).closest("dialog")) return;
+        if (!editor || editor.isDestroyed) return;
         selection.current = {
           from: editor.state.selection.from,
           to: editor.state.selection.to,
@@ -60,10 +69,12 @@ export function InlineFormatMenu({
       }}
     >
       <select
+        disabled={disabled}
         aria-label="Text style"
         value={small ? "small" : style ? "h" + style : "p"}
         onChange={(e) => {
-          const chain = command().unsetMark("gardenSmall");
+          const chain = command()?.unsetMark("gardenSmall");
+          if (!chain) return;
           if (e.target.value === "small")
             chain.setParagraph().setMark("gardenSmall").run();
           else if (e.target.value === "p") chain.setParagraph().run();
@@ -89,33 +100,37 @@ export function InlineFormatMenu({
         ["Underline", "underline", "U"],
       ].map(([label, mark, icon]) => (
         <button
+          disabled={disabled}
           key={mark}
           type="button"
           aria-label={label}
-          aria-pressed={editor.isActive(mark)}
-          onClick={() => command().toggleMark(mark).run()}
+          aria-pressed={editor?.isActive(mark) ?? false}
+          onClick={() => command()?.toggleMark(mark).run()}
         >
           {icon}
         </button>
       ))}
       <button
+        disabled={disabled}
         type="button"
         aria-label="Align left"
-        aria-pressed={editor.isActive({ textAlign: "left" })}
-        onClick={() => command().setTextAlign("left").run()}
+        aria-pressed={editor?.isActive({ textAlign: "left" }) ?? false}
+        onClick={() => command()?.setTextAlign("left").run()}
       >
         ≡
       </button>
       <button
+        disabled={disabled}
         type="button"
         aria-label="Align centre"
-        aria-pressed={editor.isActive({ textAlign: "center" })}
-        onClick={() => command().setTextAlign("center").run()}
+        aria-pressed={editor?.isActive({ textAlign: "center" }) ?? false}
+        onClick={() => command()?.setTextAlign("center").run()}
       >
         ☰
       </button>
       {allowLinks && (
         <button
+          disabled={disabled}
           type="button"
           aria-label="Add a link"
           onClick={() => setLink(true)}
@@ -123,12 +138,16 @@ export function InlineFormatMenu({
           Link
         </button>
       )}
-      {allowLinks && editor.isActive("link") && (
-        <button type="button" onClick={() => command().unsetLink().run()}>
+      {allowLinks && editor?.isActive("link") && (
+        <button
+          type="button"
+          disabled={disabled}
+          onClick={() => command()?.unsetLink().run()}
+        >
           Remove link
         </button>
       )}
-      {link && (
+      {link && !disabled && (
         <dialog
           ref={dialog}
           className="inline-link-dialog"
@@ -158,7 +177,7 @@ export function InlineFormatMenu({
                 const href = destinationHref(destination);
                 if (href)
                   command()
-                    .extendMarkRange("link")
+                    ?.extendMarkRange("link")
                     .setLink({ href, target: null, rel: null })
                     .run();
                 dialog.current?.close();
@@ -169,7 +188,6 @@ export function InlineFormatMenu({
           </div>
         </dialog>
       )}
-    </div>,
-    target,
+    </div>
   );
 }

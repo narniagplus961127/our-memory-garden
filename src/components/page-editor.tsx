@@ -13,6 +13,8 @@ import {
 import "@puckeditor/core/puck.css";
 import "./editor.css";
 import { EditorFrame } from "./editor-frame";
+import { InlineEditingProvider, useActiveInlineText } from "./inline-editing";
+import { InlineFormatMenu } from "./inline-format-menu";
 import { ColumnLayoutPicker, type ColumnRatio } from "./column-layout-picker";
 import { gardenConfig } from "./garden-blocks";
 import { PageAddress } from "./page-address";
@@ -207,6 +209,7 @@ function Workspace({
     selected = useGardenPuck((state) => state.selectedItem),
     getPuck = useGetPuck();
   const { targets, items } = documentOutline(data.content as PageBlock[]);
+  const activeText = useActiveInlineText();
   useEffect(() => {
     if (panelRef.current) panelRef.current.scrollTop = 0;
   }, [panel]);
@@ -813,7 +816,18 @@ function Workspace({
             </div>
             <small>Fit to workspace · live canvas</small>
           </div>
-          <div id="garden-inline-format" />
+          <div id="garden-inline-format">
+            <InlineFormatMenu
+              editor={
+                activeText &&
+                activeText.blockId === selected?.props.id &&
+                !activeText.editor.isDestroyed
+                  ? activeText.editor
+                  : null
+              }
+              allowLinks={activeText?.allowLinks ?? true}
+            />
+          </div>
           <div className="garden-canvas-scroll">
             <div
               className={"garden-canvas-frame canvas-" + device}
@@ -859,42 +873,44 @@ export function PageEditor({
   const [ready, setReady] = useState(false);
   useEffect(() => setReady(true), []);
   return (
-    <fieldset
-      className="garden-editor-init"
-      disabled={!ready}
-      aria-busy={!ready}
-      aria-label="Page editor"
-    >
-      <Puck
-        config={gardenConfig}
-        dnd={{ enableDragHandle: true, behavior: "static" }}
-        data={initialData}
-        onChange={(data) =>
-          save.change({
-            content: editedPageData(documentData(data), save.working.content),
-          })
-        }
-        overrides={editorOverrides}
+    <InlineEditingProvider>
+      <fieldset
+        className="garden-editor-init"
+        disabled={!ready}
+        aria-busy={!ready}
+        aria-label="Page editor"
       >
-        <EditorSync content={save.working.content} />
-        <Workspace
-          page={page}
-          accountId={accountId}
-          onDetailsSaved={save.detailsSaved}
-          title={save.working.title}
-          visibility={save.working.visibility}
-          status={ready ? save.status : "Loading editor…"}
-          error={save.error}
-          retry={save.retry}
-          onMetadata={save.change}
-          feedback={
-            <SaveFeedback
-              key={save.comparison?.saved.version ?? "feedback"}
-              save={save}
-            />
+        <Puck
+          config={gardenConfig}
+          dnd={{ enableDragHandle: true, behavior: "static" }}
+          data={initialData}
+          onChange={(data) =>
+            save.change({
+              content: editedPageData(documentData(data), save.working.content),
+            })
           }
-        />
-      </Puck>
-    </fieldset>
+          overrides={editorOverrides}
+        >
+          <EditorSync content={save.working.content} />
+          <Workspace
+            page={page}
+            accountId={accountId}
+            onDetailsSaved={save.detailsSaved}
+            title={save.working.title}
+            visibility={save.working.visibility}
+            status={ready ? save.status : "Loading editor…"}
+            error={save.error}
+            retry={save.retry}
+            onMetadata={save.change}
+            feedback={
+              <SaveFeedback
+                key={save.comparison?.saved.version ?? "feedback"}
+                save={save}
+              />
+            }
+          />
+        </Puck>
+      </fieldset>
+    </InlineEditingProvider>
   );
 }

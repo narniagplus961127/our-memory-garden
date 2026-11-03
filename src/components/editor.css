@@ -100,7 +100,7 @@
   overflow: auto;
   scroll-padding-top: 90px;
 }
-.editor-inline .panel-heading {
+.editor-inline .garden-editor-panel > .panel-heading {
   position: sticky;
   top: 0;
   z-index: 2;
@@ -109,12 +109,12 @@
   background: var(--cream);
   border-bottom: 1px solid var(--line);
 }
-.editor-inline .panel-heading h2 {
+.editor-inline .garden-editor-panel > .panel-heading h2 {
   font:
     600 19px Arial,
     sans-serif;
 }
-.editor-inline .panel-heading button {
+.editor-inline .garden-editor-panel > .panel-heading button {
   font-size: 12px;
   padding: 8px;
   min-width: 44px;
@@ -251,26 +251,33 @@
 .editor-inline .garden-canvas-frame iframe {
   width: 100%;
 }
-#garden-inline-format:empty {
-  display: none;
+#garden-inline-format {
+  height: 64px;
+  flex: 0 0 64px;
 }
 .inline-format-bar {
+  height: 100%;
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 8px 12px;
+  padding: 9px 12px;
   overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
   background: var(--cream);
   border-bottom: 1px solid var(--line);
 }
-.inline-format-bar select {
+.inline-format-bar::-webkit-scrollbar {
+  display: none;
+}
+.inline-format-bar > select {
   flex-shrink: 0;
   width: 150px;
   min-height: 44px;
   padding-top: 8px;
   padding-bottom: 8px;
 }
-.inline-format-bar button {
+.inline-format-bar > button {
   width: auto;
   min-width: 44px;
   min-height: 44px;
@@ -279,7 +286,7 @@
   background: var(--cream);
   color: var(--ink);
 }
-.inline-format-bar button[aria-pressed="true"] {
+.inline-format-bar > button[aria-pressed="true"] {
   background: var(--leaf);
   color: var(--ink);
 }
@@ -342,6 +349,33 @@
   max-height: 85dvh;
   overflow: auto;
   width: min(680px, calc(100vw - 32px));
+  position: fixed;
+  inset: 0;
+  margin: auto;
+  height: fit-content;
+}
+.inline-link-dialog {
+  width: min(520px, calc(100vw - 32px));
+}
+.inline-link-dialog .destination-picker {
+  display: grid;
+  gap: 8px;
+  margin: 24px 0;
+}
+.inline-link-dialog .destination-picker label {
+  margin: 8px 0 0;
+}
+.inline-link-dialog .destination-picker input,
+.inline-link-dialog .destination-picker select {
+  width: 100%;
+  min-width: 0;
+}
+.inline-link-dialog .destination-picker .error {
+  margin: 4px 0 0;
+}
+.inline-link-dialog > .actions {
+  justify-content: flex-end;
+  gap: 12px;
 }
 .canvas-photo-dialog {
   width: min(1100px, calc(100vw - 48px));
