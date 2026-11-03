@@ -1,3 +1,4 @@
+import { setVisibility } from "./editor-controls";
 import { test, expect } from "@playwright/test";
 import { readFile } from "node:fs/promises";
 import sharp from "sharp";
@@ -116,9 +117,7 @@ test("compose an ordered captioned gallery and use the enlarged viewer with touc
       exact: true,
     }),
   ).toBeVisible();
-  await page
-    .getByLabel("Page visibility", { exact: true })
-    .selectOption("public");
+  await setVisibility(page, "public");
   await expect(
     page.getByRole("status", { name: "Auto-save status" }),
   ).toHaveText("Saved");

@@ -14,7 +14,7 @@ function arrangement(blocks: PageBlock[], depth = 0): string {
         String(
           block.props.text ?? block.props.heading ?? block.props.caption ?? "",
         ).slice(0, 500) +
-        slotNames(block.type)
+        slotNames(block.type, block.props.count)
           .map(
             (slot) =>
               "\n" +

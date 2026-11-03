@@ -1,3 +1,4 @@
+import { selectBlock } from "./editor-controls";
 import { test, expect } from "@playwright/test";
 import { readFile } from "node:fs/promises";
 const env = Object.fromEntries(
@@ -54,9 +55,7 @@ test("unfinished and unsafe web addresses recover as unsaved inactive links", as
   });
   expect(setup.status()).toBe(200);
   await page.goto("/admin/pages/" + created.id);
-  await page
-    .getByRole("button", { name: "Select Button 1", exact: true })
-    .click();
+  await selectBlock(page, "Select Button 1");
   await page.getByRole("button", { name: "Open settings panel" }).click();
   const status = page.getByRole("status", { name: "Auto-save status" });
   await expect(status).toHaveText("Saved");
@@ -84,9 +83,7 @@ test("unfinished and unsafe web addresses recover as unsaved inactive links", as
     await expect(
       page.getByText("Recovered work is unsaved until it reaches the garden."),
     ).toBeVisible();
-    await page
-      .getByRole("button", { name: "Select Button 1", exact: true })
-      .click();
+    await selectBlock(page, "Select Button 1");
     await page.getByRole("button", { name: "Open settings panel" }).click();
     await expect(
       page.getByLabel("External web address", { exact: true }),

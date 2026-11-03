@@ -5,10 +5,14 @@ import { slotNames, slotContent, type PageBlock } from "../blocks";
 import { validDestination } from "../destinations";
 import type { PageData } from "../pages";
 import type { GridSelection } from "../organization";
+import { richFields, richPageReferences } from "../rich-text";
 function referenceIds(data: PageData) {
   const ids = new Set<string>();
   function walk(blocks: PageBlock[]) {
     for (const block of blocks) {
+      for (const key of Object.values(richFields[block.type] ?? {}))
+        if (typeof block.props[key] === "string")
+          for (const id of richPageReferences(block.props[key])) ids.add(id);
       const destination = block.props.destination;
       if (block.type === "PageGrid") {
         const selection = block.props.selection as {
@@ -18,9 +22,14 @@ function referenceIds(data: PageData) {
         if (selection.mode === "manual")
           for (const id of selection.pageIds ?? []) ids.add(id);
       }
-      if (validDestination(destination) && destination.kind === "page")
+      if (
+        !(block.type === "Text" && typeof block.props.textRich === "string") &&
+        validDestination(destination) &&
+        destination.kind === "page"
+      )
         ids.add(destination.pageId);
-      for (const slot of slotNames(block.type)) walk(slotContent(block, slot));
+      for (const slot of slotNames(block.type, block.props.count))
+        walk(slotContent(block, slot));
     }
   }
   walk(data.content);
@@ -38,7 +47,7 @@ export async function validatePageReferences(
         if (selection.mode === "category" && selection.categoryId)
           categoryIds.add(selection.categoryId);
       }
-      for (const slot of slotNames(block.type))
+      for (const slot of slotNames(block.type, block.props.count))
         categories(slotContent(block, slot));
     }
   }

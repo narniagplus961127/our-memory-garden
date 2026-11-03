@@ -28,7 +28,9 @@ test("sharing controls autosave, recover offline edits, and disable public disco
     })
   ).json();
   await page.goto("/admin/pages/" + p.id);
-  await page.getByRole("button", { name: "Page details", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Page settings", exact: true })
+    .click();
   await expect(
     page.getByLabel("Sharing title", { exact: true }),
   ).toBeDisabled();
@@ -42,7 +44,9 @@ test("sharing controls autosave, recover offline edits, and disable public disco
     })
   ).json();
   await page.reload();
-  await page.getByRole("button", { name: "Page details", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Page settings", exact: true })
+    .click();
   const sharp = (await import("sharp")).default;
   const bytes = await sharp({
     create: { width: 80, height: 60, channels: 3, background: "#769270" },
@@ -96,7 +100,9 @@ test("sharing controls autosave, recover offline edits, and disable public disco
     page.getByRole("status", { name: "Page details status" }),
   ).toHaveText("Saved");
   await page.reload();
-  await page.getByRole("button", { name: "Page details", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Page settings", exact: true })
+    .click();
   await expect(page.getByLabel("Sharing title", { exact: true })).toHaveValue(
     "Our quiet evening",
   );
@@ -117,7 +123,9 @@ test("sharing controls autosave, recover offline edits, and disable public disco
     page.getByRole("status", { name: "Page details status" }),
   ).toHaveText("Unsaved · Retry");
   await page.reload();
-  await page.getByRole("button", { name: "Page details", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Page settings", exact: true })
+    .click();
   await expect(page.getByLabel("Sharing title", { exact: true })).toHaveValue(
     "An unsaved evening",
   );
@@ -190,7 +198,9 @@ test("older details device copies recover organization without overwriting curre
   ).json();
   // Keep the device copy in the original07 shape before sharing fields existed.
   await page.goto("/admin/pages/" + p.id);
-  await page.getByRole("button", { name: "Page details", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Page settings", exact: true })
+    .click();
   await page.route("**/api/pages/" + p.id + "/details", (r) =>
     r.fulfill({
       status: 503,
@@ -233,7 +243,9 @@ test("older details device copies recover organization without overwriting curre
   });
   expect(saved.status()).toBe(200);
   await page.reload();
-  await page.getByRole("button", { name: "Page details", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Page settings", exact: true })
+    .click();
   await expect(page.getByLabel("Page date", { exact: true })).toHaveValue(
     "2026-10-28",
   );

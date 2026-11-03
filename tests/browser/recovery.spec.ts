@@ -1,3 +1,9 @@
+import {
+  canvasField,
+  writeCanvas,
+  selectBlock,
+  setVisibility,
+} from "./editor-controls";
 import { test, expect, type Page } from "@playwright/test";
 import { readFile } from "node:fs/promises";
 const env = Object.fromEntries(
@@ -33,13 +39,9 @@ async function fixture(page: Page) {
 }
 async function editText(page: Page, value: string) {
   await page.getByRole("button", { name: "Open content panel" }).click();
-  await page
-    .getByRole("button", { name: "Select Text 1", exact: true })
-    .click();
+  await selectBlock(page, "Select Text 1");
   await page.getByRole("button", { name: "Open settings panel" }).click();
-  await page
-    .getByRole("textbox", { name: "Text content", exact: true })
-    .fill(value);
+  await writeCanvas(page, "Text content", value);
 }
 test("unsaved edits recover after reload and clear only after acknowledgement", async ({
   page,
@@ -58,13 +60,11 @@ test("unsaved edits recover after reload and clear only after acknowledgement", 
   await expect(
     page.getByText("Recovered work is unsaved until it reaches the garden."),
   ).toBeVisible();
-  await page
-    .getByRole("button", { name: "Select Text 1", exact: true })
-    .click();
+  await selectBlock(page, "Select Text 1");
   await page.getByRole("button", { name: "Open settings panel" }).click();
-  await expect(
-    page.getByRole("textbox", { name: "Text content", exact: true }),
-  ).toHaveValue("Rosemary after an offline refresh");
+  await expect(canvasField(page, "Text content")).toHaveText(
+    "Rosemary after an offline refresh",
+  );
   await expect(
     page.getByRole("status", { name: "Auto-save status" }),
   ).toHaveText("Not saved");
@@ -79,13 +79,11 @@ test("unsaved edits recover after reload and clear only after acknowledgement", 
     ),
   ).toEqual([]);
   await page.reload();
-  await page
-    .getByRole("button", { name: "Select Text 1", exact: true })
-    .click();
+  await selectBlock(page, "Select Text 1");
   await page.getByRole("button", { name: "Open settings panel" }).click();
-  await expect(
-    page.getByRole("textbox", { name: "Text content", exact: true }),
-  ).toHaveValue("Rosemary after an offline refresh");
+  await expect(canvasField(page, "Text content")).toHaveText(
+    "Rosemary after an offline refresh",
+  );
 });
 
 for (const choice of ["mine", "saved", "manual"] as const)
@@ -127,9 +125,7 @@ for (const choice of ["mine", "saved", "manual"] as const)
       await page
         .getByLabel("Page title", { exact: true })
         .fill("A private new title");
-      await page
-        .getByLabel("Page visibility", { exact: true })
-        .selectOption("private");
+      await setVisibility(page, "private");
       await expect(
         page.getByRole("status", { name: "Auto-save status" }),
       ).toHaveText("Saved");
@@ -261,9 +257,7 @@ test("tabs keep separate drafts and sign-out clears account recovery before late
       await route.fulfill({ response });
     } catch {}
   });
-  await page
-    .getByRole("textbox", { name: "Text content", exact: true })
-    .fill("Private pending late response");
+  await writeCanvas(page, "Text content", "Private pending late response");
   await started;
   const signout = await context.newPage();
   await signout.goto(origin + "/admin/pages");
@@ -333,9 +327,7 @@ for (const choice of ["mine", "saved"] as const)
         },
       });
       expect(remote.status()).toBe(200);
-      await second
-        .getByRole("button", { name: "Select Text 2", exact: true })
-        .click();
+      await selectBlock(second, "Select Text 2");
       await second.getByRole("button", { name: "Open settings panel" }).click();
       await second
         .getByRole("button", { name: "Move block up", exact: true })
@@ -388,9 +380,7 @@ for (const choice of ["mine", "saved"] as const)
         moved.content.content.findIndex(
           (b: { props: { id: string } }) => b.props.id === "b",
         ) + 1;
-      await second
-        .getByRole("button", { name: "Select Text " + index, exact: true })
-        .click();
+      await selectBlock(second, "Select Text " + index);
       await second.getByRole("button", { name: "Open settings panel" }).click();
       await second
         .getByRole("button", { name: "Remove block", exact: true })
@@ -480,9 +470,7 @@ test("typing during a committed in-flight merge keeps the newest local text and 
   });
   await editText(page, "Submitted alpha");
   await started;
-  await page
-    .getByRole("textbox", { name: "Text content", exact: true })
-    .fill("Newest alpha two");
+  await writeCanvas(page, "Text content", "Newest alpha two");
   await expect(
     page.getByRole("status", { name: "Auto-save status" }),
   ).toHaveText("Saving…");
@@ -490,9 +478,9 @@ test("typing during a committed in-flight merge keeps the newest local text and 
   await expect(
     page.getByRole("status", { name: "Auto-save status" }),
   ).toHaveText("Saved");
-  await expect(
-    page.getByRole("textbox", { name: "Text content", exact: true }),
-  ).toHaveValue("Newest alpha two");
+  await expect(canvasField(page, "Text content")).toHaveText(
+    "Newest alpha two",
+  );
   await expect(
     page.frameLocator("iframe").getByText("Remote beta", { exact: true }),
   ).toBeVisible();
@@ -682,9 +670,7 @@ test("continuing to edit a conflict can converge on the saved text", async ({
   await expect(
     page.getByRole("region", { name: "Resolve editing conflicts" }),
   ).toBeVisible();
-  await page
-    .getByRole("textbox", { name: "Text content", exact: true })
-    .fill("Saved lily");
+  await writeCanvas(page, "Text content", "Saved lily");
   await expect(
     page.getByRole("status", { name: "Auto-save status" }),
   ).toHaveText("Saved");
@@ -739,13 +725,9 @@ test("an in-flight reconciliation conflict stays unresolved after refresh", asyn
     await gate;
     await route.fulfill({ response });
   });
-  await page
-    .getByRole("button", { name: "Select Text 2", exact: true })
-    .click();
+  await selectBlock(page, "Select Text 2");
   await page.getByRole("button", { name: "Open settings panel" }).click();
-  await page
-    .getByRole("textbox", { name: "Text content", exact: true })
-    .fill("Submitted B");
+  await writeCanvas(page, "Text content", "Submitted B");
   await started;
   await editText(page, "Local A during the request");
   release();
@@ -804,13 +786,9 @@ test("another administrator cannot recover this account's device draft", async (
   await expect(
     page.getByText("Recovered work is unsaved until it reaches the garden."),
   ).toHaveCount(0);
-  await page
-    .getByRole("button", { name: "Select Text 1", exact: true })
-    .click();
+  await selectBlock(page, "Select Text 1");
   await page.getByRole("button", { name: "Open settings panel" }).click();
-  await expect(
-    page.getByRole("textbox", { name: "Text content", exact: true }),
-  ).toHaveValue("");
+  await expect(canvasField(page, "Text content")).toHaveText("");
 });
 
 test("recovering another tab reads its newest draft and retains later source edits", async ({
@@ -834,9 +812,7 @@ test("recovering another tab reads its newest draft and retains later source edi
     exact: true,
   });
   await expect(recover).toBeVisible();
-  await page
-    .getByRole("textbox", { name: "Text content", exact: true })
-    .fill("Newest source rosemary");
+  await writeCanvas(page, "Text content", "Newest source rosemary");
   await expect(
     page.getByRole("status", { name: "Auto-save status" }),
   ).toHaveText("Not saved");
@@ -850,18 +826,18 @@ test("recovering another tab reads its newest draft and retains later source edi
   try {
     await recover.click();
     await recipient.getByRole("button", { name: "Open content panel" }).click();
-    await recipient
-      .getByRole("button", { name: "Select Text 1", exact: true })
-      .click();
+    await selectBlock(recipient, "Select Text 1");
     await recipient
       .getByRole("button", { name: "Open settings panel" })
       .click();
-    await expect(
-      recipient.getByRole("textbox", { name: "Text content", exact: true }),
-    ).toHaveValue("Newest source rosemary");
-    await page
-      .getByRole("textbox", { name: "Text content", exact: true })
-      .fill("Later unacknowledged source rosemary");
+    await expect(canvasField(recipient, "Text content")).toHaveText(
+      "Newest source rosemary",
+    );
+    await writeCanvas(
+      page,
+      "Text content",
+      "Later unacknowledged source rosemary",
+    );
     await expect(
       page.getByRole("status", { name: "Auto-save status" }),
     ).toHaveText("Not saved");
@@ -879,13 +855,11 @@ test("recovering another tab reads its newest draft and retains later source edi
   await expect(
     page.getByRole("status", { name: "Auto-save status" }),
   ).toHaveText("Not saved");
-  await page
-    .getByRole("button", { name: "Select Text 1", exact: true })
-    .click();
+  await selectBlock(page, "Select Text 1");
   await page.getByRole("button", { name: "Open settings panel" }).click();
-  await expect(
-    page.getByRole("textbox", { name: "Text content", exact: true }),
-  ).toHaveValue("Later unacknowledged source rosemary");
+  await expect(canvasField(page, "Text content")).toHaveText(
+    "Later unacknowledged source rosemary",
+  );
 });
 
 test("other device recovery waits until current unsaved and in-flight work is saved", async ({
@@ -939,13 +913,11 @@ test("other device recovery waits until current unsaved and in-flight work is sa
     current.getByRole("status", { name: "Auto-save status" }),
   ).toHaveText("Not saved");
   await expect(recover).toBeDisabled();
-  await current
-    .getByRole("button", { name: "Select Text 1", exact: true })
-    .click();
+  await selectBlock(current, "Select Text 1");
   await current.getByRole("button", { name: "Open settings panel" }).click();
-  await expect(
-    current.getByRole("textbox", { name: "Text content", exact: true }),
-  ).toHaveValue("Current tab's irreplaceable fern");
+  await expect(canvasField(current, "Text content")).toHaveText(
+    "Current tab's irreplaceable fern",
+  );
   await current.unroute("**/api/pages/*");
   await current
     .getByRole("button", { name: "Retry save", exact: true })
@@ -971,9 +943,7 @@ test("other device recovery waits until current unsaved and in-flight work is sa
       })
     ).status(),
   ).toBe(200);
-  await current
-    .getByRole("textbox", { name: "Text content", exact: true })
-    .fill("Current contested fern");
+  await writeCanvas(current, "Text content", "Current contested fern");
   const comparison = current.getByRole("region", {
     name: "Resolve editing conflicts",
   });
@@ -993,7 +963,9 @@ test("failed and unfinished page addresses survive refresh and retry", async ({
 }) => {
   const created = await fixture(page),
     address = page.getByLabel("Page address", { exact: true });
-  await page.getByRole("button", { name: "Page details", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Page settings", exact: true })
+    .click();
   await page.route("**/api/pages/*/address", (route) =>
     route.abort("internetdisconnected"),
   );
@@ -1003,14 +975,18 @@ test("failed and unfinished page addresses survive refresh and retry", async ({
     "Not saved",
   );
   await page.reload();
-  await page.getByRole("button", { name: "Page details", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Page settings", exact: true })
+    .click();
   await expect(address).toHaveValue(wanted);
   await expect(page.getByRole("status", { name: "Address status" })).toHaveText(
     "Not saved",
   );
   await address.fill("unfinished address-");
   await page.reload();
-  await page.getByRole("button", { name: "Page details", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Page settings", exact: true })
+    .click();
   await expect(address).toHaveValue("unfinished address-");
   await expect(page.getByRole("status", { name: "Address status" })).toHaveText(
     "Not saved",
@@ -1030,7 +1006,9 @@ test("failed and unfinished page addresses survive refresh and retry", async ({
     (await (await page.request.get("/api/pages/" + created.id)).json()).slug,
   ).toBe(wanted);
   await page.reload();
-  await page.getByRole("button", { name: "Page details", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Page settings", exact: true })
+    .click();
   await expect(address).toHaveValue(wanted);
   await expect(page.getByRole("status", { name: "Address status" })).toHaveText(
     "Saved",
@@ -1087,7 +1065,7 @@ for (const choice of ["mine", "saved"] as const)
       const created = await fixture(page),
         path = "/api/pages/" + created.id + "/address";
       await page
-        .getByRole("button", { name: "Page details", exact: true })
+        .getByRole("button", { name: "Page settings", exact: true })
         .click();
       await page.route("**/api/pages/*/address", (route) =>
         route.abort("internetdisconnected"),
@@ -1109,7 +1087,7 @@ for (const choice of ["mine", "saved"] as const)
       await page.unroute("**/api/pages/*/address");
       await page.reload();
       await page
-        .getByRole("button", { name: "Page details", exact: true })
+        .getByRole("button", { name: "Page settings", exact: true })
         .click();
       await expect(
         page.getByRole("status", { name: "Address status" }),
@@ -1164,7 +1142,9 @@ test("address recovery recognizes a lost acknowledgement without another write",
   const created = await fixture(page),
     wanted = "already-saved-rosemary-" + Date.now();
   let writes = 0;
-  await page.getByRole("button", { name: "Page details", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Page settings", exact: true })
+    .click();
   await page.route("**/api/pages/*/address", async (route) => {
     writes++;
     expect((await route.fetch()).status()).toBe(200);
@@ -1175,7 +1155,9 @@ test("address recovery recognizes a lost acknowledgement without another write",
     "Not saved",
   );
   await page.reload();
-  await page.getByRole("button", { name: "Page details", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Page settings", exact: true })
+    .click();
   await expect(page.getByLabel("Page address", { exact: true })).toHaveValue(
     wanted,
   );
@@ -1212,7 +1194,9 @@ test("an older address acknowledgement cannot clear newer unfinished input", asy
     await gate;
     await route.fulfill({ response });
   });
-  await page.getByRole("button", { name: "Page details", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Page settings", exact: true })
+    .click();
   await page.getByLabel("Page address", { exact: true }).fill(first);
   await started;
   await page
@@ -1223,7 +1207,9 @@ test("an older address acknowledgement cannot clear newer unfinished input", asy
     "Not saved",
   );
   await page.reload();
-  await page.getByRole("button", { name: "Page details", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Page settings", exact: true })
+    .click();
   await expect(page.getByLabel("Page address", { exact: true })).toHaveValue(
     "new unfinished address-",
   );
@@ -1239,7 +1225,9 @@ test("closed-tab address copies stay account scoped and clear on sign-out before
 }) => {
   const created = await fixture(page),
     wanted = "closed-tab-address-" + Date.now();
-  await page.getByRole("button", { name: "Page details", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Page settings", exact: true })
+    .click();
   await page.route("**/api/pages/*/address", (route) =>
     route.abort("internetdisconnected"),
   );
@@ -1258,7 +1246,7 @@ test("closed-tab address copies stay account scoped and clear on sign-out before
   await login(other, "OTHER");
   await other.goto(env.NEXT_PUBLIC_APP_URL + "/admin/pages/" + created.id);
   await other
-    .getByRole("button", { name: "Page details", exact: true })
+    .getByRole("button", { name: "Page settings", exact: true })
     .click();
   await expect(other.getByLabel("Page address", { exact: true })).toHaveValue(
     created.slug,
@@ -1274,7 +1262,7 @@ test("closed-tab address copies stay account scoped and clear on sign-out before
   const recipient = await context.newPage();
   await recipient.goto("/admin/pages/" + created.id);
   await recipient
-    .getByRole("button", { name: "Page details", exact: true })
+    .getByRole("button", { name: "Page settings", exact: true })
     .click();
   let release!: () => void, entered!: () => void;
   const gate = new Promise<void>((resolve) => (release = resolve)),

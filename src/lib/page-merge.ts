@@ -54,7 +54,7 @@ function flatten(data: PageData): Tree {
       originals.set(block.props.id, block);
       parents.set(block.props.id, zone);
       const props = { ...block.props };
-      for (const slot of slotNames(block.type)) {
+      for (const slot of slotNames(block.type, block.props.count)) {
         delete props[slot];
         walk(slotContent(block, slot), block.props.id + ":" + slot);
       }
@@ -128,7 +128,7 @@ export function mergePage(
         if (!node || visited.has(nodeId)) return;
         visited.add(nodeId);
         affectedIds.add(nodeId);
-        for (const slot of slotNames(node.type))
+        for (const slot of slotNames(node.type, node.props.count))
           for (const child of tree.lists.get(nodeId + ":" + slot) ?? [])
             walk(child);
       }
@@ -191,7 +191,7 @@ export function mergePage(
       if (parent) contestedZones.add(parent);
       const node = tree.nodes.get(id);
       if (node)
-        for (const slot of slotNames(node.type))
+        for (const slot of slotNames(node.type, node.props.count))
           contestedZones.add(id + ":" + slot);
     }
   if (contestedZones.size) useLayout(contestedZones);
@@ -202,7 +202,7 @@ export function mergePage(
       seen.add(id);
       const node = nodes.get(id)!,
         props = { ...node.props };
-      for (const slot of slotNames(node.type))
+      for (const slot of slotNames(node.type, node.props.count))
         props[slot] = build(id + ":" + slot, seen);
       return { type: node.type, props };
     });

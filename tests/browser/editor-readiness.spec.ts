@@ -1,3 +1,4 @@
+import { canvasField, writeCanvas, selectBlock } from "./editor-controls";
 import { test, expect } from "@playwright/test";
 import { readFile } from "node:fs/promises";
 const env = Object.fromEntries(
@@ -47,10 +48,10 @@ test("editor controls wait for client initialization before accepting edits", as
     await page.goto("/admin/pages/" + created.id, { waitUntil: "commit" });
     await blocked;
     await expect(
-      page.getByRole("button", { name: "Select Text 1", exact: true }),
+      page.getByRole("button", { name: "Open outline panel", exact: true }),
     ).toBeVisible();
     await expect(
-      page.getByRole("button", { name: "Select Text 1", exact: true }),
+      page.getByRole("button", { name: "Open outline panel", exact: true }),
     ).toBeDisabled();
     await expect(
       page.getByRole("button", { name: "Open settings panel" }),
@@ -60,24 +61,22 @@ test("editor controls wait for client initialization before accepting edits", as
     release();
   }
   await expect(
-    page.getByRole("button", { name: "Select Text 1", exact: true }),
+    page.getByRole("button", { name: "Open outline panel", exact: true }),
   ).toBeEnabled();
-  await page
-    .getByRole("button", { name: "Select Text 1", exact: true })
-    .click();
+  await selectBlock(page, "Select Text 1");
   await page.getByRole("button", { name: "Open settings panel" }).click();
-  await page
-    .getByRole("textbox", { name: "Text content", exact: true })
-    .fill("The first edit after loading survives.");
+  await writeCanvas(
+    page,
+    "Text content",
+    "The first edit after loading survives.",
+  );
   await expect(
     page.getByRole("status", { name: "Auto-save status" }),
   ).toHaveText("Saved");
   await page.reload();
-  await page
-    .getByRole("button", { name: "Select Text 1", exact: true })
-    .click();
+  await selectBlock(page, "Select Text 1");
   await page.getByRole("button", { name: "Open settings panel" }).click();
-  await expect(
-    page.getByRole("textbox", { name: "Text content", exact: true }),
-  ).toHaveValue("The first edit after loading survives.");
+  await expect(canvasField(page, "Text content")).toHaveText(
+    "The first edit after loading survives.",
+  );
 });

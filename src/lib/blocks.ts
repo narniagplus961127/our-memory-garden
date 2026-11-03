@@ -1,5 +1,6 @@
 import { isWebUrl, validDestination } from "./destinations";
 import { validGrid } from "./organization";
+import { richFields, validRichText } from "./rich-text";
 export { isWebUrl } from "./destinations";
 import type { PageData, JsonValue } from "./pages";
 export const blockNames = [
@@ -14,15 +15,16 @@ export const blockNames = [
 ] as const;
 export type BlockName = (typeof blockNames)[number];
 export type PageBlock = PageData["content"][number];
-export function slotNames(type: string): string[] {
+export const columnSlots = ["left", "right", "third", "fourth"] as const;
+export function slotNames(type: string, count: unknown = 2): string[] {
   return type === "Section"
     ? ["content"]
     : type === "Columns"
-      ? ["left", "right"]
+      ? columnSlots.slice(0, typeof count === "number" ? count : 2)
       : [];
 }
 export function slotContent(block: PageBlock, name: string): PageBlock[] {
-  return block.props[name] as PageBlock[];
+  return (block.props[name] ?? []) as PageBlock[];
 }
 export function validPageData(
   value: unknown,
@@ -110,14 +112,62 @@ export function validPageData(
           Gallery: ["photos"],
           Button: ["label", "href", "destination", "variant", "align"],
           Section: ["background", "spacing", "content"],
-          Columns: ["ratio", "gap", "left", "right"],
+          Columns: [
+            "ratio",
+            "gap",
+            "left",
+            "right",
+            "third",
+            "fourth",
+            "count",
+          ],
         };
         if (
           Object.keys(props).some(
-            (key) => key !== "id" && !allowed[type as BlockName].includes(key),
+            (key) =>
+              key !== "id" &&
+              ![
+                ...allowed[type as BlockName],
+                ...Object.values(richFields[type] ?? {}),
+                "backgroundColor",
+                "padding",
+                "radius",
+              ].includes(key),
           )
         )
           return false;
+        if (
+          props.backgroundColor !== undefined &&
+          (typeof props.backgroundColor !== "string" ||
+            (props.backgroundColor !== "" &&
+              !/^#(?:[\da-f]{3}|[\da-f]{6})$/i.test(props.backgroundColor)))
+        )
+          return false;
+        for (const key of ["padding", "radius"])
+          if (
+            props[key] !== undefined &&
+            (!Number.isInteger(props[key]) ||
+              props[key] < 0 ||
+              props[key] > (key === "padding" ? 120 : 24))
+          )
+            return false;
+        const richLimits: Record<string, number> = {
+          text: 100000,
+          heading: 1000,
+          description: 10000,
+          caption: 2000,
+          label: 200,
+        };
+        for (const [plain, rich] of Object.entries(richFields[type] ?? {}))
+          if (
+            props[rich] !== undefined &&
+            !validRichText(
+              props[rich],
+              options.allowIncomplete ? 100000 : richLimits[plain],
+              type !== "Button",
+            )
+          )
+            return false;
         const str = (key: string, max: number, required = false) =>
           props[key] === undefined
             ? !required
@@ -199,10 +249,23 @@ export function validPageData(
             );
           case "Columns":
             return (
-              opt("ratio", ["equal", "wide-left", "wide-right"]) &&
+              (props.count === undefined ||
+                [1, 2, 3, 4].includes(props.count)) &&
+              opt("ratio", [
+                "equal",
+                "wide-left",
+                "wide-right",
+                "quarter-left",
+                "quarter-right",
+              ]) &&
               opt("gap", ["compact", "comfortable", "spacious"]) &&
-              list(props.left, depth + 1) &&
-              list(props.right, depth + 1)
+              columnSlots.every((name, index) => {
+                const children = props[name] ?? (index > 1 ? [] : undefined);
+                return (
+                  list(children, depth + 1) &&
+                  (index < (props.count ?? 2) || children.length === 0)
+                );
+              })
             );
           default:
             return false;

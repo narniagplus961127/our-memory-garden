@@ -6,9 +6,19 @@ import type { GridSelection, PageCard } from "@/lib/organization";
 import { displayPhotoUrl } from "@/lib/media";
 import { DestinationPicker } from "./destination-picker";
 import { destinationHref, type Destination } from "@/lib/destinations";
-import type { Config, Slot } from "@puckeditor/core";
+import { BackgroundColour } from "./background-colour";
+import { richField } from "./garden-rich-field";
+import { CanvasPhotoAction } from "./canvas-photo-action";
+import { CanvasRichText } from "./canvas-rich-text";
+import type { CSSProperties, ReactNode } from "react";
+import type { Config, Slot, RichText, PuckContext } from "@puckeditor/core";
 import type { TextStyle } from "@/lib/pages";
-export type GardenBlocks = {
+type Appearance = {
+  backgroundColor?: string;
+  padding?: number;
+  radius?: number;
+};
+type GardenBlockProps = {
   PageGrid: {
     selection: GridSelection;
     showDate?: boolean;
@@ -16,6 +26,7 @@ export type GardenBlocks = {
   };
   Text: {
     text: string;
+    textRich?: RichText;
     style: TextStyle;
     align?: "left" | "center";
     linkText?: string;
@@ -23,6 +34,8 @@ export type GardenBlocks = {
   };
   Banner: {
     heading: string;
+    headingRich?: RichText;
+    descriptionRich?: RichText;
     description: string;
     background?: "paper" | "sage" | "clay";
     align?: "left" | "center";
@@ -31,12 +44,14 @@ export type GardenBlocks = {
     photoId?: string;
     alt: string;
     caption?: string;
+    captionRich?: RichText;
     fit?: "cover" | "contain";
     width?: "inset" | "full";
   };
   Gallery: { photos: GalleryPhoto[] };
   Button: {
     label: string;
+    labelRich?: RichText;
     href?: string;
     destination?: Destination | null;
     variant?: "primary" | "secondary";
@@ -48,11 +63,71 @@ export type GardenBlocks = {
     content: Slot;
   };
   Columns: {
-    ratio?: "equal" | "wide-left" | "wide-right";
+    count?: number;
+    ratio?:
+      "equal" | "wide-left" | "wide-right" | "quarter-left" | "quarter-right";
     gap?: "compact" | "comfortable" | "spacious";
     left: Slot;
     right: Slot;
+    third?: Slot;
+    fourth?: Slot;
   };
+};
+export type GardenBlocks = {
+  [K in keyof GardenBlockProps]: GardenBlockProps[K] & Appearance;
+};
+function blockStyle(value: Appearance): CSSProperties {
+  return {
+    backgroundColor: value.backgroundColor || undefined,
+    padding: value.padding,
+    borderRadius: value.radius,
+  };
+}
+function RichContent({
+  id,
+  puck,
+  type,
+  children,
+}: {
+  id: string;
+  puck: PuckContext;
+  type: string;
+  children: ReactNode;
+}) {
+  return puck.isEditing ? (
+    <CanvasRichText id={id} type={type}>
+      {children}
+    </CanvasRichText>
+  ) : (
+    children
+  );
+}
+const appearance = {
+  backgroundColor: {
+    type: "custom" as const,
+    label: "Background colour",
+    render: ({
+      value,
+      onChange,
+    }: {
+      value?: string;
+      onChange: (value: string) => void;
+    }) => <BackgroundColour value={value} onChange={onChange} />,
+  },
+  padding: {
+    type: "number" as const,
+    label: "Block padding · px",
+    min: 0,
+    max: 120,
+    step: 1,
+  },
+  radius: {
+    type: "number" as const,
+    label: "Corner radius · px",
+    min: 0,
+    max: 24,
+    step: 1,
+  },
 };
 const alignment = {
   type: "select" as const,
@@ -88,6 +163,7 @@ export const gardenConfig: Config<GardenBlocks> = {
     PageGrid: {
       label: "Page grid",
       fields: {
+        ...appearance,
         selection: {
           type: "custom",
           label: "Pages",
@@ -108,17 +184,22 @@ export const gardenConfig: Config<GardenBlocks> = {
         selection: { mode: "manual", pageIds: [], categoryId: "" },
         showDate: true,
       },
-      render: ({ selection, showDate, cards }) => (
-        <PageGrid selection={selection} showDate={showDate} cards={cards} />
+      render: ({ selection, showDate, cards, ...surface }) => (
+        <div style={blockStyle(surface)}>
+          <PageGrid selection={selection} showDate={showDate} cards={cards} />
+        </div>
       ),
     },
     Text: {
       label: "Text",
       fields: {
-        text: { type: "textarea", label: "Text content" },
+        ...appearance,
+        text: { type: "textarea", label: "Text content", visible: false },
+        textRich: richField("Text content"),
         style: {
           type: "select",
           label: "Text style",
+          visible: false,
           options: ["h1", "h2", "h3", "h4", "p", "small"].map((value) => ({
             label:
               value === "p"
@@ -130,9 +211,10 @@ export const gardenConfig: Config<GardenBlocks> = {
           })),
         },
         align: alignment,
-        linkText: { type: "text", label: "Linked text" },
+        linkText: { type: "text", label: "Linked text", visible: false },
         destination: {
           type: "custom",
+          visible: false,
           render: ({ value, onChange }) => (
             <DestinationPicker value={value} onChange={onChange} optional />
           ),
@@ -140,29 +222,46 @@ export const gardenConfig: Config<GardenBlocks> = {
       },
       defaultProps: {
         text: "Write a little memory…",
+        textRich: "<p>Write a little memory…</p>",
         style: "p",
         align: "left",
       },
-      render: ({ text, style, align, linkText, destination }) => {
+      render: ({
+        id,
+        puck,
+        text,
+        textRich,
+        style,
+        align,
+        linkText,
+        destination,
+        ...surface
+      }) => {
         const href = destinationHref(destination ?? undefined);
         const start = linkText ? text.indexOf(linkText) : -1;
         const Tag = style;
         return (
           <div
             className="garden-block garden-text"
-            style={{ textAlign: align }}
+            style={{ textAlign: align, ...blockStyle(surface) }}
           >
-            <Tag className="text-block">
-              {href && linkText && start >= 0 ? (
-                <>
-                  {text.slice(0, start)}
-                  <a href={href}>{linkText}</a>
-                  {text.slice(start + linkText.length)}
-                </>
+            <RichContent id={id} puck={puck} type="Text">
+              {textRich !== undefined ? (
+                <div className="text-block garden-rich-text">{textRich}</div>
               ) : (
-                text
+                <Tag className="text-block">
+                  {href && linkText && start >= 0 ? (
+                    <>
+                      {text.slice(0, start)}
+                      <a href={href}>{linkText}</a>
+                      {text.slice(start + linkText.length)}
+                    </>
+                  ) : (
+                    text
+                  )}
+                </Tag>
               )}
-            </Tag>
+            </RichContent>
           </div>
         );
       },
@@ -170,31 +269,57 @@ export const gardenConfig: Config<GardenBlocks> = {
     Banner: {
       label: "Banner",
       fields: {
-        heading: { type: "text", label: "Heading" },
-        description: { type: "textarea", label: "Description" },
+        ...appearance,
+        heading: { type: "text", label: "Heading", visible: false },
+        headingRich: richField("Heading"),
+        description: { type: "textarea", label: "Description", visible: false },
+        descriptionRich: richField("Description"),
         background: backgrounds,
         align: alignment,
       },
       defaultProps: {
         heading: "A little moment, remembered",
+        headingRich: "<h1>A little moment, remembered</h1>",
+        descriptionRich: "<p>Tell the story behind it.</p>",
         description: "Tell the story behind it.",
         background: "sage",
         align: "left",
       },
-      render: ({ heading, description, background, align }) => (
+      render: ({
+        id,
+        puck,
+        heading,
+        headingRich,
+        description,
+        descriptionRich,
+        background,
+        align,
+        ...surface
+      }) => (
         <header
           className={"garden-banner garden-tone-" + (background ?? "sage")}
-          style={{ textAlign: align }}
+          style={{ textAlign: align, ...blockStyle(surface) }}
         >
           <p className="eyebrow">Our memory garden</p>
-          <h1>{heading}</h1>
-          <p>{description}</p>
+          <RichContent id={id} puck={puck} type="Banner">
+            {headingRich !== undefined ? (
+              <div className="garden-rich-text">{headingRich}</div>
+            ) : (
+              <h1>{heading}</h1>
+            )}
+            {descriptionRich !== undefined ? (
+              <div className="garden-rich-text">{descriptionRich}</div>
+            ) : (
+              <p>{description}</p>
+            )}
+          </RichContent>
         </header>
       ),
     },
     Image: {
       label: "Image",
       fields: {
+        ...appearance,
         photoId: {
           type: "custom",
           label: "Photo",
@@ -203,7 +328,8 @@ export const gardenConfig: Config<GardenBlocks> = {
           ),
         },
         alt: { type: "text", label: "Alternative text" },
-        caption: { type: "textarea", label: "Caption" },
+        caption: { type: "textarea", label: "Caption", visible: false },
+        captionRich: richField("Caption"),
         fit: {
           type: "select",
           label: "Photo fit",
@@ -224,11 +350,25 @@ export const gardenConfig: Config<GardenBlocks> = {
       defaultProps: {
         alt: "A photograph from our garden",
         caption: "",
+        captionRich: "<p></p>",
         fit: "cover",
         width: "inset",
       },
-      render: ({ photoId, alt, caption, fit, width }) => (
-        <figure className={"garden-image garden-image-" + (width ?? "inset")}>
+      render: ({
+        id,
+        photoId,
+        alt,
+        caption,
+        captionRich,
+        fit,
+        width,
+        puck,
+        ...surface
+      }) => (
+        <figure
+          className={"garden-image garden-image-" + (width ?? "inset")}
+          style={blockStyle(surface)}
+        >
           {photoId ? (
             <img
               className={"garden-photo garden-fit-" + (fit ?? "cover")}
@@ -254,13 +394,25 @@ export const gardenConfig: Config<GardenBlocks> = {
               <span>Photo placeholder</span>
             </div>
           )}
-          {caption && <figcaption>{caption}</figcaption>}
+          {puck.isEditing && (
+            <CanvasPhotoAction id={id} hasPhoto={Boolean(photoId)} />
+          )}
+          <RichContent id={id} puck={puck} type="Image">
+            {captionRich !== undefined ? (
+              <figcaption className="garden-rich-text">
+                {captionRich}
+              </figcaption>
+            ) : (
+              caption && <figcaption>{caption}</figcaption>
+            )}
+          </RichContent>
         </figure>
       ),
     },
     Gallery: {
       label: "Gallery",
       fields: {
+        ...appearance,
         photos: {
           type: "custom",
           label: "Gallery photos",
@@ -270,12 +422,18 @@ export const gardenConfig: Config<GardenBlocks> = {
         },
       },
       defaultProps: { photos: [] },
-      render: ({ photos }) => <PhotoGallery photos={photos} />,
+      render: ({ photos, ...surface }) => (
+        <div style={blockStyle(surface)}>
+          <PhotoGallery photos={photos} />
+        </div>
+      ),
     },
     Button: {
       label: "Button",
       fields: {
-        label: { type: "text", label: "Button label" },
+        ...appearance,
+        label: { type: "text", label: "Button label", visible: false },
+        labelRich: richField("Button label"),
         destination: {
           type: "custom",
           render: ({ value, onChange }) => (
@@ -309,33 +467,60 @@ export const gardenConfig: Config<GardenBlocks> = {
       }),
       defaultProps: {
         label: "Explore a little more",
+        labelRich: "<p>Explore a little more</p>",
         href: "https://example.com",
         variant: "primary",
         align: "left",
       },
-      render: ({ label, href, destination, variant, align }) => (
+      render: ({
+        id,
+        puck,
+        label,
+        labelRich,
+        href,
+        destination,
+        variant,
+        align,
+        ...surface
+      }) => (
         <div
           className="garden-block garden-button-block"
-          style={{ textAlign: align }}
+          style={{ textAlign: align, ...blockStyle(surface) }}
         >
           <a
             className={"button " + (variant ?? "primary")}
             href={destinationHref(destination ?? undefined, href)}
           >
-            {label}
+            <RichContent id={id} puck={puck} type="Button">
+              {labelRich !== undefined ? (
+                <span className="garden-rich-text">{labelRich}</span>
+              ) : (
+                label
+              )}
+            </RichContent>
           </a>
         </div>
       ),
     },
     Section: {
       label: "Section",
-      fields: { background: backgrounds, spacing, content: { type: "slot" } },
+      fields: {
+        ...appearance,
+        background: backgrounds,
+        spacing,
+        content: { type: "slot" },
+      },
       defaultProps: {
         background: "paper",
         spacing: "comfortable",
         content: [],
       },
-      render: ({ background, spacing: space, content: Content }) => (
+      render: ({
+        background,
+        spacing: space,
+        content: Content,
+        ...surface
+      }) => (
         <section
           className={
             "garden-section garden-tone-" +
@@ -343,6 +528,7 @@ export const gardenConfig: Config<GardenBlocks> = {
             " garden-space-" +
             (space ?? "comfortable")
           }
+          style={blockStyle(surface)}
         >
           <Content minEmptyHeight={100} />
         </section>
@@ -351,8 +537,11 @@ export const gardenConfig: Config<GardenBlocks> = {
     Columns: {
       label: "Columns",
       fields: {
+        ...appearance,
+        count: { type: "number", min: 1, max: 4, visible: false },
         ratio: {
           type: "select",
+          visible: false,
           label: "Column proportions",
           options: [
             { label: "Equal", value: "equal" },
@@ -363,23 +552,57 @@ export const gardenConfig: Config<GardenBlocks> = {
         gap: spacing,
         left: { type: "slot" },
         right: { type: "slot" },
+        third: { type: "slot" },
+        fourth: { type: "slot" },
       },
-      defaultProps: { ratio: "equal", gap: "comfortable", left: [], right: [] },
-      render: ({ ratio, gap, left: Left, right: Right }) => (
+      defaultProps: {
+        count: 2,
+        ratio: "equal",
+        gap: "comfortable",
+        left: [],
+        right: [],
+        third: [],
+        fourth: [],
+      },
+      render: ({
+        count = 2,
+        ratio,
+        gap,
+        left: Left,
+        right: Right,
+        third: Third,
+        fourth: Fourth,
+        ...surface
+      }) => (
         <div
           className={
             "garden-columns garden-columns-" +
             (ratio ?? "equal") +
             " garden-gap-" +
-            (gap ?? "comfortable")
+            (gap ?? "comfortable") +
+            " garden-columns-count-" +
+            count
           }
+          style={blockStyle(surface)}
         >
           <div>
             <Left minEmptyHeight={120} />
           </div>
-          <div>
-            <Right minEmptyHeight={120} />
-          </div>
+          {count > 1 && (
+            <div>
+              <Right minEmptyHeight={120} />
+            </div>
+          )}
+          {count > 2 && Third && (
+            <div>
+              <Third minEmptyHeight={120} />
+            </div>
+          )}
+          {count > 3 && Fourth && (
+            <div>
+              <Fourth minEmptyHeight={120} />
+            </div>
+          )}
         </div>
       ),
     },
