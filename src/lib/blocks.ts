@@ -122,7 +122,16 @@ export function validPageData(
             "buttonColor",
             "textColor",
           ],
-          Section: ["background", "spacing", "content"],
+          Section: [
+            "background",
+            "spacing",
+            "content",
+            "backgroundImage",
+            "contentBackground",
+            "borderWidth",
+            "borderColor",
+            "columnAlignment",
+          ],
           Columns: [
             "ratio",
             "gap",
@@ -283,6 +292,41 @@ export function validPageData(
             );
           case "Section":
             return (
+              (props.backgroundImage === undefined ||
+                (props.backgroundImage &&
+                  typeof props.backgroundImage === "object" &&
+                  !Array.isArray(props.backgroundImage) &&
+                  Object.keys(props.backgroundImage).length === 1 &&
+                  typeof props.backgroundImage.photoId === "string" &&
+                  (props.backgroundImage.photoId === "" ||
+                    /^[\da-f]{8}-[\da-f]{4}-[\da-f]{4}-[\da-f]{4}-[\da-f]{12}$/i.test(
+                      props.backgroundImage.photoId,
+                    )))) &&
+              (props.contentBackground === undefined ||
+                (props.contentBackground &&
+                  typeof props.contentBackground === "object" &&
+                  !Array.isArray(props.contentBackground) &&
+                  Object.keys(props.contentBackground).every((key) =>
+                    ["mode", "colour"].includes(key),
+                  ) &&
+                  ["auto", "custom", "none"].includes(
+                    props.contentBackground.mode,
+                  ) &&
+                  (props.contentBackground.colour === undefined ||
+                    props.contentBackground.colour === "" ||
+                    (typeof props.contentBackground.colour === "string" &&
+                      /^#(?:[\da-f]{3}|[\da-f]{6})$/i.test(
+                        props.contentBackground.colour,
+                      ))))) &&
+              (props.borderWidth === undefined ||
+                (Number.isInteger(props.borderWidth) &&
+                  props.borderWidth >= 0 &&
+                  props.borderWidth <= 12)) &&
+              (props.borderColor === undefined ||
+                props.borderColor === "" ||
+                (typeof props.borderColor === "string" &&
+                  /^#(?:[\da-f]{3}|[\da-f]{6})$/i.test(props.borderColor))) &&
+              opt("columnAlignment", ["top", "center", "bottom"]) &&
               opt("background", ["paper", "sage", "clay"]) &&
               opt("spacing", ["compact", "comfortable", "spacious"]) &&
               list(props.content, depth + 1)
@@ -379,10 +423,16 @@ export function templateData(template: TemplateId = "blank"): PageData {
       root: { props: {} },
       content: [
         welcome(),
-        image(),
-        text("A day to remember", "h2"),
-        text("Write about the things you noticed today."),
+        block("Section", {
+          background: "paper",
+          spacing: "comfortable",
+          content: [
+            image(),
+            text("A day to remember", "h2"),
+            text("Write about the things you noticed today."),
+          ],
+        }),
       ],
     };
-  return { root: { props: {} }, content: [text("")] };
+  return { root: { props: {} }, content: [] };
 }

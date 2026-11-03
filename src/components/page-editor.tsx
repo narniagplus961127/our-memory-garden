@@ -73,15 +73,25 @@ function EditorSync({ content }: { content: PageData }) {
   }, [content, getPuck]);
   return null;
 }
-type Target = { zone: string; label: string; items: PageBlock[] };
+type Target = {
+  zone: string;
+  label: string;
+  items: PageBlock[];
+  insideSection: boolean;
+};
 type OutlineItem = { block: PageBlock; label: string; depth: number };
 function documentOutline(content: PageBlock[]) {
   const targets: Target[] = [
-      { zone: "root:default-zone", label: "Page", items: content },
+      {
+        zone: "root:default-zone",
+        label: "Page",
+        items: content,
+        insideSection: false,
+      },
     ],
     items: OutlineItem[] = [],
     counts: Record<string, number> = {};
-  function walk(blocks: PageBlock[], depth: number) {
+  function walk(blocks: PageBlock[], depth: number, insideSection = false) {
     for (const block of blocks) {
       const label =
         blockLabel(block.type) +
@@ -95,8 +105,9 @@ function documentOutline(content: PageBlock[]) {
           label:
             label + " · " + (slot === "content" ? "content" : slot + " column"),
           items: children,
+          insideSection: insideSection || block.type === "Section",
         });
-        walk(children, depth + 1);
+        walk(children, depth + 1, insideSection || block.type === "Section");
       }
     }
   }
@@ -175,35 +186,73 @@ function InspectorFields({
           : type === "Gallery"
             ? { title: "Photos", keys: ["photos"] }
             : null;
-  const groups = [
-    ...(content ? [{ id: "content", ...content }] : []),
-    ...(type === "Image"
-      ? [{ id: "link", title: "Link", keys: ["destination"] }]
-      : []),
-    {
-      id: "layout",
-      title:
-        type === "Button"
-          ? "Button style"
-          : type === "Image"
-            ? "Image layout"
-            : "Layout",
-      keys: [
-        "variant",
-        "width",
-        "fit",
-        "align",
-        "background",
-        "spacing",
-        "gap",
-        "buttonColor",
-        "textColor",
-      ],
-    },
-    { id: "background", title: "Block background", keys: ["backgroundColor"] },
-    { id: "spacing", title: "Spacing", keys: ["paddingSides", "marginSides"] },
-    { id: "corners", title: "Corners", keys: ["radius"] },
-  ];
+  const groups =
+    type === "Section"
+      ? [
+          { id: "image", title: "Background image", keys: ["backgroundImage"] },
+          {
+            id: "content-background",
+            title: "Content background",
+            keys: ["contentBackground"],
+          },
+          {
+            id: "background",
+            title: "Section colour",
+            keys: ["background", "backgroundColor"],
+          },
+          {
+            id: "border",
+            title: "Border",
+            keys: ["borderWidth", "borderColor", "radius"],
+          },
+          {
+            id: "spacing",
+            title: "Spacing",
+            keys: ["spacing", "paddingSides", "marginSides"],
+          },
+          {
+            id: "alignment",
+            title: "Column content alignment",
+            keys: ["columnAlignment"],
+          },
+        ]
+      : [
+          ...(content ? [{ id: "content", ...content }] : []),
+          ...(type === "Image"
+            ? [{ id: "link", title: "Link", keys: ["destination"] }]
+            : []),
+          {
+            id: "layout",
+            title:
+              type === "Button"
+                ? "Button style"
+                : type === "Image"
+                  ? "Image layout"
+                  : "Layout",
+            keys: [
+              "variant",
+              "width",
+              "fit",
+              "align",
+              "background",
+              "spacing",
+              "gap",
+              "buttonColor",
+              "textColor",
+            ],
+          },
+          {
+            id: "background",
+            title: "Block background",
+            keys: ["backgroundColor"],
+          },
+          {
+            id: "spacing",
+            title: "Spacing",
+            keys: ["paddingSides", "marginSides"],
+          },
+          { id: "corners", title: "Corners", keys: ["radius"] },
+        ];
   const assigned = new Set(groups.flatMap((group) => group.keys));
   const others = Object.keys(fields).filter((key) => !assigned.has(key));
   if (others.length)
@@ -351,9 +400,11 @@ function Workspace({
           selected.type === "Columns" ? selected.props.count : undefined,
         )[0]
       : selection?.zone;
+  const blockTargets = targets.filter((item) => item.insideSection);
   const target =
-    targets.find((item) => item.zone === (explicitTarget ?? preferredZone)) ??
-    targets[0];
+    blockTargets.find(
+      (item) => item.zone === (explicitTarget ?? preferredZone),
+    ) ?? blockTargets[0];
   const siblings =
     targets.find((item) => item.zone === selection?.zone)?.items ?? [];
   useEffect(() => {
@@ -398,7 +449,9 @@ function Workspace({
     });
   }
   const safeTargets = targets.filter((item) => {
-    if (!selected || item.zone === "root:default-zone") return true;
+    if (!selected) return false;
+    if (selected.type === "Section") return item.zone === "root:default-zone";
+    if (!item.insideSection) return false;
     let id = item.zone.split(":")[0];
     while (id && id !== "root") {
       if (id === selected.props.id) return false;
@@ -477,22 +530,24 @@ function Workspace({
     const current = selected
       ? api.getSelectorForId(selected.props.id)
       : undefined;
+    const destination = type === "Section" ? targets[0] : target;
+    if (!destination) return;
     const index =
-      !explicitTarget && current?.zone === target.zone
+      !explicitTarget && current?.zone === destination.zone
         ? current.index + 1
-        : target.items.length;
+        : destination.items.length;
     const id = crypto.randomUUID();
     if (layout) pendingLayout.current = { id, ...layout };
     api.dispatch({
       type: "insert",
       componentType: type,
       destinationIndex: index,
-      destinationZone: target.zone,
+      destinationZone: destination.zone,
       id,
     });
     api.dispatch({
       type: "setUi",
-      ui: { itemSelector: { index, zone: target.zone } },
+      ui: { itemSelector: { index, zone: destination.zone } },
     });
     if (window.matchMedia("(max-width:760px)").matches) setPanel(null);
     setExplicitTarget(null);
@@ -748,24 +803,52 @@ function Workspace({
           {panel === "content" && (
             <>
               <p className="muted editor-panel-hint">
-                Drag a block to a position on your page, or use its Add button.
-                Click its words to write.
+                {target
+                  ? "Add or drag blocks into a section. Click words on the canvas to write."
+                  : "Add a section first, then place blocks or columns inside it."}
               </p>
               <Drawer>
+                <div className="palette-heading">Start with a section</div>
+                <div className="garden-palette section-palette">
+                  <div className="palette-card">
+                    <Drawer.Item name="Section">
+                      {() => (
+                        <span>
+                          Section <span aria-hidden="true">⠿</span>
+                        </span>
+                      )}
+                    </Drawer.Item>
+                    <button
+                      className="secondary palette-add"
+                      aria-label="Add Section"
+                      onClick={() => insert("Section")}
+                    >
+                      ＋
+                    </button>
+                  </div>
+                </div>
                 <div className="palette-heading">Blocks</div>
                 <div className="garden-palette">
                   {["Text", "Image", "Button", "PageGrid"].map((name) => (
                     <div className="palette-card" key={name}>
-                      <Drawer.Item name={name}>
-                        {() => (
-                          <span>
-                            {blockLabel(name)} <span aria-hidden="true">⠿</span>
-                          </span>
-                        )}
-                      </Drawer.Item>
+                      {target ? (
+                        <Drawer.Item name={name}>
+                          {() => (
+                            <span>
+                              {blockLabel(name)}{" "}
+                              <span aria-hidden="true">⠿</span>
+                            </span>
+                          )}
+                        </Drawer.Item>
+                      ) : (
+                        <span className="palette-unavailable">
+                          {blockLabel(name)}
+                        </span>
+                      )}
                       <button
                         className="secondary palette-add"
                         aria-label={"Add " + blockLabel(name)}
+                        disabled={!target}
                         onClick={() => insert(name as BlockName)}
                       >
                         ＋
@@ -775,23 +858,24 @@ function Workspace({
                 </div>
                 <div className="palette-heading">Layout</div>
                 <div className="garden-palette">
-                  {["Columns", "Section"].map((name) => (
+                  {["Columns"].map((name) => (
                     <div className="palette-card" key={name}>
-                      <Drawer.Item name={name}>
-                        {() => (
-                          <span>
-                            {name} <span aria-hidden="true">⠿</span>
-                          </span>
-                        )}
-                      </Drawer.Item>
+                      {target ? (
+                        <Drawer.Item name={name}>
+                          {() => (
+                            <span>
+                              {name} <span aria-hidden="true">⠿</span>
+                            </span>
+                          )}
+                        </Drawer.Item>
+                      ) : (
+                        <span className="palette-unavailable">{name}</span>
+                      )}
                       <button
                         className="secondary palette-add"
                         aria-label={"Add " + name}
-                        onClick={() =>
-                          name === "Columns"
-                            ? setColumns({ edit: false })
-                            : insert("Section")
-                        }
+                        disabled={!target}
+                        onClick={() => setColumns({ edit: false })}
                       >
                         ＋
                       </button>
@@ -799,22 +883,27 @@ function Workspace({
                   ))}
                 </div>
               </Drawer>
-              <label htmlFor="add-target">Add to</label>
-              <select
-                id="add-target"
-                value={target.zone}
-                onChange={(event) => setExplicitTarget(event.target.value)}
-              >
-                {targets.map((item) => (
-                  <option key={item.zone} value={item.zone}>
-                    {item.label}
-                  </option>
-                ))}
-              </select>
-              <p className="muted editor-panel-hint">
-                Tap Add to place a block after the selected block, or at the end
-                of your chosen container.
-              </p>
+              {target && (
+                <>
+                  <label htmlFor="add-target">Add to</label>
+                  <select
+                    id="add-target"
+                    value={target.zone}
+                    onChange={(event) => setExplicitTarget(event.target.value)}
+                  >
+                    {blockTargets.map((item) => (
+                      <option key={item.zone} value={item.zone}>
+                        {item.label}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="muted editor-panel-hint">
+                    Tap Add to place a block after the selected block, or at the
+                    end of your chosen container. Sections are added at page
+                    level.
+                  </p>
+                </>
+              )}
             </>
           )}
           {panel === "outline" && outline}
@@ -873,51 +962,57 @@ function Workspace({
                         Remove
                       </button>
                     </div>
-                    <div className="editor-move-field">
-                      <label htmlFor="move-target">Move to</label>
-                      <select
-                        id="move-target"
-                        value={moveDestination.zone}
-                        onChange={(e) => {
-                          setMoveTarget(e.target.value);
-                          setMoveIndex(0);
-                        }}
-                      >
-                        {safeTargets.map((item) => (
-                          <option key={item.zone} value={item.zone}>
-                            {item.label}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    <div className="editor-move-field">
-                      <label htmlFor="move-position">Position</label>
-                      <select
-                        id="move-position"
-                        value={Math.min(
-                          moveIndex,
-                          moveDestination.items.length,
-                        )}
-                        onChange={(e) => setMoveIndex(Number(e.target.value))}
-                      >
-                        {Array.from(
-                          { length: moveDestination.items.length + 1 },
-                          (_, i) => (
-                            <option key={i} value={i}>
-                              {i === moveDestination.items.length
-                                ? "At the end"
-                                : "Before block " + (i + 1)}
-                            </option>
-                          ),
-                        )}
-                      </select>
-                    </div>
-                    <button
-                      className="secondary editor-move-submit"
-                      onClick={moveHere}
-                    >
-                      Move block here
-                    </button>
+                    {moveDestination && (
+                      <>
+                        <div className="editor-move-field">
+                          <label htmlFor="move-target">Move to</label>
+                          <select
+                            id="move-target"
+                            value={moveDestination.zone}
+                            onChange={(e) => {
+                              setMoveTarget(e.target.value);
+                              setMoveIndex(0);
+                            }}
+                          >
+                            {safeTargets.map((item) => (
+                              <option key={item.zone} value={item.zone}>
+                                {item.label}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                        <div className="editor-move-field">
+                          <label htmlFor="move-position">Position</label>
+                          <select
+                            id="move-position"
+                            value={Math.min(
+                              moveIndex,
+                              moveDestination.items.length,
+                            )}
+                            onChange={(e) =>
+                              setMoveIndex(Number(e.target.value))
+                            }
+                          >
+                            {Array.from(
+                              { length: moveDestination.items.length + 1 },
+                              (_, i) => (
+                                <option key={i} value={i}>
+                                  {i === moveDestination.items.length
+                                    ? "At the end"
+                                    : "Before block " + (i + 1)}
+                                </option>
+                              ),
+                            )}
+                          </select>
+                        </div>
+                        <button
+                          className="secondary editor-move-submit"
+                          onClick={moveHere}
+                        >
+                          Move block here
+                        </button>
+                      </>
+                    )}
                   </section>
                 </>
               ) : (

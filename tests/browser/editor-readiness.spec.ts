@@ -1,4 +1,9 @@
-import { canvasField, writeCanvas, selectBlock } from "./editor-controls";
+import {
+  canvasField,
+  writeCanvas,
+  selectBlock,
+  seedLegacyTextPage,
+} from "./editor-controls";
 import { test, expect } from "@playwright/test";
 import { readFile } from "node:fs/promises";
 const env = Object.fromEntries(
@@ -25,12 +30,13 @@ test("editor controls wait for client initialization before accepting edits", as
       })
     ).status(),
   ).toBe(200);
-  const created = await (
+  let created = await (
     await page.request.post("/api/pages", {
       headers: { Origin: origin },
       data: { title: "An editor ready to grow" },
     })
   ).json();
+  created = await seedLegacyTextPage(page, created, env.NEXT_PUBLIC_APP_URL);
   let release!: () => void, arrived!: () => void;
   const gate = new Promise<void>((resolve) => (release = resolve)),
     blocked = new Promise<void>((resolve) => (arrived = resolve));

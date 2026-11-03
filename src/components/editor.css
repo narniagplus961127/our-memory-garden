@@ -283,6 +283,43 @@
 .palette-card:hover {
   border-color: var(--muted);
 }
+.section-palette {
+  grid-template-columns: minmax(0, 1fr) !important;
+}
+.palette-unavailable {
+  display: flex;
+  height: 100%;
+  padding: 10px 44px 10px 10px;
+  align-items: center;
+  color: var(--muted);
+  cursor: default;
+}
+.section-setting {
+  display: grid;
+  gap: 12px;
+}
+.section-segments {
+  display: flex;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #f2f4f1;
+  padding: 3px;
+  gap: 3px;
+}
+.section-segments button {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  padding: 8px;
+  font-size: 14px;
+}
+.section-segments button[aria-pressed="true"] {
+  background: white;
+  color: var(--ink);
+  box-shadow: 0 1px 4px #30433725;
+}
 .editor-inline .garden-block-list {
   padding-bottom: 16px;
 }

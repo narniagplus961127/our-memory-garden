@@ -754,6 +754,13 @@ button.primary {
 }
 .garden-section {
   padding: 32px 0;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+.garden-section-content {
+  display: flow-root;
+  min-width: 0;
 }
 .garden-space-compact {
   padding-top: 16px;
@@ -765,6 +772,7 @@ button.primary {
 }
 .garden-columns {
   display: grid;
+  align-items: var(--section-column-alignment, start);
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 24px;
   padding: 16px var(--gutter);
