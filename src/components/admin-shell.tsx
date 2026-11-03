@@ -75,10 +75,17 @@ export function AdminShell({
   return (
     <div className="admin-shell">
       <aside className="admin-sidebar">
-        <Brand />
-        <div>
-          <p className="eyebrow">Your garden</p>
-          <nav aria-label="Administration">{links}</nav>
+        <div
+          className="sidebar-scroll"
+          role="region"
+          aria-label="Sidebar navigation"
+          tabIndex={0}
+        >
+          <Brand />
+          <div>
+            <p className="eyebrow">Your garden</p>
+            <nav aria-label="Administration">{links}</nav>
+          </div>
         </div>
         <div className="sidebar-bottom">{bottom}</div>
       </aside>
