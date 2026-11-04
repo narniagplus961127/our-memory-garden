@@ -84,8 +84,11 @@ test("manage nested navigation and change addresses through desktop and mobile c
     page.getByRole("status", { name: "Navigation status" }),
   ).toHaveText("Saved");
   await page
-    .getByRole("button", { name: "Move Garden elsewhere up", exact: true })
-    .click();
+    .getByRole("button", { name: "Drag Garden elsewhere", exact: true })
+    .focus();
+  await page.keyboard.press("Space");
+  await page.keyboard.press("ArrowUp");
+  await page.keyboard.press("Enter");
   await expect(
     page.getByRole("status", { name: "Navigation status" }),
   ).toHaveText("Saved");

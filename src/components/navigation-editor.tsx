@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { DestinationPicker } from "./destination-picker";
+import { useMenuReorder } from "./use-menu-reorder";
 import {
   validDestination,
   type Destination,
@@ -23,6 +24,7 @@ export function NavigationEditor({
     [status, setStatus] = useState("Saved"),
     [error, setError] = useState("");
   const busy = status === "Saving…";
+  const sort = useMenuReorder(items, busy, (next) => void persist(next));
   async function persist(next: MenuItem[]) {
     setItems(next);
     setStatus("Saving…");
@@ -62,25 +64,39 @@ export function NavigationEditor({
     }
     return false;
   }
-  function move(item: MenuItem, offset: number) {
-    const siblings = items.filter((i) => i.parentId === item.parentId),
-      index = siblings.findIndex((i) => i.id === item.id),
-      other = siblings[index + offset];
-    if (!other) return;
-    const next = [...items],
-      a = items.indexOf(item),
-      b = items.indexOf(other);
-    [next[a], next[b]] = [next[b], next[a]];
-    void persist(next);
-  }
   function list(parent: string | null): React.ReactNode {
     const siblings = items.filter((i) => i.parentId === parent);
     return (
       <ol className="navigation-items">
-        {siblings.map((item, index) => (
-          <li key={item.id}>
+        {siblings.map((item) => (
+          <li
+            key={item.id}
+            ref={(node) => sort.registerRow(item.id, node)}
+            data-menu-item={item.id}
+            data-dragging={sort.drag?.id === item.id || undefined}
+            data-drop={sort.marker(item.id)}
+          >
             <div className="navigation-item">
-              <div>
+              <button
+                type="button"
+                className="secondary navigation-drag-handle"
+                {...sort.handleProps(item)}
+              >
+                <svg
+                  width="20"
+                  height="24"
+                  viewBox="0 0 20 24"
+                  fill="currentColor"
+                  aria-hidden="true"
+                >
+                  {[6, 12, 18].flatMap((y) =>
+                    [6, 14].map((x) => (
+                      <circle key={x + ":" + y} cx={x} cy={y} r="1.6" />
+                    )),
+                  )}
+                </svg>
+              </button>
+              <div className="navigation-item-content">
                 <strong>{item.label}</strong>
                 <p className="muted">
                   <small>
@@ -89,50 +105,36 @@ export function NavigationEditor({
                       : item.destination.url}
                   </small>
                 </p>
-              </div>
-              <div className="actions">
-                <button
-                  className="secondary"
-                  disabled={busy}
-                  onClick={() => {
-                    setEditing(item.id);
-                    setLabel(item.label);
-                    setDestination(item.destination);
-                    setParentId(item.parentId ?? "");
-                  }}
-                >
-                  Edit {item.label}
-                </button>
-                <button
-                  className="secondary"
-                  aria-label={"Move " + item.label + " up"}
-                  disabled={busy || index === 0}
-                  onClick={() => move(item, -1)}
-                >
-                  ↑
-                </button>
-                <button
-                  className="secondary"
-                  aria-label={"Move " + item.label + " down"}
-                  disabled={busy || index === siblings.length - 1}
-                  onClick={() => move(item, 1)}
-                >
-                  ↓
-                </button>
-                <button
-                  className="secondary"
-                  disabled={busy}
-                  onClick={() => {
-                    void persist(
-                      items.filter(
-                        (i) => i.id !== item.id && !descendant(i.id, item.id),
-                      ),
-                    );
-                    if (editing === item.id) reset();
-                  }}
-                >
-                  Remove {item.label}
-                </button>
+                <div className="actions">
+                  <button
+                    className="secondary"
+                    aria-label={"Edit " + item.label}
+                    disabled={busy}
+                    onClick={() => {
+                      setEditing(item.id);
+                      setLabel(item.label);
+                      setDestination(item.destination);
+                      setParentId(item.parentId ?? "");
+                    }}
+                  >
+                    Edit
+                  </button>
+                  <button
+                    className="secondary"
+                    aria-label={"Remove " + item.label}
+                    disabled={busy}
+                    onClick={() => {
+                      void persist(
+                        items.filter(
+                          (i) => i.id !== item.id && !descendant(i.id, item.id),
+                        ),
+                      );
+                      if (editing === item.id) reset();
+                    }}
+                  >
+                    Remove
+                  </button>
+                </div>
               </div>
             </div>
             {list(item.id)}
@@ -156,7 +158,20 @@ export function NavigationEditor({
       <div className="navigation-workspace">
         <section aria-label="Menu items">
           <h2>Your menu</h2>
+          <p id="menu-drag-instructions" className="muted navigation-drag-hint">
+            Drag the grip to reorder items within their menu level. Keyboard:
+            Space to pick up, arrow keys to move, Enter to drop, Escape to
+            cancel.
+          </p>
           {items.length ? list(null) : <p>No menu items yet.</p>}
+          <span
+            className="visually-hidden"
+            role="status"
+            aria-live="polite"
+            aria-atomic="true"
+          >
+            {sort.announcement}
+          </span>
           <p role="status" aria-label="Navigation status">
             {status}
           </p>
@@ -236,6 +251,27 @@ export function NavigationEditor({
           )}
         </form>
       </div>
+      {sort.drag?.input === "pointer" && (
+        <div
+          className="navigation-drag-preview"
+          aria-hidden="true"
+          style={{
+            left: Math.max(
+              12,
+              Math.min(
+                sort.drag.x + 14,
+                window.innerWidth - Math.min(260, window.innerWidth * 0.7) - 12,
+              ),
+            ),
+            top: Math.max(
+              12,
+              Math.min(sort.drag.y + 14, window.innerHeight - 120),
+            ),
+          }}
+        >
+          <span aria-hidden="true">⠿</span> {sort.drag.label}
+        </div>
+      )}
     </>
   );
 }
