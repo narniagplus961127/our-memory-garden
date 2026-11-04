@@ -98,43 +98,78 @@ export function NavigationEditor({
               </button>
               <div className="navigation-item-content">
                 <strong>{item.label}</strong>
-                <p className="muted">
+                <p
+                  className="muted"
+                  title={
+                    item.destination.kind === "page"
+                      ? "Garden page"
+                      : item.destination.url
+                  }
+                >
                   <small>
                     {item.destination.kind === "page"
                       ? "Garden page"
                       : item.destination.url}
                   </small>
                 </p>
-                <div className="actions">
-                  <button
-                    className="secondary"
-                    aria-label={"Edit " + item.label}
-                    disabled={busy}
-                    onClick={() => {
-                      setEditing(item.id);
-                      setLabel(item.label);
-                      setDestination(item.destination);
-                      setParentId(item.parentId ?? "");
-                    }}
+              </div>
+              <div className="navigation-item-actions">
+                <button
+                  type="button"
+                  className="secondary"
+                  aria-label={"Edit " + item.label}
+                  title={"Edit " + item.label}
+                  disabled={busy}
+                  onClick={() => {
+                    setEditing(item.id);
+                    setLabel(item.label);
+                    setDestination(item.destination);
+                    setParentId(item.parentId ?? "");
+                  }}
+                >
+                  <svg
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.7"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden="true"
                   >
-                    Edit
-                  </button>
-                  <button
-                    className="secondary"
-                    aria-label={"Remove " + item.label}
-                    disabled={busy}
-                    onClick={() => {
-                      void persist(
-                        items.filter(
-                          (i) => i.id !== item.id && !descendant(i.id, item.id),
-                        ),
-                      );
-                      if (editing === item.id) reset();
-                    }}
+                    <path d="m16 3 5 5-13 13-5 1 1-5ZM14 5l5 5" />
+                  </svg>
+                </button>
+                <button
+                  type="button"
+                  className="secondary"
+                  aria-label={"Remove " + item.label}
+                  title={"Remove " + item.label}
+                  disabled={busy}
+                  onClick={() => {
+                    void persist(
+                      items.filter(
+                        (i) => i.id !== item.id && !descendant(i.id, item.id),
+                      ),
+                    );
+                    if (editing === item.id) reset();
+                  }}
+                >
+                  <svg
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.7"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden="true"
                   >
-                    Remove
-                  </button>
-                </div>
+                    <path d="M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7M14 10v7" />
+                  </svg>
+                </button>
               </div>
             </div>
             {list(item.id)}

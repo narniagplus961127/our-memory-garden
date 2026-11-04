@@ -1466,7 +1466,8 @@ button.primary {
   padding-left: 24px;
 }
 .navigation-item {
-  display: flex;
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) auto;
   align-items: flex-start;
   gap: 12px;
   padding: 20px;
@@ -1478,6 +1479,12 @@ button.primary {
   flex: 1;
   min-width: 0;
   overflow-wrap: anywhere;
+}
+.navigation-item-content small {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .navigation-item .navigation-drag-handle {
   flex: 0 0 44px;
@@ -1539,9 +1546,18 @@ button.primary {
   max-width: min(260px, 70vw);
   overflow-wrap: anywhere;
 }
-.navigation-item .actions {
-  flex-wrap: wrap;
-  margin-top: 12px;
+.navigation-item-actions {
+  display: flex;
+  gap: 4px;
+  justify-self: end;
+}
+.navigation-item-actions button {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  min-height: 44px;
+  padding: 10px;
 }
 .navigation-item p {
   margin: 4px 0;
@@ -1580,9 +1596,9 @@ button.primary {
     min-height: 44px;
     padding-top: 8px;
   }
-  .navigation-item .actions {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
+  .navigation-item {
+    padding: 12px;
+    gap: 8px;
   }
   .navigation-items .navigation-items {
     padding-left: 16px;

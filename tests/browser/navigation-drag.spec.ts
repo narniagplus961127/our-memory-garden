@@ -118,7 +118,9 @@ test("drag handles reorder siblings with mouse/touch, preserve children, cancel 
         capturedDrag = true;
         await page.screenshot({
           path: testInfo.outputPath("navigation-dragging.png"),
-          fullPage: true,
+          // Full-page capture can resize the emulated phone viewport and cancel
+          // an active native touch gesture. Capture the visible drop marker.
+          fullPage: false,
         });
       }
       if (cancel) {
