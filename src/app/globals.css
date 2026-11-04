@@ -284,7 +284,7 @@ a:focus-visible {
   gap: 12px;
 }
 .brand img {
-  width: 30px;
+  width: 36px;
   height: 36px;
   object-fit: contain;
 }
@@ -557,6 +557,10 @@ td:last-child {
   .brand {
     font-size: 17px;
     gap: 10px;
+  }
+  .brand img {
+    width: 32px;
+    height: 32px;
   }
   .public-nav {
     display: none;

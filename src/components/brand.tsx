@@ -3,7 +3,7 @@ import { PublicMenu } from "./public-menu";
 export function Brand() {
   return (
     <Link className="brand" href="/">
-      <img src="/brand/garden-gate-mark.png" alt="" />
+      <img src="/brand/seedlings.svg" alt="" width={36} height={36} />
       <span>Our Memory Garden</span>
     </Link>
   );

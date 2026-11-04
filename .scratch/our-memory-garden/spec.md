@@ -141,6 +141,8 @@ Public registration, visitor comments or reactions, a separate story content typ
 
 ## Further Notes
 
+Ticket 33 (owner approved 2026-11-04): Replace the website's garden-gate mark with a simple forest-green twin-seedling vector on a shared curved soil line. Retain the name and serif wordmark; apply the mark to public/admin/mobile branding and matching browser favicon/touch icons. See `docs/brand.md` for current asset sources and sizing.
+
 Ticket 32 (owner requested 2026-11-04): Navigation Edit/Remove actions use pencil/trash icon buttons at the right end of every card, with accessible names, tooltips and 44 px touch targets on desktop/mobile.
 
 Image blocks may link to a garden page by stable ID or a validated external HTTP(S) URL. Only the image is linked on the website; editor photo/caption controls remain interactive. Block and inline paragraph alignment support Left, Centre and Right (ticket 29).

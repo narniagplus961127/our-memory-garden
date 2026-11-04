@@ -8,6 +8,7 @@
     "build": "next build",
     "start": "next start --hostname 127.0.0.1",
     "typecheck": "tsc --noEmit",
+    "brand:build": "node scripts/build-brand.mjs",
     "test": "playwright test",
     "test:api": "node --env-file=.env.test --test tests/service/*.test.mjs",
     "db:migrate": "node --env-file=.env.local scripts/migrate.mjs",
