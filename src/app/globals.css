@@ -1595,6 +1595,12 @@ button.primary {
 .navigation-item-form :is(label, input, select, .destination-picker) {
   margin: 0;
 }
+.navigation-item-form .destination-picker > label:not(:first-child) {
+  margin-top: 16px;
+}
+.navigation-item-form .destination-picker .error {
+  margin: 0;
+}
 .navigation-item-form :is(input, select) {
   width: 100%;
 }

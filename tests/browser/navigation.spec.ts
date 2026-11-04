@@ -52,6 +52,52 @@ test("manage nested navigation and change addresses through desktop and mobile c
     .getByLabel("Destination type", { exact: true })
     .selectOption("page");
   await page.getByLabel("Garden page", { exact: true }).selectOption(p.id);
+  async function expectFieldAlignment() {
+    const fields = await page
+      .locator(".navigation-item-form")
+      .evaluate((form) => {
+        const labels = [...form.querySelectorAll("label")];
+        return labels.map((label, index) => {
+          const control = form
+            .querySelector<HTMLElement>('[id="' + label.htmlFor + '"]')!
+            .getBoundingClientRect();
+          const previous =
+            index > 0
+              ? form
+                  .querySelector<HTMLElement>(
+                    '[id="' + labels[index - 1].htmlFor + '"]',
+                  )!
+                  .getBoundingClientRect()
+              : null;
+          return {
+            x: control.x,
+            width: control.width,
+            height: control.height,
+            labelGap: control.top - label.getBoundingClientRect().bottom,
+            fieldGap: previous
+              ? label.getBoundingClientRect().top - previous.bottom
+              : null,
+          };
+        });
+      });
+    expect(fields.map((field) => field.fieldGap)).toEqual([null, 24, 24, 24]);
+    for (const field of fields) {
+      expect(field.labelGap).toBe(8);
+      expect(field.height).toBe(44);
+      expect(field.x).toBe(fields[0].x);
+      expect(field.width).toBe(fields[0].width);
+    }
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= innerWidth,
+      ),
+    ).toBeTruthy();
+  }
+  await expectFieldAlignment();
+  await page.screenshot({
+    path: testInfo.outputPath("navigation-page-fields.png"),
+    fullPage: true,
+  });
   await page
     .getByRole("button", { name: "Add menu item", exact: true })
     .click();
@@ -66,6 +112,11 @@ test("manage nested navigation and change addresses through desktop and mobile c
   await page
     .getByLabel("External web address", { exact: true })
     .fill("https://example.com/garden");
+  await expectFieldAlignment();
+  await page.screenshot({
+    path: testInfo.outputPath("navigation-external-fields.png"),
+    fullPage: true,
+  });
   await page
     .getByLabel("Parent item", { exact: true })
     .selectOption({ label: "Our rosemary" });
