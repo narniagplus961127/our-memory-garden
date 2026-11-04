@@ -19,10 +19,17 @@ export async function publicNavigation(): Promise<PublicMenuItem[]> {
     { id: string; slug: string }[]
   >`select id,slug from pages where visibility='public' and deleted_at is null`;
   const addresses = new Map(pages.map((p) => [p.id, p.slug]));
+  const categoryRows = await database()<
+    { id: string; slug: string }[]
+  >`select id,slug from page_categories`;
+  const categoryAddresses = new Map(categoryRows.map((c) => [c.id, c.slug]));
   const visible = new Map(
     items.map((i) => [
       i.id,
-      i.destination.kind === "external" || addresses.has(i.destination.pageId),
+      i.destination.kind === "external" ||
+        (i.destination.kind === "category"
+          ? categoryAddresses.has(i.destination.categoryId)
+          : addresses.has(i.destination.pageId)),
     ]),
   );
   function allowed(item: MenuItem): boolean {
@@ -38,7 +45,9 @@ export async function publicNavigation(): Promise<PublicMenuItem[]> {
     href:
       i.destination.kind === "page"
         ? "/garden/" + addresses.get(i.destination.pageId)
-        : i.destination.url,
+        : i.destination.kind === "category"
+          ? "/category/" + categoryAddresses.get(i.destination.categoryId)
+          : i.destination.url,
   }));
 }
 export async function saveNavigation(
@@ -80,8 +89,22 @@ export async function saveNavigation(
   const pages = await database()<
     { id: string }[]
   >`select id from pages where deleted_at is null`;
+  const categoryRows = await database()<
+    { id: string }[]
+  >`select id from page_categories`;
   for (const item of items) {
     const destination = item.destination;
+    if (
+      destination.kind === "category" &&
+      !categoryRows.some((c) => c.id === destination.categoryId) &&
+      !previous.items.some(
+        (i) =>
+          i.id === item.id &&
+          i.destination.kind === "category" &&
+          i.destination.categoryId === destination.categoryId,
+      )
+    )
+      throw new RequestError(400, "Choose an available category.");
     if (
       destination.kind === "page" &&
       !pages.some((p) => p.id === destination.pageId) &&

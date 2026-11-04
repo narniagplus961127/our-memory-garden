@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { useEffect, useId, useState } from "react";
 import { isWebUrl, type Destination } from "@/lib/destinations";
 import type { GardenPage } from "@/lib/pages";
+import type { Category } from "@/lib/organization";
 export function DestinationPicker({
   value,
   onChange,
@@ -17,9 +18,23 @@ export function DestinationPicker({
 }) {
   const id = useId();
   const [pages, setPages] = useState<GardenPage[]>([]),
-    [error, setError] = useState("");
+    [error, setError] = useState(""),
+    [categories, setCategories] = useState<Category[]>([]),
+    [categoryError, setCategoryError] = useState("");
   useEffect(() => {
     let active = true;
+    fetch("/api/categories")
+      .then(async (r) => {
+        if (!r.ok) throw Error();
+        const list = await r.json();
+        if (active) setCategories(list);
+      })
+      .catch(() => {
+        if (active)
+          setCategoryError(
+            "Could not load categories. Reopen these settings to retry.",
+          );
+      });
     fetch("/api/pages")
       .then(async (r) => {
         if (!r.ok) throw Error();
@@ -49,9 +64,11 @@ export function DestinationPicker({
           onChange(
             e.target.value === "page"
               ? { kind: "page", pageId: "" }
-              : e.target.value === "external"
-                ? { kind: "external", url: "" }
-                : null,
+              : e.target.value === "category"
+                ? { kind: "category", categoryId: "" }
+                : e.target.value === "external"
+                  ? { kind: "external", url: "" }
+                  : null,
           )
         }
       >
@@ -59,6 +76,7 @@ export function DestinationPicker({
           <NativeSelectOption value="none">No link</NativeSelectOption>
         )}
         <NativeSelectOption value="page">Garden page</NativeSelectOption>
+        <NativeSelectOption value="category">Category</NativeSelectOption>
         <NativeSelectOption value="external">External URL</NativeSelectOption>
       </NativeSelect>
       {kind === "page" && (
@@ -119,6 +137,47 @@ export function DestinationPicker({
                 Enter a complete http:// or https:// web address.
               </p>
             )}
+        </>
+      )}
+      {kind === "category" && (
+        <>
+          <Label htmlFor={id + "-category"}>Category</Label>
+          <NativeSelect
+            id={id + "-category"}
+            value={value?.kind === "category" ? value.categoryId : ""}
+            onChange={(event) =>
+              onChange({ kind: "category", categoryId: event.target.value })
+            }
+          >
+            <NativeSelectOption value="">Choose a category</NativeSelectOption>
+            {value?.kind === "category" &&
+              value.categoryId &&
+              !categories.some((c) => c.id === value.categoryId) && (
+                <NativeSelectOption value={value.categoryId}>
+                  Unavailable category
+                </NativeSelectOption>
+              )}
+            {categories.map((category) => (
+              <NativeSelectOption key={category.id} value={category.id}>
+                {category.name}
+              </NativeSelectOption>
+            ))}
+          </NativeSelect>
+          {(!value || value.kind !== "category" || !value.categoryId) && (
+            <p
+              className={optional ? "muted" : "error"}
+              role={optional ? undefined : "alert"}
+            >
+              {optional
+                ? "Choose a category when you're ready. Until then, no link is shown."
+                : "Choose a category."}
+            </p>
+          )}
+          {categoryError && (
+            <p className="error" role="alert">
+              {categoryError}
+            </p>
+          )}
         </>
       )}
       {error && (

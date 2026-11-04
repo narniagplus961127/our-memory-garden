@@ -28,7 +28,9 @@ export const richFields: Record<string, Record<string, string>> = {
 };
 export const isRichLink = (value: string) =>
   isWebUrl(value) ||
-  /^\/p\/[\da-f]{8}-[\da-f]{4}-[\da-f]{4}-[\da-f]{4}-[\da-f]{12}$/i.test(value);
+  /^\/(?:p|c)\/[\da-f]{8}-[\da-f]{4}-[\da-f]{4}-[\da-f]{4}-[\da-f]{12}$/i.test(
+    value,
+  );
 export function validRichText(
   value: unknown,
   max = 100000,
@@ -221,5 +223,10 @@ export function richLinks(value: string): string[] {
 export function richPageReferences(value: string): string[] {
   return richLinks(value)
     .filter((href) => href.startsWith("/p/"))
+    .map((href) => href.slice(3));
+}
+export function richCategoryReferences(value: string): string[] {
+  return richLinks(value)
+    .filter((href) => href.startsWith("/c/"))
     .map((href) => href.slice(3));
 }

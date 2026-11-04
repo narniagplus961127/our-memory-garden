@@ -1,4 +1,4 @@
-@import "tailwindcss";
+@import "tailwindcss" source("../");
 
 @theme inline {
   --spacing: 4px;
@@ -206,7 +206,7 @@
   margin: 12px 0 0;
 }
 .category-manager {
-  max-width: 820px;
+  width: 100%;
 }
 .category-manager > [role="status"]:empty {
   display: none;
@@ -229,7 +229,7 @@
   justify-content: space-between;
   gap: 16px;
 }
-.category-row > span {
+.category-row > div:first-child {
   min-width: 0;
   overflow-wrap: anywhere;
 }

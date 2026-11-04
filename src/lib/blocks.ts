@@ -74,6 +74,7 @@ export function validPageData(
     return (
       Object.keys(d).length === 2 &&
       ((d.kind === "page" && typeof d.pageId === "string") ||
+        (d.kind === "category" && typeof d.categoryId === "string") ||
         (d.kind === "external" && typeof d.url === "string"))
     );
   }

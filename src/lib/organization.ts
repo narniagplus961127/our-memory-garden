@@ -1,4 +1,4 @@
-export type Category = { id: string; name: string };
+export type Category = { id: string; name: string; slug: string };
 export type PageDetails = {
   date: string | null;
   categoryId: string | null;

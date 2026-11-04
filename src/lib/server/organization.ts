@@ -3,49 +3,8 @@ import { database } from "./db";
 import { RequestError } from "./http";
 import type { Administrator } from "./pages";
 import type { GardenPage } from "../pages";
-import {
-  uuid,
-  type Category,
-  type GridSelection,
-  type PageCard,
-} from "../organization";
-export async function categories(): Promise<Category[]> {
-  return database()<
-    Category[]
-  >`select id,name from page_categories order by lower(name),id`;
-}
-export async function editCategory(
-  admin: Administrator,
-  name: unknown,
-  id?: string,
-  expectedName?: unknown,
-) {
-  if (typeof name !== "string" || !name.trim() || name.trim().length > 100)
-    throw new RequestError(
-      400,
-      "Enter a category name between 1 and 100 characters.",
-    );
-  if (id && !uuid.test(id)) throw new RequestError(404, "Category not found.");
-  try {
-    const rows = id
-      ? await database()<
-          Category[]
-        >`update page_categories set name=${name.trim()} where id=${id} and name=${String(expectedName)} returning id,name`
-      : await database()<
-          Category[]
-        >`insert into page_categories(name,created_by) values(${name.trim()},${admin.id}) returning id,name`;
-    if (!rows[0])
-      throw new RequestError(
-        409,
-        "This category changed elsewhere. Reload before renaming.",
-      );
-    return rows[0];
-  } catch (e) {
-    if ((e as { code?: string }).code === "23505")
-      throw new RequestError(400, "A category already uses this name.");
-    throw e;
-  }
-}
+import { uuid, type GridSelection, type PageCard } from "../organization";
+export { categories, editCategory } from "./categories";
 export async function updateDetails(
   admin: Administrator,
   id: string,
