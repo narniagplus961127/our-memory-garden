@@ -141,6 +141,8 @@ Public registration, visitor comments or reactions, a separate story content typ
 
 ## Further Notes
 
+Ticket 32 (owner requested 2026-11-04): Navigation Edit/Remove actions use pencil/trash icon buttons at the right end of every card, with accessible names, tooltips and 44 px touch targets on desktop/mobile.
+
 Image blocks may link to a garden page by stable ID or a validated external HTTP(S) URL. Only the image is linked on the website; editor photo/caption controls remain interactive. Block and inline paragraph alignment support Left, Centre and Right (ticket 29).
 
 The released baseline through ticket 13 is complete. The owner approved the concrete Klaviyo-inspired proposal on 2026-11-02; [ticket 14](issues/14-inline-editor-experience.md) delivered direct canvas editing. [Ticket 15](issues/15-editor-toolbar-dialog-stability.md) corrects the toolbar flicker and dialog positioning reported on 2026-11-03. [The inline design reference](../../docs/editor-inline-design.md) records both interactions. Existing pages, private media, autosave, recovery, conflicts and history remain required compatibility boundaries.
