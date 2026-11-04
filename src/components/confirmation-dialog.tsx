@@ -59,23 +59,25 @@ export function ConfirmationDialog({
         </>
       }
     >
-      <div className="confirmation-copy grid gap-4">
-        {children}
-        {error && (
-          <div className="grid gap-3 text-destructive" role="alert">
-            <p className="m-0">{error}</p>
-            <Button
-              type="button"
-              variant="outline"
-              className="justify-self-start"
-              disabled={busy}
-              onClick={onReload}
-            >
-              {reloadLabel}
-            </Button>
-          </div>
-        )}
-      </div>
+      {children || error ? (
+        <div className="confirmation-copy grid gap-4">
+          {children}
+          {error && (
+            <div className="grid gap-3 text-destructive" role="alert">
+              <p className="m-0">{error}</p>
+              <Button
+                type="button"
+                variant="outline"
+                className="justify-self-start"
+                disabled={busy}
+                onClick={onReload}
+              >
+                {reloadLabel}
+              </Button>
+            </div>
+          )}
+        </div>
+      ) : null}
     </Modal>
   );
 }

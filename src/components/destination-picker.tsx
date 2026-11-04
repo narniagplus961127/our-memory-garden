@@ -85,8 +85,13 @@ export function DestinationPicker({
             ))}
           </NativeSelect>
           {!value || value.kind !== "page" || !value.pageId ? (
-            <p className="error" role="alert">
-              Choose a garden page.
+            <p
+              className={optional ? "muted" : "error"}
+              role={optional ? undefined : "alert"}
+            >
+              {optional
+                ? "Choose a page when you're ready. Until then, no link is shown."
+                : "Choose a garden page."}
             </p>
           ) : null}
         </>
@@ -102,11 +107,18 @@ export function DestinationPicker({
               onChange({ kind: "external", url: e.target.value })
             }
           />
-          {value?.kind === "external" && !isWebUrl(value.url) && (
-            <p className="error" role="alert">
-              Enter a complete http:// or https:// web address.
+          {optional && value?.kind === "external" && value.url === "" && (
+            <p className="muted">
+              Add a web address when you're ready. Until then, no link is shown.
             </p>
           )}
+          {value?.kind === "external" &&
+            !isWebUrl(value.url) &&
+            !(optional && value.url === "") && (
+              <p className="error" role="alert">
+                Enter a complete http:// or https:// web address.
+              </p>
+            )}
         </>
       )}
       {error && (

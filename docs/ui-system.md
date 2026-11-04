@@ -14,6 +14,12 @@ Use Button (including `asChild` for links), Input, Textarea, Label, NativeSelect
 
 Block removal uses the same confirmation from both canvas and sidebar, warns about nested children and keeps shared photos. Puck's direct delete action is disabled; an explicit confirmed action performs removal. Keep the default rich-text toolbar bridge when customizing the action bar.
 
+Ticket 40 omits the padded body when a confirmation has only a title/description and actions. Confirmations have a 560 px maximum width; content-bearing warnings and retry errors still use the scrollable body. There is a single divider before the actions when no body is present.
+
+## Optional editor links
+
+New buttons start with No link. Optional button/image destinations can retain an empty page choice or empty external address as an inactive saved state. Use neutral helper text for these choices, not an alert or autosave failure. Valid configured links activate immediately; clearing a choice removes the link. Explicit No link suppresses legacy href fallback. A button without a valid destination renders a noninteractive span with its authored appearance. Non-empty malformed/unsafe addresses retain inline validation and local recovery; autosave waits for correction without sending a known-invalid request or showing a generic save-error toast. Genuine connection/server errors retain their toast and Retry save. Required Navigation destinations and the inline-link Apply action remain strict.
+
 ## Website shortcuts
 
 The seedling icon remains in the bottom-right corner. Desktop hover and mobile tap reveal Dashboard; authenticated owners viewing an actual page also get Edit this page by stable ID. Anonymous and not-found screens never receive an editor shortcut. The popover supports keyboard, Escape, outside dismissal and hover travel between trigger and links.

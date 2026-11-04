@@ -6,6 +6,7 @@ import { PageGrid, PageGridSettings } from "./page-grid";
 import type { GridSelection, PageCard } from "@/lib/organization";
 import { displayPhotoUrl } from "@/lib/media";
 import { DestinationPicker } from "./destination-picker";
+import { ButtonDestination } from "./button-destination";
 import { destinationHref, type Destination } from "@/lib/destinations";
 import { BackgroundColour } from "./background-colour";
 import { BlockSpacingControl, type BlockSpacing } from "./block-spacing";
@@ -566,10 +567,7 @@ export const gardenConfig: Config<
         destination: {
           type: "custom",
           render: ({ value, onChange }) => (
-            <DestinationPicker
-              value={value ?? { kind: "external", url: "https://example.com" }}
-              onChange={onChange}
-            />
+            <ButtonDestination value={value} onChange={onChange} />
           ),
         },
         variant: {
@@ -633,22 +631,10 @@ export const gardenConfig: Config<
         align: alignment,
         ...appearance,
       },
-      resolveFields: (data, { fields }) => ({
-        ...fields,
-        destination: {
-          type: "custom",
-          render: ({ value, onChange }) => (
-            <DestinationPicker
-              value={value ?? { kind: "external", url: data.props.href ?? "" }}
-              onChange={onChange}
-            />
-          ),
-        },
-      }),
       defaultProps: {
         label: "Explore a little more",
         labelRich: "<p>Explore a little more</p>",
-        href: "https://example.com",
+        href: "",
         variant: "primary",
         width: "fit",
         align: "left",
@@ -666,32 +652,37 @@ export const gardenConfig: Config<
         buttonColor,
         textColor,
         ...surface
-      }) => (
-        <div
-          className="garden-block garden-button-block"
-          style={{ textAlign: align, ...blockStyle(surface) }}
-        >
-          <Button asChild className={"button " + (variant ?? "primary")}>
-            <a
-              style={{
-                width: width === "full" ? "100%" : undefined,
-                backgroundColor: buttonColor || undefined,
-                borderColor: buttonColor || undefined,
-                color: textColor || undefined,
-              }}
-              href={destinationHref(destination ?? undefined, href)}
-            >
-              <RichContent id={id} puck={puck} type="Button">
-                {labelRich !== undefined ? (
-                  <span className="garden-rich-text">{labelRich}</span>
-                ) : (
-                  label
-                )}
-              </RichContent>
-            </a>
-          </Button>
-        </div>
-      ),
+      }) => {
+        const target = destinationHref(destination, href);
+        const Element = target ? "a" : "span";
+        return (
+          <div
+            className="garden-block garden-button-block"
+            style={{ textAlign: align, ...blockStyle(surface) }}
+          >
+            <Button asChild className={"button " + (variant ?? "primary")}>
+              <Element
+                style={{
+                  cursor: target ? undefined : "default",
+                  width: width === "full" ? "100%" : undefined,
+                  backgroundColor: buttonColor || undefined,
+                  borderColor: buttonColor || undefined,
+                  color: textColor || undefined,
+                }}
+                href={target}
+              >
+                <RichContent id={id} puck={puck} type="Button">
+                  {labelRich !== undefined ? (
+                    <span className="garden-rich-text">{labelRich}</span>
+                  ) : (
+                    label
+                  )}
+                </RichContent>
+              </Element>
+            </Button>
+          </div>
+        );
+      },
     },
     Section: {
       label: "Section",
