@@ -13,6 +13,7 @@ export function ConfirmationDialog({
   onConfirm,
   onCancel,
   onReload,
+  confirmDisabled = false,
 }: {
   title: string;
   description: string;
@@ -25,6 +26,7 @@ export function ConfirmationDialog({
   onConfirm: () => void;
   onCancel: () => void;
   onReload: () => void;
+  confirmDisabled?: boolean;
 }) {
   const dialog = useRef<HTMLDialogElement>(null),
     cancel = useRef<HTMLButtonElement>(null),
@@ -82,7 +84,11 @@ export function ConfirmationDialog({
         >
           Cancel
         </button>
-        <button type="button" disabled={busy} onClick={onConfirm}>
+        <button
+          type="button"
+          disabled={busy || confirmDisabled}
+          onClick={onConfirm}
+        >
           {busy ? "Working…" : error ? retryLabel : confirmLabel}
         </button>
       </footer>

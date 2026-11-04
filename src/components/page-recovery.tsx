@@ -1,8 +1,15 @@
 "use client";
-import { createContext, useContext, useState, type ReactNode } from "react";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import type { GardenPage } from "@/lib/pages";
+import type { GardenPage, PageCardData } from "@/lib/pages";
 import type { InboundReference } from "@/lib/server/page-recovery";
 import { ConfirmationDialog } from "./confirmation-dialog";
 
@@ -121,11 +128,11 @@ export function RestoreVersion({
 }
 export function TrashAction({
   page: initialPage,
-  references = [],
+  icon = false,
   onDone,
 }: {
-  page: GardenPage;
-  references?: InboundReference[];
+  page: PageCardData;
+  icon?: boolean;
   onDone?: (message: string) => void;
 }) {
   const router = useRouter();
@@ -137,9 +144,54 @@ export function TrashAction({
     ),
     [busy, setBusy] = useState(false),
     [error, setError] = useState(""),
-    [success, setSuccess] = useState("");
+    [success, setSuccess] = useState(""),
+    [references, setReferences] = useState<InboundReference[] | null>(null),
+    [referencesLoading, setReferencesLoading] = useState(false),
+    [referenceAttempt, setReferenceAttempt] = useState(0);
+  const pending = useRef(false),
+    trigger = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    if (action !== "trash") return;
+    const controller = new AbortController();
+    fetch("/api/pages/" + page.id + "/trash", {
+      cache: "no-store",
+      signal: controller.signal,
+    })
+      .then(async (response) => {
+        const data = await response.json();
+        if (!response.ok)
+          throw Error(data.error ?? "Could not check links. Try again.");
+        if (!Array.isArray(data.references))
+          throw Error("Could not check links. Try again.");
+        if (!controller.signal.aborted) setReferences(data.references);
+      })
+      .catch((failure) => {
+        if (!controller.signal.aborted)
+          setError(
+            failure instanceof Error
+              ? failure.message
+              : "Could not check links. Try again.",
+          );
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setReferencesLoading(false);
+      });
+    return () => controller.abort();
+  }, [action, page.id, referenceAttempt]);
+  function cancel() {
+    setAction(null);
+    setError("");
+    requestAnimationFrame(() => trigger.current?.focus());
+  }
   async function submit() {
-    if (!action || busy) return;
+    if (!action || pending.current || referencesLoading) return;
+    if (action === "trash" && references === null) {
+      setError("");
+      setReferencesLoading(true);
+      setReferenceAttempt((attempt) => attempt + 1);
+      return;
+    }
+    pending.current = true;
     setBusy(true);
     setError("");
     try {
@@ -168,11 +220,12 @@ export function TrashAction({
           : "Could not complete this action. Please retry.",
       );
     } finally {
+      pending.current = false;
       setBusy(false);
     }
   }
   return (
-    <div className="recovery-action">
+    <div className={icon ? "page-card-trash" : "recovery-action"}>
       {page.deleted_at ? (
         <>
           <button
@@ -199,17 +252,44 @@ export function TrashAction({
       ) : (
         <>
           <button
-            className="button secondary"
+            className={"button secondary" + (icon ? " page-trash-icon" : "")}
+            ref={trigger}
+            aria-label={icon ? "Move " + page.title + " to trash" : undefined}
+            title={
+              page.is_homepage
+                ? "Choose another homepage in Settings before moving this page to trash."
+                : icon
+                  ? "Move " + page.title + " to trash"
+                  : undefined
+            }
             onClick={() => {
+              setReferences(null);
+              setReferencesLoading(true);
               setAction("trash");
               setError("");
               setSuccess("");
             }}
-            disabled={page.is_homepage || busy}
+            disabled={page.is_homepage || busy || (icon && Boolean(success))}
           >
-            Move to trash
+            {icon ? (
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.7"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7M14 10v7" />
+              </svg>
+            ) : (
+              "Move to trash"
+            )}
           </button>
-          {page.is_homepage && (
+          {page.is_homepage && !icon && (
             <p>
               Choose another homepage in Settings before moving this page to
               trash.
@@ -234,21 +314,21 @@ export function TrashAction({
                 : "The page will be hidden from visitors. You can restore it from trash."
           }
           busy={busy}
+          confirmDisabled={referencesLoading}
           error={error}
           confirmLabel={
             action === "delete"
               ? "Confirm permanent deletion"
               : action === "restore"
                 ? "Confirm restore as private"
-                : "Confirm move to trash"
+                : referencesLoading
+                  ? "Loading links…"
+                  : "Confirm move to trash"
           }
           retryLabel="Retry action"
           reloadLabel="Reload page"
           onConfirm={() => void submit()}
-          onCancel={() => {
-            setAction(null);
-            setError("");
-          }}
+          onCancel={cancel}
           onReload={() => {
             setAction(null);
             setError("");
@@ -258,7 +338,11 @@ export function TrashAction({
           {action === "trash" && (
             <>
               <h3>Links to this page</h3>
-              {references.length ? (
+              {referencesLoading ? (
+                <p role="status">Checking links to this page…</p>
+              ) : references === null ? (
+                <p>Links could not be checked. Retry before confirming.</p>
+              ) : references.length ? (
                 <ul>
                   {references.map((r, i) => (
                     <li key={i}>
@@ -285,7 +369,7 @@ export function TrashAction({
           )}
         </ConfirmationDialog>
       )}
-      {success && <p role="status">{success}</p>}
+      {success && !icon && <p role="status">{success}</p>}
     </div>
   );
 }

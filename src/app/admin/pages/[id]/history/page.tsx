@@ -1,11 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireAdministrator } from "@/lib/server/auth";
-import {
-  pageHistory,
-  historicalPage,
-  inboundReferences,
-} from "@/lib/server/page-recovery";
+import { pageHistory, historicalPage } from "@/lib/server/page-recovery";
 import {
   RecoveryPage,
   RestoreVersion,
@@ -35,10 +31,7 @@ export default async function History({
     const selected = version
       ? (await historicalPage(id, version)).snapshot
       : null;
-    const [{ references }, categoryList] = await Promise.all([
-      inboundReferences(id),
-      categories(),
-    ]);
+    const categoryList = await categories();
     return (
       <RecoveryPage page={page}>
         <Link href="/admin/pages">← Pages</Link>
@@ -146,10 +139,12 @@ export default async function History({
             )}
           </section>
         </div>
-        <section className="recovery-trash">
-          <h2>Page recovery</h2>
-          <TrashAction page={page} references={references} />
-        </section>
+        {page.deleted_at && (
+          <section className="recovery-trash">
+            <h2>Page recovery</h2>
+            <TrashAction page={page} />
+          </section>
+        )}
       </RecoveryPage>
     );
   } catch (e) {

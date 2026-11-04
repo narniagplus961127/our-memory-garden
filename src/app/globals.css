@@ -2030,12 +2030,16 @@ button.primary {
   gap: 16px;
 }
 .admin-page-cards > li {
+  display: flex;
+  align-items: center;
   background: var(--cream);
   border: 1px solid var(--line);
   border-radius: 5px;
   overflow: hidden;
 }
 .admin-page-cards > li > a {
+  flex: 1;
+  min-width: 0;
   display: block;
   min-height: 76px;
   padding: 16px;
@@ -2044,6 +2048,17 @@ button.primary {
 }
 .admin-page-cards a:hover {
   background: var(--paper);
+}
+.page-card-trash {
+  flex: 0 0 auto;
+  padding: 16px 16px 16px 0;
+}
+.page-trash-icon {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 10px;
 }
 .admin-page-card-title {
   display: block;

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { requireAdministrator } from "@/lib/server/auth";
 import { listPages } from "@/lib/server/pages";
 import { AdminPageCards } from "@/components/admin-page-cards";
+import { pageCardData } from "@/lib/pages";
 export default async function Pages() {
   const pages = await listPages(await requireAdministrator());
   return (
@@ -9,7 +10,9 @@ export default async function Pages() {
       <div className="admin-heading">
         <div>
           <p className="eyebrow">Your garden</p>
-          <h1>Pages</h1>
+          <h1 id="pages-title" tabIndex={-1}>
+            Pages
+          </h1>
           <p className="muted">Manage and organize your pages.</p>
         </div>
       </div>
@@ -21,16 +24,7 @@ export default async function Pages() {
           Trash
         </Link>
       </div>
-      {pages.length ? (
-        <AdminPageCards pages={pages} />
-      ) : (
-        <div className="empty-state">
-          <h2>Your first page starts here</h2>
-          <p className="muted">
-            Create a private page and give a memory a place to grow.
-          </p>
-        </div>
-      )}
+      <AdminPageCards pages={pages.map(pageCardData)} allowTrash />
     </>
   );
 }

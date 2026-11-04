@@ -45,6 +45,8 @@ Ticket 25 adds a Categories destination to both administration menus using the e
 
 Current 14 px implementation evidence: [Categories desktop](evidence/ticket26/categories-desktop.png), [Categories mobile](evidence/ticket26/categories-mobile.png), [new-page URL desktop](evidence/ticket26/page-url-desktop.png), [new-page URL mobile](evidence/ticket26/page-url-mobile.png).
 
+Ticket 36 adds a right-aligned bin icon to Pages-list cards, with a 44 px target and 16 px inset matching the card link padding. Titles/metadata keep their flexible text area; buttons remain outside the editor link. The homepage bin is disabled with an explanatory tooltip. The shared centred popup loads current inbound-link warnings before confirmation, keeps Cancel available during lookup, and retains failures/retry. A successful move refreshes the list, shows a toast and focuses Pages. The active-page action is removed from History; restore/delete remain for trashed pages. Overview cards remain unchanged. Application evidence supersedes the older History-based placement; native frames are not redrawn for this increment.
+
 The native document and rendered samples are audited with the FigCraft CLI; evidence paths and final counts are recorded in `docs/design-spec-review.md`. Validate server authorization, media accessibility, durable conflict preservation, export generation and actual storage measurement through the application. The old approved prototype routes remain unchanged. Category creation/rename, validation, confirmation and errors use the same labelled field, 44 px action and inline status patterns shown here; no additional screen per small variant is implied. Material new direction still requires owner review.
 ## Image links and alignment (ticket 29)
 

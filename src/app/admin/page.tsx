@@ -2,6 +2,7 @@ import Link from "next/link";
 import { requireAdministrator } from "@/lib/server/auth";
 import { listPages } from "@/lib/server/pages";
 import { AdminPageCards } from "@/components/admin-page-cards";
+import { pageCardData } from "@/lib/pages";
 export default async function Dashboard() {
   const pages = await listPages(await requireAdministrator());
   return (
@@ -18,7 +19,7 @@ export default async function Dashboard() {
           <Link href="/admin/pages">Manage pages</Link>
         </div>
         {pages.length ? (
-          <AdminPageCards pages={pages.slice(0, 5)} />
+          <AdminPageCards pages={pages.slice(0, 5).map(pageCardData)} />
         ) : (
           <div className="empty-state">
             <h3>Your first page starts here</h3>
