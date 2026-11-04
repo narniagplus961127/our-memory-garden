@@ -53,3 +53,7 @@ Image Styles includes an optional Link group with None, Garden page and External
 ## Section-first layouts (ticket 30)
 
 Blank canvas → Add Section → add blocks or Columns inside it. Section has its own Styles groups for background image, content background (Auto/Custom/None), Section colour, border, spacing and vertical column alignment. Root drag accepts Sections; child slots reject Sections; Add/Move targets follow the same hierarchy. Existing root blocks remain compatible. Desktop/mobile implementation screenshots and browser checks are recorded in ticket 30; these incremental owner requests supersede the older native frame's unrestricted root insertion.
+
+## Navigation dragging (ticket 31)
+
+Navigation cards have a 44 px grip before the label/destination and compact Edit/Remove actions with full accessible names. Mouse/touch dragging shows a floating label, dims the moved subtree and highlights the sibling insertion point; dragging near viewport edges scrolls the page. Drop saves the sibling order once. Parent item still controls nesting. Keyboard: Space/Enter picks up, arrows or Home/End choose the position, Space/Enter drops, Escape cancels, Tab leaves without moving. Announce pickup/position/drop/cancellation, retain focus and keep save/retry feedback. Navigation arrow buttons are removed; page-editor block move alternatives are unaffected. [Desktop dragging](evidence/ticket31/navigation-dragging-desktop.png), [mobile](evidence/ticket31/navigation-mobile.png). This incremental application reference supersedes the older static navigation arrows.

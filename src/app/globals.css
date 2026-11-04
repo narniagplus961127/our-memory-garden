@@ -1466,10 +1466,78 @@ button.primary {
   padding-left: 24px;
 }
 .navigation-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
   padding: 20px;
   background: var(--cream);
   margin: 12px 0;
   border-radius: 5px;
+}
+.navigation-item-content {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.navigation-item .navigation-drag-handle {
+  flex: 0 0 44px;
+  width: 44px;
+  height: 44px;
+  min-height: 44px;
+  padding: 8px;
+  display: grid;
+  place-items: center;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+.navigation-drag-handle:active,
+.navigation-drag-handle[aria-pressed="true"] {
+  cursor: grabbing;
+}
+.navigation-drag-handle[aria-disabled="true"] {
+  cursor: wait;
+  opacity: 0.5;
+}
+.navigation-items > li {
+  position: relative;
+}
+.navigation-items > li[data-dragging="true"] .navigation-item {
+  opacity: 0.45;
+}
+.navigation-items > li[data-drop]::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 3px;
+  border-radius: 3px;
+  background: var(--ink);
+  z-index: 1;
+  pointer-events: none;
+}
+.navigation-items > li[data-drop="before"]::before {
+  top: -6px;
+}
+.navigation-items > li[data-drop="after"]::before {
+  bottom: -6px;
+}
+.navigation-drag-hint {
+  font-size: 13px;
+  line-height: 1.6;
+  max-width: 60ch;
+}
+.navigation-drag-preview {
+  position: fixed;
+  z-index: 100;
+  pointer-events: none;
+  background: var(--ink);
+  color: var(--cream);
+  padding: 12px 16px;
+  border-radius: 6px;
+  box-shadow: 0 8px 24px #30433730;
+  max-width: min(260px, 70vw);
+  overflow-wrap: anywhere;
 }
 .navigation-item .actions {
   flex-wrap: wrap;
