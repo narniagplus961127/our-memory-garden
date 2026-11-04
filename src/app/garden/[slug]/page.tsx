@@ -24,7 +24,7 @@ export default async function GardenPage({
   if (!page) notFound();
   return (
     <>
-      <GardenHeader />
+      <GardenHeader pageId={page.id} />
       <main className="public-page">
         <div
           className="page-content public-page-heading"

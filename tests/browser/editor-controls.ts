@@ -36,6 +36,7 @@ export async function startWithText(page: Page) {
     .getByRole("button", { name: "Open content panel", exact: true })
     .click();
   await page.getByRole("button", { name: "Add Text", exact: true }).click();
+  await selectBlock(page, "Select Text 1");
 }
 
 export function canvasField(page: Page, label: string) {
@@ -69,7 +70,14 @@ export async function writeCanvas(page: Page, label: string, value: string) {
   const close = page.getByRole("button", { name: "Close panel", exact: true });
   if ((page.viewportSize()?.width ?? 1280) <= 760 && (await close.isVisible()))
     await close.click();
-  const field = canvasField(page, label);
+  const selected = canvasField(page, label);
+  // Adding keeps blocks unselected; the test must click the new words to edit.
+  const field = (await selected.count())
+    ? selected
+    : page
+        .frameLocator("iframe")
+        .getByRole("textbox", { name: label, exact: true })
+        .last();
   await field.click();
   await field.fill(value);
   if (restoreStyles) await styles.click();

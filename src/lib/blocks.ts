@@ -123,6 +123,7 @@ export function validPageData(
             "textColor",
           ],
           Section: [
+            "width",
             "background",
             "spacing",
             "content",
@@ -327,6 +328,7 @@ export function validPageData(
                 (typeof props.borderColor === "string" &&
                   /^#(?:[\da-f]{3}|[\da-f]{6})$/i.test(props.borderColor))) &&
               opt("columnAlignment", ["top", "center", "bottom"]) &&
+              opt("width", ["container", "full"]) &&
               opt("background", ["paper", "sage", "clay"]) &&
               opt("spacing", ["compact", "comfortable", "spacious"]) &&
               list(props.content, depth + 1)

@@ -1,8 +1,9 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import { createPortal } from "react-dom";
 import { registerOverlayPortal, useGetPuck } from "@puckeditor/core";
 import { MediaLibrary } from "./media-library";
+import { Modal } from "./modal";
+import { Button } from "./ui/button";
 export function CanvasPhotoAction({
   id,
   hasPhoto,
@@ -12,26 +13,28 @@ export function CanvasPhotoAction({
 }) {
   const getPuck = useGetPuck(),
     ref = useRef<HTMLDivElement>(null),
-    opener = useRef<HTMLButtonElement>(null),
-    dialog = useRef<HTMLDialogElement>(null);
-  const [open, setOpen] = useState(false),
-    [host, setHost] = useState<HTMLElement | null>(null);
-  useEffect(() => {
-    setHost(document.body);
-    return registerOverlayPortal(ref.current, { disableDrag: true });
-  }, []);
-  useEffect(() => {
-    if (open) dialog.current?.showModal();
-  }, [open]);
+    opener = useRef<HTMLButtonElement>(null);
+  const [open, setOpen] = useState(false);
+  useEffect(
+    () => registerOverlayPortal(ref.current, { disableDrag: true }),
+    [],
+  );
+  function close() {
+    setOpen(false);
+    const api = getPuck(),
+      selector = api.getSelectorForId(id);
+    if (selector)
+      api.dispatch({ type: "setUi", ui: { itemSelector: selector } });
+  }
   return (
     <div ref={ref} className="canvas-photo-action">
-      <button
+      <Button
         ref={opener}
         type="button"
-        className="secondary"
-        onClick={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
+        variant="outline"
+        onClick={(event) => {
+          event.preventDefault();
+          event.stopPropagation();
           const api = getPuck(),
             selector = api.getSelectorForId(id);
           if (selector) {
@@ -41,53 +44,32 @@ export function CanvasPhotoAction({
         }}
       >
         {hasPhoto ? "Replace photo" : "Choose photo"}
-      </button>
-      {open &&
-        host &&
-        createPortal(
-          <dialog
-            ref={dialog}
-            className="canvas-photo-dialog"
-            aria-label="Choose a photo"
-            onPointerDown={(event) => event.stopPropagation()}
-            onClick={(event) => event.stopPropagation()}
-            onClose={() => {
-              setOpen(false);
+      </Button>
+      {open && (
+        <Modal
+          closeLabel="Close photo library"
+          title="Choose a photo"
+          onClose={close}
+          returnFocus={opener}
+          className="canvas-photo-dialog modal-wide"
+        >
+          <MediaLibrary
+            onSelect={(photoId) => {
               const api = getPuck(),
-                selector = api.getSelectorForId(id);
-              if (selector)
-                api.dispatch({ type: "setUi", ui: { itemSelector: selector } });
-              opener.current?.focus();
+                selector = api.getSelectorForId(id),
+                data = selector ? api.getItemById(id) : undefined;
+              if (selector && data?.type === "Image")
+                api.dispatch({
+                  type: "replace",
+                  destinationIndex: selector.index,
+                  destinationZone: selector.zone,
+                  data: { ...data, props: { ...data.props, photoId } },
+                });
+              close();
             }}
-            onCancel={() => setOpen(false)}
-          >
-            <div className="panel-heading">
-              <h2>Choose a photo</h2>
-              <button
-                className="secondary"
-                onClick={() => dialog.current?.close()}
-              >
-                Close photo library
-              </button>
-            </div>
-            <MediaLibrary
-              onSelect={(photoId) => {
-                const api = getPuck(),
-                  selector = api.getSelectorForId(id);
-                const data = selector ? api.getItemById(id) : undefined;
-                if (selector && data?.type === "Image")
-                  api.dispatch({
-                    type: "replace",
-                    destinationIndex: selector.index,
-                    destinationZone: selector.zone,
-                    data: { ...data, props: { ...data.props, photoId } },
-                  });
-                dialog.current?.close();
-              }}
-            />
-          </dialog>,
-          host,
-        )}
+          />
+        </Modal>
+      )}
     </div>
   );
 }

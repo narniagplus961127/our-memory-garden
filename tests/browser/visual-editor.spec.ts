@@ -105,6 +105,10 @@ test("compose nested blocks with taps, retain selection through moves and save i
     sections[1].props.content[0].props.left[0].props.id,
   );
   await press(page.getByRole("button", { name: "Remove block", exact: true }));
+  await page
+    .getByRole("dialog")
+    .getByRole("button", { name: "Remove block", exact: true })
+    .click();
   await expect(
     page.getByRole("heading", { name: "Block styles", exact: true }),
   ).toBeVisible();

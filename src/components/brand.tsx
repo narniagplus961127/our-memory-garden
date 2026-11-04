@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { PublicMenu } from "./public-menu";
+import { AdminShortcuts } from "./admin-shortcuts";
 export function Brand() {
   return (
     <Link className="brand" href="/">
@@ -10,8 +11,10 @@ export function Brand() {
 }
 export function PublicHeader({
   items = [],
+  editPageId,
 }: {
   items?: import("@/lib/destinations").PublicMenuItem[];
+  editPageId?: string;
 }) {
   function menu(parentId: string | null): React.ReactNode {
     const children = items.filter((i) => i.parentId === parentId);
@@ -40,25 +43,7 @@ export function PublicHeader({
           </>
         )}
       </header>
-      <Link
-        className="button garden-dashboard-fab"
-        href="/admin"
-        title="Garden dashboard"
-      >
-        <svg
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.7"
-          aria-hidden="true"
-        >
-          <rect x="3" y="3" width="7" height="7" rx="1.5" />
-          <rect x="14" y="3" width="7" height="7" rx="1.5" />
-          <rect x="3" y="14" width="7" height="7" rx="1.5" />
-          <rect x="14" y="14" width="7" height="7" rx="1.5" />
-        </svg>
-        <span className="visually-hidden">Garden dashboard</span>
-      </Link>
+      <AdminShortcuts editPageId={editPageId} />
     </>
   );
 }

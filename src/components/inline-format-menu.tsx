@@ -1,10 +1,15 @@
 "use client";
+import { Modal } from "./modal";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { NativeSelect } from "@/components/ui/native-select";
+import { NativeSelectOption } from "@/components/ui/native-select";
+import { Button } from "@/components/ui/button";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import type { Editor } from "@tiptap/core";
 import { DestinationPicker } from "./destination-picker";
 import { destinationHref, type Destination } from "@/lib/destinations";
 import { textColour, textFonts } from "@/lib/text-appearance";
-
 function TextNumberControl({
   label,
   value,
@@ -36,13 +41,13 @@ function TextNumberControl({
       Number(draft) >= min &&
       Number(draft) <= max);
   return (
-    <label
+    <Label
       className={"format-pixels" + (compact ? " format-pixels-compact" : "")}
     >
       <span className={compact ? "visually-hidden" : undefined}>
         {label} · {unit}
       </span>
-      <input
+      <Input
         type="number"
         aria-label={label}
         title={
@@ -93,10 +98,9 @@ function TextNumberControl({
           {unit}
         </span>
       )}
-    </label>
+    </Label>
   );
 }
-
 export function InlineFormatMenu({
   editor,
   allowLinks = true,
@@ -109,8 +113,6 @@ export function InlineFormatMenu({
       kind: "external",
       url: "https://",
     });
-  const dialog = useRef<HTMLDialogElement>(null);
-  const colourDialog = useRef<HTMLDialogElement>(null);
   const morePanel = useRef<HTMLDivElement>(null),
     moreButton = useRef<HTMLButtonElement>(null),
     moreId = useId(),
@@ -142,7 +144,10 @@ export function InlineFormatMenu({
   }, [placeMore]);
   const [colourOpen, setColourOpen] = useState(false),
     [colourDraft, setColourDraft] = useState("#304337");
-  const selection = useRef<{ from: number; to: number } | null>(null);
+  const selection = useRef<{
+    from: number;
+    to: number;
+  } | null>(null);
   const [, refresh] = useState(0);
   useEffect(() => {
     if (!editor) return;
@@ -158,12 +163,6 @@ export function InlineFormatMenu({
     morePanel.current?.hidePopover();
     selection.current = null;
   }, [editor]);
-  useEffect(() => {
-    if (link) dialog.current?.showModal();
-  }, [link]);
-  useEffect(() => {
-    if (colourOpen) colourDialog.current?.showModal();
-  }, [colourOpen]);
   const disabled = !editor || editor.isDestroyed;
   const attributes = disabled ? {} : editor.getAttributes("gardenTextStyle");
   const colour = textColour(attributes.color ?? "") ?? "#304337";
@@ -171,6 +170,10 @@ export function InlineFormatMenu({
   const lineHeight = disabled
     ? ""
     : String(editor.getAttributes(paragraphType).lineHeight ?? "");
+  function closeColour() {
+    setColourOpen(false);
+    selection.current = null;
+  }
   function closeLink() {
     selection.current = null;
     setLink(false);
@@ -201,7 +204,8 @@ export function InlineFormatMenu({
       onClick={(event) => event.stopPropagation()}
       onPointerDown={(event) => {
         event.stopPropagation();
-        if ((event.target as HTMLElement).closest("dialog")) return;
+        if ((event.target as HTMLElement).closest("dialog,[role=dialog]"))
+          return;
         if (!editor || editor.isDestroyed) return;
         selection.current = {
           from: editor.state.selection.from,
@@ -211,11 +215,11 @@ export function InlineFormatMenu({
           event.preventDefault();
       }}
       onMouseDown={(e) => {
-        if ((e.target as HTMLElement).closest("dialog")) return;
+        if ((e.target as HTMLElement).closest("dialog,[role=dialog]")) return;
         if ((e.target as HTMLElement).closest("button")) e.preventDefault();
       }}
     >
-      <select
+      <NativeSelect
         disabled={disabled}
         aria-label="Text style"
         value={small ? "small" : style ? "h" + style : "p"}
@@ -233,15 +237,15 @@ export function InlineFormatMenu({
               .run();
         }}
       >
-        <option value="p">Body</option>
+        <NativeSelectOption value="p">Body</NativeSelectOption>
         {[1, 2, 3, 4].map((n) => (
-          <option key={n} value={"h" + n}>
+          <NativeSelectOption key={n} value={"h" + n}>
             {"H" + n}
-          </option>
+          </NativeSelectOption>
         ))}
-        <option value="small">Small</option>
-      </select>
-      <select
+        <NativeSelectOption value="small">Small</NativeSelectOption>
+      </NativeSelect>
+      <NativeSelect
         disabled={disabled}
         aria-label="Font family"
         value={attributes.fontFamily ?? ""}
@@ -253,13 +257,13 @@ export function InlineFormatMenu({
             .run()
         }
       >
-        <option value="">Site default</option>
+        <NativeSelectOption value="">Site default</NativeSelectOption>
         {textFonts.map((font) => (
-          <option value={font} key={font}>
+          <NativeSelectOption value={font} key={font}>
             {font}
-          </option>
+          </NativeSelectOption>
         ))}
-      </select>
+      </NativeSelect>
       <TextNumberControl
         key={(editor?.instanceId ?? "none") + "size"}
         label="Font size"
@@ -272,7 +276,7 @@ export function InlineFormatMenu({
           command()?.setMark("gardenTextStyle", { fontSize }).run()
         }
       />
-      <button
+      <Button
         type="button"
         disabled={disabled}
         aria-label="Text colour"
@@ -285,8 +289,8 @@ export function InlineFormatMenu({
         <span className="text-colour-icon" style={{ borderColor: colour }}>
           A
         </span>
-      </button>
-      <button
+      </Button>
+      <Button
         disabled={disabled}
         type="button"
         aria-label="Bold"
@@ -294,27 +298,27 @@ export function InlineFormatMenu({
         onClick={() => command()?.toggleBold().run()}
       >
         B
-      </button>
+      </Button>
       {allowLinks && (
-        <button
+        <Button
           disabled={disabled}
           type="button"
           aria-label="Add a link"
           onClick={() => setLink(true)}
         >
           Link
-        </button>
+        </Button>
       )}
       {allowLinks && editor?.isActive("link") && (
-        <button
+        <Button
           type="button"
           disabled={disabled}
           onClick={() => command()?.unsetLink().run()}
         >
           Remove link
-        </button>
+        </Button>
       )}
-      <button
+      <Button
         type="button"
         disabled={disabled}
         className="format-more-trigger"
@@ -336,7 +340,7 @@ export function InlineFormatMenu({
         }}
       >
         ⋯
-      </button>
+      </Button>
       <div
         ref={morePanel}
         id={moreId}
@@ -360,20 +364,20 @@ export function InlineFormatMenu({
       >
         <div className="format-more-heading">
           <strong>More formatting</strong>
-          <button
+          <Button
             type="button"
             aria-label="Close more formatting"
             onClick={closeMore}
           >
             ×
-          </button>
+          </Button>
         </div>
         <div className="format-more-actions">
           {[
             ["Italic", "italic", "I"],
             ["Underline", "underline", "U"],
           ].map(([label, mark, icon]) => (
-            <button
+            <Button
               key={mark}
               type="button"
               disabled={disabled}
@@ -383,9 +387,9 @@ export function InlineFormatMenu({
               onClick={() => command()?.toggleMark(mark).run()}
             >
               {icon}
-            </button>
+            </Button>
           ))}
-          <button
+          <Button
             disabled={disabled}
             type="button"
             aria-label="Align left"
@@ -394,8 +398,8 @@ export function InlineFormatMenu({
             onClick={() => command()?.setTextAlign("left").run()}
           >
             ≡
-          </button>
-          <button
+          </Button>
+          <Button
             disabled={disabled}
             type="button"
             aria-label="Align centre"
@@ -404,8 +408,8 @@ export function InlineFormatMenu({
             onClick={() => command()?.setTextAlign("center").run()}
           >
             ☰
-          </button>
-          <button
+          </Button>
+          <Button
             disabled={disabled}
             type="button"
             aria-label="Align right"
@@ -424,7 +428,7 @@ export function InlineFormatMenu({
             >
               <path d="M4 5h16M9 10h11M4 15h16M9 20h11" />
             </svg>
-          </button>
+          </Button>
         </div>
         <div className="format-more-spacing">
           <TextNumberControl
@@ -458,7 +462,7 @@ export function InlineFormatMenu({
         <p>
           Spacing between letters and lines. Leave blank for the site default.
         </p>
-        <button
+        <Button
           type="button"
           className="secondary"
           disabled={disabled}
@@ -472,23 +476,15 @@ export function InlineFormatMenu({
           }
         >
           Reset text style
-        </button>
+        </Button>
       </div>
       {colourOpen && !disabled && (
-        <dialog
-          ref={colourDialog}
+        <Modal
+          title="Text colour"
+          label="Choose text colour"
+          onClose={closeColour}
           className="inline-link-dialog text-colour-dialog"
-          aria-label="Choose text colour"
-          onClose={() => {
-            setColourOpen(false);
-            selection.current = null;
-          }}
-          onCancel={() => {
-            setColourOpen(false);
-            selection.current = null;
-          }}
         >
-          <h2>Text colour</h2>
           <p>Apply to your selected words, or the text you type next.</p>
           <div className="text-colour-presets">
             {[
@@ -498,7 +494,7 @@ export function InlineFormatMenu({
               ["Ink", "#202820"],
               ["White", "#ffffff"],
             ].map(([name, hex]) => (
-              <button
+              <Button
                 key={name}
                 type="button"
                 aria-label={name + " text colour"}
@@ -508,15 +504,15 @@ export function InlineFormatMenu({
               />
             ))}
           </div>
-          <label htmlFor="text-colour-hex">Custom hex colour</label>
+          <Label htmlFor="text-colour-hex">Custom hex colour</Label>
           <div className="colour-inputs">
-            <input
+            <Input
               type="color"
               aria-label="Choose custom text colour"
               value={textColour(colourDraft) ?? colour}
               onChange={(e) => setColourDraft(e.target.value)}
             />
-            <input
+            <Input
               id="text-colour-hex"
               value={colourDraft}
               maxLength={7}
@@ -530,14 +526,14 @@ export function InlineFormatMenu({
             Use a colour picker or enter a hex colour, such as #A75B43.
           </small>
           <div className="actions">
-            <button
+            <Button
               type="button"
               className="secondary"
-              onClick={() => colourDialog.current?.close()}
+              onClick={() => closeColour()}
             >
               Cancel
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
               disabled={!textColour(colourDraft)}
               onClick={() => {
@@ -546,23 +542,21 @@ export function InlineFormatMenu({
                     color: textColour(colourDraft),
                   })
                   .run();
-                colourDialog.current?.close();
+                closeColour();
               }}
             >
               Apply colour
-            </button>
+            </Button>
           </div>
-        </dialog>
+        </Modal>
       )}
       {link && !disabled && (
-        <dialog
-          ref={dialog}
-          className="inline-link-dialog"
-          aria-label="Link text to a page or website"
+        <Modal
+          title="Link your words"
+          label="Link text to a page or website"
           onClose={closeLink}
-          onCancel={closeLink}
+          className="inline-link-dialog"
         >
-          <h2>Link your words</h2>
           <DestinationPicker
             value={destination}
             onChange={(value) => {
@@ -570,14 +564,14 @@ export function InlineFormatMenu({
             }}
           />
           <div className="actions">
-            <button
+            <Button
               type="button"
               className="secondary"
-              onClick={() => dialog.current?.close()}
+              onClick={() => closeLink()}
             >
               Cancel
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
               disabled={!destinationHref(destination)}
               onClick={() => {
@@ -587,13 +581,13 @@ export function InlineFormatMenu({
                     ?.extendMarkRange("link")
                     .setLink({ href, target: null, rel: null })
                     .run();
-                dialog.current?.close();
+                closeLink();
               }}
             >
               Apply link
-            </button>
+            </Button>
           </div>
-        </dialog>
+        </Modal>
       )}
     </div>
   );

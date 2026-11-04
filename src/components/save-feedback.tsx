@@ -1,4 +1,7 @@
 "use client";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { useState } from "react";
 import type { usePageAutosave } from "./use-page-autosave";
 import type { PageBlock } from "@/lib/blocks";
@@ -72,15 +75,15 @@ export function SaveFeedback({ save }: { save: Save }) {
             Another device copy of this page has unsaved work. Review one copy
             at a time; another tab may still be editing it.
           </p>
-          <button
+          <Button
             disabled={!save.canRecover}
             onClick={() => save.recover(copy.key)}
           >
             Recover device copy
-          </button>{" "}
-          <button className="secondary" onClick={() => save.discard(copy.key)}>
+          </Button>{" "}
+          <Button className="secondary" onClick={() => save.discard(copy.key)}>
             Discard device copy
-          </button>
+          </Button>
           {!save.canRecover && (
             <p className="muted">
               Save or resolve your current work before recovering another copy.
@@ -124,24 +127,24 @@ export function SaveFeedback({ save }: { save: Save }) {
                       : conflict.label}
                 </legend>
                 <div className="conflict-comparison">
-                  <label>
+                  <Label>
                     {text ? "Your text" : "Your change"}
-                    <textarea
+                    <Textarea
                       aria-label={text ? "Your text" : "Your change"}
                       readOnly
                       value={local}
                       rows={5}
                     />
-                  </label>
-                  <label>
+                  </Label>
+                  <Label>
                     {text ? "Saved text" : "Saved change"}
-                    <textarea
+                    <Textarea
                       aria-label={text ? "Saved text" : "Saved change"}
                       readOnly
                       value={saved}
                       rows={5}
                     />
-                  </label>
+                  </Label>
                 </div>
                 {text &&
                   (conflict.local as PageBlock).props.textRich !==
@@ -158,9 +161,9 @@ export function SaveFeedback({ save }: { save: Save }) {
                     </div>
                   )}
                 {manual[conflict.key] !== undefined && (
-                  <label>
+                  <Label>
                     Combined text
-                    <textarea
+                    <Textarea
                       aria-label="Combined text"
                       value={manual[conflict.key]}
                       onChange={(event) => {
@@ -172,26 +175,26 @@ export function SaveFeedback({ save }: { save: Save }) {
                       }}
                       rows={6}
                     />
-                  </label>
+                  </Label>
                 )}
                 <div className="actions">
-                  <button onClick={() => save.resolve(conflict.key, "local")}>
+                  <Button onClick={() => save.resolve(conflict.key, "local")}>
                     {conflict.kind === "layout"
                       ? "Keep my layout"
                       : manual[conflict.key] !== undefined
                         ? "Use combined text"
                         : "Keep mine"}
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     className="secondary"
                     onClick={() => save.resolve(conflict.key, "saved")}
                   >
                     {conflict.kind === "layout"
                       ? "Use saved layout"
                       : "Use saved version"}
-                  </button>
+                  </Button>
                   {text ? (
-                    <button
+                    <Button
                       className="secondary"
                       onClick={async () => {
                         setManual({ ...manual, [conflict.key]: local });
@@ -208,9 +211,9 @@ export function SaveFeedback({ save }: { save: Save }) {
                       }}
                     >
                       Copy and edit manually
-                    </button>
+                    </Button>
                   ) : (
-                    <button
+                    <Button
                       className="secondary"
                       onClick={() =>
                         setNotice(
@@ -219,7 +222,7 @@ export function SaveFeedback({ save }: { save: Save }) {
                       }
                     >
                       Continue editing
-                    </button>
+                    </Button>
                   )}
                 </div>
               </fieldset>

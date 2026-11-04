@@ -525,7 +525,7 @@ test("failed parts remain retryable in the same snapshot and expired parts/manif
     /expired/i,
   );
 });
-test("retained history protects originals without granting anonymous display access or duplicating page usage", async () => {
+test("history-only photos are deletable after removal without deleting the page or granting public access", async () => {
   const cookie = await login(),
     p = await photo(cookie, "historical-flower.png");
   let page = await (
@@ -556,6 +556,7 @@ test("retained history protects originals without granting anonymous display acc
   );
   assert.equal(response.status, 200);
   page = await response.json();
+  const photoVersion = page.version;
   response = await call(
     "/api/pages/" + page.id,
     "PATCH",
@@ -587,14 +588,40 @@ test("retained history protects originals without granting anonymous display acc
   const details = await (
     await call("/api/media/" + p.id, "GET", undefined, cookie)
   ).json();
-  assert.equal(details.usages.length, 1);
-  assert.equal(details.usages[0].history, true);
+  assert.equal(details.usages.length, 0);
   assert.equal(details.publiclyAccessible, false);
   assert.equal((await call("/api/media/" + p.id + "/display")).status, 404);
   assert.equal(
     (await call("/api/media/" + p.id, "DELETE", { confirm: true }, cookie))
       .status,
+    200,
+  );
+  assert.equal(
+    (await call("/api/media/" + p.id + "/original", "GET", undefined, cookie))
+      .status,
+    404,
+  );
+  const before = await (
+    await call("/api/pages/" + page.id, "GET", undefined, cookie)
+  ).json();
+  assert.equal(
+    (
+      await call(
+        "/api/pages/" + page.id + "/history/" + photoVersion,
+        "POST",
+        { confirm: true, version: before.version },
+        cookie,
+      )
+    ).status,
     409,
+  );
+  assert.deepEqual(
+    (
+      await (
+        await call("/api/pages/" + page.id, "GET", undefined, cookie)
+      ).json()
+    ).content,
+    before.content,
   );
   const job = await prepare(cookie, await freshExport(cookie));
   assert.equal(job.status, "ready");
@@ -842,7 +869,7 @@ test("cover/date/category records and exact scanner keys survive the consistent 
     await sql.end();
   }
 });
-test("actual history/trash restoration preserves photo bytes and permanent page deletion finally releases retained usages", async () => {
+test("history can restore available photos while current trash references still protect them", async () => {
   const cookie = await login(),
     p = await photo(cookie, "restorable-byte-retention.png");
   let page = await (
@@ -886,10 +913,10 @@ test("actual history/trash restoration preserves photo bytes and permanent page 
   );
   assert.equal(response.status, 200);
   page = await response.json();
-  assert.equal(
-    (await call("/api/media/" + p.id, "DELETE", { confirm: true }, cookie))
-      .status,
-    409,
+  assert.deepEqual(
+    (await (await call("/api/media/" + p.id, "GET", undefined, cookie)).json())
+      .usages,
+    [],
   );
   response = await call(
     "/api/pages/" + page.id + "/history/" + photoVersion,

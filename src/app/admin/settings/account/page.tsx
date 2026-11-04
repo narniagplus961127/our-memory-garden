@@ -1,3 +1,4 @@
+import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { requireAdministrator } from "@/lib/server/auth";
 export default async function Account() {
@@ -8,9 +9,9 @@ export default async function Account() {
       <h1>Your account</h1>
       <p>You are signed in as {admin.email}.</p>
       <p className="muted">Both garden administrators have equal access.</p>
-      <Link className="button" href="/forgot-password">
-        Reset password by email
-      </Link>
+      <Button asChild className="button">
+        <Link href="/forgot-password">Reset password by email</Link>
+      </Button>
     </>
   );
 }

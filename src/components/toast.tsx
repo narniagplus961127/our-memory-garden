@@ -1,6 +1,6 @@
 "use client";
+import { Button } from "@/components/ui/button";
 import { useEffect, useRef, useState } from "react";
-
 export function Toast({
   message,
   tone = "info",
@@ -39,19 +39,19 @@ export function Toast({
     >
       <p>{message}</p>
       {onAction && (
-        <button type="button" onClick={onAction}>
+        <Button type="button" onClick={onAction}>
           {actionLabel}
-        </button>
+        </Button>
       )}
       {onDismiss && (
-        <button
+        <Button
           type="button"
           className="secondary toast-dismiss"
           aria-label="Dismiss notification"
           onClick={onDismiss}
         >
           ×
-        </button>
+        </Button>
       )}
     </div>
   );

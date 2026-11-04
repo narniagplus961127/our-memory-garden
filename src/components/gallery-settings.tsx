@@ -1,4 +1,7 @@
 "use client";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
 import { useId, useState } from "react";
 import { MediaLibrary } from "./media-library";
 import { displayPhotoUrl } from "@/lib/media";
@@ -27,10 +30,10 @@ export function GallerySettings({
               src={displayPhotoUrl(photo.photoId)}
               alt={`Photo ${index + 1}`}
             />
-            <label htmlFor={`${fieldId}-${index}`}>
+            <Label htmlFor={`${fieldId}-${index}`}>
               Caption for photo {index + 1}
-            </label>
-            <textarea
+            </Label>
+            <Textarea
               id={`${fieldId}-${index}`}
               maxLength={2000}
               value={photo.caption ?? ""}
@@ -45,7 +48,7 @@ export function GallerySettings({
               }
             />
             <div className="actions">
-              <button
+              <Button
                 type="button"
                 className="secondary"
                 aria-label={`Move photo ${index + 1} up`}
@@ -53,8 +56,8 @@ export function GallerySettings({
                 onClick={() => move(index, -1)}
               >
                 ↑
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
                 className="secondary"
                 aria-label={`Move photo ${index + 1} down`}
@@ -62,27 +65,27 @@ export function GallerySettings({
                 onClick={() => move(index, 1)}
               >
                 ↓
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
                 className="secondary"
                 aria-label={`Remove photo ${index + 1}`}
                 onClick={() => onChange(value.filter((_, i) => i !== index))}
               >
                 Remove
-              </button>
+              </Button>
             </div>
           </li>
         ))}
       </ol>
-      <button
+      <Button
         type="button"
         className="secondary"
         disabled={value.length >= 100}
         onClick={() => setLibraryOpen(!libraryOpen)}
       >
         {libraryOpen ? "Close gallery library" : "Add gallery photo"}
-      </button>
+      </Button>
       {libraryOpen && (
         <MediaLibrary
           onSelect={(photoId) => {

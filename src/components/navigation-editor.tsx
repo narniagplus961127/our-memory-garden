@@ -1,4 +1,5 @@
 "use client";
+import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { useRef, useState } from "react";
 import { ConfirmationDialog } from "./confirmation-dialog";
@@ -118,7 +119,7 @@ export function NavigationEditor({ initial }: { initial: NavigationState }) {
             data-drop={sort.marker(item.id)}
           >
             <div className="navigation-item">
-              <button
+              <Button
                 type="button"
                 className="secondary navigation-drag-handle"
                 {...sort.handleProps(item)}
@@ -136,7 +137,7 @@ export function NavigationEditor({ initial }: { initial: NavigationState }) {
                     )),
                   )}
                 </svg>
-              </button>
+              </Button>
               <div className="navigation-item-content">
                 <strong>{item.label}</strong>
                 <p
@@ -155,32 +156,33 @@ export function NavigationEditor({ initial }: { initial: NavigationState }) {
                 </p>
               </div>
               <div className="navigation-item-actions">
-                <Link
-                  href={"/admin/navigation/" + item.id + "/edit"}
-                  className="button secondary"
-                  aria-label={"Edit " + item.label}
-                  title={"Edit " + item.label}
-                  aria-disabled={locked}
-                  tabIndex={locked ? -1 : undefined}
-                  onClick={(event) => {
-                    if (locked) event.preventDefault();
-                  }}
-                >
-                  <svg
-                    width="20"
-                    height="20"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.7"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    aria-hidden="true"
+                <Button asChild className="button secondary">
+                  <Link
+                    href={"/admin/navigation/" + item.id + "/edit"}
+                    aria-label={"Edit " + item.label}
+                    title={"Edit " + item.label}
+                    aria-disabled={locked}
+                    tabIndex={locked ? -1 : undefined}
+                    onClick={(event) => {
+                      if (locked) event.preventDefault();
+                    }}
                   >
-                    <path d="m16 3 5 5-13 13-5 1 1-5ZM14 5l5 5" />
-                  </svg>
-                </Link>
-                <button
+                    <svg
+                      width="20"
+                      height="20"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.7"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      aria-hidden="true"
+                    >
+                      <path d="m16 3 5 5-13 13-5 1 1-5ZM14 5l5 5" />
+                    </svg>
+                  </Link>
+                </Button>
+                <Button
                   type="button"
                   className="secondary"
                   aria-label={"Remove " + item.label}
@@ -205,7 +207,7 @@ export function NavigationEditor({ initial }: { initial: NavigationState }) {
                   >
                     <path d="M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7M14 10v7" />
                   </svg>
-                </button>
+                </Button>
               </div>
             </div>
             {list(item.id)}
@@ -230,17 +232,18 @@ export function NavigationEditor({ initial }: { initial: NavigationState }) {
             from visitors.
           </p>
         </div>
-        <Link
-          href="/admin/navigation/new"
-          className="button"
-          aria-disabled={locked}
-          tabIndex={locked ? -1 : undefined}
-          onClick={(event) => {
-            if (locked) event.preventDefault();
-          }}
-        >
-          Add menu item
-        </Link>
+        <Button asChild className="button">
+          <Link
+            href="/admin/navigation/new"
+            aria-disabled={locked}
+            tabIndex={locked ? -1 : undefined}
+            onClick={(event) => {
+              if (locked) event.preventDefault();
+            }}
+          >
+            Add menu item
+          </Link>
+        </Button>
       </div>
       <div className="navigation-workspace">
         <section aria-label="Menu items">
@@ -267,9 +270,9 @@ export function NavigationEditor({ initial }: { initial: NavigationState }) {
           {error && (
             <div role="alert">
               <p className="error">{error}</p>
-              <button onClick={() => void persist(items)}>
+              <Button onClick={() => void persist(items)}>
                 Retry menu changes
-              </button>
+              </Button>
             </div>
           )}
         </section>

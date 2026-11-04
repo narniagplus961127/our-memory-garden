@@ -1,3 +1,4 @@
+import { Button } from "@/components/ui/button";
 import { GallerySettings } from "./gallery-settings";
 import { PhotoGallery, type GalleryPhoto } from "./photo-gallery";
 import { PhotoPicker } from "./media-library";
@@ -10,6 +11,7 @@ import { BackgroundColour } from "./background-colour";
 import { BlockSpacingControl, type BlockSpacing } from "./block-spacing";
 import { richField } from "./garden-rich-field";
 import { CanvasPhotoAction } from "./canvas-photo-action";
+import { PhotoImage } from "./photo-image";
 import { CanvasRichText } from "./canvas-rich-text";
 import {
   cloneElement,
@@ -20,6 +22,7 @@ import {
 import {
   SectionContentBackground,
   SectionColumnAlignment,
+  SectionWidth,
   type ContentBackground,
 } from "./section-settings";
 import type { Config, Slot, RichText, PuckContext } from "@puckeditor/core";
@@ -62,7 +65,9 @@ type GardenBlockProps = {
     fit?: "cover" | "contain";
     width?: "inset" | "full";
   };
-  Gallery: { photos: GalleryPhoto[] };
+  Gallery: {
+    photos: GalleryPhoto[];
+  };
   Button: {
     label: string;
     labelRich?: RichText;
@@ -75,10 +80,13 @@ type GardenBlockProps = {
     textColor?: string;
   };
   Section: {
+    width?: "container" | "full";
     background?: "paper" | "sage" | "clay";
     spacing?: "compact" | "comfortable" | "spacious";
     content: Slot;
-    backgroundImage?: { photoId: string };
+    backgroundImage?: {
+      photoId: string;
+    };
     contentBackground?: ContentBackground;
     borderWidth?: number;
     borderColor?: string;
@@ -236,7 +244,12 @@ const spacing = {
     { label: "Spacious", value: "spacious" },
   ],
 };
-export const gardenConfig: Config<GardenBlocks, { showTitle?: boolean }> = {
+export const gardenConfig: Config<
+  GardenBlocks,
+  {
+    showTitle?: boolean;
+  }
+> = {
   root: {
     fields: {
       showTitle: {
@@ -252,8 +265,11 @@ export const gardenConfig: Config<GardenBlocks, { showTitle?: boolean }> = {
     render: ({ children, puck }) => (
       <div className="garden-document">
         {/* Puck supplies its root drop area as children. Restrict that existing area;
-            nested content uses Slot allow lists, without adding deprecated DropZones. */}
-        {puck.isEditing && isValidElement<{ allow?: string[] }>(children)
+                    nested content uses Slot allow lists, without adding deprecated DropZones. */}
+        {puck.isEditing &&
+        isValidElement<{
+          allow?: string[];
+        }>(children)
           ? cloneElement(children, { allow: ["Section"] })
           : children}
       </div>
@@ -483,7 +499,7 @@ export const gardenConfig: Config<GardenBlocks, { showTitle?: boolean }> = {
             alt={alt}
           >
             {photoId ? (
-              <img
+              <PhotoImage
                 className={"garden-photo garden-fit-" + (fit ?? "cover")}
                 src={displayPhotoUrl(photoId)}
                 alt={alt}
@@ -577,14 +593,14 @@ export const gardenConfig: Config<GardenBlocks, { showTitle?: boolean }> = {
                     ["full", "Full width"],
                   ] as const
                 ).map(([width, label]) => (
-                  <button
+                  <Button
                     type="button"
                     key={width}
                     aria-pressed={(value ?? "fit") === width}
                     onClick={() => onChange(width)}
                   >
                     {label}
-                  </button>
+                  </Button>
                 ))}
               </div>
             </fieldset>
@@ -655,24 +671,25 @@ export const gardenConfig: Config<GardenBlocks, { showTitle?: boolean }> = {
           className="garden-block garden-button-block"
           style={{ textAlign: align, ...blockStyle(surface) }}
         >
-          <a
-            className={"button " + (variant ?? "primary")}
-            style={{
-              width: width === "full" ? "100%" : undefined,
-              backgroundColor: buttonColor || undefined,
-              borderColor: buttonColor || undefined,
-              color: textColor || undefined,
-            }}
-            href={destinationHref(destination ?? undefined, href)}
-          >
-            <RichContent id={id} puck={puck} type="Button">
-              {labelRich !== undefined ? (
-                <span className="garden-rich-text">{labelRich}</span>
-              ) : (
-                label
-              )}
-            </RichContent>
-          </a>
+          <Button asChild className={"button " + (variant ?? "primary")}>
+            <a
+              style={{
+                width: width === "full" ? "100%" : undefined,
+                backgroundColor: buttonColor || undefined,
+                borderColor: buttonColor || undefined,
+                color: textColor || undefined,
+              }}
+              href={destinationHref(destination ?? undefined, href)}
+            >
+              <RichContent id={id} puck={puck} type="Button">
+                {labelRich !== undefined ? (
+                  <span className="garden-rich-text">{labelRich}</span>
+                ) : (
+                  label
+                )}
+              </RichContent>
+            </a>
+          </Button>
         </div>
       ),
     },
@@ -680,6 +697,13 @@ export const gardenConfig: Config<GardenBlocks, { showTitle?: boolean }> = {
       label: "Section",
       fields: {
         ...appearance,
+        width: {
+          type: "custom",
+          label: "Section width",
+          render: ({ value, onChange }) => (
+            <SectionWidth value={value} onChange={onChange} />
+          ),
+        },
         background: backgrounds,
         spacing,
         backgroundImage: {
@@ -729,12 +753,14 @@ export const gardenConfig: Config<GardenBlocks, { showTitle?: boolean }> = {
         content: { type: "slot", disallow: ["Section"] },
       },
       defaultProps: {
+        width: "container",
         background: "paper",
         spacing: "comfortable",
         content: [],
         columnAlignment: "top",
       },
       render: ({
+        width,
         background,
         spacing: space,
         content: Content,
@@ -750,11 +776,15 @@ export const gardenConfig: Config<GardenBlocks, { showTitle?: boolean }> = {
             "garden-section garden-tone-" +
             (background ?? "paper") +
             " garden-space-" +
-            (space ?? "comfortable")
+            (space ?? "comfortable") +
+            (width === "full" ? " garden-section-full" : "")
           }
           style={
             {
               ...blockStyle(surface),
+              ...(width === "full"
+                ? { paddingLeft: 0, paddingRight: 0, "--gutter": "0px" }
+                : {}),
               backgroundImage: backgroundImage?.photoId
                 ? `url("${displayPhotoUrl(backgroundImage.photoId)}")`
                 : undefined,

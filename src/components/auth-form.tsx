@@ -1,4 +1,7 @@
 "use client";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -84,8 +87,8 @@ export function AuthForm({
         >
           {mode !== "reset" && (
             <div className="field">
-              <label htmlFor="email">Email address</label>
-              <input
+              <Label htmlFor="email">Email address</Label>
+              <Input
                 id="email"
                 name="email"
                 type="email"
@@ -97,10 +100,10 @@ export function AuthForm({
           )}
           {mode !== "forgot" && (
             <div className="field">
-              <label htmlFor="password">
+              <Label htmlFor="password">
                 {mode === "reset" ? "New password" : "Password"}
-              </label>
-              <input
+              </Label>
+              <Input
                 id="password"
                 name="password"
                 type="password"
@@ -116,7 +119,7 @@ export function AuthForm({
               )}
             </div>
           )}
-          <button disabled={!ready || pending || !configured} type="submit">
+          <Button disabled={!ready || pending || !configured} type="submit">
             {pending
               ? "Please wait…"
               : mode === "login"
@@ -124,7 +127,7 @@ export function AuthForm({
                 : mode === "forgot"
                   ? "Send reset link"
                   : "Set password"}
-          </button>
+          </Button>
           <p
             role={failed ? "alert" : "status"}
             className={"form-message" + (failed ? " error" : "")}

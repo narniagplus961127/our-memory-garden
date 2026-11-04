@@ -1,10 +1,38 @@
 "use client";
+import { Button } from "@/components/ui/button";
 import { BackgroundColour } from "./background-colour";
-
 export type ContentBackground = {
   mode: "auto" | "custom" | "none";
   colour?: string;
 };
+export function SectionWidth({
+  value = "container",
+  onChange,
+}: {
+  value?: "container" | "full";
+  onChange: (value: "container" | "full") => void;
+}) {
+  return (
+    <div className="section-setting">
+      <div className="section-segments" role="group" aria-label="Section width">
+        {(["container", "full"] as const).map((mode) => (
+          <Button
+            key={mode}
+            type="button"
+            aria-pressed={value === mode}
+            onClick={() => onChange(mode)}
+          >
+            {mode === "container" ? "Normal container" : "Full width"}
+          </Button>
+        ))}
+      </div>
+      <small className="muted">
+        Full width removes side padding and default block gutters. Custom block
+        spacing is kept.
+      </small>
+    </div>
+  );
+}
 export function SectionContentBackground({
   value,
   onChange,
@@ -21,7 +49,7 @@ export function SectionContentBackground({
         aria-label="Content background"
       >
         {(["auto", "custom", "none"] as const).map((option) => (
-          <button
+          <Button
             key={option}
             type="button"
             aria-pressed={mode === option}
@@ -32,7 +60,7 @@ export function SectionContentBackground({
               : option === "custom"
                 ? "Custom"
                 : "None"}
-          </button>
+          </Button>
         ))}
       </div>
       <small className="muted">
@@ -49,7 +77,6 @@ export function SectionContentBackground({
     </div>
   );
 }
-
 export function SectionColumnAlignment({
   value,
   onChange,
@@ -64,14 +91,14 @@ export function SectionColumnAlignment({
       aria-label="Column content alignment"
     >
       {(["top", "center", "bottom"] as const).map((option) => (
-        <button
+        <Button
           key={option}
           type="button"
           aria-pressed={(value ?? "top") === option}
           onClick={() => onChange(option)}
         >
           {option === "top" ? "Top" : option === "center" ? "Centre" : "Bottom"}
-        </button>
+        </Button>
       ))}
     </div>
   );

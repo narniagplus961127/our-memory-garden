@@ -1,5 +1,7 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { Modal } from "./modal";
+import { Button } from "@/components/ui/button";
+import { useState } from "react";
 export const columnRatios = [
   { value: "equal", label: "Equal", weights: [1, 1] },
   { value: "wide-right", label: "33% / 67%", weights: [1, 2] },
@@ -21,32 +23,18 @@ export function ColumnLayoutPicker({
 }) {
   const [nextCount, setCount] = useState(count),
     [nextRatio, setRatio] = useState<ColumnRatio>(ratio);
-  const dialog = useRef<HTMLDialogElement>(null);
-  useEffect(() => {
-    dialog.current?.showModal();
-  }, []);
   return (
-    <dialog
-      ref={dialog}
-      className="column-layout-dialog"
-      aria-labelledby="column-layout-title"
+    <Modal
+      closeLabel="Close column chooser"
+      title="Choose your columns"
+      label="Choose your columns"
       onClose={onClose}
-      onCancel={onClose}
+      className="column-layout-dialog"
     >
-      <div className="panel-heading">
-        <h2 id="column-layout-title">Choose your columns</h2>
-        <button
-          className="secondary"
-          aria-label="Close column chooser"
-          onClick={onClose}
-        >
-          ×
-        </button>
-      </div>
       <p>Number of columns</p>
       <div className="column-counts">
         {[1, 2, 3, 4].map((n) => (
-          <button
+          <Button
             key={n}
             aria-label={n + (n === 1 ? " column" : " columns")}
             aria-pressed={nextCount === n}
@@ -56,13 +44,13 @@ export function ColumnLayoutPicker({
             }}
           >
             {n}
-          </button>
+          </Button>
         ))}
       </div>
       <p>Column proportions</p>
       <div className="column-options">
         {(nextCount === 2 ? columnRatios : [columnRatios[0]]).map((option) => (
-          <button
+          <Button
             key={option.value}
             aria-pressed={nextRatio === option.value}
             onClick={() => setRatio(option.value)}
@@ -84,7 +72,7 @@ export function ColumnLayoutPicker({
               ))}
             </span>
             {option.label}
-          </button>
+          </Button>
         ))}
       </div>
       <p className="muted" role="status">
@@ -93,13 +81,13 @@ export function ColumnLayoutPicker({
           : "Columns stack in reading order on mobile."}
       </p>
       <div className="actions">
-        <button className="secondary" onClick={onClose}>
+        <Button className="secondary" onClick={onClose}>
           Cancel
-        </button>
-        <button onClick={() => onApply(nextCount, nextRatio)}>
+        </Button>
+        <Button onClick={() => onApply(nextCount, nextRatio)}>
           Apply layout
-        </button>
+        </Button>
       </div>
-    </dialog>
+    </Modal>
   );
 }

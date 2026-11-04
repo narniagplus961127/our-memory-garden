@@ -1,4 +1,5 @@
 "use client";
+import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useRef, useState } from "react";
@@ -67,9 +68,9 @@ export function AdminShell({
           }
         }}
       >
-        <button type="submit" disabled={signingOut}>
+        <Button type="submit" disabled={signingOut}>
           {signingOut ? "Signing out…" : "Sign out"}
-        </button>
+        </Button>
         {signOutError && <p role="alert">{signOutError}</p>}
       </form>
     </>

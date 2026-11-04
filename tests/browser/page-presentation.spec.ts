@@ -123,8 +123,8 @@ test("title visibility defaults on, survives editing and reload, and hides only 
     await expect(view.locator(".public-page-heading > .eyebrow")).toHaveCount(
       0,
     );
-    const dashboard = view.getByRole("link", {
-      name: "Garden dashboard",
+    const dashboard = view.getByRole("button", {
+      name: "Garden tools",
       exact: true,
     });
     await expect(dashboard).toHaveCSS("position", "fixed");

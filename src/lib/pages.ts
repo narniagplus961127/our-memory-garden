@@ -31,6 +31,35 @@ export type GardenPage = {
   updated_by: string;
   deleted_at: string | null;
 };
+export type PageCardData = Pick<
+  GardenPage,
+  | "id"
+  | "title"
+  | "visibility"
+  | "is_homepage"
+  | "updated_at"
+  | "version"
+  | "deleted_at"
+>;
+export function pageCardData({
+  id,
+  title,
+  visibility,
+  is_homepage,
+  updated_at,
+  version,
+  deleted_at,
+}: GardenPage): PageCardData {
+  return {
+    id,
+    title,
+    visibility,
+    is_homepage,
+    updated_at,
+    version,
+    deleted_at,
+  };
+}
 export function initialPageData(text = ""): PageData {
   return {
     root: { props: {} },

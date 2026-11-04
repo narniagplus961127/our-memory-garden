@@ -1,7 +1,9 @@
 "use client";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import type { Category } from "@/lib/organization";
-
 export function CategoryManager({
   initialCategories,
 }: {
@@ -69,8 +71,8 @@ export function CategoryManager({
       >
         <h2>Create a category</h2>
         <div className="field">
-          <label htmlFor="new-category-name">Category name</label>
-          <input
+          <Label htmlFor="new-category-name">Category name</Label>
+          <Input
             id="new-category-name"
             value={name}
             maxLength={100}
@@ -79,7 +81,7 @@ export function CategoryManager({
             onChange={(event) => setName(event.target.value)}
           />
         </div>
-        <button disabled={busy || !name.trim()}>Create category</button>
+        <Button disabled={busy || !name.trim()}>Create category</Button>
       </form>
       {error && (
         <p className="error" role="alert">
@@ -105,8 +107,8 @@ export function CategoryManager({
                     onSubmit={(event) => void submit(event, editing)}
                   >
                     <div className="field">
-                      <label htmlFor="rename-category">Rename category</label>
-                      <input
+                      <Label htmlFor="rename-category">Rename category</Label>
+                      <Input
                         id="rename-category"
                         autoFocus
                         value={rename}
@@ -117,23 +119,23 @@ export function CategoryManager({
                       />
                     </div>
                     <div className="actions">
-                      <button disabled={busy || !rename.trim()}>
+                      <Button disabled={busy || !rename.trim()}>
                         Rename category
-                      </button>
-                      <button
+                      </Button>
+                      <Button
                         type="button"
                         className="secondary"
                         disabled={busy}
                         onClick={() => setEditing(null)}
                       >
                         Cancel
-                      </button>
+                      </Button>
                     </div>
                   </form>
                 ) : (
                   <div className="category-row">
                     <span>{category.name}</span>
-                    <button
+                    <Button
                       type="button"
                       className="secondary"
                       disabled={busy}
@@ -146,7 +148,7 @@ export function CategoryManager({
                       }}
                     >
                       Rename
-                    </button>
+                    </Button>
                   </div>
                 )}
               </li>

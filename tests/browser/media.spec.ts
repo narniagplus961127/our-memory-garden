@@ -11,6 +11,154 @@ const env = Object.fromEntries(
       return [line.slice(0, i), line.slice(i + 1)];
     }),
 );
+test("a removed editor image becomes deletable while its page and history remain", async ({
+  page,
+}, testInfo) => {
+  test.setTimeout(120000);
+  const headers = { Origin: env.NEXT_PUBLIC_APP_URL };
+  await page.request.post("/api/auth/sign-in/email", {
+    headers,
+    data: { email: env.TEST_ADMIN_EMAIL, password: env.TEST_ADMIN_PASSWORD },
+  });
+  const bytes = await sharp({
+      create: { width: 32, height: 24, channels: 3, background: "#769270" },
+    })
+      .png()
+      .toBuffer(),
+    name = "unused-after-edit-" + Date.now() + ".png";
+  const upload = await (
+    await page.request.post("/api/media/uploads", {
+      headers,
+      data: { name, size: bytes.length, type: "image/png" },
+    })
+  ).json();
+  expect(
+    (
+      await page.request.put(upload.uploadUrl, {
+        headers: { "Content-Type": "image/png" },
+        data: bytes,
+      })
+    ).ok(),
+  ).toBeTruthy();
+  expect(
+    (
+      await page.request.post("/api/media/" + upload.id + "/complete", {
+        headers,
+        data: {},
+      })
+    ).ok(),
+  ).toBeTruthy();
+  const garden = await (
+    await page.request.post("/api/pages", {
+      headers,
+      data: { title: "Keep this page after removing its photo " + Date.now() },
+    })
+  ).json();
+  expect(
+    (
+      await page.request.patch("/api/pages/" + garden.id, {
+        headers,
+        data: {
+          version: garden.version,
+          content: {
+            root: { props: {} },
+            content: [
+              {
+                type: "Section",
+                props: {
+                  id: "photo-section",
+                  content: [
+                    {
+                      type: "Image",
+                      props: {
+                        id: "photo-to-remove",
+                        photoId: upload.id,
+                        alt: "Local test flower",
+                      },
+                    },
+                  ],
+                },
+              },
+            ],
+          },
+        },
+      })
+    ).ok(),
+  ).toBeTruthy();
+  await page.goto("/admin/pages/" + garden.id);
+  await selectBlock(page, "Select Image 1");
+  await page
+    .getByRole("button", { name: "Open settings panel", exact: true })
+    .click();
+  await page.getByRole("button", { name: "Remove block", exact: true }).click();
+  await page
+    .getByRole("dialog", { name: "Remove Image?", exact: true })
+    .getByRole("button", { name: "Remove block", exact: true })
+    .click();
+  await expect(
+    page.getByRole("status", { name: "Auto-save status" }),
+  ).toHaveText("Saved");
+  await expect
+    .poll(
+      async () =>
+        (await (await page.request.get("/api/media/" + upload.id)).json())
+          .usages,
+    )
+    .toEqual([]);
+  await page.goto("/admin/media");
+  await page
+    .getByRole("button", { name: "Photo details " + name, exact: true })
+    .click();
+  const details = page.getByRole("dialog", {
+    name: "Photo details",
+    exact: true,
+  });
+  await expect(
+    details
+      .getByRole("button", { name: "Close photo details", exact: true })
+      .locator("svg"),
+  ).toHaveCount(1);
+  await expect(
+    details.getByRole("button", { name: "Delete photo", exact: true }),
+  ).toBeEnabled();
+  await details
+    .getByRole("button", { name: "Delete photo", exact: true })
+    .click();
+  await expect(details).toContainText(
+    "including access from saved page versions",
+  );
+  await page.screenshot({
+    path: testInfo.outputPath("unused-photo-modal.png"),
+  });
+  await details
+    .getByRole("button", { name: "Delete permanently", exact: true })
+    .click();
+  await expect(details).toHaveCount(0);
+  expect((await page.request.get("/api/media/" + upload.id)).status()).toBe(
+    404,
+  );
+  expect((await page.request.get("/api/pages/" + garden.id)).status()).toBe(
+    200,
+  );
+  const history = await page.request.get(
+    "/api/pages/" + garden.id + "/history",
+  );
+  expect(history.ok()).toBeTruthy();
+  await page.goto("/admin/pages/" + garden.id + "/history?version=2");
+  await expect(
+    page.getByRole("img", {
+      name: "Local test flower — no longer available",
+      exact: true,
+    }),
+  ).toBeVisible();
+  await expect(
+    page.getByText("Photo no longer available", { exact: true }),
+  ).toBeVisible();
+  await page.screenshot({
+    path: testInfo.outputPath("deleted-historical-photo.png"),
+  });
+});
+
 test("upload with per-file feedback, inspect protected details and reuse a photo in Puck", async ({
   page,
   isMobile,

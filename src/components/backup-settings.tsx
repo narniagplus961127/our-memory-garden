@@ -1,4 +1,5 @@
 "use client";
+import { Button } from "@/components/ui/button";
 import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 type Part = {
@@ -244,12 +245,11 @@ export function ExportSettings() {
               the current part; reopen it to continue. Ready parts stay
               available until {new Date(job.expires_at).toLocaleString()}.
             </p>
-            <a
-              className="button secondary"
-              href={"/api/exports/" + job.id + "/manifest"}
-            >
-              Download manifest
-            </a>
+            <Button asChild className="button secondary">
+              <a href={"/api/exports/" + job.id + "/manifest"}>
+                Download manifest
+              </a>
+            </Button>
           </div>
           {job.parts.map((part) => (
             <div className="settings-card" key={part.id}>
@@ -268,15 +268,20 @@ export function ExportSettings() {
                     : "Awaiting preparation"}
               </p>
               {part.status === "ready" && (
-                <a
-                  className="button"
-                  onClick={(event) => void download(event, part)}
-                  href={
-                    "/api/exports/" + job.id + "/parts/" + part.id + "/download"
-                  }
-                >
-                  {"Download part " + part.number}
-                </a>
+                <Button asChild className="button">
+                  <a
+                    onClick={(event) => void download(event, part)}
+                    href={
+                      "/api/exports/" +
+                      job.id +
+                      "/parts/" +
+                      part.id +
+                      "/download"
+                    }
+                  >
+                    {"Download part " + part.number}
+                  </a>
+                </Button>
               )}
             </div>
           ))}
@@ -291,7 +296,7 @@ export function ExportSettings() {
       <div className="actions">
         {active && !ready ? (
           <>
-            <button
+            <Button
               disabled={busy || preparing}
               onClick={() => {
                 setError("");
@@ -299,23 +304,23 @@ export function ExportSettings() {
               }}
             >
               Resume export
-            </button>
-            <button
+            </Button>
+            <Button
               className="secondary"
               disabled={busy}
               onClick={() => setCancelConfirm(true)}
             >
               Cancel export
-            </button>
+            </Button>
           </>
         ) : (
-          <button disabled={busy} onClick={() => void create()}>
+          <Button disabled={busy} onClick={() => void create()}>
             {job?.expired
               ? "Create fresh export"
               : ready
                 ? "Create fresh export"
                 : "Create export"}
-          </button>
+          </Button>
         )}
       </div>
       {cancelConfirm && (
@@ -326,15 +331,15 @@ export function ExportSettings() {
             and original photos remain in the garden.
           </p>
           <div className="actions">
-            <button disabled={busy} onClick={() => void cancel()}>
+            <Button disabled={busy} onClick={() => void cancel()}>
               Confirm cancellation
-            </button>
-            <button
+            </Button>
+            <Button
               className="secondary"
               onClick={() => setCancelConfirm(false)}
             >
               Keep preparing
-            </button>
+            </Button>
           </div>
         </div>
       )}
@@ -422,13 +427,13 @@ export function StorageSettings() {
           </p>
         </div>
       )}
-      <button
+      <Button
         className="secondary"
         disabled={busy}
         onClick={() => void refresh()}
       >
         {error ? "Retry refresh" : "Refresh usage"}
-      </button>
+      </Button>
     </section>
   );
 }
