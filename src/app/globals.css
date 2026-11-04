@@ -224,17 +224,15 @@
   border-radius: 8px;
 }
 .category-row {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
-  justify-content: space-between;
   gap: 16px;
 }
-.category-row > div:first-child {
+.category-name {
   min-width: 0;
   overflow-wrap: anywhere;
-}
-.category-row > button {
-  flex-shrink: 0;
+  line-height: 1.5;
 }
 .details-cover {
   width: 100%;

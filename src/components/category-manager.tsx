@@ -98,23 +98,7 @@ export function CategoryManager({
             {list.map((category) => (
               <li key={category.id}>
                 <div className="category-row">
-                  <div className="min-w-0">
-                    <strong>{category.name}</strong>
-                    <p className="m-0 mt-2 text-sm text-muted-foreground break-all">
-                      <Link
-                        href={"/category/" + category.slug}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        aria-label={
-                          "View " +
-                          category.name +
-                          " category (opens in a new tab)"
-                        }
-                      >
-                        /category/{category.slug} ↗
-                      </Link>
-                    </p>
-                  </div>
+                  <strong className="category-name">{category.name}</strong>
                   <div className="flex shrink-0 gap-2">
                     <Button asChild variant="outline" size="icon">
                       <Link
