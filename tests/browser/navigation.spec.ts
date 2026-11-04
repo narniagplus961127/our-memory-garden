@@ -46,6 +46,7 @@ test("manage nested navigation and change addresses through desktop and mobile c
     data: { visibility: "public", version: p.version },
   });
   await page.goto("/admin/navigation");
+  await page.getByRole("link", { name: "Add menu item", exact: true }).click();
   await page.getByLabel("Menu label", { exact: true }).fill("Our rosemary");
   await page
     .getByLabel("Destination type", { exact: true })
@@ -57,6 +58,7 @@ test("manage nested navigation and change addresses through desktop and mobile c
   await expect(
     page.getByRole("status", { name: "Navigation status" }),
   ).toHaveText("Saved");
+  await page.getByRole("link", { name: "Add menu item", exact: true }).click();
   await page.getByLabel("Menu label", { exact: true }).fill("Garden elsewhere");
   await page
     .getByLabel("Destination type", { exact: true })
@@ -74,7 +76,7 @@ test("manage nested navigation and change addresses through desktop and mobile c
     page.getByRole("status", { name: "Navigation status" }),
   ).toHaveText("Saved");
   await page
-    .getByRole("button", { name: "Edit Garden elsewhere", exact: true })
+    .getByRole("link", { name: "Edit Garden elsewhere", exact: true })
     .click();
   await page.getByLabel("Parent item", { exact: true }).selectOption("");
   await page
@@ -96,7 +98,7 @@ test("manage nested navigation and change addresses through desktop and mobile c
     page.getByRole("region", { name: "Menu items" }).locator("strong"),
   ).toHaveText(["Garden elsewhere", "Our rosemary"]);
   await page
-    .getByRole("button", { name: "Edit Garden elsewhere", exact: true })
+    .getByRole("link", { name: "Edit Garden elsewhere", exact: true })
     .click();
   await page
     .getByLabel("Parent item", { exact: true })
@@ -151,11 +153,16 @@ test("manage nested navigation and change addresses through desktop and mobile c
   await page
     .getByRole("button", { name: "Remove Garden elsewhere", exact: true })
     .click();
+  await page
+    .getByRole("dialog")
+    .getByRole("button", { name: "Remove menu item", exact: true })
+    .click();
+  await expect(page.getByRole("dialog")).toHaveCount(0);
   await expect(
     page.getByRole("status", { name: "Navigation status" }),
   ).toHaveText("Saved");
   await expect(
-    page.getByRole("button", { name: "Edit Garden elsewhere", exact: true }),
+    page.getByRole("link", { name: "Edit Garden elsewhere", exact: true }),
   ).toHaveCount(0);
 });
 test("text and button page pickers keep private links visible, follow changed addresses, and retain invalid addresses", async ({

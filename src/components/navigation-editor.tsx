@@ -1,42 +1,39 @@
 "use client";
-import { useState } from "react";
-import { DestinationPicker } from "./destination-picker";
+import Link from "next/link";
+import { useRef, useState } from "react";
+import { ConfirmationDialog } from "./confirmation-dialog";
 import { useMenuReorder } from "./use-menu-reorder";
-import {
-  validDestination,
-  type Destination,
-  type MenuItem,
-} from "@/lib/destinations";
-export function NavigationEditor({
-  initial,
-}: {
-  initial: { items: MenuItem[]; version: number };
-}) {
+import type { MenuItem } from "@/lib/destinations";
+import { isMenuDescendant, type NavigationState } from "@/lib/navigation";
+import { fetchNavigation, putNavigation } from "@/lib/navigation-client";
+export function NavigationEditor({ initial }: { initial: NavigationState }) {
   const [items, setItems] = useState(initial.items),
     [version, setVersion] = useState(initial.version),
-    [label, setLabel] = useState(""),
-    [destination, setDestination] = useState<Destination | null>({
-      kind: "page",
-      pageId: "",
-    }),
-    [parentId, setParentId] = useState(""),
-    [editing, setEditing] = useState<string | null>(null),
     [status, setStatus] = useState("Saved"),
-    [error, setError] = useState("");
-  const busy = status === "Saving…";
-  const sort = useMenuReorder(items, busy, (next) => void persist(next));
+    [error, setError] = useState(""),
+    [removal, setRemoval] = useState<{
+      item: MenuItem;
+      items: MenuItem[];
+      version: number;
+    } | null>(null),
+    [removing, setRemoving] = useState(false),
+    [removalError, setRemovalError] = useState("");
+  const inFlight = useRef(false),
+    heading = useRef<HTMLHeadingElement>(null),
+    removalTrigger = useRef<HTMLButtonElement | null>(null);
+  const busy = status === "Saving…" || removing;
+  const locked = busy || status === "Not saved" || Boolean(removal);
+  const sort = useMenuReorder(
+    items,
+    busy || Boolean(removal),
+    (next) => void persist(next),
+  );
   async function persist(next: MenuItem[]) {
     setItems(next);
     setStatus("Saving…");
     setError("");
     try {
-      const r = await fetch("/api/navigation", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ items: next, version }),
-      });
-      const data = await r.json();
-      if (!r.ok) throw Error(data.error);
+      const data = await putNavigation(next, version);
       setVersion(data.version);
       setStatus("Saved");
       return true;
@@ -50,19 +47,63 @@ export function NavigationEditor({
       return false;
     }
   }
-  function reset() {
-    setEditing(null);
-    setLabel("");
-    setDestination({ kind: "page", pageId: "" });
-    setParentId("");
-  }
-  function descendant(id: string, ancestor: string): boolean {
-    let current = items.find((i) => i.id === id);
-    while (current?.parentId) {
-      if (current.parentId === ancestor) return true;
-      current = items.find((i) => i.id === current!.parentId);
+  async function removeConfirmed() {
+    if (!removal || inFlight.current) return;
+    inFlight.current = true;
+    setRemoving(true);
+    setRemovalError("");
+    try {
+      const next = removal.items.filter(
+        (item) =>
+          item.id !== removal.item.id &&
+          !isMenuDescendant(removal.items, item.id, removal.item.id),
+      );
+      const saved = await putNavigation(next, removal.version);
+      setItems(saved.items);
+      setVersion(saved.version);
+      setStatus("Saved");
+      setRemoval(null);
+      requestAnimationFrame(() => heading.current?.focus());
+    } catch (failure) {
+      setRemovalError(
+        failure instanceof Error
+          ? failure.message
+          : "Could not remove the menu item. Try again.",
+      );
+    } finally {
+      inFlight.current = false;
+      setRemoving(false);
     }
-    return false;
+  }
+  async function reviewSavedMenu() {
+    if (inFlight.current) return;
+    inFlight.current = true;
+    setRemoving(true);
+    try {
+      const saved = await fetchNavigation();
+      setItems(saved.items);
+      setVersion(saved.version);
+      setStatus("Saved");
+      setError("");
+      closeRemoval();
+      setRemovalError("");
+    } catch (failure) {
+      setRemovalError(
+        failure instanceof Error
+          ? failure.message
+          : "Could not reload the saved menu.",
+      );
+    } finally {
+      inFlight.current = false;
+      setRemoving(false);
+    }
+  }
+  function closeRemoval() {
+    setRemoval(null);
+    requestAnimationFrame(() => {
+      if (removalTrigger.current?.isConnected) removalTrigger.current.focus();
+      else heading.current?.focus();
+    });
   }
   function list(parent: string | null): React.ReactNode {
     const siblings = items.filter((i) => i.parentId === parent);
@@ -114,17 +155,15 @@ export function NavigationEditor({
                 </p>
               </div>
               <div className="navigation-item-actions">
-                <button
-                  type="button"
-                  className="secondary"
+                <Link
+                  href={"/admin/navigation/" + item.id + "/edit"}
+                  className="button secondary"
                   aria-label={"Edit " + item.label}
                   title={"Edit " + item.label}
-                  disabled={busy}
-                  onClick={() => {
-                    setEditing(item.id);
-                    setLabel(item.label);
-                    setDestination(item.destination);
-                    setParentId(item.parentId ?? "");
+                  aria-disabled={locked}
+                  tabIndex={locked ? -1 : undefined}
+                  onClick={(event) => {
+                    if (locked) event.preventDefault();
                   }}
                 >
                   <svg
@@ -140,20 +179,17 @@ export function NavigationEditor({
                   >
                     <path d="m16 3 5 5-13 13-5 1 1-5ZM14 5l5 5" />
                   </svg>
-                </button>
+                </Link>
                 <button
                   type="button"
                   className="secondary"
                   aria-label={"Remove " + item.label}
                   title={"Remove " + item.label}
-                  disabled={busy}
-                  onClick={() => {
-                    void persist(
-                      items.filter(
-                        (i) => i.id !== item.id && !descendant(i.id, item.id),
-                      ),
-                    );
-                    if (editing === item.id) reset();
+                  disabled={locked}
+                  onClick={(event) => {
+                    removalTrigger.current = event.currentTarget;
+                    setRemovalError("");
+                    setRemoval({ item, items, version });
                   }}
                 >
                   <svg
@@ -178,6 +214,11 @@ export function NavigationEditor({
       </ol>
     );
   }
+  const nestedRemovalCount = removal
+    ? removal.items.filter((entry) =>
+        isMenuDescendant(removal.items, entry.id, removal.item.id),
+      ).length
+    : 0;
   return (
     <>
       <div className="admin-heading">
@@ -189,10 +230,23 @@ export function NavigationEditor({
             from visitors.
           </p>
         </div>
+        <Link
+          href="/admin/navigation/new"
+          className="button"
+          aria-disabled={locked}
+          tabIndex={locked ? -1 : undefined}
+          onClick={(event) => {
+            if (locked) event.preventDefault();
+          }}
+        >
+          Add menu item
+        </Link>
       </div>
       <div className="navigation-workspace">
         <section aria-label="Menu items">
-          <h2>Your menu</h2>
+          <h2 ref={heading} tabIndex={-1}>
+            Your menu
+          </h2>
           <p id="menu-drag-instructions" className="muted navigation-drag-hint">
             Drag the grip to reorder items within their menu level. Keyboard:
             Space to pick up, arrow keys to move, Enter to drop, Escape to
@@ -219,73 +273,30 @@ export function NavigationEditor({
             </div>
           )}
         </section>
-        <form
-          className="settings-card"
-          onSubmit={async (e) => {
-            e.preventDefault();
-            if (!label.trim() || !validDestination(destination)) {
-              setError("Enter a label and choose a destination.");
-              return;
-            }
-            const item = {
-              id: editing ?? crypto.randomUUID(),
-              label: label.trim(),
-              parentId: parentId || null,
-              destination,
-            };
-            const success = await persist(
-              editing
-                ? items.map((i) => (i.id === editing ? item : i))
-                : [...items, item],
-            );
-            if (success) reset();
-            else setEditing(item.id);
-          }}
-        >
-          <h2>{editing ? "Edit menu item" : "Add menu item"}</h2>
-          <label htmlFor="menu-label">Menu label</label>
-          <input
-            id="menu-label"
-            maxLength={100}
-            value={label}
-            onChange={(e) => setLabel(e.target.value)}
-            required
-          />
-          <DestinationPicker value={destination} onChange={setDestination} />
-          <label htmlFor="menu-parent">Parent item</label>
-          <select
-            id="menu-parent"
-            value={parentId}
-            onChange={(e) => setParentId(e.target.value)}
-          >
-            <option value="">Top level</option>
-            {items
-              .filter(
-                (i) =>
-                  i.id !== editing && (!editing || !descendant(i.id, editing)),
-              )
-              .map((i) => (
-                <option key={i.id} value={i.id}>
-                  {i.label}
-                </option>
-              ))}
-          </select>
-          <p className="muted">
-            <small>
-              Nested items appear beneath their parent. Removing a parent also
-              removes its menu children; pages are kept.
-            </small>
-          </p>
-          <button disabled={busy}>
-            {editing ? "Update menu item" : "Add menu item"}
-          </button>
-          {editing && (
-            <button className="secondary" type="button" onClick={reset}>
-              Cancel editing
-            </button>
-          )}
-        </form>
       </div>
+      {removal && (
+        <ConfirmationDialog
+          title="Remove menu item?"
+          description={`Remove “${removal.item.label}” from your website menu?`}
+          busy={removing}
+          error={removalError}
+          confirmLabel="Remove menu item"
+          retryLabel="Try removing again"
+          reloadLabel="Review saved menu"
+          onConfirm={() => void removeConfirmed()}
+          onCancel={closeRemoval}
+          onReload={() => void reviewSavedMenu()}
+        >
+          {nestedRemovalCount > 0 && (
+            <p>
+              {nestedRemovalCount} nested menu{" "}
+              {nestedRemovalCount === 1 ? "item" : "items"} will also be
+              removed.
+            </p>
+          )}
+          <p>Your pages and their content will be kept.</p>
+        </ConfirmationDialog>
+      )}
       {sort.drag?.input === "pointer" && (
         <div
           className="navigation-drag-preview"

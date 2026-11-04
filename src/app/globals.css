@@ -1459,8 +1459,7 @@ button.primary {
 }
 .navigation-workspace {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(280px, 360px);
-  gap: 32px;
+  grid-template-columns: minmax(0, 1fr);
 }
 .navigation-items {
   list-style: none;
@@ -1555,7 +1554,7 @@ button.primary {
   gap: 4px;
   justify-self: end;
 }
-.navigation-item-actions button {
+.navigation-item-actions :is(button, a) {
   display: grid;
   place-items: center;
   width: 44px;
@@ -1566,7 +1565,49 @@ button.primary {
 .navigation-item p {
   margin: 4px 0;
 }
-.navigation-workspace .settings-card {
+.navigation-item-actions a[aria-disabled="true"],
+.navigation-back[aria-disabled="true"],
+.navigation-item-form a[aria-disabled="true"],
+.admin-heading a[aria-disabled="true"] {
+  opacity: 0.5;
+  cursor: wait;
+}
+.navigation-back {
+  display: inline-block;
+  margin-bottom: 24px;
+}
+.navigation-item-form {
+  max-width: 720px;
+}
+.navigation-item-form fieldset {
+  display: grid;
+  gap: 24px;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
+}
+.navigation-form-field,
+.navigation-item-form .destination-picker {
+  display: grid;
+  gap: 8px;
+}
+.navigation-item-form :is(label, input, select, .destination-picker) {
+  margin: 0;
+}
+.navigation-item-form :is(input, select) {
+  width: 100%;
+}
+.navigation-item-form .actions,
+.navigation-form-error {
+  margin-top: 24px;
+}
+.navigation-form-error {
+  display: grid;
+  gap: 12px;
+  overflow-wrap: anywhere;
+}
+.navigation-form-error p {
   margin: 0;
 }
 .destination-picker {
@@ -1580,10 +1621,6 @@ button.primary {
 }
 .page-address [role="status"] {
   font-size: 13px;
-}
-.navigation-workspace input,
-.navigation-workspace select {
-  margin-bottom: 20px;
 }
 @media (max-width: 760px) {
   .navigation-workspace {
