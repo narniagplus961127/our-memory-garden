@@ -387,6 +387,10 @@ for (const choice of ["mine", "saved"] as const)
       await second
         .getByRole("button", { name: "Remove block", exact: true })
         .click();
+      await second
+        .getByRole("dialog")
+        .getByRole("button", { name: "Remove block", exact: true })
+        .click();
       await expect(comparison).toBeVisible();
       await expect(
         comparison.getByLabel("Saved change", { exact: true }),
@@ -915,7 +919,24 @@ test("other device recovery waits until current unsaved and in-flight work is sa
     current.getByRole("status", { name: "Auto-save status" }),
   ).toHaveText("Not saved");
   await expect(recover).toBeDisabled();
-  await selectBlock(current, "Select Text 1");
+  await current
+    .getByRole("button", { name: "Open outline panel", exact: true })
+    .click();
+  if ((current.viewportSize()?.width ?? 1280) <= 760) {
+    const toast = await current
+      .getByRole("alert")
+      .filter({ hasText: "Your edits remain in this editor." })
+      .boundingBox();
+    const panel = await current
+      .getByRole("complementary", { name: "Page outline", exact: true })
+      .boundingBox();
+    expect(toast).not.toBeNull();
+    expect(panel).not.toBeNull();
+    expect(toast!.y + toast!.height).toBeLessThanOrEqual(panel!.y - 12);
+  }
+  await current
+    .getByRole("button", { name: "Select Text 1", exact: true })
+    .click();
   await current.getByRole("button", { name: "Open settings panel" }).click();
   await expect(canvasField(current, "Text content")).toHaveText(
     "Current tab's irreplaceable fern",

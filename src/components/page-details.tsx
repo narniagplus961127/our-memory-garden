@@ -1,4 +1,10 @@
 "use client";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { NativeSelect } from "@/components/ui/native-select";
+import { NativeSelectOption } from "@/components/ui/native-select";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 import { useEffect, useState } from "react";
 import type { GardenPage } from "@/lib/pages";
 import type { Category } from "@/lib/organization";
@@ -80,10 +86,10 @@ export function PageDetails({
   return (
     <div className="page-details field">
       <div className="settings-field">
-        <label htmlFor="page-date">
+        <Label htmlFor="page-date">
           Page date <small>(optional)</small>
-        </label>
-        <input
+        </Label>
+        <Input
           id="page-date"
           aria-label="Page date"
           type="date"
@@ -94,10 +100,10 @@ export function PageDetails({
         />
       </div>
       <div className="settings-field">
-        <label htmlFor="page-category">
+        <Label htmlFor="page-category">
           Page category <small>(optional)</small>
-        </label>
-        <select
+        </Label>
+        <NativeSelect
           id="page-category"
           aria-label="Page category"
           value={details.categoryId ?? ""}
@@ -106,39 +112,39 @@ export function PageDetails({
             setName(list.find((c) => c.id === e.target.value)?.name ?? "");
           }}
         >
-          <option value="">No category</option>
+          <NativeSelectOption value="">No category</NativeSelectOption>
           {list.map((c) => (
-            <option key={c.id} value={c.id}>
+            <NativeSelectOption key={c.id} value={c.id}>
               {c.name}
-            </option>
+            </NativeSelectOption>
           ))}
-        </select>
+        </NativeSelect>
       </div>
       <div className="settings-field">
-        <label htmlFor="category-name">Category name</label>
-        <input
+        <Label htmlFor="category-name">Category name</Label>
+        <Input
           id="category-name"
           maxLength={100}
           value={name}
           onChange={(e) => setName(e.target.value)}
         />
         <div className="actions category-actions">
-          <button
+          <Button
             className="secondary"
             aria-label="Create category"
             disabled={categoryBusy || !name.trim()}
             onClick={() => void category(false)}
           >
             Create
-          </button>
-          <button
+          </Button>
+          <Button
             className="secondary"
             aria-label="Rename category"
             disabled={categoryBusy || !details.categoryId || !name.trim()}
             onClick={() => void category(true)}
           >
             Rename
-          </button>
+          </Button>
         </div>
       </div>
       <div className="settings-field">
@@ -164,10 +170,10 @@ export function PageDetails({
         aria-label="Search and sharing"
       >
         <div className="settings-field">
-          <label htmlFor="sharing-title">
+          <Label htmlFor="sharing-title">
             Sharing title <small>(optional)</small>
-          </label>
-          <input
+          </Label>
+          <Input
             id="sharing-title"
             aria-label="Sharing title"
             maxLength={200}
@@ -180,10 +186,10 @@ export function PageDetails({
           </p>
         </div>
         <div className="settings-field">
-          <label htmlFor="sharing-description">
+          <Label htmlFor="sharing-description">
             Sharing description <small>(optional)</small>
-          </label>
-          <textarea
+          </Label>
+          <Textarea
             id="sharing-description"
             aria-label="Sharing description"
             maxLength={2000}
@@ -215,15 +221,15 @@ export function PageDetails({
           </p>
         </div>
         <div className="settings-field">
-          <label className="sharing-indexing" htmlFor="allow-indexing">
-            <input
+          <Label className="sharing-indexing" htmlFor="allow-indexing">
+            <Input
               id="allow-indexing"
               type="checkbox"
               checked={details.allowIndexing}
               onChange={(e) => change({ allowIndexing: e.target.checked })}
             />
             Allow search indexing
-          </label>
+          </Label>
           <p className="muted">
             <small>
               Search engines may take time to update. Turning indexing off does
@@ -238,16 +244,16 @@ export function PageDetails({
             Another device copy of this page has unsaved details. Review one
             copy at a time; another tab may still be editing it.
           </p>
-          <button
+          <Button
             className="secondary"
             disabled={!save.canRecover}
             onClick={() => save.recover(copy.key)}
           >
             Recover details device copy
-          </button>
-          <button className="secondary" onClick={() => save.discard(copy.key)}>
+          </Button>
+          <Button className="secondary" onClick={() => save.discard(copy.key)}>
             Discard details device copy
-          </button>
+          </Button>
           {!save.canRecover && (
             <p className="muted">
               Save or resolve your current details before recovering another
@@ -307,13 +313,13 @@ export function PageDetails({
               </div>
             ))}
             <div className="actions">
-              <button className="secondary" onClick={() => save.resolve(true)}>
+              <Button className="secondary" onClick={() => save.resolve(true)}>
                 Keep my details
-              </button>
-              <button className="secondary" onClick={() => save.resolve(false)}>
+              </Button>
+              <Button className="secondary" onClick={() => save.resolve(false)}>
                 Use saved details
-              </button>
-              <button
+              </Button>
+              <Button
                 className="secondary"
                 onClick={() => {
                   setShowComparison(false);
@@ -321,13 +327,13 @@ export function PageDetails({
                 }}
               >
                 Continue editing details
-              </button>
+              </Button>
             </div>
           </div>
         ) : (
-          <button className="secondary" onClick={() => setShowComparison(true)}>
+          <Button className="secondary" onClick={() => setShowComparison(true)}>
             Review details conflict
-          </button>
+          </Button>
         ))}
       <span role="status" aria-label="Page details status">
         {status}
@@ -345,9 +351,9 @@ export function PageDetails({
               {error || save.error}
             </p>
           )}
-          <button className="secondary" onClick={save.retry}>
+          <Button className="secondary" onClick={save.retry}>
             Retry details
-          </button>
+          </Button>
         </>
       )}
     </div>

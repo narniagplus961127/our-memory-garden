@@ -71,7 +71,7 @@ function pageUsages(rows: PhotoUsage[]): PhotoUsage[] {
 }
 export async function photoUsages(id: string): Promise<PhotoUsage[]> {
   const rows =
-    await database()`select page_id as id,title,visibility,deleted,history from garden_media_usages where photo_id=${id} order by title,history`;
+    await database()`select page_id as id,title,visibility,deleted,history from garden_media_usages where photo_id=${id} and not history order by title`;
   return pageUsages(rows as unknown as PhotoUsage[]);
 }
 export async function getPhoto(id: string): Promise<Photo | null> {
@@ -95,7 +95,7 @@ export async function listPhotos(): Promise<Photo[]> {
     >`select id,name,width,height,original_bytes,display_bytes,(status='deleting') as "deletionPending",deletion_error as "deletionError" from media_photos where status in ('ready','deleting') order by created_at desc`,
     database()<
       (PhotoUsage & { photo_id: string })[]
-    >`select page_id as id,title,visibility,deleted,history,photo_id from garden_media_usages order by title,history`,
+    >`select page_id as id,title,visibility,deleted,history,photo_id from garden_media_usages where not history order by title`,
   ]);
   const byPhoto = new Map<string, PhotoUsage[]>();
   for (const { photo_id, ...usage } of usages) {
@@ -285,11 +285,11 @@ export async function deletePhoto(id: string) {
       await sql`select * from media_photos where id=${id} and status in ('ready','deleting') for update`;
     if (!rows[0]) throw new RequestError(404, "Photo not found.");
     const usages =
-      await sql`select page_id from garden_media_usages where photo_id=${id} limit 1`;
+      await sql`select page_id from garden_media_usages where photo_id=${id} and not history limit 1`;
     if (usages.length)
       throw new RequestError(
         409,
-        "This photo is in use. Remove its page and history references before deleting it.",
+        "This photo is in use. Remove it from current pages and covers before deleting it.",
       );
     const pins =
       await sql`select i.source_photo_id from garden_export_items i join garden_exports e on e.id=i.export_id where i.photo_id=${id} and e.expires_at>now() limit 1`;

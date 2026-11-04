@@ -1,3 +1,4 @@
+import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireAdministrator } from "@/lib/server/auth";
@@ -11,12 +12,17 @@ import { GardenContent } from "@/components/garden-content";
 import { RequestError } from "@/lib/server/http";
 import { categories } from "@/lib/server/organization";
 import { displayPhotoUrl } from "@/lib/media";
+import { PhotoImage } from "@/components/photo-image";
 export default async function History({
   params,
   searchParams,
 }: {
-  params: Promise<{ id: string }>;
-  searchParams: Promise<{ version?: string }>;
+  params: Promise<{
+    id: string;
+  }>;
+  searchParams: Promise<{
+    version?: string;
+  }>;
 }) {
   await requireAdministrator();
   const id = (await params).id;
@@ -41,12 +47,13 @@ export default async function History({
             <h1>Version history</h1>
             <p>{page.title}</p>
           </div>
-          <Link
-            className="button secondary"
-            href={page.deleted_at ? "/admin/trash" : "/admin/pages/" + id}
-          >
-            {page.deleted_at ? "Back to trash" : "Return to editor"}
-          </Link>
+          <Button asChild className="button secondary">
+            <Link
+              href={page.deleted_at ? "/admin/trash" : "/admin/pages/" + id}
+            >
+              {page.deleted_at ? "Back to trash" : "Return to editor"}
+            </Link>
+          </Button>
         </div>
         <div className="history-layout">
           <nav aria-label="Saved versions">
@@ -111,7 +118,7 @@ export default async function History({
                 </dl>
                 {selected.sharing_cover_photo_id && (
                   <figure className="history-cover">
-                    <img
+                    <PhotoImage
                       src={displayPhotoUrl(selected.sharing_cover_photo_id)}
                       alt="Saved sharing cover"
                     />
@@ -120,7 +127,7 @@ export default async function History({
                 )}
                 {selected.cover_photo_id && (
                   <figure className="history-cover">
-                    <img
+                    <PhotoImage
                       src={displayPhotoUrl(selected.cover_photo_id)}
                       alt="Saved page cover"
                     />

@@ -1,4 +1,5 @@
 "use client";
+import { Button } from "@/components/ui/button";
 import {
   createContext,
   useContext,
@@ -12,12 +13,10 @@ import Link from "next/link";
 import type { GardenPage, PageCardData } from "@/lib/pages";
 import type { InboundReference } from "@/lib/server/page-recovery";
 import { ConfirmationDialog } from "./confirmation-dialog";
-
 const RecoveryPageContext = createContext<{
   page: GardenPage;
   acknowledge: (saved: GardenPage) => void;
 } | null>(null);
-
 export function RecoveryPage({
   page,
   children,
@@ -48,7 +47,6 @@ export function RecoveryPage({
     </RecoveryPageContext.Provider>
   );
 }
-
 export function RestoreVersion({
   page: initialPage,
   revision,
@@ -90,7 +88,7 @@ export function RestoreVersion({
   }
   return (
     <div className="recovery-action">
-      <button
+      <Button
         className="button"
         onClick={() => {
           setConfirm(true);
@@ -100,7 +98,7 @@ export function RestoreVersion({
         disabled={busy || Boolean(page.deleted_at)}
       >
         Restore this version
-      </button>
+      </Button>
       {confirm && (
         <ConfirmationDialog
           title={"Restore version " + revision + "?"}
@@ -228,7 +226,7 @@ export function TrashAction({
     <div className={icon ? "page-card-trash" : "recovery-action"}>
       {page.deleted_at ? (
         <>
-          <button
+          <Button
             className="button"
             onClick={() => {
               setAction("restore");
@@ -237,8 +235,8 @@ export function TrashAction({
             disabled={busy}
           >
             Restore as private
-          </button>
-          <button
+          </Button>
+          <Button
             className="button secondary"
             onClick={() => {
               setAction("delete");
@@ -247,11 +245,11 @@ export function TrashAction({
             disabled={busy}
           >
             Delete permanently
-          </button>
+          </Button>
         </>
       ) : (
         <>
-          <button
+          <Button
             className={"button secondary" + (icon ? " page-trash-icon" : "")}
             ref={trigger}
             aria-label={icon ? "Move " + page.title + " to trash" : undefined}
@@ -288,7 +286,7 @@ export function TrashAction({
             ) : (
               "Move to trash"
             )}
-          </button>
+          </Button>
           {page.is_homepage && !icon && (
             <p>
               Choose another homepage in Settings before moving this page to
@@ -373,7 +371,6 @@ export function TrashAction({
     </div>
   );
 }
-
 export function TrashList({ pages }: { pages: GardenPage[] }) {
   const [notice, setNotice] = useState("");
   return (

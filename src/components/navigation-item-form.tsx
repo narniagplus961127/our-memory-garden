@@ -1,4 +1,9 @@
 "use client";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { NativeSelect } from "@/components/ui/native-select";
+import { NativeSelectOption } from "@/components/ui/native-select";
+import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useRef, useState, type FormEvent } from "react";
@@ -14,7 +19,6 @@ import {
   type NavigationState,
 } from "@/lib/navigation";
 import { fetchNavigation, putNavigation } from "@/lib/navigation-client";
-
 export function NavigationItemForm({
   initial,
   item,
@@ -126,8 +130,8 @@ export function NavigationItemForm({
       <form className="settings-card navigation-item-form" onSubmit={submit}>
         <fieldset disabled={busy}>
           <div className="navigation-form-field">
-            <label htmlFor="menu-label">Menu label</label>
-            <input
+            <Label htmlFor="menu-label">Menu label</Label>
+            <Input
               id="menu-label"
               maxLength={100}
               value={label}
@@ -137,17 +141,17 @@ export function NavigationItemForm({
           </div>
           <DestinationPicker value={destination} onChange={setDestination} />
           <div className="navigation-form-field">
-            <label htmlFor="menu-parent">Parent item</label>
-            <select
+            <Label htmlFor="menu-parent">Parent item</Label>
+            <NativeSelect
               id="menu-parent"
               value={parentId}
               onChange={(event) => setParentId(event.target.value)}
             >
-              <option value="">Top level</option>
+              <NativeSelectOption value="">Top level</NativeSelectOption>
               {parentId && !items.some((entry) => entry.id === parentId) && (
-                <option value={parentId}>
+                <NativeSelectOption value={parentId}>
                   Unavailable parent — choose another
-                </option>
+                </NativeSelectOption>
               )}
               {items
                 .filter(
@@ -155,11 +159,11 @@ export function NavigationItemForm({
                     entry.id !== id && !isMenuDescendant(items, entry.id, id),
                 )
                 .map((entry) => (
-                  <option key={entry.id} value={entry.id}>
+                  <NativeSelectOption key={entry.id} value={entry.id}>
                     {entry.label}
-                  </option>
+                  </NativeSelectOption>
                 ))}
-            </select>
+            </NativeSelect>
             <small className="muted">
               Nested items appear beneath their parent. Removing a parent also
               removes its menu children; linked pages are kept.
@@ -180,7 +184,7 @@ export function NavigationItemForm({
                     ? "Garden page"
                     : conflict.destination.url}
                 </p>
-                <button
+                <Button
                   type="button"
                   className="secondary"
                   onClick={() => {
@@ -193,25 +197,26 @@ export function NavigationItemForm({
                   }}
                 >
                   Load saved values
-                </button>
+                </Button>
               </>
             )}
           </div>
         )}
         <div className="actions">
-          <button disabled={busy}>
+          <Button disabled={busy}>
             {busy ? "Saving…" : item ? "Update menu item" : "Add menu item"}
-          </button>
-          <Link
-            className="button secondary"
-            href="/admin/navigation"
-            aria-disabled={busy}
-            onClick={(event) => {
-              if (busy) event.preventDefault();
-            }}
-          >
-            Cancel
-          </Link>
+          </Button>
+          <Button asChild className="button secondary">
+            <Link
+              href="/admin/navigation"
+              aria-disabled={busy}
+              onClick={(event) => {
+                if (busy) event.preventDefault();
+              }}
+            >
+              Cancel
+            </Link>
+          </Button>
         </div>
       </form>
     </>

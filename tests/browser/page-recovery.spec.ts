@@ -340,13 +340,17 @@ test("administrator reviews history, confirms restore and safely recovers a tras
     await page.unrouteAll({ behavior: "wait" });
   }
   await page.goto("/admin/trash");
-  const card = page
-    .locator("article")
-    .filter({ has: page.getByRole("heading", { name: title, exact: true }) });
+  const card = page.locator("article").filter({
+    has: page.getByRole("heading", {
+      name: title,
+      exact: true,
+      includeHidden: true,
+    }),
+  });
   await card
     .getByRole("button", { name: "Restore as private", exact: true })
     .click();
-  await card
+  await page
     .getByRole("button", { name: "Confirm restore as private", exact: true })
     .click();
   await expect(card).toHaveCount(0);
@@ -369,14 +373,17 @@ test("administrator reviews history, confirms restore and safely recovers a tras
     .getByRole("button", { name: "Delete permanently", exact: true })
     .click();
   await expect(
-    card.getByRole("dialog", { name: /^Permanently delete/ }),
+    page.getByRole("dialog", { name: /^Permanently delete/ }),
   ).toContainText("cannot be undone");
-  await card.getByRole("button", { name: "Cancel", exact: true }).click();
+  await page
+    .getByRole("dialog")
+    .getByRole("button", { name: "Cancel", exact: true })
+    .click();
   await expect(card).toBeVisible();
   await card
     .getByRole("button", { name: "Delete permanently", exact: true })
     .click();
-  await card
+  await page
     .getByRole("button", { name: "Confirm permanent deletion", exact: true })
     .click();
   await expect(card).toHaveCount(0);
@@ -439,7 +446,7 @@ test("failed restoration retains the read-only snapshot and can be retried", asy
     page.getByRole("alert").filter({ hasText: "Connection interrupted" }),
   ).toContainText("Connection interrupted");
   await expect(
-    page.getByRole("region", { name: "Read-only saved snapshot" }),
+    page.locator('section[aria-label="Read-only saved snapshot"]'),
   ).toContainText(oldTitle);
   expect(
     (await (await page.request.get("/api/pages/" + p.id)).json()).title,
@@ -495,9 +502,13 @@ test("failed trash and permanent deletion keep the original state and offer retr
   await page.getByRole("button", { name: "Retry action", exact: true }).click();
   await expect(page.getByRole("status")).toContainText("Page moved to trash");
   await page.goto("/admin/trash");
-  const card = page
-    .locator("article")
-    .filter({ has: page.getByRole("heading", { name: p.title, exact: true }) });
+  const card = page.locator("article").filter({
+    has: page.getByRole("heading", {
+      name: p.title,
+      exact: true,
+      includeHidden: true,
+    }),
+  });
   await page.route(path, (route) =>
     route.fulfill({
       status: 503,
@@ -508,10 +519,10 @@ test("failed trash and permanent deletion keep the original state and offer retr
   await card
     .getByRole("button", { name: "Delete permanently", exact: true })
     .click();
-  await card
+  await page
     .getByRole("button", { name: "Confirm permanent deletion", exact: true })
     .click();
-  await expect(card.getByRole("alert")).toContainText(
+  await expect(page.getByRole("dialog").getByRole("alert")).toContainText(
     "Deletion connection interrupted",
   );
   await expect(card).toBeVisible();
@@ -521,7 +532,10 @@ test("failed trash and permanent deletion keep the original state and offer retr
     ),
   ).toBe(true);
   await page.unroute(path);
-  await card.getByRole("button", { name: "Retry action", exact: true }).click();
+  await page
+    .getByRole("dialog")
+    .getByRole("button", { name: "Retry action", exact: true })
+    .click();
   await expect(card).toHaveCount(0);
   await expect(page.getByRole("status")).toContainText(
     "Page permanently deleted",

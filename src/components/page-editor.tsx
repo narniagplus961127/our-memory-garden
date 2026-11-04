@@ -1,5 +1,20 @@
 "use client";
-import { useEffect, useMemo, useRef, useState, type RefObject } from "react";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { NativeSelect } from "@/components/ui/native-select";
+import { NativeSelectOption } from "@/components/ui/native-select";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type RefObject,
+} from "react";
+import { Trash2 } from "lucide-react";
+import { ConfirmationDialog } from "./confirmation-dialog";
 import Link from "next/link";
 import {
   Puck,
@@ -34,13 +49,21 @@ import { Toast } from "./toast";
 import { equal } from "@/lib/page-merge";
 import { inlinePageData, richPageData, editedPageData } from "@/lib/rich-text";
 const useGardenPuck = createUsePuck<typeof gardenConfig>();
+const RequestBlockRemoval = createContext<(id: string) => void>(() => {});
 const blockLabel = (type: string) => (type === "PageGrid" ? "Page grid" : type);
 type Snapshot = import("@/lib/page-merge").PageSnapshot;
-type InsertionNotice = { id: string; type: string; zone: string };
+type InsertionNotice = {
+  id: string;
+  type: string;
+  zone: string;
+};
 function documentData(
   data: Data<
     Record<string, Record<string, unknown>>,
-    { title?: string; showTitle?: boolean }
+    {
+      title?: string;
+      showTitle?: boolean;
+    }
   >,
 ): PageData {
   return richPageData({
@@ -80,7 +103,11 @@ type Target = {
   items: PageBlock[];
   insideSection: boolean;
 };
-type OutlineItem = { block: PageBlock; label: string; depth: number };
+type OutlineItem = {
+  block: PageBlock;
+  label: string;
+  depth: number;
+};
 function documentOutline(content: PageBlock[]) {
   const targets: Target[] = [
       {
@@ -301,10 +328,83 @@ const editorOverrides: Partial<Overrides<typeof gardenConfig>> = {
         )}
         <CanvasMoveActions />
         {children}
+        <CanvasEditActions />
       </ActionBar>
     </div>
   ),
 };
+function CanvasEditActions() {
+  const selected = useGardenPuck((state) => state.selectedItem),
+    requestRemoval = useContext(RequestBlockRemoval);
+  if (!selected) return null;
+  return (
+    <>
+      <ActionBar.Action
+        label="Delete"
+        onClick={() => requestRemoval(selected.props.id)}
+      >
+        <Trash2 size={18} />
+      </ActionBar.Action>
+    </>
+  );
+}
+function BlockRemovalDialog({
+  id,
+  onClose,
+}: {
+  id: string;
+  onClose: () => void;
+}) {
+  const getPuck = useGetPuck();
+  const [snapshot] = useState(() => getPuck().getItemById(id));
+  const [error, setError] = useState("");
+  const nested = snapshot
+    ? documentOutline([snapshot as unknown as PageBlock]).items.length - 1
+    : 0;
+  return (
+    <ConfirmationDialog
+      title={"Remove " + (snapshot?.type ?? "block") + "?"}
+      description={
+        nested
+          ? `This also removes ${nested} nested ${nested === 1 ? "block" : "blocks"}. Photos stay in the shared media library.`
+          : "This removes the block from this page. Photos stay in the shared media library."
+      }
+      busy={false}
+      error={error}
+      confirmLabel="Remove block"
+      retryLabel="Remove block"
+      reloadLabel="Close and review block"
+      onCancel={onClose}
+      onReload={onClose}
+      onConfirm={() => {
+        const api = getPuck(),
+          current = api.getItemById(id),
+          selector = api.getSelectorForId(id);
+        if (!current || !selector || !equal(current, snapshot)) {
+          setError(
+            "The block changed while this popup was open. Close and review it before removing.",
+          );
+          return;
+        }
+        const parent = api.getParentById(id),
+          parentSelector =
+            parent && parent.props.id !== "root"
+              ? api.getSelectorForId(parent.props.id)
+              : null;
+        api.dispatch({
+          type: "remove",
+          index: selector.index,
+          zone: selector.zone,
+        });
+        api.dispatch({
+          type: "setUi",
+          ui: { itemSelector: parentSelector ?? null },
+        });
+        onClose();
+      }}
+    />
+  );
+}
 function Workspace({
   page,
   accountId,
@@ -330,20 +430,27 @@ function Workspace({
   onDetailsSaved: (page: GardenPage) => void;
   insertion: RefObject<InsertionNotice | null>;
 }) {
+  const requestRemoval = useContext(RequestBlockRemoval);
   const [panel, setPanel] = useState<
       "content" | "settings" | "outline" | "page" | null
     >("content"),
     [device, setDevice] = useState<"desktop" | "mobile">("desktop"),
     [explicitTarget, setExplicitTarget] = useState<string | null>(null),
-    [columns, setColumns] = useState<{ edit: boolean } | null>(null),
+    [columns, setColumns] = useState<{
+      edit: boolean;
+    } | null>(null),
     [moveTarget, setMoveTarget] = useState("root:default-zone"),
     [moveIndex, setMoveIndex] = useState(0);
   const lastSelected = useRef<string | null>(null),
-    insertionCursor = useRef<{ id: string; zone: string } | null>(null),
+    insertionCursor = useRef<{
+      id: string;
+      zone: string;
+    } | null>(null),
     panelRef = useRef<HTMLElement>(null),
-    canvasFocus = useRef<{ element: HTMLElement; range: Range | null } | null>(
-      null,
-    );
+    canvasFocus = useRef<{
+      element: HTMLElement;
+      range: Range | null;
+    } | null>(null);
   const pendingLayout = useRef<{
     id: string;
     count: number;
@@ -539,7 +646,10 @@ function Workspace({
   }
   function insert(
     type: BlockName,
-    layout?: { count: number; ratio: ColumnRatio },
+    layout?: {
+      count: number;
+      ratio: ColumnRatio;
+    },
   ) {
     const api = getPuck();
     const current = selected
@@ -579,28 +689,12 @@ function Workspace({
         sourceIndex: current.index,
         sourceZone: current.zone,
       });
-    else {
-      const parent = api.getParentById(selected.props.id);
-      const parentSelector =
-        parent && parent.props.id !== "root"
-          ? api.getSelectorForId(parent.props.id)
-          : undefined;
-      api.dispatch({
-        type: "remove",
-        index: current.index,
-        zone: current.zone,
-      });
-      api.dispatch({
-        type: "setUi",
-        ui: { itemSelector: parentSelector ?? null },
-      });
-      setExplicitTarget(null);
-    }
+    else requestRemoval(selected.props.id);
   }
   const outline = (
     <div className="garden-block-list">
       {items.map((item) => (
-        <button
+        <Button
           key={item.block.props.id}
           className="secondary"
           style={{ paddingLeft: 12 + item.depth * 16 }}
@@ -614,7 +708,7 @@ function Workspace({
               ? String(item.block.props.text).slice(0, 28)
               : ""}
           </span>
-        </button>
+        </Button>
       ))}
     </div>
   );
@@ -625,10 +719,10 @@ function Workspace({
           ← Pages
         </Link>
         <div className="editor-page-identity">
-          <label className="visually-hidden" htmlFor="page-title">
+          <Label className="visually-hidden" htmlFor="page-title">
             Page title
-          </label>
-          <input
+          </Label>
+          <Input
             id="page-title"
             value={title}
             maxLength={200}
@@ -648,21 +742,19 @@ function Workspace({
             {status}
           </span>
         </div>
-        <a
-          className="button secondary editor-view-link"
-          href={page.is_homepage ? "/" : "/p/" + page.id}
-          target="_blank"
-          rel="noopener noreferrer"
-          aria-label="View page (opens in a new tab)"
-        >
-          View page <span aria-hidden="true">↗</span>
-        </a>
-        <Link
-          className="button secondary editor-history-link"
-          href={"/admin/pages/" + page.id + "/history"}
-        >
-          History
-        </Link>
+        <Button asChild className="button secondary editor-view-link">
+          <a
+            href={page.is_homepage ? "/" : "/p/" + page.id}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="View page (opens in a new tab)"
+          >
+            View page <span aria-hidden="true">↗</span>
+          </a>
+        </Button>
+        <Button asChild className="button secondary editor-history-link">
+          <Link href={"/admin/pages/" + page.id + "/history"}>History</Link>
+        </Button>
       </header>
       {error && (
         <Toast
@@ -681,7 +773,7 @@ function Workspace({
             ["outline", "Outline"],
             ["page", "Page settings"],
           ].map(([key, label]) => (
-            <button
+            <Button
               key={key}
               className="secondary"
               aria-label={
@@ -703,7 +795,7 @@ function Workspace({
             >
               <EditorIcon name={key} />
               <span className="rail-label">{label}</span>
-            </button>
+            </Button>
           ))}
         </nav>
         <aside
@@ -722,13 +814,13 @@ function Workspace({
         >
           <div className="panel-heading">
             {panel === "settings" && (
-              <button
+              <Button
                 className="inspector-back"
                 aria-label="Back to content"
                 onClick={() => setPanel("content")}
               >
                 <EditorIcon name="back" />
-              </button>
+              </Button>
             )}
             <h2>
               {panel === "page"
@@ -741,18 +833,18 @@ function Workspace({
                     ? "On this page"
                     : "Add content"}
             </h2>
-            <button
+            <Button
               className="secondary"
               aria-label="Close panel"
               onClick={closePanel}
             >
               <EditorIcon name="close" />
-            </button>
+            </Button>
           </div>
           <div hidden={panel !== "page"} className="editor-page-settings">
             <div className="settings-field">
-              <label htmlFor="page-settings-title">Title</label>
-              <input
+              <Label htmlFor="page-settings-title">Title</Label>
+              <Input
                 id="page-settings-title"
                 aria-label="Page settings title"
                 value={title}
@@ -761,8 +853,8 @@ function Workspace({
               />
             </div>
             <div className="settings-field">
-              <label className="page-title-visibility">
-                <input
+              <Label className="page-title-visibility">
+                <Input
                   type="checkbox"
                   checked={data.root?.props?.showTitle !== false}
                   onChange={(event) => {
@@ -779,7 +871,7 @@ function Workspace({
                   }}
                 />
                 Show page title
-              </label>
+              </Label>
               <p className="muted page-title-help">
                 Show the heading on the website. The page name and sharing title
                 stay the same.
@@ -787,8 +879,8 @@ function Workspace({
             </div>
             <PageAddress page={page} accountId={accountId} />
             <div className="settings-field">
-              <label htmlFor="page-visibility">Visibility</label>
-              <select
+              <Label htmlFor="page-visibility">Visibility</Label>
+              <NativeSelect
                 id="page-visibility"
                 aria-label="Page visibility"
                 value={visibility}
@@ -800,9 +892,13 @@ function Workspace({
                   })
                 }
               >
-                <option value="private">Private · administrators only</option>
-                <option value="public">Public · everyone</option>
-              </select>
+                <NativeSelectOption value="private">
+                  Private · administrators only
+                </NativeSelectOption>
+                <NativeSelectOption value="public">
+                  Public · everyone
+                </NativeSelectOption>
+              </NativeSelect>
               {page.is_homepage && (
                 <small>The homepage always stays public.</small>
               )}
@@ -832,13 +928,13 @@ function Workspace({
                         </span>
                       )}
                     </Drawer.Item>
-                    <button
+                    <Button
                       className="secondary palette-add"
                       aria-label="Add Section"
                       onClick={() => insert("Section")}
                     >
                       ＋
-                    </button>
+                    </Button>
                   </div>
                 </div>
                 <div className="palette-heading">Blocks</div>
@@ -859,14 +955,14 @@ function Workspace({
                           {blockLabel(name)}
                         </span>
                       )}
-                      <button
+                      <Button
                         className="secondary palette-add"
                         aria-label={"Add " + blockLabel(name)}
                         disabled={!target}
                         onClick={() => insert(name as BlockName)}
                       >
                         ＋
-                      </button>
+                      </Button>
                     </div>
                   ))}
                 </div>
@@ -885,22 +981,22 @@ function Workspace({
                       ) : (
                         <span className="palette-unavailable">{name}</span>
                       )}
-                      <button
+                      <Button
                         className="secondary palette-add"
                         aria-label={"Add " + name}
                         disabled={!target}
                         onClick={() => setColumns({ edit: false })}
                       >
                         ＋
-                      </button>
+                      </Button>
                     </div>
                   ))}
                 </div>
               </Drawer>
               {target && (
                 <>
-                  <label htmlFor="add-target">Add to</label>
-                  <select
+                  <Label htmlFor="add-target">Add to</Label>
+                  <NativeSelect
                     id="add-target"
                     value={target.zone}
                     onChange={(event) => {
@@ -909,11 +1005,11 @@ function Workspace({
                     }}
                   >
                     {blockTargets.map((item) => (
-                      <option key={item.zone} value={item.zone}>
+                      <NativeSelectOption key={item.zone} value={item.zone}>
                         {item.label}
-                      </option>
+                      </NativeSelectOption>
                     ))}
-                  </select>
+                  </NativeSelect>
                   <p className="muted editor-panel-hint">
                     Tap Add to place a block after the selected block, or at the
                     end of your chosen container. Sections are added at page
@@ -933,12 +1029,12 @@ function Workspace({
                   </p>
                   {selected.type === "Columns" && (
                     <div className="editor-column-layout-action">
-                      <button
+                      <Button
                         className="secondary"
                         onClick={() => setColumns({ edit: true })}
                       >
                         Change column layout
-                      </button>
+                      </Button>
                     </div>
                   )}
                   <Puck.Fields wrapFields={false} />
@@ -948,15 +1044,15 @@ function Workspace({
                   >
                     <h3>Arrange this block</h3>
                     <div className="block-move-controls">
-                      <button
+                      <Button
                         className="secondary"
                         aria-label="Move block up"
                         disabled={!selection || selection.index === 0}
                         onClick={() => action("up")}
                       >
                         ↑ Move up
-                      </button>
-                      <button
+                      </Button>
+                      <Button
                         className="secondary"
                         aria-label="Move block down"
                         disabled={
@@ -965,27 +1061,27 @@ function Workspace({
                         onClick={() => action("down")}
                       >
                         ↓ Move down
-                      </button>
-                      <button
+                      </Button>
+                      <Button
                         className="secondary"
                         aria-label="Duplicate block"
                         onClick={() => action("duplicate")}
                       >
                         Duplicate
-                      </button>
-                      <button
+                      </Button>
+                      <Button
                         className="secondary"
                         aria-label="Remove block"
                         onClick={() => action("remove")}
                       >
                         Remove
-                      </button>
+                      </Button>
                     </div>
                     {moveDestination && (
                       <>
                         <div className="editor-move-field">
-                          <label htmlFor="move-target">Move to</label>
-                          <select
+                          <Label htmlFor="move-target">Move to</Label>
+                          <NativeSelect
                             id="move-target"
                             value={moveDestination.zone}
                             onChange={(e) => {
@@ -994,15 +1090,18 @@ function Workspace({
                             }}
                           >
                             {safeTargets.map((item) => (
-                              <option key={item.zone} value={item.zone}>
+                              <NativeSelectOption
+                                key={item.zone}
+                                value={item.zone}
+                              >
                                 {item.label}
-                              </option>
+                              </NativeSelectOption>
                             ))}
-                          </select>
+                          </NativeSelect>
                         </div>
                         <div className="editor-move-field">
-                          <label htmlFor="move-position">Position</label>
-                          <select
+                          <Label htmlFor="move-position">Position</Label>
+                          <NativeSelect
                             id="move-position"
                             value={Math.min(
                               moveIndex,
@@ -1015,21 +1114,21 @@ function Workspace({
                             {Array.from(
                               { length: moveDestination.items.length + 1 },
                               (_, i) => (
-                                <option key={i} value={i}>
+                                <NativeSelectOption key={i} value={i}>
                                   {i === moveDestination.items.length
                                     ? "At the end"
                                     : "Before block " + (i + 1)}
-                                </option>
+                                </NativeSelectOption>
                               ),
                             )}
-                          </select>
+                          </NativeSelect>
                         </div>
-                        <button
+                        <Button
                           className="secondary editor-move-submit"
                           onClick={moveHere}
                         >
                           Move block here
-                        </button>
+                        </Button>
                       </>
                     )}
                   </section>
@@ -1062,20 +1161,20 @@ function Workspace({
         >
           <div className="editor-canvas-top">
             <div className="actions device-controls" aria-label="Canvas width">
-              <button
+              <Button
                 aria-pressed={device === "desktop"}
                 onClick={() => setDevice("desktop")}
               >
                 <EditorIcon name="desktop" />
                 <span className="visually-hidden">Desktop</span>
-              </button>
-              <button
+              </Button>
+              <Button
                 aria-pressed={device === "mobile"}
                 onClick={() => setDevice("mobile")}
               >
                 <EditorIcon name="mobile" />
                 <span className="visually-hidden">Mobile</span>
-              </button>
+              </Button>
             </div>
             <small>
               <span className="desktop-canvas-hint">
@@ -1124,7 +1223,6 @@ function Workspace({
     </div>
   );
 }
-
 export function PageEditor({
   page,
   accountId,
@@ -1139,55 +1237,68 @@ export function PageEditor({
   );
   const [ready, setReady] = useState(false);
   const insertion = useRef<InsertionNotice | null>(null);
+  const [removal, setRemoval] = useState<string | null>(null);
   useEffect(() => setReady(true), []);
   return (
     <InlineEditingProvider>
-      <fieldset
-        className="garden-editor-init"
-        disabled={!ready}
-        aria-busy={!ready}
-        aria-label="Page editor"
-      >
-        <Puck
-          config={gardenConfig}
-          dnd={{ enableDragHandle: true, behavior: "static" }}
-          data={initialData}
-          onAction={(action) => {
-            if (action.type === "insert" && action.id)
-              insertion.current = {
-                id: action.id,
-                type: action.componentType,
-                zone: action.destinationZone,
-              };
-          }}
-          onChange={(data) =>
-            save.change({
-              content: editedPageData(documentData(data), save.working.content),
-            })
-          }
-          overrides={editorOverrides}
+      <RequestBlockRemoval.Provider value={setRemoval}>
+        <fieldset
+          className="garden-editor-init"
+          disabled={!ready}
+          aria-busy={!ready}
+          aria-label="Page editor"
         >
-          <EditorSync content={save.working.content} />
-          <Workspace
-            page={page}
-            insertion={insertion}
-            accountId={accountId}
-            onDetailsSaved={save.detailsSaved}
-            title={save.working.title}
-            visibility={save.working.visibility}
-            status={ready ? save.status : "Loading editor…"}
-            error={save.error}
-            retry={save.retry}
-            onMetadata={save.change}
-            feedback={
-              <SaveFeedback
-                key={save.comparison?.saved.version ?? "feedback"}
-                save={save}
-              />
+          <Puck
+            permissions={{ delete: false }}
+            config={gardenConfig}
+            dnd={{ enableDragHandle: true, behavior: "static" }}
+            data={initialData}
+            onAction={(action) => {
+              if (action.type === "insert" && action.id)
+                insertion.current = {
+                  id: action.id,
+                  type: action.componentType,
+                  zone: action.destinationZone,
+                };
+            }}
+            onChange={(data) =>
+              save.change({
+                content: editedPageData(
+                  documentData(data),
+                  save.working.content,
+                ),
+              })
             }
-          />
-        </Puck>
-      </fieldset>
+            overrides={editorOverrides}
+          >
+            <EditorSync content={save.working.content} />
+            <Workspace
+              page={page}
+              insertion={insertion}
+              accountId={accountId}
+              onDetailsSaved={save.detailsSaved}
+              title={save.working.title}
+              visibility={save.working.visibility}
+              status={ready ? save.status : "Loading editor…"}
+              error={save.error}
+              retry={save.retry}
+              onMetadata={save.change}
+              feedback={
+                <SaveFeedback
+                  key={save.comparison?.saved.version ?? "feedback"}
+                  save={save}
+                />
+              }
+            />
+            {removal && (
+              <BlockRemovalDialog
+                id={removal}
+                onClose={() => setRemoval(null)}
+              />
+            )}
+          </Puck>
+        </fieldset>
+      </RequestBlockRemoval.Provider>
     </InlineEditingProvider>
   );
 }

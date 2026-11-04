@@ -81,7 +81,9 @@ test("website navigation keeps custom links and returns with Back and Escape", a
         path: testInfo.outputPath("website-menu.png"),
         fullPage: true,
       });
-      await menu.getByRole("button", { name: "Back", exact: true }).click();
+      await menu
+        .getByRole("button", { name: "Close menu", exact: true })
+        .click();
       await expect(menu).not.toBeVisible();
       await expect(opener).toBeFocused();
       await expect(page).toHaveURL(/\/login$/);
@@ -209,6 +211,7 @@ test("signed-in gardeners return from the public website to their dashboard", as
   if (isMobile) await page.getByLabel("Open administration menu").click();
   await page.getByRole("link", { name: "View website ↗", exact: true }).click();
   await expect(page).toHaveURL(/\/$/);
+  await page.getByRole("button", { name: "Garden tools", exact: true }).click();
   await page
     .getByRole("link", { name: "Garden dashboard", exact: true })
     .click();
@@ -227,6 +230,7 @@ test("anonymous garden dashboard navigation still asks for sign in", async ({
   page,
 }) => {
   await page.goto("/");
+  await page.getByRole("button", { name: "Garden tools", exact: true }).click();
   const dashboard = page.getByRole("link", {
     name: "Garden dashboard",
     exact: true,

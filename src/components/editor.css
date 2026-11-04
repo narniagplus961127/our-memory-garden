@@ -8,7 +8,7 @@
   --cream: #fff;
   --leaf: #edf3ee;
   --line: #dce3df;
-  --muted: #65716a;
+  --garden-muted: #65716a;
   --editor-panel-width: 352px;
   --puck-color-azure-04: #304337;
   --puck-color-azure-06: #50725a;
@@ -188,7 +188,7 @@
   text-transform: uppercase;
   letter-spacing: 0.06em;
   font-size: 11px;
-  color: var(--muted);
+  color: var(--garden-muted);
   margin: 22px 0 12px;
 }
 .editor-inline .garden-palette {
@@ -281,7 +281,7 @@
   background: var(--cream);
 }
 .palette-card:hover {
-  border-color: var(--muted);
+  border-color: var(--garden-muted);
 }
 .section-palette {
   grid-template-columns: minmax(0, 1fr) !important;
@@ -291,7 +291,7 @@
   height: 100%;
   padding: 10px 44px 10px 10px;
   align-items: center;
-  color: var(--muted);
+  color: var(--garden-muted);
   cursor: default;
 }
 .section-setting {
@@ -349,7 +349,7 @@
 .editor-canvas-top small {
   margin-left: auto;
   font-size: 12px;
-  color: var(--muted);
+  color: var(--garden-muted);
 }
 .mobile-canvas-hint {
   display: none;
@@ -506,7 +506,7 @@
 .format-more p {
   margin: 0;
   font-size: 12px;
-  color: var(--muted);
+  color: var(--garden-muted);
 }
 .inline-format-bar > button {
   width: auto;
@@ -570,7 +570,7 @@
   outline: none;
 }
 .format-pixels-compact:focus-within {
-  outline: 2px solid var(--muted);
+  outline: 2px solid var(--garden-muted);
   outline-offset: 3px;
 }
 .format-pixels-compact:has(input[aria-invalid="true"]) {
@@ -579,7 +579,7 @@
 .format-number-unit {
   padding-right: 10px;
   font-size: 13px;
-  color: var(--muted);
+  color: var(--garden-muted);
 }
 .editor-block-arrangement {
   display: grid;
@@ -617,13 +617,13 @@
   content: "+";
   font-size: 22px;
   font-weight: 400;
-  color: var(--muted);
+  color: var(--garden-muted);
 }
 .inspector-section[open] > summary::after {
   content: "−";
 }
 .inspector-section > summary:focus-visible {
-  outline: 2px solid var(--muted);
+  outline: 2px solid var(--garden-muted);
   outline-offset: -4px;
   border-radius: 6px;
 }
@@ -747,7 +747,7 @@
   top: 50%;
   transform: translateY(-50%);
   font-size: 12px;
-  color: var(--muted);
+  color: var(--garden-muted);
   pointer-events: none;
 }
 .block-spacing .spacing-reset {
@@ -880,7 +880,7 @@
   overflow: hidden;
 }
 .colour-inputs:focus-within {
-  outline: 2px solid var(--muted);
+  outline: 2px solid var(--garden-muted);
   outline-offset: 3px;
 }
 .editor-inline .colour-inputs input {
@@ -911,25 +911,6 @@
   display: block;
   margin-top: 8px;
 }
-.column-layout-dialog,
-.inline-link-dialog,
-.canvas-photo-dialog {
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  color: var(--ink);
-  background: var(--cream);
-  padding: 28px;
-  max-height: 85dvh;
-  overflow: auto;
-  width: min(680px, calc(100vw - 32px));
-  position: fixed;
-  inset: 0;
-  margin: auto;
-  height: fit-content;
-}
-.inline-link-dialog {
-  width: min(520px, calc(100vw - 32px));
-}
 .inline-link-dialog .destination-picker {
   display: grid;
   gap: 8px;
@@ -949,14 +930,6 @@
 .inline-link-dialog > .actions {
   justify-content: flex-end;
   gap: 12px;
-}
-.canvas-photo-dialog {
-  width: min(1100px, calc(100vw - 48px));
-}
-.column-layout-dialog::backdrop,
-.inline-link-dialog::backdrop,
-.canvas-photo-dialog::backdrop {
-  background: #20312865;
 }
 .column-layout-dialog .panel-heading,
 .canvas-photo-dialog .panel-heading {
@@ -1225,6 +1198,12 @@
   .editor-inline .garden-editor-panel[hidden] {
     display: none;
   }
+  .editor-inline:not(.panel-closed) > .garden-toast {
+    bottom: calc(52dvh + 16px + env(safe-area-inset-bottom));
+  }
+  .editor-inline.panel-page > .garden-toast {
+    bottom: calc(100dvh - 182px + env(safe-area-inset-bottom));
+  }
   .editor-inline .garden-canvas-workspace,
   .editor-inline.panel-closed .garden-canvas-workspace {
     order: initial;
@@ -1273,11 +1252,6 @@
   }
   .column-options {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-  .column-layout-dialog,
-  .inline-link-dialog,
-  .canvas-photo-dialog {
-    padding: 20px;
   }
   .column-layout-dialog h2,
   .inline-link-dialog h2 {

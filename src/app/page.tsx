@@ -12,7 +12,7 @@ export default async function HomePage() {
   const page = isConfigured() ? await getHomepage() : null;
   return (
     <>
-      <GardenHeader />
+      <GardenHeader pageId={page?.id} />
       <main className="public-page public-homepage">
         <div
           className="page-content public-page-heading"

@@ -1,4 +1,7 @@
 "use client";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { templates } from "@/lib/blocks";
 import Link from "next/link";
 import { useState } from "react";
@@ -50,8 +53,8 @@ export function NewPageForm() {
         <legend>Start from a template</legend>
         <div className="template-grid">
           {templates.map((template) => (
-            <label className="template-card" key={template.id}>
-              <input
+            <Label className="template-card" key={template.id}>
+              <Input
                 type="radio"
                 name="template"
                 value={template.id}
@@ -88,13 +91,13 @@ export function NewPageForm() {
               <span className="template-description">
                 {template.description}
               </span>
-            </label>
+            </Label>
           ))}
         </div>
       </fieldset>
       <div className="field new-page-title">
-        <label htmlFor="new-title">Page title</label>
-        <input
+        <Label htmlFor="new-title">Page title</Label>
+        <Input
           id="new-title"
           name="title"
           required
@@ -108,10 +111,10 @@ export function NewPageForm() {
         />
       </div>
       <div className="field new-page-url">
-        <label htmlFor="new-slug">Page URL</label>
+        <Label htmlFor="new-slug">Page URL</Label>
         <div className="page-url-input">
           <span aria-hidden="true">/garden/</span>
-          <input
+          <Input
             id="new-slug"
             name="slug"
             value={slug}
@@ -134,7 +137,7 @@ export function NewPageForm() {
             Lowercase letters, numbers and hyphens. You can change this later in
             Page settings.
           </small>
-          <button
+          <Button
             type="button"
             className="secondary"
             disabled={pending || customSlug === null}
@@ -144,7 +147,7 @@ export function NewPageForm() {
             }}
           >
             Use title
-          </button>
+          </Button>
         </div>
         <p
           id="new-slug-error"
@@ -156,10 +159,10 @@ export function NewPageForm() {
         </p>
       </div>
       <div className="actions">
-        <button disabled={pending}>Create private page</button>
-        <Link className="button secondary" href="/admin/pages">
-          Cancel
-        </Link>
+        <Button disabled={pending}>Create private page</Button>
+        <Button asChild className="button secondary">
+          <Link href="/admin/pages">Cancel</Link>
+        </Button>
       </div>
       {error && (
         <p role="alert" className="error">

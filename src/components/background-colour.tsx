@@ -1,10 +1,11 @@
 "use client";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { useEffect, useId, useState } from "react";
 const normalColour = (colour: string) =>
   colour.length === 4
     ? "#" + [...colour.slice(1)].map((c) => c + c).join("")
     : colour;
-
 export function BackgroundColour({
   value,
   onChange,
@@ -37,7 +38,7 @@ export function BackgroundColour({
           ["Clay", "#e5c7b7"],
           [defaultLabel, ""],
         ].map(([preset, colour]) => (
-          <button
+          <Button
             key={preset}
             type="button"
             title={preset}
@@ -59,11 +60,11 @@ export function BackgroundColour({
             >
               {colour ? "" : "↺"}
             </span>
-          </button>
+          </Button>
         ))}
       </div>
       <div className="colour-inputs">
-        <input
+        <Input
           type="color"
           aria-label={
             label === "Background colour"
@@ -76,7 +77,7 @@ export function BackgroundColour({
             onChange(e.target.value);
           }}
         />
-        <input
+        <Input
           aria-label={
             label === "Background colour"
               ? "Custom background hex colour"

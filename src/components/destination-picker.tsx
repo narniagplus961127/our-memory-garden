@@ -1,4 +1,8 @@
 "use client";
+import { Label } from "@/components/ui/label";
+import { NativeSelect } from "@/components/ui/native-select";
+import { NativeSelectOption } from "@/components/ui/native-select";
+import { Input } from "@/components/ui/input";
 import { useEffect, useId, useState } from "react";
 import { isWebUrl, type Destination } from "@/lib/destinations";
 import type { GardenPage } from "@/lib/pages";
@@ -37,8 +41,8 @@ export function DestinationPicker({
   const kind = value?.kind ?? (optional ? "none" : "external");
   return (
     <div className="destination-picker">
-      <label htmlFor={id + "-kind"}>Destination type</label>
-      <select
+      <Label htmlFor={id + "-kind"}>Destination type</Label>
+      <NativeSelect
         id={id + "-kind"}
         value={kind}
         onChange={(e) =>
@@ -51,31 +55,35 @@ export function DestinationPicker({
           )
         }
       >
-        {optional && <option value="none">No link</option>}
-        <option value="page">Garden page</option>
-        <option value="external">External URL</option>
-      </select>
+        {optional && (
+          <NativeSelectOption value="none">No link</NativeSelectOption>
+        )}
+        <NativeSelectOption value="page">Garden page</NativeSelectOption>
+        <NativeSelectOption value="external">External URL</NativeSelectOption>
+      </NativeSelect>
       {kind === "page" && (
         <>
-          <label htmlFor={id + "-page"}>Garden page</label>
-          <select
+          <Label htmlFor={id + "-page"}>Garden page</Label>
+          <NativeSelect
             id={id + "-page"}
             value={value?.kind === "page" ? value.pageId : ""}
             onChange={(e) => onChange({ kind: "page", pageId: e.target.value })}
           >
-            <option value="">Choose a page</option>
+            <NativeSelectOption value="">Choose a page</NativeSelectOption>
             {value?.kind === "page" &&
               value.pageId &&
               !pages.some((p) => p.id === value.pageId) && (
-                <option value={value.pageId}>Unavailable page</option>
+                <NativeSelectOption value={value.pageId}>
+                  Unavailable page
+                </NativeSelectOption>
               )}
             {pages.map((p) => (
-              <option key={p.id} value={p.id}>
+              <NativeSelectOption key={p.id} value={p.id}>
                 {p.title}
                 {p.visibility === "private" ? " · Private" : ""}
-              </option>
+              </NativeSelectOption>
             ))}
-          </select>
+          </NativeSelect>
           {!value || value.kind !== "page" || !value.pageId ? (
             <p className="error" role="alert">
               Choose a garden page.
@@ -85,8 +93,8 @@ export function DestinationPicker({
       )}
       {kind === "external" && (
         <>
-          <label htmlFor={id + "-url"}>External web address</label>
-          <input
+          <Label htmlFor={id + "-url"}>External web address</Label>
+          <Input
             id={id + "-url"}
             type="url"
             value={value?.kind === "external" ? value.url : ""}

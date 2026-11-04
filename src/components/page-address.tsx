@@ -1,4 +1,7 @@
 "use client";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { useEffect, useRef, useState } from "react";
 import type { GardenPage } from "@/lib/pages";
 import { validSlug } from "@/lib/page-address";
@@ -15,7 +18,10 @@ type AddressCopy = {
   editorSessionId: string;
   expectedSlug: string;
   slug: string;
-  source?: { key: string; value: string };
+  source?: {
+    key: string;
+    value: string;
+  };
 };
 export function PageAddress({
   page,
@@ -268,8 +274,8 @@ export function PageAddress({
     conflict === null;
   return (
     <div className="page-address field">
-      <label htmlFor="page-address">Page address</label>
-      <input
+      <Label htmlFor="page-address">Page address</Label>
+      <Input
         id="page-address"
         value={slug}
         maxLength={100}
@@ -310,7 +316,7 @@ export function PageAddress({
             The saved address is /garden/{conflict}. Your unsaved address is
             /garden/{slug}.
           </p>
-          <button
+          <Button
             className="secondary"
             onClick={() => {
               const s = state.current;
@@ -324,8 +330,8 @@ export function PageAddress({
             }}
           >
             Keep my address
-          </button>
-          <button
+          </Button>
+          <Button
             className="secondary"
             onClick={() => {
               const s = state.current;
@@ -338,13 +344,13 @@ export function PageAddress({
             }}
           >
             Use saved address
-          </button>
+          </Button>
         </div>
       )}
       {copies.map((key) => (
         <div className="editor-recovery-notice" key={key}>
           <p>Another device copy has an unsaved page address.</p>
-          <button
+          <Button
             className="secondary"
             disabled={!canRecover}
             onClick={() => {
@@ -366,7 +372,7 @@ export function PageAddress({
             }}
           >
             Recover address device copy
-          </button>
+          </Button>
           {!canRecover && (
             <p>
               Save or resolve your current address before recovering another
@@ -380,9 +386,9 @@ export function PageAddress({
           <p role="alert" className="error">
             {error}
           </p>
-          <button className="secondary" onClick={() => void persist()}>
+          <Button className="secondary" onClick={() => void persist()}>
             Retry address
-          </button>
+          </Button>
         </>
       )}
     </div>

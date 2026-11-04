@@ -1,8 +1,11 @@
 "use client";
+import { Label } from "@/components/ui/label";
+import { NativeSelect } from "@/components/ui/native-select";
+import { NativeSelectOption } from "@/components/ui/native-select";
+import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import Link from "next/link";
 import type { GardenPage } from "@/lib/pages";
-
 export function HomepageSettings({
   homepage,
   pages,
@@ -52,26 +55,26 @@ export function HomepageSettings({
       </div>
       <form onSubmit={choose}>
         <div className="field">
-          <label htmlFor="homepage-choice">Public page</label>
-          <select
+          <Label htmlFor="homepage-choice">Public page</Label>
+          <NativeSelect
             id="homepage-choice"
             value={selected}
             onChange={(event) => setSelected(event.target.value)}
           >
             {pages.map((page) => (
-              <option key={page.id} value={page.id}>
+              <NativeSelectOption key={page.id} value={page.id}>
                 {page.title}
-              </option>
+              </NativeSelectOption>
             ))}
-          </select>
+          </NativeSelect>
         </div>
-        <button
+        <Button
           className="primary"
           type="submit"
           disabled={busy || selected === current.id}
         >
           Choose as homepage
-        </button>
+        </Button>
       </form>
       <p className="muted settings-note">
         Your homepage stays public and cannot be deleted until another is

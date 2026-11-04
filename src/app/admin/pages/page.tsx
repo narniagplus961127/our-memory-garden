@@ -1,3 +1,4 @@
+import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { requireAdministrator } from "@/lib/server/auth";
 import { listPages } from "@/lib/server/pages";
@@ -17,12 +18,12 @@ export default async function Pages() {
         </div>
       </div>
       <div className="actions create-page-link">
-        <Link className="button" href="/admin/pages/new">
-          Create page
-        </Link>
-        <Link className="button secondary" href="/admin/trash">
-          Trash
-        </Link>
+        <Button asChild className="button">
+          <Link href="/admin/pages/new">Create page</Link>
+        </Button>
+        <Button asChild className="button secondary">
+          <Link href="/admin/trash">Trash</Link>
+        </Button>
       </div>
       <AdminPageCards pages={pages.map(pageCardData)} allowTrash />
     </>

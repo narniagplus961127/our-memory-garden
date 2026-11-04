@@ -1,4 +1,8 @@
 "use client";
+import { Label } from "@/components/ui/label";
+import { NativeSelect } from "@/components/ui/native-select";
+import { NativeSelectOption } from "@/components/ui/native-select";
+import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
 import type { Category, GridSelection, PageCard } from "@/lib/organization";
 import { displayPhotoUrl } from "@/lib/media";
@@ -118,8 +122,8 @@ export function PageGridSettings({
   }
   return (
     <div className="field page-grid-settings">
-      <label htmlFor="grid-mode">Grid selection</label>
-      <select
+      <Label htmlFor="grid-mode">Grid selection</Label>
+      <NativeSelect
         id="grid-mode"
         value={value.mode}
         onChange={(e) =>
@@ -129,44 +133,48 @@ export function PageGridSettings({
           })
         }
       >
-        <option value="manual">Choose pages manually</option>
-        <option value="category">Pages in a category</option>
-      </select>
+        <NativeSelectOption value="manual">
+          Choose pages manually
+        </NativeSelectOption>
+        <NativeSelectOption value="category">
+          Pages in a category
+        </NativeSelectOption>
+      </NativeSelect>
       {value.mode === "category" ? (
         <>
-          <label htmlFor="grid-category">Grid category</label>
-          <select
+          <Label htmlFor="grid-category">Grid category</Label>
+          <NativeSelect
             id="grid-category"
             value={value.categoryId}
             onChange={(e) => onChange({ ...value, categoryId: e.target.value })}
           >
-            <option value="">Choose a category</option>
+            <NativeSelectOption value="">Choose a category</NativeSelectOption>
             {categories.map((c) => (
-              <option key={c.id} value={c.id}>
+              <NativeSelectOption key={c.id} value={c.id}>
                 {c.name}
-              </option>
+              </NativeSelectOption>
             ))}
-          </select>
+          </NativeSelect>
         </>
       ) : (
         <>
-          <label htmlFor="grid-page">Add page to grid</label>
-          <select
+          <Label htmlFor="grid-page">Add page to grid</Label>
+          <NativeSelect
             id="grid-page"
             value={pick}
             onChange={(e) => setPick(e.target.value)}
           >
-            <option value="">Choose a page</option>
+            <NativeSelectOption value="">Choose a page</NativeSelectOption>
             {pages
               .filter((p) => !value.pageIds.includes(p.id))
               .map((p) => (
-                <option key={p.id} value={p.id}>
+                <NativeSelectOption key={p.id} value={p.id}>
                   {p.title}
                   {p.visibility === "private" ? " · Private" : ""}
-                </option>
+                </NativeSelectOption>
               ))}
-          </select>
-          <button
+          </NativeSelect>
+          <Button
             className="secondary"
             disabled={!pick || value.pageIds.length >= 100}
             onClick={() => {
@@ -175,7 +183,7 @@ export function PageGridSettings({
             }}
           >
             Add selected page
-          </button>
+          </Button>
           <ol className="grid-selected-pages">
             {value.pageIds.map((id, i) => {
               const p = pages.find((p) => p.id === id);
@@ -186,23 +194,23 @@ export function PageGridSettings({
                     {p?.visibility === "private" && <small> · Private</small>}
                   </span>
                   <div className="actions">
-                    <button
+                    <Button
                       className="secondary"
                       aria-label={"Move page up " + (i + 1)}
                       disabled={i === 0}
                       onClick={() => move(i, -1)}
                     >
                       ↑
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                       className="secondary"
                       aria-label={"Move page down " + (i + 1)}
                       disabled={i === value.pageIds.length - 1}
                       onClick={() => move(i, 1)}
                     >
                       ↓
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                       className="secondary"
                       aria-label={"Remove page " + (i + 1)}
                       onClick={() =>
@@ -213,7 +221,7 @@ export function PageGridSettings({
                       }
                     >
                       Remove
-                    </button>
+                    </Button>
                   </div>
                 </li>
               );

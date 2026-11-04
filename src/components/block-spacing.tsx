@@ -1,8 +1,10 @@
 "use client";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { useId } from "react";
 import { createUsePuck } from "@puckeditor/core";
 const useEditor = createUsePuck();
-
 export type BlockSpacing = Partial<
   Record<"top" | "right" | "bottom" | "left", number>
 >;
@@ -31,10 +33,10 @@ export function BlockSpacingControl({
       </p>
       <div className="spacing-sides">
         {(["top", "right", "bottom", "left"] as const).map((side) => (
-          <label key={side} htmlFor={id + side}>
+          <Label key={side} htmlFor={id + side}>
             {side[0].toUpperCase() + side.slice(1)}
             <span className="spacing-value">
-              <input
+              <Input
                 id={id + side}
                 aria-label={label + " " + side}
                 type="number"
@@ -62,16 +64,16 @@ export function BlockSpacingControl({
                 px
               </span>
             </span>
-          </label>
+          </Label>
         ))}
       </div>
-      <button
+      <Button
         className="spacing-reset secondary"
         type="button"
         onClick={() => onChange({})}
       >
         Reset {label.toLowerCase()}
-      </button>
+      </Button>
     </fieldset>
   );
 }

@@ -1,4 +1,8 @@
 "use client";
+import { Modal } from "./modal";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import { useEffect, useRef, useState, useId } from "react";
 import Link from "next/link";
 import { displayPhotoUrl, MAX_PHOTO_BYTES, type Photo } from "@/lib/media";
@@ -97,29 +101,14 @@ export function PhotoDetails({
       setDeleting(false);
     }
   }
-  const dialog = useRef<HTMLDialogElement>(null);
-  useEffect(() => {
-    const element = dialog.current;
-    element?.showModal();
-    return () => element?.close();
-  }, []);
   return (
-    <dialog
-      ref={dialog}
+    <Modal
+      title="Photo details"
+      label="Photo details"
+      onClose={onClose}
+      busy={deleting}
       className="photo-details"
-      onCancel={onClose}
-      aria-labelledby="photo-details-title"
     >
-      <div className="panel-heading">
-        <h2 id="photo-details-title">Photo details</h2>
-        <button
-          className="secondary"
-          onClick={onClose}
-          aria-label="Close photo details"
-        >
-          Close
-        </button>
-      </div>
       {!photo.deletionPending && (
         <img
           className="photo-detail-preview"
@@ -167,7 +156,7 @@ export function PhotoDetails({
           ))}
         </ul>
       ) : (
-        <p className="muted">Not used on any page yet.</p>
+        <p className="muted">Not used on any current page.</p>
       )}
       <p className="muted">
         <small>
@@ -178,45 +167,48 @@ export function PhotoDetails({
       </p>
       <div className="actions">
         {!photo.deletionPending && (
-          <a className="button" href={"/api/media/" + photo.id + "/original"}>
-            Download original
-          </a>
+          <Button asChild className="button">
+            <a href={"/api/media/" + photo.id + "/original"}>
+              Download original
+            </a>
+          </Button>
         )}
         {photo.usages.length > 0 && (
-          <button disabled aria-describedby="photo-in-use">
+          <Button disabled aria-describedby="photo-in-use">
             Delete photo
-          </button>
+          </Button>
         )}
       </div>
       {photo.usages.length === 0 && (
         <div className="photo-delete">
           {!confirm && !photo.deletionPending ? (
-            <button className="secondary" onClick={() => setConfirm(true)}>
+            <Button className="secondary" onClick={() => setConfirm(true)}>
               Delete photo
-            </button>
+            </Button>
           ) : (
             <>
               <h3>Delete this photo permanently?</h3>
               <p>
                 This removes its original and display copies from the shared
-                library. This cannot be undone.
+                library, including access from saved page versions. This cannot
+                be undone.
               </p>
               <div className="actions">
-                <button disabled={deleting} onClick={() => void remove()}>
+                <Button disabled={deleting} onClick={() => void remove()}>
                   {deleting
                     ? "Deleting…"
                     : deleteError || photo.deletionPending
                       ? "Retry deletion"
                       : "Delete permanently"}
-                </button>
+                </Button>
                 {!photo.deletionPending && (
-                  <button
+                  <Button
                     className="secondary"
                     disabled={deleting}
                     onClick={() => setConfirm(false)}
                   >
                     Keep photo
-                  </button>
+                  </Button>
                 )}
               </div>
             </>
@@ -231,12 +223,13 @@ export function PhotoDetails({
       {photo.usages.length > 0 && (
         <p id="photo-in-use" className="muted">
           <small>
-            This photo is in use. Remove its page and retained history
-            references before deleting it.
+            This photo is in use. Remove it from current pages and cover
+            settings before deleting it. Save those changes, then reopen photo
+            details.
           </small>
         </p>
       )}
-    </dialog>
+    </Modal>
   );
 }
 export function MediaLibrary({
@@ -348,8 +341,8 @@ export function MediaLibrary({
   return (
     <div className={onSelect ? "media-library media-picker" : "media-library"}>
       <div className="media-upload">
-        <label htmlFor={fieldId + "-upload"}>Upload photos</label>
-        <input
+        <Label htmlFor={fieldId + "-upload"}>Upload photos</Label>
+        <Input
           id={fieldId + "-upload"}
           type="file"
           accept="image/jpeg,image/png,image/webp"
@@ -396,14 +389,14 @@ export function MediaLibrary({
               )}
               {item.state === "Error" && (
                 <div className="actions">
-                  <button
+                  <Button
                     className="secondary"
                     aria-label={"Retry " + item.file.name}
                     onClick={() => void upload(item)}
                   >
                     Retry
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     className="secondary"
                     aria-label={"Remove failed " + item.file.name}
                     onClick={() =>
@@ -413,7 +406,7 @@ export function MediaLibrary({
                     }
                   >
                     Remove failed
-                  </button>
+                  </Button>
                 </div>
               )}
             </li>
@@ -422,28 +415,28 @@ export function MediaLibrary({
       )}
       <div className="media-search">
         <div>
-          <label htmlFor={fieldId + "-search"}>Find a photo</label>
-          <input
+          <Label htmlFor={fieldId + "-search"}>Find a photo</Label>
+          <Input
             id={fieldId + "-search"}
             type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
           />
         </div>
-        <button
+        <Button
           className="secondary"
           disabled={loading}
           onClick={() => void refresh()}
         >
           Refresh library
-        </button>
+        </Button>
       </div>
       {error && (
         <p role="alert" className="error">
           {error}{" "}
-          <button className="secondary" onClick={() => void refresh()}>
+          <Button className="secondary" onClick={() => void refresh()}>
             Retry library
-          </button>
+          </Button>
         </p>
       )}
       {loading && <p role="status">Loading photos…</p>}
@@ -484,15 +477,15 @@ export function MediaLibrary({
               </small>
               <div className="actions">
                 {onSelect && !photo.deletionPending ? (
-                  <button
+                  <Button
                     className="secondary"
                     aria-label={"Use photo " + photo.name}
                     onClick={() => onSelect(photo.id)}
                   >
                     Use photo
-                  </button>
+                  </Button>
                 ) : null}
-                <button
+                <Button
                   className="secondary"
                   aria-label={"Photo details " + photo.name}
                   onClick={(event) =>
@@ -500,7 +493,7 @@ export function MediaLibrary({
                   }
                 >
                   Details
-                </button>
+                </Button>
               </div>
             </div>
           </article>
@@ -541,7 +534,7 @@ export function PhotoPicker({
         />
       )}
       <div className="actions">
-        <button
+        <Button
           type="button"
           className="secondary"
           onClick={() => setOpen(!open)}
@@ -549,15 +542,15 @@ export function PhotoPicker({
           {open
             ? "Close " + label.toLowerCase() + " library"
             : "Choose " + label.toLowerCase()}
-        </button>
+        </Button>
         {value && (
-          <button
+          <Button
             type="button"
             className="secondary"
             onClick={() => onChange("")}
           >
             {"Remove " + label.toLowerCase()}
-          </button>
+          </Button>
         )}
       </div>
       {open && (
