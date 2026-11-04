@@ -66,6 +66,8 @@ The trash icon opens the shared centred confirmation popup. It names the selecte
 
 Application evidence: [create desktop](evidence/ticket34/navigation-create-desktop.png), [create mobile](evidence/ticket34/navigation-create-mobile.png), [edit desktop](evidence/ticket34/navigation-edit-desktop.png), [edit mobile](evidence/ticket34/navigation-edit-mobile.png), [confirmation desktop](evidence/ticket34/navigation-confirm-removal-desktop.png), [confirmation mobile](evidence/ticket34/navigation-confirm-removal-mobile.png).
 
+Ticket 35 corrects the destination picker's compressed field gap in these forms: all fields use 24 px separation, labels use an 8 px gap to their controls, and aligned inputs/selects remain 44 px high. This applies to both destination types on desktop/mobile and is scoped to navigation forms.
+
 Ticket 32 replaces the Edit/Remove text with pencil/trash icons in a right-aligned action group, independent of the middle label/destination column. Both actions keep 44 px targets, full accessible names and tooltips. Mobile uses smaller card gutters so icons remain at the right edge; nested items follow the same layout. Long destination URLs use an ellipsis, retaining the full value in the title and edit form.
 
 ## Twin-seedling brand (ticket 33)

@@ -141,6 +141,8 @@ Public registration, visitor comments or reactions, a separate story content typ
 
 ## Further Notes
 
+Ticket 35 (owner reported 2026-11-04): Navigation create/edit forms use consistent 24 px spacing between fields, 8 px between labels and controls, and matching aligned 44 px inputs/selects for both Garden page and External URL destinations. Validation messages must not introduce stray paragraph margins.
+
 Ticket 34 (owner requested 2026-11-04): Navigation uses a full-width menu list. Add menu item opens `/admin/navigation/new`; pencil actions open `/admin/navigation/[id]/edit`, both authenticated form pages with label, destination and parent controls plus Back/Cancel. Successful submission returns to the updated list; failures retain entered values. Preserve other items' concurrent edits, require review before replacing a changed item, and avoid duplicate creation after an interrupted success response. Trash actions open a centred confirmation popup naming the item and counting all nested items that will also be removed. Cancel/Escape make no change; linked pages are kept. Keep rows visible until removal succeeds, disable repeated actions during the request, retain retry errors in the popup and offer Review saved menu after a conflict. Existing drag behavior and right-edge icons remain unchanged. These application refinements supersede the old side-by-side navigation form.
 
 Ticket 33 (owner approved 2026-11-04): Replace the website's garden-gate mark with a simple forest-green twin-seedling vector on a shared curved soil line. Retain the name and serif wordmark; apply the mark to public/admin/mobile branding and matching browser favicon/touch icons. See `docs/brand.md` for current asset sources and sizing.
