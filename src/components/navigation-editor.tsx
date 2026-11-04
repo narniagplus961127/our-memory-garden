@@ -145,13 +145,17 @@ export function NavigationEditor({ initial }: { initial: NavigationState }) {
                   title={
                     item.destination.kind === "page"
                       ? "Garden page"
-                      : item.destination.url
+                      : item.destination.kind === "category"
+                        ? "Category"
+                        : item.destination.url
                   }
                 >
                   <small>
                     {item.destination.kind === "page"
                       ? "Garden page"
-                      : item.destination.url}
+                      : item.destination.kind === "category"
+                        ? "Category"
+                        : item.destination.url}
                   </small>
                 </p>
               </div>

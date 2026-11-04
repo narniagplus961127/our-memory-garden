@@ -25,3 +25,9 @@ New buttons start with No link. Optional button/image destinations can retain an
 The seedling icon remains in the bottom-right corner. Desktop hover and mobile tap reveal Dashboard; authenticated owners viewing an actual page also get Edit this page by stable ID. Anonymous and not-found screens never receive an editor shortcut. The popover supports keyboard, Escape, outside dismissal and hover travel between trigger and links.
 
 Native FigCraft frames have not been redrawn for this implementation refinement; the approved garden visual direction remains unchanged. Application screenshots and functional checks are recorded in tickets 37–39.
+
+## Category forms and destinations
+
+Category management reuses the Navigation form and shared confirmation patterns: dedicated create/edit routes, 44 px right-edge icon actions, name-derived editable address, retained errors, explicit concurrent-change review and safe Cancel/focus return. The shared destination picker supports Category in menus, buttons, images and inline text. Public category collections reuse the public header/gutters and responsive PageGrid, with an empty state and public-only contents. Deleted category selections remain visibly unavailable rather than appearing silently reset.
+
+Tailwind scans application sources (`src/`) explicitly so generated browser evidence does not participate in the development style watcher.

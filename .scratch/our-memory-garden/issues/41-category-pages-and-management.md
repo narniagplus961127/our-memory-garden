@@ -1,0 +1,19 @@
+# 41 — Category management pages, editable addresses and destinations
+
+Status: resolved
+
+The owner requested category creation/editing on dedicated pages like Navigation, deletion with confirmation, and category pages that can be linked. Category addresses follow the name by default during creation, remain editable and reject duplicates. Reuse garden/shadcn styles, right-edge edit/delete icons, and safe back/cancel/error handling. A public category page lists only live public pages. Stable category-ID destinations in menus and editor links follow later address changes; old addresses become not found. Deleting a category keeps its pages and clears their current assignment; category links become unavailable and existing category grids become empty without preventing unrelated page saves. Protect authentication, URL validation and concurrent edits, document deletion consequences, update spec/design reference, verify desktop/mobile and API behavior, and push/release the completed ticket.
+
+## Answer
+
+Categories now use dedicated create/edit pages and a full-width list with right-edge pencil/bin icons. New addresses follow the name until manually edited; Use name restores generation. Existing category renames preserve their URL unless changed explicitly. Duplicate addresses/names retain form entries, and stale edits require review of saved values. Stable create IDs acknowledge retries after a lost response. Deletion uses the common centred confirmation, pending guards, cancel/focus return and retained error/retry/review.
+
+Public `/category/[slug]` collections show only live public pages. Navigation, Button, Image and inline-text destinations support categories by ID. `/c/[id]` follows current addresses; old addresses return not found. Deleting a category keeps pages/photos, clears current assignments (including trash), advances metadata revisions, hides unavailable menu entries and leaves old category grids empty. Retained references do not block unrelated saves; new unavailable references are rejected. Exports already snapshot all category columns, including the new address.
+
+## Verification and limits
+
+Six new desktop/mobile journeys pass across the final runs: create/edit/default/custom URL/duplicates/cancel, deletion/Escape/focus/pending/failure/retry, and navigation/inline/button category links with public/private filtering. Two existing category-assignment desktop/mobile checks pass. All fourteen category, organization, navigation and block API checks pass, including authorization, origin protection, simultaneous duplicate creation, stale writes, deleted-category history and photo privacy. The photo check initially lacked its local storage fixture and passed once the fixture was started. Two browser assertions were corrected to avoid Next's route-announcer alert and to open the collapsed mobile menu. TypeScript, formatting, whitespace and optimized production build pass.
+
+Migration 0014 was applied to the local fixture and an expiring isolated Neon copy before production. The production-copy backfill yielded one unique valid category address. The additive migration was then applied to the existing garden production database. No other project was used. Tailwind now scans `src/` explicitly, preventing generated evidence from participating in the development style watcher; subsequent browser checks were stable.
+
+Derived category collections initially use noindex/follow and are omitted from the sitemap. Saved versions requiring a deleted category cannot be restored; the confirmation explains this. Existing page-settings quick-create/rename helpers remain; editable URL management is in Categories. Native FigCraft frames are not redrawn for this increment. The spec and design/UI references record the current behavior and [desktop/mobile evidence](../../../docs/design-state-reference.md#category-management-and-collection-pages-ticket-41).

@@ -101,11 +101,15 @@ test("Categories navigation supports creating, renaming and duplicate-name recov
   await expect(page).toHaveURL(/\/admin\/categories$/);
   const name = "Adventures " + crypto.randomUUID(),
     renamed = name + " together";
+  await page
+    .getByRole("link", { name: "Create category", exact: true })
+    .click();
+  await expect(page).toHaveURL(/\/admin\/categories\/new$/);
   await page.getByLabel("Category name", { exact: true }).fill(name);
   await page
     .getByRole("button", { name: "Create category", exact: true })
     .click();
-  await expect(page.getByRole("status")).toContainText("Category created");
+  await expect(page).toHaveURL(/\/admin\/categories$/);
   const list = await (await page.request.get("/api/categories")).json();
   const category = list.find((item: { name: string }) => item.name === name);
   const created = await (
@@ -127,20 +131,21 @@ test("Categories navigation supports creating, renaming and duplicate-name recov
       })
     ).ok(),
   ).toBeTruthy();
+  await page.getByRole("link", { name: "Edit " + name, exact: true }).click();
   await page
-    .getByRole("button", { name: "Rename " + name, exact: true })
-    .click();
-  await page
-    .getByRole("textbox", { name: "Rename category", exact: true })
+    .getByRole("textbox", { name: "Category name", exact: true })
     .fill(renamed);
   await page
-    .getByRole("button", { name: "Rename category", exact: true })
+    .getByRole("button", { name: "Update category", exact: true })
     .click();
-  await expect(page.getByRole("status")).toContainText("Category renamed");
+  await expect(page).toHaveURL(/\/admin\/categories$/);
   const after = await (
     await page.request.get("/api/pages/" + created.id)
   ).json();
   expect(after.category_id).toBe(category.id);
+  await page
+    .getByRole("link", { name: "Create category", exact: true })
+    .click();
   await page
     .getByLabel("Category name", { exact: true })
     .fill(renamed.toUpperCase());
@@ -148,14 +153,14 @@ test("Categories navigation supports creating, renaming and duplicate-name recov
     .getByRole("button", { name: "Create category", exact: true })
     .click();
   await expect(
-    page.locator(".category-manager").getByRole("alert"),
+    page.getByRole("alert").filter({ hasText: "already uses this name" }),
   ).toContainText("already uses this name");
   await expect(page.getByLabel("Category name", { exact: true })).toHaveValue(
     renamed.toUpperCase(),
   );
-  await page.reload();
+  await page.getByRole("link", { name: "Cancel", exact: true }).click();
   await expect(
-    page.getByRole("button", { name: "Rename " + renamed, exact: true }),
+    page.getByRole("link", { name: "Edit " + renamed, exact: true }),
   ).toBeVisible();
   await page.goto("/admin/pages/" + created.id);
   await page

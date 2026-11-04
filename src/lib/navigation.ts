@@ -25,8 +25,10 @@ export function sameMenuItem(a: MenuItem | undefined, b: MenuItem | undefined) {
     a.parentId === b.parentId &&
     (a.destination.kind === "page" && b.destination.kind === "page"
       ? a.destination.pageId === b.destination.pageId
-      : a.destination.kind === "external" &&
-        b.destination.kind === "external" &&
-        a.destination.url === b.destination.url)
+      : a.destination.kind === "category" && b.destination.kind === "category"
+        ? a.destination.categoryId === b.destination.categoryId
+        : a.destination.kind === "external" &&
+          b.destination.kind === "external" &&
+          a.destination.url === b.destination.url)
   );
 }

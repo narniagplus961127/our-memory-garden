@@ -1,8 +1,10 @@
 "use client";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { useState } from "react";
+import Link from "next/link";
+import { useRef, useState } from "react";
+import { Pencil, Trash2 } from "lucide-react";
+import { Button } from "./ui/button";
+import { ConfirmationDialog } from "./confirmation-dialog";
+import { Toast } from "./toast";
 import type { Category } from "@/lib/organization";
 export function CategoryManager({
   initialCategories,
@@ -10,157 +12,165 @@ export function CategoryManager({
   initialCategories: Category[];
 }) {
   const [list, setList] = useState(initialCategories),
-    [name, setName] = useState(""),
-    [editing, setEditing] = useState<Category | null>(null),
-    [rename, setRename] = useState(""),
+    [selected, setSelected] = useState<Category | null>(null),
     [busy, setBusy] = useState(false),
     [error, setError] = useState(""),
-    [status, setStatus] = useState("");
-  async function submit(
-    event: React.FormEvent<HTMLFormElement>,
-    category?: Category,
-  ) {
-    event.preventDefault();
-    if (busy) return;
+    [notice, setNotice] = useState("");
+  const pending = useRef(false);
+  function done(id: string, message: string) {
+    setList((current) => current.filter((c) => c.id !== id));
+    setSelected(null);
+    setError("");
+    setNotice(message);
+    requestAnimationFrame(() =>
+      document.getElementById("categories-title")?.focus(),
+    );
+  }
+  async function remove() {
+    if (!selected || pending.current) return;
+    pending.current = true;
     setBusy(true);
     setError("");
-    setStatus("");
     try {
-      const response = await fetch(
-        "/api/categories" + (category ? "/" + category.id : ""),
-        {
-          method: category ? "PATCH" : "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            name: category ? rename : name,
-            expectedName: category?.name,
-          }),
-        },
-      );
+      const response = await fetch("/api/categories/" + selected.id, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          confirm: true,
+          expectedName: selected.name,
+          expectedSlug: selected.slug,
+        }),
+      });
       const result = await response.json();
       if (!response.ok)
-        throw Error(result.error ?? "Could not change this category.");
-      setList((current) =>
-        [...current.filter((item) => item.id !== result.id), result].sort(
-          (a, b) => a.name.localeCompare(b.name),
-        ),
-      );
-      if (category) setEditing(null);
-      else setName("");
-      setStatus(
-        category
-          ? "Category renamed. Pages keep their category."
-          : "Category created. Choose it in a page’s settings.",
-      );
-    } catch (error) {
+        throw Error(result.error ?? "Could not delete this category.");
+      done(selected.id, "Category deleted. Its pages were kept.");
+    } catch (failure) {
       setError(
-        error instanceof Error
-          ? error.message
+        failure instanceof Error
+          ? failure.message
           : "Could not connect. Try again.",
       );
     } finally {
+      pending.current = false;
+      setBusy(false);
+    }
+  }
+  async function review() {
+    if (!selected || pending.current) return;
+    pending.current = true;
+    setBusy(true);
+    try {
+      const response = await fetch("/api/categories/" + selected.id, {
+        cache: "no-store",
+      });
+      if (response.status === 404) {
+        done(
+          selected.id,
+          "This category was already deleted. Its pages were kept.",
+        );
+        return;
+      }
+      const result = await response.json();
+      if (!response.ok) throw Error(result.error);
+      setSelected(result);
+      setList((current) =>
+        current.map((c) => (c.id === result.id ? result : c)),
+      );
+      setError("");
+    } catch (failure) {
+      setError(
+        failure instanceof Error
+          ? failure.message
+          : "Could not load the category. Try again.",
+      );
+    } finally {
+      pending.current = false;
       setBusy(false);
     }
   }
   return (
     <div className="category-manager">
-      <form
-        className="settings-card category-create"
-        aria-label="Create category"
-        onSubmit={(event) => void submit(event)}
-      >
-        <h2>Create a category</h2>
-        <div className="field">
-          <Label htmlFor="new-category-name">Category name</Label>
-          <Input
-            id="new-category-name"
-            value={name}
-            maxLength={100}
-            required
-            disabled={busy}
-            onChange={(event) => setName(event.target.value)}
-          />
-        </div>
-        <Button disabled={busy || !name.trim()}>Create category</Button>
-      </form>
-      {error && (
-        <p className="error" role="alert">
-          {error}
-        </p>
-      )}
-      <p role="status" className="muted">
-        {status}
-      </p>
+      {notice && <Toast message={notice} onDismiss={() => setNotice("")} />}
       <section aria-label="Categories" className="category-list">
-        <h2>Your categories</h2>
-        <p className="muted">
-          Assign a category in Page settings. Renaming updates its name
-          everywhere.
-        </p>
         {list.length ? (
           <ul>
             {list.map((category) => (
               <li key={category.id}>
-                {editing?.id === category.id ? (
-                  <form
-                    aria-label={"Rename " + category.name}
-                    onSubmit={(event) => void submit(event, editing)}
-                  >
-                    <div className="field">
-                      <Label htmlFor="rename-category">Rename category</Label>
-                      <Input
-                        id="rename-category"
-                        autoFocus
-                        value={rename}
-                        required
-                        maxLength={100}
-                        disabled={busy}
-                        onChange={(event) => setRename(event.target.value)}
-                      />
-                    </div>
-                    <div className="actions">
-                      <Button disabled={busy || !rename.trim()}>
-                        Rename category
-                      </Button>
-                      <Button
-                        type="button"
-                        className="secondary"
-                        disabled={busy}
-                        onClick={() => setEditing(null)}
+                <div className="category-row">
+                  <div className="min-w-0">
+                    <strong>{category.name}</strong>
+                    <p className="m-0 mt-2 text-sm text-muted-foreground break-all">
+                      <Link
+                        href={"/category/" + category.slug}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        aria-label={
+                          "View " +
+                          category.name +
+                          " category (opens in a new tab)"
+                        }
                       >
-                        Cancel
-                      </Button>
-                    </div>
-                  </form>
-                ) : (
-                  <div className="category-row">
-                    <span>{category.name}</span>
+                        /category/{category.slug} ↗
+                      </Link>
+                    </p>
+                  </div>
+                  <div className="flex shrink-0 gap-2">
+                    <Button asChild variant="outline" size="icon">
+                      <Link
+                        href={"/admin/categories/" + category.id + "/edit"}
+                        aria-label={"Edit " + category.name}
+                        title={"Edit " + category.name}
+                      >
+                        <Pencil aria-hidden="true" />
+                      </Link>
+                    </Button>
                     <Button
                       type="button"
-                      className="secondary"
-                      disabled={busy}
-                      aria-label={"Rename " + category.name}
+                      variant="outline"
+                      size="icon"
+                      aria-label={"Delete " + category.name}
+                      title={"Delete " + category.name}
                       onClick={() => {
-                        setEditing(category);
-                        setRename(category.name);
+                        setSelected(category);
                         setError("");
-                        setStatus("");
                       }}
                     >
-                      Rename
+                      <Trash2 aria-hidden="true" />
                     </Button>
                   </div>
-                )}
+                </div>
               </li>
             ))}
           </ul>
         ) : (
           <div className="empty-state">
-            <h3>A place for every chapter</h3>
-            <p>Create your first category above.</p>
+            <h2>A place for every chapter</h2>
+            <p>Create a category to organize your pages.</p>
           </div>
         )}
       </section>
+      {selected && (
+        <ConfirmationDialog
+          title={"Delete " + selected.name + "?"}
+          description="Your pages and photos will be kept. Their category assignment will be cleared, including pages in trash."
+          busy={busy}
+          error={error}
+          confirmLabel="Delete category"
+          retryLabel="Retry deletion"
+          reloadLabel="Review saved category"
+          onConfirm={() => void remove()}
+          onCancel={() => setSelected(null)}
+          onReload={() => void review()}
+        >
+          <p>
+            Links to this category will lead to not found. Menu items pointing
+            here will be hidden from visitors, and category-based page grids
+            will become empty. Saved versions that require this category cannot
+            be restored after deletion.
+          </p>
+        </ConfirmationDialog>
+      )}
     </div>
   );
 }

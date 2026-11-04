@@ -1,5 +1,7 @@
 export type Destination =
-  { kind: "page"; pageId: string } | { kind: "external"; url: string };
+  | { kind: "page"; pageId: string }
+  | { kind: "category"; categoryId: string }
+  | { kind: "external"; url: string };
 export type MenuItem = {
   id: string;
   label: string;
@@ -29,11 +31,11 @@ export function isWebUrl(value: unknown): value is string {
 export function validDestination(value: unknown): value is Destination {
   if (!value || typeof value !== "object" || Array.isArray(value)) return false;
   const d = value as Record<string, unknown>;
-  return d.kind === "page"
+  return d.kind === "page" || d.kind === "category"
     ? Object.keys(d).length === 2 &&
-        typeof d.pageId === "string" &&
+        typeof (d.kind === "page" ? d.pageId : d.categoryId) === "string" &&
         /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
-          d.pageId,
+          String(d.kind === "page" ? d.pageId : d.categoryId),
         )
     : d.kind === "external" && Object.keys(d).length === 2 && isWebUrl(d.url);
 }
@@ -44,6 +46,7 @@ export function unconfiguredDestination(value: unknown): value is Destination {
   return (
     Object.keys(d).length === 2 &&
     ((d.kind === "page" && d.pageId === "") ||
+      (d.kind === "category" && d.categoryId === "") ||
       (d.kind === "external" && d.url === ""))
   );
 }
@@ -56,7 +59,9 @@ export function destinationHref(
     if (!validDestination(destination)) return undefined;
     return destination.kind === "page"
       ? "/p/" + destination.pageId
-      : destination.url;
+      : destination.kind === "category"
+        ? "/c/" + destination.categoryId
+        : destination.url;
   }
   return isWebUrl(legacy) ? legacy : undefined;
 }

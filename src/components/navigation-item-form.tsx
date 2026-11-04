@@ -182,7 +182,9 @@ export function NavigationItemForm({
                   <strong>Saved destination:</strong>{" "}
                   {conflict.destination.kind === "page"
                     ? "Garden page"
-                    : conflict.destination.url}
+                    : conflict.destination.kind === "category"
+                      ? "Category"
+                      : conflict.destination.url}
                 </p>
                 <Button
                   type="button"

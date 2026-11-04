@@ -149,6 +149,12 @@ export function PageGridSettings({
             onChange={(e) => onChange({ ...value, categoryId: e.target.value })}
           >
             <NativeSelectOption value="">Choose a category</NativeSelectOption>
+            {value.categoryId &&
+              !categories.some((c) => c.id === value.categoryId) && (
+                <NativeSelectOption value={value.categoryId}>
+                  Unavailable category
+                </NativeSelectOption>
+              )}
             {categories.map((c) => (
               <NativeSelectOption key={c.id} value={c.id}>
                 {c.name}

@@ -22,8 +22,12 @@ export async function POST(request: Request) {
     assertSameOrigin(request);
     const admin = await currentAdministrator(request.headers);
     if (!admin) throw new RequestError(401, "Sign in to organize pages.");
+    const body = await bodyJson(request);
     return Response.json(
-      await editCategory(admin, (await bodyJson(request)).name),
+      await editCategory(admin, body.name, undefined, undefined, {
+        slug: body.slug,
+        createId: body.id,
+      }),
       { status: 201, headers: { "Cache-Control": "private, no-store" } },
     );
   } catch (e) {

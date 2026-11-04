@@ -5,7 +5,11 @@ import { slotNames, slotContent, type PageBlock } from "../blocks";
 import { validDestination } from "../destinations";
 import type { PageData } from "../pages";
 import type { GridSelection } from "../organization";
-import { richFields, richPageReferences } from "../rich-text";
+import {
+  richFields,
+  richPageReferences,
+  richCategoryReferences,
+} from "../rich-text";
 function referenceIds(data: PageData) {
   const ids = new Set<string>();
   function walk(blocks: PageBlock[]) {
@@ -39,26 +43,40 @@ export async function validatePageReferences(
   content: PageData,
   previous: PageData,
 ) {
-  const categoryIds = new Set<string>();
-  function categories(blocks: PageBlock[]) {
-    for (const block of blocks) {
-      if (block.type === "PageGrid") {
-        const selection = block.props.selection as GridSelection;
-        if (selection.mode === "category" && selection.categoryId)
-          categoryIds.add(selection.categoryId);
+  function categoryReferences(data: PageData) {
+    const categoryIds = new Set<string>();
+    function categories(blocks: PageBlock[]) {
+      for (const block of blocks) {
+        for (const key of Object.values(richFields[block.type] ?? {}))
+          if (typeof block.props[key] === "string")
+            for (const id of richCategoryReferences(block.props[key]))
+              categoryIds.add(id);
+        const destination = block.props.destination;
+        if (validDestination(destination) && destination.kind === "category")
+          categoryIds.add(destination.categoryId);
+        if (block.type === "PageGrid") {
+          const selection = block.props.selection as GridSelection;
+          if (selection.mode === "category" && selection.categoryId)
+            categoryIds.add(selection.categoryId);
+        }
+        for (const slot of slotNames(block.type, block.props.count))
+          categories(slotContent(block, slot));
       }
-      for (const slot of slotNames(block.type, block.props.count))
-        categories(slotContent(block, slot));
     }
+    categories(data.content);
+    return categoryIds;
   }
-  categories(content.content);
-  if (categoryIds.size) {
+  const priorCategories = categoryReferences(previous);
+  const categoryIds = [...categoryReferences(content)].filter(
+    (id) => !priorCategories.has(id),
+  );
+  if (categoryIds.length) {
     const found =
-      await database()`select id from page_categories where id in ${database()([...categoryIds])}`;
-    if (found.length !== categoryIds.size)
+      await database()`select id from page_categories where id in ${database()(categoryIds)}`;
+    if (found.length !== categoryIds.length)
       throw new RequestError(
         400,
-        "Choose an existing category for the page grid.",
+        "Choose an existing category for the link or page grid.",
       );
   }
   const existing = referenceIds(previous);
