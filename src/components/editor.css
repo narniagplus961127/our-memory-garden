@@ -588,6 +588,9 @@
   padding-top: 20px;
   border-top: 1px solid var(--line);
 }
+.editor-column-layout-action {
+  padding-bottom: 24px;
+}
 .editor-property-fields {
   margin-top: 0;
 }
@@ -989,6 +992,7 @@
 }
 .column-layout-dialog button[aria-pressed="true"] {
   background: var(--leaf);
+  color: var(--ink);
   outline: 2px solid var(--ink);
   outline-offset: -2px;
 }

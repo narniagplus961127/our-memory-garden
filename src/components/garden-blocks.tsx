@@ -20,6 +20,7 @@ import {
 import {
   SectionContentBackground,
   SectionColumnAlignment,
+  SectionWidth,
   type ContentBackground,
 } from "./section-settings";
 import type { Config, Slot, RichText, PuckContext } from "@puckeditor/core";
@@ -75,6 +76,7 @@ type GardenBlockProps = {
     textColor?: string;
   };
   Section: {
+    width?: "container" | "full";
     background?: "paper" | "sage" | "clay";
     spacing?: "compact" | "comfortable" | "spacious";
     content: Slot;
@@ -680,6 +682,13 @@ export const gardenConfig: Config<GardenBlocks, { showTitle?: boolean }> = {
       label: "Section",
       fields: {
         ...appearance,
+        width: {
+          type: "custom",
+          label: "Section width",
+          render: ({ value, onChange }) => (
+            <SectionWidth value={value} onChange={onChange} />
+          ),
+        },
         background: backgrounds,
         spacing,
         backgroundImage: {
@@ -729,12 +738,14 @@ export const gardenConfig: Config<GardenBlocks, { showTitle?: boolean }> = {
         content: { type: "slot", disallow: ["Section"] },
       },
       defaultProps: {
+        width: "container",
         background: "paper",
         spacing: "comfortable",
         content: [],
         columnAlignment: "top",
       },
       render: ({
+        width,
         background,
         spacing: space,
         content: Content,
@@ -750,11 +761,15 @@ export const gardenConfig: Config<GardenBlocks, { showTitle?: boolean }> = {
             "garden-section garden-tone-" +
             (background ?? "paper") +
             " garden-space-" +
-            (space ?? "comfortable")
+            (space ?? "comfortable") +
+            (width === "full" ? " garden-section-full" : "")
           }
           style={
             {
               ...blockStyle(surface),
+              ...(width === "full"
+                ? { paddingLeft: 0, paddingRight: 0, "--gutter": "0px" }
+                : {}),
               backgroundImage: backgroundImage?.photoId
                 ? `url("${displayPhotoUrl(backgroundImage.photoId)}")`
                 : undefined,

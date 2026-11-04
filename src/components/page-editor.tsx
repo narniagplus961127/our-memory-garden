@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type RefObject } from "react";
 import Link from "next/link";
 import {
   Puck,
@@ -36,6 +36,7 @@ import { inlinePageData, richPageData, editedPageData } from "@/lib/rich-text";
 const useGardenPuck = createUsePuck<typeof gardenConfig>();
 const blockLabel = (type: string) => (type === "PageGrid" ? "Page grid" : type);
 type Snapshot = import("@/lib/page-merge").PageSnapshot;
+type InsertionNotice = { id: string; type: string; zone: string };
 function documentData(
   data: Data<
     Record<string, Record<string, unknown>>,
@@ -189,6 +190,7 @@ function InspectorFields({
   const groups =
     type === "Section"
       ? [
+          { id: "width", title: "Section width", keys: ["width"] },
           { id: "image", title: "Background image", keys: ["backgroundImage"] },
           {
             id: "content-background",
@@ -314,6 +316,7 @@ function Workspace({
   feedback,
   onMetadata,
   onDetailsSaved,
+  insertion,
 }: {
   page: GardenPage;
   accountId: string;
@@ -325,6 +328,7 @@ function Workspace({
   feedback: React.ReactNode;
   onMetadata: (changes: Partial<Snapshot>) => void;
   onDetailsSaved: (page: GardenPage) => void;
+  insertion: RefObject<InsertionNotice | null>;
 }) {
   const [panel, setPanel] = useState<
       "content" | "settings" | "outline" | "page" | null
@@ -335,6 +339,7 @@ function Workspace({
     [moveTarget, setMoveTarget] = useState("root:default-zone"),
     [moveIndex, setMoveIndex] = useState(0);
   const lastSelected = useRef<string | null>(null),
+    insertionCursor = useRef<{ id: string; zone: string } | null>(null),
     panelRef = useRef<HTMLElement>(null),
     canvasFocus = useRef<{ element: HTMLElement; range: Range | null } | null>(
       null,
@@ -408,14 +413,24 @@ function Workspace({
   const siblings =
     targets.find((item) => item.zone === selection?.zone)?.items ?? [];
   useEffect(() => {
-    if (
-      selected?.props.id &&
-      lastSelected.current !== selected.props.id &&
-      !window.matchMedia("(max-width:760px)").matches
-    )
-      setPanel("settings");
+    const added = insertion.current;
+    if (added && items.some((item) => item.block.props.id === added.id)) {
+      insertion.current = null;
+      insertionCursor.current = { id: added.id, zone: added.zone };
+      const childSlot = slotNames(added.type)[0];
+      setExplicitTarget(childSlot ? added.id + ":" + childSlot : added.zone);
+      getPuck().dispatch({ type: "setUi", ui: { itemSelector: null } });
+      setPanel("content");
+      lastSelected.current = null;
+      return;
+    }
+    if (selected?.props.id && lastSelected.current !== selected.props.id) {
+      insertionCursor.current = null;
+      setExplicitTarget(null);
+      if (!window.matchMedia("(max-width:760px)").matches) setPanel("settings");
+    }
     lastSelected.current = selected?.props.id ?? null;
-  }, [selected?.props.id]);
+  }, [data, selected?.props.id, getPuck, insertion]);
   function rememberCanvasFocus() {
     const document = documentCanvas();
     const element = document?.activeElement;
@@ -532,8 +547,13 @@ function Workspace({
       : undefined;
     const destination = type === "Section" ? targets[0] : target;
     if (!destination) return;
-    const index =
-      !explicitTarget && current?.zone === destination.zone
+    const cursor =
+      insertionCursor.current?.zone === destination.zone
+        ? api.getSelectorForId(insertionCursor.current.id)
+        : undefined;
+    const index = cursor
+      ? cursor.index + 1
+      : !explicitTarget && current?.zone === destination.zone
         ? current.index + 1
         : destination.items.length;
     const id = crypto.randomUUID();
@@ -545,12 +565,6 @@ function Workspace({
       destinationZone: destination.zone,
       id,
     });
-    api.dispatch({
-      type: "setUi",
-      ui: { itemSelector: { index, zone: destination.zone } },
-    });
-    if (window.matchMedia("(max-width:760px)").matches) setPanel(null);
-    setExplicitTarget(null);
   }
   function action(kind: "up" | "down" | "duplicate" | "remove") {
     if (!selected) return;
@@ -889,7 +903,10 @@ function Workspace({
                   <select
                     id="add-target"
                     value={target.zone}
-                    onChange={(event) => setExplicitTarget(event.target.value)}
+                    onChange={(event) => {
+                      insertionCursor.current = null;
+                      setExplicitTarget(event.target.value);
+                    }}
                   >
                     {blockTargets.map((item) => (
                       <option key={item.zone} value={item.zone}>
@@ -915,12 +932,14 @@ function Workspace({
                     Write on the canvas. Adjust its appearance here.
                   </p>
                   {selected.type === "Columns" && (
-                    <button
-                      className="secondary"
-                      onClick={() => setColumns({ edit: true })}
-                    >
-                      Change column layout
-                    </button>
+                    <div className="editor-column-layout-action">
+                      <button
+                        className="secondary"
+                        onClick={() => setColumns({ edit: true })}
+                      >
+                        Change column layout
+                      </button>
+                    </div>
                   )}
                   <Puck.Fields wrapFields={false} />
                   <section
@@ -1119,6 +1138,7 @@ export function PageEditor({
     [page.content],
   );
   const [ready, setReady] = useState(false);
+  const insertion = useRef<InsertionNotice | null>(null);
   useEffect(() => setReady(true), []);
   return (
     <InlineEditingProvider>
@@ -1132,6 +1152,14 @@ export function PageEditor({
           config={gardenConfig}
           dnd={{ enableDragHandle: true, behavior: "static" }}
           data={initialData}
+          onAction={(action) => {
+            if (action.type === "insert" && action.id)
+              insertion.current = {
+                id: action.id,
+                type: action.componentType,
+                zone: action.destinationZone,
+              };
+          }}
           onChange={(data) =>
             save.change({
               content: editedPageData(documentData(data), save.working.content),
@@ -1142,6 +1170,7 @@ export function PageEditor({
           <EditorSync content={save.working.content} />
           <Workspace
             page={page}
+            insertion={insertion}
             accountId={accountId}
             onDetailsSaved={save.detailsSaved}
             title={save.working.title}

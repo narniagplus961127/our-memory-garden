@@ -141,6 +141,8 @@ Public registration, visitor comments or reactions, a separate story content typ
 
 ## Further Notes
 
+Ticket 37 (owner requested 2026-11-04): Adding or dragging a new block keeps it unselected and keeps Add blocks open, preserving batch insertion order/target until manual selection. Section Styles offers Normal container (existing/default) or Full width without horizontal section padding/default block gutters; explicit child spacing remains configurable and normal-mode padding values are retained. Add breathing room below Change column layout and keep selected column-option text readable.
+
 Ticket 36 (owner requested 2026-11-04): Move active-page Move to trash from History to a right-edge 44 px bin icon on each Pages-list card. Include accessible names, a protected homepage action and a centred confirmation popup with freshly loaded inbound links. A failed link lookup must be retried before confirmation; Cancel/Escape remain available during lookup. Keep version validation, failure/retry, successful list refresh and a success toast. History retains version recovery; Trash and trashed-page history retain restore/permanent-delete controls. Overview cards remain simple editor links.
 
 Ticket 35 (owner reported 2026-11-04): Navigation create/edit forms use consistent 24 px spacing between fields, 8 px between labels and controls, and matching aligned 44 px inputs/selects for both Garden page and External URL destinations. Validation messages must not introduce stray paragraph margins.

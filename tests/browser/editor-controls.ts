@@ -36,6 +36,7 @@ export async function startWithText(page: Page) {
     .getByRole("button", { name: "Open content panel", exact: true })
     .click();
   await page.getByRole("button", { name: "Add Text", exact: true }).click();
+  await selectBlock(page, "Select Text 1");
 }
 
 export function canvasField(page: Page, label: string) {

@@ -38,6 +38,82 @@ async function fixture(page: Page) {
     .click();
   return garden;
 }
+test("add several blocks without selection, choose full-width sections and read selected column options", async ({
+  page,
+}, testInfo) => {
+  const garden = await fixture(page);
+  const frame = page.frameLocator("iframe");
+  await page.getByRole("button", { name: "Add Section", exact: true }).click();
+  for (const name of ["Text", "Image", "Button"]) {
+    await expect(
+      page.getByRole("button", { name: "Open content panel", exact: true }),
+    ).toHaveAttribute("aria-pressed", "true");
+    await page
+      .getByRole("button", { name: "Add " + name, exact: true })
+      .click();
+    await expect(
+      frame.getByRole("group", { name: /^Selected .* block$/ }),
+    ).toHaveCount(0);
+  }
+  await saved(page);
+  let state = await (await page.request.get("/api/pages/" + garden.id)).json();
+  expect(
+    state.content.content[0].props.content.map(
+      (block: { type: string }) => block.type,
+    ),
+  ).toEqual(["Text", "Image", "Button"]);
+  await page.getByRole("button", { name: "Add Columns", exact: true }).click();
+  const chooser = page.getByRole("dialog", { name: "Choose your columns" });
+  await expect(
+    chooser.getByRole("button", { name: "2 columns", exact: true }),
+  ).toHaveCSS("color", "rgb(48, 67, 55)");
+  await expect(
+    chooser.getByRole("button", { name: "Equal", exact: true }),
+  ).toHaveCSS("color", "rgb(48, 67, 55)");
+  await chooser
+    .getByRole("button", { name: "Apply layout", exact: true })
+    .click();
+  await expect(
+    page.getByRole("button", { name: "Add Text", exact: true }),
+  ).toBeVisible();
+  await selectBlock(page, "Select Section 1");
+  await page
+    .getByRole("button", { name: "Open settings panel", exact: true })
+    .click();
+  await page.getByRole("button", { name: "Full width", exact: true }).click();
+  await saved(page);
+  await expect(frame.locator(".garden-section")).toHaveCSS(
+    "padding-left",
+    "0px",
+  );
+  await expect(frame.locator(".garden-text")).toHaveCSS("padding-left", "0px");
+  state = await (await page.request.get("/api/pages/" + garden.id)).json();
+  expect(state.content.content[0].props.width).toBe("full");
+  await page.screenshot({ path: testInfo.outputPath("section-width.png") });
+  await page.reload();
+  await expect(frame.locator(".garden-section-full")).toHaveCount(1);
+  await selectBlock(page, "Select Section 1");
+  await page
+    .getByRole("button", { name: "Open settings panel", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "Normal container", exact: true })
+    .click();
+  await saved(page);
+  await expect(frame.locator(".garden-text")).not.toHaveCSS(
+    "padding-left",
+    "0px",
+  );
+  await selectBlock(page, "Select Columns 1");
+  await page
+    .getByRole("button", { name: "Open settings panel", exact: true })
+    .click();
+  await expect(page.locator(".editor-column-layout-action")).toHaveCSS(
+    "padding-bottom",
+    "24px",
+  );
+});
+
 test("sections contain new blocks and columns; styles persist without losing the nested caret", async ({
   page,
   isMobile,

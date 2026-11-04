@@ -5,6 +5,34 @@ export type ContentBackground = {
   mode: "auto" | "custom" | "none";
   colour?: string;
 };
+export function SectionWidth({
+  value = "container",
+  onChange,
+}: {
+  value?: "container" | "full";
+  onChange: (value: "container" | "full") => void;
+}) {
+  return (
+    <div className="section-setting">
+      <div className="section-segments" role="group" aria-label="Section width">
+        {(["container", "full"] as const).map((mode) => (
+          <button
+            key={mode}
+            type="button"
+            aria-pressed={value === mode}
+            onClick={() => onChange(mode)}
+          >
+            {mode === "container" ? "Normal container" : "Full width"}
+          </button>
+        ))}
+      </div>
+      <small className="muted">
+        Full width removes side padding and default block gutters. Custom block
+        spacing is kept.
+      </small>
+    </div>
+  );
+}
 export function SectionContentBackground({
   value,
   onChange,
