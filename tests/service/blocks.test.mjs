@@ -28,6 +28,120 @@ async function call(path, method, data, cookie) {
   });
 }
 
+test("empty optional block destinations persist as inactive while malformed links and required menu destinations are rejected", async () => {
+  const cookie = await login();
+  let page = await (
+    await call(
+      "/api/pages",
+      "POST",
+      { title: "Optional paths " + Date.now() },
+      cookie,
+    )
+  ).json();
+  const path = "/api/pages/" + page.id;
+  for (const destination of [
+    null,
+    { kind: "page", pageId: "" },
+    { kind: "external", url: "" },
+  ]) {
+    const content = {
+      root: { props: {} },
+      content: [
+        {
+          type: "Section",
+          props: {
+            id: "optional-section",
+            content: [
+              {
+                type: "Text",
+                props: {
+                  id: "optional-text",
+                  text: "Kept alongside the unfinished link",
+                  style: "p",
+                },
+              },
+              {
+                type: "Image",
+                props: {
+                  id: "optional-image",
+                  alt: "Photo placeholder",
+                  destination,
+                },
+              },
+              {
+                type: "Button",
+                props: {
+                  id: "optional-button",
+                  label: "Choose a path later",
+                  href: "",
+                  destination,
+                },
+              },
+            ],
+          },
+        },
+      ],
+    };
+    const response = await call(
+      path,
+      "PATCH",
+      { version: page.version, content },
+      cookie,
+    );
+    assert.equal(response.status, 200);
+    page = await response.json();
+    assert.deepEqual(
+      page.content.content[0].props.content[2].props.destination,
+      destination,
+    );
+    assert.equal(
+      page.content.content[0].props.content[0].props.text,
+      "Kept alongside the unfinished link",
+    );
+  }
+  for (const destination of [
+    { kind: "page", pageId: "invalid-id" },
+    { kind: "page", pageId: crypto.randomUUID() },
+    { kind: "page", pageId: "", url: "https://example.com" },
+    { kind: "external", url: "javascript:alert(1)" },
+    { kind: "external", url: "data:text/html,unsafe" },
+    false,
+  ]) {
+    const content = structuredClone(page.content);
+    content.content[0].props.content[2].props.destination = destination;
+    assert.equal(
+      (await call(path, "PATCH", { version: page.version, content }, cookie))
+        .status,
+      400,
+    );
+  }
+  const navigation = await (
+    await fetch(base + "/api/navigation", { headers: { Cookie: cookie } })
+  ).json();
+  assert.equal(
+    (
+      await call(
+        "/api/navigation",
+        "PUT",
+        {
+          version: navigation.version,
+          items: [
+            ...navigation.items,
+            {
+              id: crypto.randomUUID(),
+              label: "Missing destination",
+              parentId: null,
+              destination: { kind: "page", pageId: "" },
+            },
+          ],
+        },
+        cookie,
+      )
+    ).status,
+    400,
+  );
+});
+
 test("explicit rich text and custom colours round-trip, while legacy markup stays literal and unsafe formatting is rejected", async () => {
   const cookie = await login();
   let page = await (

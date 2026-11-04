@@ -75,6 +75,10 @@
   width: min(1120px, calc(100vw - 32px));
   max-width: min(1120px, calc(100vw - 32px));
 }
+[data-slot="dialog-content"].garden-modal.confirmation-dialog {
+  width: min(560px, calc(100vw - 32px));
+  max-width: min(560px, calc(100vw - 32px));
+}
 .garden-modal-header [data-slot="dialog-title"] {
   @apply m-0 font-serif text-2xl leading-tight font-normal;
 }

@@ -1,4 +1,8 @@
-import { isWebUrl, validDestination } from "./destinations";
+import {
+  isWebUrl,
+  validDestination,
+  unconfiguredDestination,
+} from "./destinations";
 import { validGrid } from "./organization";
 import { richFields, validRichText } from "./rich-text";
 export { isWebUrl } from "./destinations";
@@ -58,7 +62,7 @@ export function validPageData(
   )
     return false;
   function destination(value: unknown) {
-    if (validDestination(value)) return true;
+    if (validDestination(value) || unconfiguredDestination(value)) return true;
     if (
       !options.allowIncomplete ||
       !value ||
@@ -284,11 +288,13 @@ export function validPageData(
                     /^#(?:[\da-f]{3}|[\da-f]{6})$/i.test(props[key])),
               ) &&
               str("label", 200, true) &&
-              (props.destination
+              (props.destination != null
                 ? destination(props.destination)
-                : options.allowIncomplete
-                  ? typeof props.href === "string"
-                  : isWebUrl(props.href)) &&
+                : props.href === undefined ||
+                  props.href === "" ||
+                  (options.allowIncomplete
+                    ? typeof props.href === "string"
+                    : isWebUrl(props.href))) &&
               opt("variant", ["primary", "secondary"])
             );
           case "Section":

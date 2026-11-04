@@ -37,7 +37,21 @@ export function validDestination(value: unknown): value is Destination {
         )
     : d.kind === "external" && Object.keys(d).length === 2 && isWebUrl(d.url);
 }
-export function destinationHref(destination?: Destination, legacy?: string) {
+// Empty optional block destinations keep their selected mode without becoming links.
+export function unconfiguredDestination(value: unknown): value is Destination {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return false;
+  const d = value as Record<string, unknown>;
+  return (
+    Object.keys(d).length === 2 &&
+    ((d.kind === "page" && d.pageId === "") ||
+      (d.kind === "external" && d.url === ""))
+  );
+}
+export function destinationHref(
+  destination?: Destination | null,
+  legacy?: string,
+) {
+  if (destination === null) return undefined;
   if (destination) {
     if (!validDestination(destination)) return undefined;
     return destination.kind === "page"

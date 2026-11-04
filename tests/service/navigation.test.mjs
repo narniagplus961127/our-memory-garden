@@ -296,7 +296,7 @@ test("text and button links store page IDs and remain visible when their private
   assert.match(html, /href="\/p\/[^"]+">quiet rosemary<\/a>/);
   assert.match(
     html,
-    /href="\/p\/[^"]+">(?:(?!<\/a>)[\s\S])*Our secret garden(?:(?!<\/a>)[\s\S])*<\/a>/,
+    /href="\/p\/[^"]+"[^>]*>(?:(?!<\/a>)[\s\S])*Our secret garden(?:(?!<\/a>)[\s\S])*<\/a>/,
   );
   assert.equal((await fetch(base + "/p/" + target.id)).status, 404);
   r = await call(

@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import type { GardenPage } from "@/lib/pages";
 import { slotNames, slotContent, type PageBlock } from "@/lib/blocks";
 import { plainHtml } from "@/lib/rich-text";
+import { isWebUrl } from "@/lib/destinations";
 import {
   snapshot,
   equal,
@@ -23,6 +24,27 @@ type Comparison = {
   result: MergeResult;
   choices: Record<string, "local" | "saved">;
 };
+function hasUnfinishedWebAddress(blocks: PageBlock[]): boolean {
+  return blocks.some((block) => {
+    const destination = block.props.destination;
+    if (["Button", "Image", "Text"].includes(block.type)) {
+      const address =
+        destination &&
+        typeof destination === "object" &&
+        !Array.isArray(destination) &&
+        destination.kind === "external"
+          ? destination.url
+          : block.type === "Button" && destination === undefined
+            ? block.props.href
+            : undefined;
+      if (typeof address === "string" && address !== "" && !isWebUrl(address))
+        return true;
+    }
+    return slotNames(block.type, block.props.count).some((slot) =>
+      hasUnfinishedWebAddress(slotContent(block, slot)),
+    );
+  });
+}
 export function usePageAutosave(page: GardenPage, accountId: string) {
   const initial = snapshot(page);
   const state = useRef({
@@ -132,6 +154,14 @@ export function usePageAutosave(page: GardenPage, accountId: string) {
     if (!s.working.title.trim()) {
       setStatus("Not saved");
       setError("Enter a page title.");
+      return;
+    }
+    if (hasUnfinishedWebAddress(s.working.content.content)) {
+      // DestinationPicker explains this editable field state. Do not send a
+      // known-invalid request or turn it into a misleading connection-error toast.
+      setStatus("Not saved");
+      setError("");
+      writeRecovery();
       return;
     }
     const submitted = s.working,

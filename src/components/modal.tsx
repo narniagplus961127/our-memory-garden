@@ -33,7 +33,7 @@ export function Modal({
   title: string;
   label?: string;
   description?: string;
-  children: ReactNode;
+  children?: ReactNode;
   footer?: ReactNode;
   onClose: () => void;
   busy?: boolean;
@@ -44,6 +44,8 @@ export function Modal({
   closeLabel?: string;
 }) {
   const close = useRef<HTMLButtonElement>(null);
+  const hasBody =
+    children !== undefined && children !== null && children !== false;
   const [previous] = useState(() =>
     typeof document === "undefined" ? null : document.activeElement,
   );
@@ -86,7 +88,12 @@ export function Modal({
         onKeyDown={onKeyDown}
         aria-busy={busy}
       >
-        <header className="garden-modal-header flex shrink-0 items-start justify-between gap-4 border-b p-5 sm:p-6">
+        <header
+          className={cn(
+            "garden-modal-header flex shrink-0 items-start justify-between gap-4 p-5 sm:p-6",
+            hasBody && "border-b",
+          )}
+        >
           <div className="min-w-0">
             <DialogTitle className="m-0 font-serif text-2xl leading-tight font-normal break-words">
               {title}
@@ -111,9 +118,11 @@ export function Modal({
             <X aria-hidden="true" />
           </Button>
         </header>
-        <div className="garden-modal-body min-h-0 overflow-y-auto overscroll-contain p-5 sm:p-6">
-          {children}
-        </div>
+        {hasBody && (
+          <div className="garden-modal-body min-h-0 overflow-y-auto overscroll-contain p-5 sm:p-6">
+            {children}
+          </div>
+        )}
         {footer && (
           <footer className="garden-modal-footer flex shrink-0 flex-wrap justify-end gap-3 border-t p-5 sm:p-6">
             {footer}

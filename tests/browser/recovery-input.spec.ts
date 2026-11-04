@@ -70,15 +70,15 @@ test("unfinished and unsafe web addresses recover as unsaved inactive links", as
   ]) {
     await page.getByLabel("External web address", { exact: true }).fill(value);
     await expect(status).toHaveText("Not saved");
+    await expect(
+      page.getByRole("alert").filter({ hasText: "Invalid page content" }),
+    ).toHaveCount(0);
     expect((await (await page.request.get(path)).json()).version).toBe(
       acknowledged.version,
     );
-    expect(
-      await page
-        .frameLocator("iframe")
-        .locator(".garden-button-block a")
-        .getAttribute("href"),
-    ).toBeNull();
+    await expect(
+      page.frameLocator("iframe").locator(".garden-button-block a[href]"),
+    ).toHaveCount(0);
     await page.reload();
     await expect(
       page.getByText("Recovered work is unsaved until it reaches the garden."),
@@ -89,12 +89,9 @@ test("unfinished and unsafe web addresses recover as unsaved inactive links", as
       page.getByLabel("External web address", { exact: true }),
     ).toHaveValue(value);
     await expect(status).toHaveText("Not saved");
-    expect(
-      await page
-        .frameLocator("iframe")
-        .locator(".garden-button-block a")
-        .getAttribute("href"),
-    ).toBeNull();
+    await expect(
+      page.frameLocator("iframe").locator(".garden-button-block a[href]"),
+    ).toHaveCount(0);
   }
   await page
     .getByLabel("External web address", { exact: true })
@@ -116,4 +113,23 @@ test("unfinished and unsafe web addresses recover as unsaved inactive links", as
       Object.keys(localStorage).filter((k) => k.startsWith("garden-recovery:")),
     ),
   ).toEqual([]);
+  // Explicit No link must suppress the original legacy href too.
+  await page
+    .getByLabel("Destination type", { exact: true })
+    .selectOption("none");
+  await expect(status).toHaveText("Saved");
+  const unlinked = await (await page.request.get(path)).json();
+  expect(unlinked.content.content[0].props.href).toBe("https://example.com");
+  expect(unlinked.content.content[0].props.destination).toBeNull();
+  await page.reload();
+  await selectBlock(page, "Select Button 1");
+  await page
+    .getByRole("button", { name: "Open settings panel", exact: true })
+    .click();
+  await expect(
+    page.getByLabel("Destination type", { exact: true }),
+  ).toHaveValue("none");
+  await expect(
+    page.frameLocator("iframe").locator(".garden-button-block a[href]"),
+  ).toHaveCount(0);
 });
