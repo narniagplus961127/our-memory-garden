@@ -60,7 +60,7 @@ async function externalForm(page: Page, label: string) {
 async function listReady(page: Page) {
   await expect(page).toHaveURL(/\/admin\/navigation$/);
   await expect(
-    page.getByRole("heading", { name: "Your menu", exact: true }),
+    page.getByRole("heading", { name: "Navigation", exact: true }),
   ).toBeVisible();
 }
 
@@ -361,7 +361,7 @@ test("menu removal confirms descendants, keeps pages and rows on failure, and re
     release!();
     await expect(dialog).toHaveCount(0);
     await expect(
-      page.getByRole("heading", { name: "Your menu", exact: true }),
+      page.getByRole("heading", { name: "Navigation", exact: true }),
     ).toBeFocused();
     expect((await readMenu(page)).items).toEqual([keep]);
     expect(

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { PublicMenu } from "./public-menu";
 import { AdminShortcuts } from "./admin-shortcuts";
+import { WebsiteNavigation } from "./website-navigation";
 export function Brand() {
   return (
     <Link className="brand" href="/">
@@ -16,20 +17,6 @@ export function PublicHeader({
   items?: import("@/lib/destinations").PublicMenuItem[];
   editPageId?: string;
 }) {
-  function menu(parentId: string | null): React.ReactNode {
-    const children = items.filter((i) => i.parentId === parentId);
-    if (!children.length) return null;
-    return (
-      <ul className="public-menu-items">
-        {children.map((i) => (
-          <li key={i.id}>
-            <a href={i.href}>{i.label}</a>
-            {menu(i.id)}
-          </li>
-        ))}
-      </ul>
-    );
-  }
   return (
     <>
       <header className="public-header">
@@ -37,9 +24,11 @@ export function PublicHeader({
         {items.length > 0 && (
           <>
             <nav className="public-nav" aria-label="Main navigation">
-              {menu(null)}
+              <WebsiteNavigation items={items} />
             </nav>
-            <PublicMenu>{menu(null)}</PublicMenu>
+            <PublicMenu>
+              <WebsiteNavigation items={items} mobile />
+            </PublicMenu>
           </>
         )}
       </header>

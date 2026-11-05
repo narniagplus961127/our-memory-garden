@@ -222,6 +222,9 @@ test("drag handles reorder siblings with mouse/touch, preserve children, cancel 
       "Alpha",
       "Gamma",
     ]);
+    await nav
+      .getByRole("button", { name: "Submenu for Alpha", exact: true })
+      .click();
     await expect(
       nav.getByRole("link", { name: "Two", exact: true }),
     ).toBeVisible();

@@ -230,7 +230,9 @@ export function NavigationEditor({ initial }: { initial: NavigationState }) {
       <div className="admin-heading">
         <div>
           <p className="eyebrow">Your garden</p>
-          <h1>Navigation</h1>
+          <h1 ref={heading} tabIndex={-1}>
+            Navigation
+          </h1>
           <p className="muted">
             Arrange the paths through your garden. Private pages stay hidden
             from visitors.
@@ -251,10 +253,7 @@ export function NavigationEditor({ initial }: { initial: NavigationState }) {
       </div>
       <div className="navigation-workspace">
         <section aria-label="Menu items">
-          <h2 ref={heading} tabIndex={-1}>
-            Your menu
-          </h2>
-          <p id="menu-drag-instructions" className="muted navigation-drag-hint">
+          <p id="menu-drag-instructions" className="visually-hidden">
             Drag the grip to reorder items within their menu level. Keyboard:
             Space to pick up, arrow keys to move, Enter to drop, Escape to
             cancel.

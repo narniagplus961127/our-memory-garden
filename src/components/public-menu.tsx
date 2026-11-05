@@ -21,6 +21,22 @@ export function PublicMenu({ children }: { children: ReactNode }) {
           title="Menu"
           onClose={() => setOpen(false)}
           className="website-menu"
+          onEscapeKeyDown={(event) => {
+            if (!(event.target instanceof Element)) return;
+            let item = event.target.closest(".has-submenu");
+            while (item) {
+              const trigger = item.querySelector<HTMLButtonElement>(
+                ":scope > .submenu-toggle[aria-expanded='true']",
+              );
+              if (trigger) {
+                event.preventDefault();
+                trigger.focus();
+                trigger.click();
+                return;
+              }
+              item = item.parentElement?.closest(".has-submenu") ?? null;
+            }
+          }}
         >
           <nav
             aria-label="Mobile navigation"

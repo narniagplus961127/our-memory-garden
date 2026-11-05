@@ -126,6 +126,8 @@ export function validPageData(
             "width",
             "buttonColor",
             "textColor",
+            "buttonPadding",
+            "buttonRadius",
           ],
           Section: [
             "width",
@@ -160,8 +162,15 @@ export function validPageData(
                 "paddingSides",
                 "marginSides",
                 "radius",
+                "animation",
               ].includes(key),
           )
+        )
+          return false;
+        if (
+          props.animation !== undefined &&
+          (typeof props.animation !== "string" ||
+            !["none", "fade-in"].includes(props.animation))
         )
           return false;
         if (
@@ -179,7 +188,14 @@ export function validPageData(
               props[key] > (key === "padding" ? 120 : 24))
           )
             return false;
-        for (const key of ["paddingSides", "marginSides"]) {
+        if (
+          props.buttonRadius !== undefined &&
+          (!Number.isInteger(props.buttonRadius) ||
+            props.buttonRadius < 0 ||
+            props.buttonRadius > 999)
+        )
+          return false;
+        for (const key of ["paddingSides", "marginSides", "buttonPadding"]) {
           const sides = props[key];
           if (
             sides !== undefined &&
