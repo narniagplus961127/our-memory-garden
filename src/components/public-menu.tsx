@@ -1,26 +1,33 @@
 "use client";
 import { useState, type ReactNode } from "react";
-import { Modal } from "./modal";
+import { X } from "lucide-react";
 import { Button } from "./ui/button";
+import {
+  Sheet,
+  SheetClose,
+  SheetContent,
+  SheetTitle,
+  SheetTrigger,
+} from "./ui/sheet";
 export function PublicMenu({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false);
   return (
     <div className="public-menu">
-      <Button
-        type="button"
-        variant="outline"
-        aria-label="Open website menu"
-        aria-haspopup="dialog"
-        aria-expanded={open}
-        onClick={() => setOpen(true)}
-      >
-        ☰
-      </Button>
-      {open && (
-        <Modal
-          title="Menu"
-          onClose={() => setOpen(false)}
+      <Sheet open={open} onOpenChange={setOpen}>
+        <SheetTrigger asChild>
+          <Button
+            type="button"
+            variant="outline"
+            aria-label="Open website menu"
+          >
+            ☰
+          </Button>
+        </SheetTrigger>
+        <SheetContent
           className="website-menu"
+          overlayClassName="website-menu-overlay"
+          showCloseButton={false}
+          aria-describedby={undefined}
           onEscapeKeyDown={(event) => {
             if (!(event.target instanceof Element)) return;
             let item = event.target.closest(".has-submenu");
@@ -30,7 +37,7 @@ export function PublicMenu({ children }: { children: ReactNode }) {
               );
               if (trigger) {
                 event.preventDefault();
-                trigger.focus();
+                trigger.focus({ preventScroll: true });
                 trigger.click();
                 return;
               }
@@ -38,6 +45,12 @@ export function PublicMenu({ children }: { children: ReactNode }) {
             }
           }}
         >
+          <header className="website-menu-header">
+            <SheetTitle>Menu</SheetTitle>
+            <SheetClose className="website-menu-close" aria-label="Close menu">
+              <X aria-hidden="true" />
+            </SheetClose>
+          </header>
           <nav
             aria-label="Mobile navigation"
             onClick={(event) => {
@@ -47,8 +60,8 @@ export function PublicMenu({ children }: { children: ReactNode }) {
           >
             {children}
           </nav>
-        </Modal>
-      )}
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }

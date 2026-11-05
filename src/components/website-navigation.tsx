@@ -1,7 +1,6 @@
 "use client";
 import { useEffect, useId, useRef, useState } from "react";
 import { ChevronDown } from "lucide-react";
-import { Button } from "./ui/button";
 import type { PublicMenuItem } from "@/lib/destinations";
 
 function NavigationItem({
@@ -68,11 +67,9 @@ function NavigationItem({
       <a href={item.href}>{item.label}</a>
       {children.length > 0 && (
         <>
-          <Button
+          <button
             ref={toggle}
             type="button"
-            variant="ghost"
-            size="icon"
             className="submenu-toggle"
             aria-label={"Submenu for " + item.label}
             aria-expanded={open}
@@ -94,7 +91,7 @@ function NavigationItem({
             }}
           >
             <ChevronDown aria-hidden="true" />
-          </Button>
+          </button>
           <div
             id={id}
             className={"public-submenu" + (mobile ? " mobile-submenu" : "")}

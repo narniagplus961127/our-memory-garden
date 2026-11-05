@@ -311,10 +311,19 @@ test("website submenus expand without changing header height and support keyboar
     const height = await page
       .locator(".public-header")
       .evaluate((el) => el.getBoundingClientRect().height);
-    if (isMobile)
+    const drawer = page.getByRole("dialog", { name: "Menu", exact: true });
+    if (isMobile) {
       await page
         .getByRole("button", { name: "Open website menu", exact: true })
         .click();
+      await expect(drawer).toHaveCSS("animation-name", "website-menu-slide-in");
+      await expect(drawer).toHaveCSS("transform", "matrix(1, 0, 0, 1, 0, 0)");
+      const bounds = (await drawer.boundingBox())!;
+      const viewport = page.viewportSize()!;
+      expect(bounds.y).toBe(0);
+      expect(bounds.height).toBe(viewport.height);
+      expect(bounds.x + bounds.width).toBe(viewport.width);
+    }
     const nav = page.getByRole("navigation", {
         name: isMobile ? "Mobile navigation" : "Main navigation",
         exact: true,
@@ -324,6 +333,8 @@ test("website submenus expand without changing header height and support keyboar
         exact: true,
       });
     await expect(toggle).toHaveAttribute("aria-expanded", "false");
+    await expect(toggle).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+    await expect(toggle).toHaveCSS("border-top-width", "0px");
     await expect(
       nav.getByRole("link", { name: "Trips", exact: true }),
     ).toHaveCount(0);
@@ -376,6 +387,7 @@ test("website submenus expand without changing header height and support keyboar
     await page.emulateMedia({ reducedMotion: "reduce" });
     await expect(toggle.locator("svg")).toHaveCSS("transition-duration", "0s");
     if (isMobile) {
+      await expect(drawer).toHaveCSS("animation-name", "none");
       await page.keyboard.press("Escape");
       await expect(toggle).toBeFocused();
       await page.keyboard.press("Escape");
