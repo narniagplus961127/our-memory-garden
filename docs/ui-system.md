@@ -31,3 +31,11 @@ Native FigCraft frames have not been redrawn for this implementation refinement;
 Category management reuses the Navigation form and shared confirmation patterns: dedicated create/edit routes, 44 px right-edge icon actions, name-derived editable address, retained errors, explicit concurrent-change review and safe Cancel/focus return. The shared destination picker supports Category in menus, buttons, images and inline text. Public category collections reuse the public header/gutters and responsive PageGrid, with an empty state and public-only contents. Deleted category selections remain visibly unavailable rather than appearing silently reset.
 
 Tailwind scans application sources (`src/`) explicitly so generated browser evidence does not participate in the development style watcher.
+
+## Editor actions and motion
+
+Use the common confirmation for Delete page inside Page settings; this is a recoverable move to Trash. Disable deletion while content/details are saving or unresolved, and retain homepage protection. Button style has separate inner button padding and corner radius; block spacing/corners still control the surrounding block.
+
+Animation type defaults to Fade in for every block/section and accepts None to disable. The reusable native-element motion component preserves existing layout/slot structure, reveals once on viewport entry from 8 px above over 600 ms, disables motion inside Puck and respects reduced-motion preferences. Server-rendered content stays visible without JavaScript.
+
+Website submenus use link-plus-chevron disclosures with 44 px targets, 180 ms transitions, desktop top-level hover, mobile tap, keyboard focus/ArrowDown/Escape and outside dismissal. Nested levels expand inside the dropdown. Mobile Escape collapses the nearest open submenu before closing the surrounding modal; the shared Modal exposes a composed Escape callback for that behavior. Dynamic desktop navigation opts out of scroll anchoring.

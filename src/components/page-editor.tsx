@@ -268,6 +268,8 @@ function InspectorFields({
               "gap",
               "buttonColor",
               "textColor",
+              "buttonPadding",
+              "buttonRadius",
             ],
           },
           {
@@ -282,6 +284,7 @@ function InspectorFields({
           },
           { id: "corners", title: "Corners", keys: ["radius"] },
         ];
+  groups.push({ id: "animation", title: "Animation", keys: ["animation"] });
   const assigned = new Set(groups.flatMap((group) => group.keys));
   const others = Object.keys(fields).filter((key) => !assigned.has(key));
   if (others.length)
@@ -908,6 +911,7 @@ function Workspace({
               accountId={accountId}
               visibility={visibility}
               onSaved={onDetailsSaved}
+              contentSaved={status === "Saved"}
             />
           </div>
           {panel === "content" && (

@@ -1,5 +1,24 @@
 @import "tailwindcss" source("../");
 
+@keyframes garden-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  [data-animation="fade-in"][data-motion="pending"] {
+    opacity: 0;
+  }
+  [data-animation="fade-in"][data-motion="enter"] {
+    animation: garden-fade-in 600ms ease-out both;
+  }
+}
+
 @theme inline {
   --spacing: 4px;
   --text-xs: 12px;
@@ -351,6 +370,7 @@ input[type="radio"] {
   object-fit: contain;
 }
 .public-nav {
+  overflow-anchor: none;
   display: flex;
   gap: 24px;
   align-items: flex-start;
@@ -1466,9 +1486,7 @@ button.primary {
 }
 .public-menu-items .public-menu-items {
   display: grid;
-  gap: 6px;
-  padding-top: 8px;
-  font-size: 13px;
+  gap: 4px;
 }
 .public-menu-items:empty {
   display: none;
@@ -1476,6 +1494,94 @@ button.primary {
 .public-menu-items a {
   display: block;
   min-height: 32px;
+}
+.public-menu-items > li {
+  position: relative;
+  min-width: 0;
+}
+.public-menu-items > .has-submenu {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 44px;
+  align-items: center;
+  column-gap: 4px;
+}
+.submenu-toggle {
+  color: var(--ink);
+}
+.submenu-toggle svg {
+  transition: transform 180ms ease;
+}
+.submenu-toggle[aria-expanded="true"] svg {
+  transform: rotate(180deg);
+}
+.public-submenu {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-rows: 0fr;
+  visibility: hidden;
+  opacity: 0;
+  transition:
+    grid-template-rows 180ms ease,
+    opacity 180ms ease,
+    visibility 180ms;
+}
+.public-submenu[data-open="true"] {
+  grid-template-rows: 1fr;
+  visibility: visible;
+  opacity: 1;
+}
+.public-submenu-inner {
+  min-height: 0;
+  overflow: hidden;
+}
+.public-nav .public-submenu[data-depth="0"] {
+  position: absolute;
+  z-index: 40;
+  top: 100%;
+  right: 0;
+  width: min(260px, calc(100vw - 32px));
+  display: block;
+  transform: translateY(-6px);
+  transition:
+    opacity 180ms ease,
+    transform 180ms ease,
+    visibility 180ms;
+}
+.public-nav .public-submenu[data-depth="0"][data-open="true"] {
+  transform: translateY(0);
+}
+.public-nav .public-submenu[data-depth="0"] > .public-submenu-inner {
+  max-height: 70dvh;
+  overflow-y: auto;
+  background: var(--cream);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 8px;
+  box-shadow: 0 8px 24px #30463718;
+}
+.public-submenu a {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 10px 12px;
+  border-radius: 4px;
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+.public-submenu a:hover,
+.public-submenu a:focus-visible {
+  background: var(--sage);
+}
+.public-submenu .public-submenu .public-submenu-inner,
+.mobile-submenu > .public-submenu-inner > ul {
+  padding-left: 12px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .public-submenu,
+  .public-nav .public-submenu[data-depth="0"],
+  .submenu-toggle svg {
+    transition: none;
+  }
 }
 .navigation-workspace {
   display: grid;

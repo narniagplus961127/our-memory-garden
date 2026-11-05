@@ -7,6 +7,9 @@ import type { GridSelection, PageCard } from "@/lib/organization";
 import { displayPhotoUrl } from "@/lib/media";
 import { DestinationPicker } from "./destination-picker";
 import { ButtonDestination } from "./button-destination";
+import { ButtonRadiusControl } from "./button-radius";
+import { AnimatedBlock } from "./animated-block";
+import { AnimationSettings } from "./animation-settings";
 import { destinationHref, type Destination } from "@/lib/destinations";
 import { BackgroundColour } from "./background-colour";
 import { BlockSpacingControl, type BlockSpacing } from "./block-spacing";
@@ -29,6 +32,7 @@ import {
 import type { Config, Slot, RichText, PuckContext } from "@puckeditor/core";
 import type { TextStyle } from "@/lib/pages";
 type Appearance = {
+  animation?: "none" | "fade-in";
   backgroundColor?: string;
   padding?: number;
   paddingSides?: BlockSpacing;
@@ -79,6 +83,8 @@ type GardenBlockProps = {
     width?: "fit" | "full";
     buttonColor?: string;
     textColor?: string;
+    buttonPadding?: BlockSpacing;
+    buttonRadius?: number;
   };
   Section: {
     width?: "container" | "full";
@@ -165,6 +171,17 @@ function ImageLink({
   );
 }
 const appearance = {
+  animation: {
+    type: "custom" as const,
+    label: "Animation",
+    render: ({
+      value,
+      onChange,
+    }: {
+      value?: "none" | "fade-in";
+      onChange: (value: "none" | "fade-in") => void;
+    }) => <AnimationSettings value={value} onChange={onChange} />,
+  },
   backgroundColor: {
     type: "custom" as const,
     label: "Background colour",
@@ -301,10 +318,14 @@ export const gardenConfig: Config<
         selection: { mode: "manual", pageIds: [], categoryId: "" },
         showDate: true,
       },
-      render: ({ selection, showDate, cards, ...surface }) => (
-        <div style={blockStyle(surface)}>
+      render: ({ selection, showDate, cards, puck, ...surface }) => (
+        <AnimatedBlock
+          animation={surface.animation}
+          editing={puck.isEditing}
+          style={blockStyle(surface)}
+        >
           <PageGrid selection={selection} showDate={showDate} cards={cards} />
-        </div>
+        </AnimatedBlock>
       ),
     },
     Text: {
@@ -358,7 +379,9 @@ export const gardenConfig: Config<
         const start = linkText ? text.indexOf(linkText) : -1;
         const Tag = style;
         return (
-          <div
+          <AnimatedBlock
+            animation={surface.animation}
+            editing={puck.isEditing}
             className="garden-block garden-text"
             style={{ textAlign: align, ...blockStyle(surface) }}
           >
@@ -379,7 +402,7 @@ export const gardenConfig: Config<
                 </Tag>
               )}
             </RichContent>
-          </div>
+          </AnimatedBlock>
         );
       },
     },
@@ -413,7 +436,10 @@ export const gardenConfig: Config<
         align,
         ...surface
       }) => (
-        <header
+        <AnimatedBlock
+          as="header"
+          animation={surface.animation}
+          editing={puck.isEditing}
           className={"garden-banner garden-tone-" + (background ?? "sage")}
           style={{ textAlign: align, ...blockStyle(surface) }}
         >
@@ -430,7 +456,7 @@ export const gardenConfig: Config<
               <p>{description}</p>
             )}
           </RichContent>
-        </header>
+        </AnimatedBlock>
       ),
     },
     Image: {
@@ -490,7 +516,10 @@ export const gardenConfig: Config<
         puck,
         ...surface
       }) => (
-        <figure
+        <AnimatedBlock
+          as="figure"
+          animation={surface.animation}
+          editing={puck.isEditing}
           className={"garden-image garden-image-" + (width ?? "inset")}
           style={blockStyle(surface)}
         >
@@ -537,7 +566,7 @@ export const gardenConfig: Config<
               caption && <figcaption>{caption}</figcaption>
             )}
           </RichContent>
-        </figure>
+        </AnimatedBlock>
       ),
     },
     Gallery: {
@@ -553,10 +582,14 @@ export const gardenConfig: Config<
         },
       },
       defaultProps: { photos: [] },
-      render: ({ photos, ...surface }) => (
-        <div style={blockStyle(surface)}>
+      render: ({ photos, puck, ...surface }) => (
+        <AnimatedBlock
+          animation={surface.animation}
+          editing={puck.isEditing}
+          style={blockStyle(surface)}
+        >
           <PhotoGallery photos={photos} />
-        </div>
+        </AnimatedBlock>
       ),
     },
     Button: {
@@ -628,6 +661,25 @@ export const gardenConfig: Config<
             />
           ),
         },
+        buttonPadding: {
+          type: "custom",
+          label: "Button padding",
+          render: ({ value, onChange }) => (
+            <BlockSpacingControl
+              label="Button padding"
+              description="Space between the button label and its edge."
+              value={value}
+              onChange={onChange}
+            />
+          ),
+        },
+        buttonRadius: {
+          type: "custom",
+          label: "Button corner radius",
+          render: ({ value, onChange }) => (
+            <ButtonRadiusControl value={value} onChange={onChange} />
+          ),
+        },
         align: alignment,
         ...appearance,
       },
@@ -651,12 +703,16 @@ export const gardenConfig: Config<
         width,
         buttonColor,
         textColor,
+        buttonPadding,
+        buttonRadius,
         ...surface
       }) => {
         const target = destinationHref(destination, href);
         const Element = target ? "a" : "span";
         return (
-          <div
+          <AnimatedBlock
+            animation={surface.animation}
+            editing={puck.isEditing}
             className="garden-block garden-button-block"
             style={{ textAlign: align, ...blockStyle(surface) }}
           >
@@ -668,6 +724,11 @@ export const gardenConfig: Config<
                   backgroundColor: buttonColor || undefined,
                   borderColor: buttonColor || undefined,
                   color: textColor || undefined,
+                  paddingTop: buttonPadding?.top,
+                  paddingRight: buttonPadding?.right,
+                  paddingBottom: buttonPadding?.bottom,
+                  paddingLeft: buttonPadding?.left,
+                  borderRadius: buttonRadius,
                 }}
                 href={target}
               >
@@ -680,7 +741,7 @@ export const gardenConfig: Config<
                 </RichContent>
               </Element>
             </Button>
-          </div>
+          </AnimatedBlock>
         );
       },
     },
@@ -752,6 +813,7 @@ export const gardenConfig: Config<
       },
       render: ({
         width,
+        puck,
         background,
         spacing: space,
         content: Content,
@@ -762,7 +824,10 @@ export const gardenConfig: Config<
         columnAlignment,
         ...surface
       }) => (
-        <section
+        <AnimatedBlock
+          as="section"
+          animation={surface.animation}
+          editing={puck.isEditing}
           className={
             "garden-section garden-tone-" +
             (background ?? "paper") +
@@ -805,7 +870,7 @@ export const gardenConfig: Config<
           >
             {Content({ minEmptyHeight: 100 })}
           </div>
-        </section>
+        </AnimatedBlock>
       ),
     },
     Columns: {
@@ -846,9 +911,12 @@ export const gardenConfig: Config<
         right: Right,
         third: Third,
         fourth: Fourth,
+        puck,
         ...surface
       }) => (
-        <div
+        <AnimatedBlock
+          animation={surface.animation}
+          editing={puck.isEditing}
           className={
             "garden-columns garden-columns-" +
             (ratio ?? "equal") +
@@ -863,7 +931,7 @@ export const gardenConfig: Config<
           {count > 1 && <div>{Right({ minEmptyHeight: 120 })}</div>}
           {count > 2 && Third && <div>{Third({ minEmptyHeight: 120 })}</div>}
           {count > 3 && Fourth && <div>{Fourth({ minEmptyHeight: 120 })}</div>}
-        </div>
+        </AnimatedBlock>
       ),
     },
   },

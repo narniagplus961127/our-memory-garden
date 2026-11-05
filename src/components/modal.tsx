@@ -27,6 +27,7 @@ export function Modal({
   className,
   initialFocus,
   onKeyDown,
+  onEscapeKeyDown,
   returnFocus,
   closeLabel,
 }: {
@@ -40,6 +41,7 @@ export function Modal({
   className?: string;
   initialFocus?: RefObject<HTMLButtonElement | null>;
   onKeyDown?: KeyboardEventHandler<HTMLDivElement>;
+  onEscapeKeyDown?: (event: KeyboardEvent) => void;
   returnFocus?: RefObject<HTMLElement | null>;
   closeLabel?: string;
 }) {
@@ -81,6 +83,7 @@ export function Modal({
         }}
         onEscapeKeyDown={(event) => {
           if (busy) event.preventDefault();
+          else onEscapeKeyDown?.(event);
         }}
         onInteractOutside={(event) => event.preventDefault()}
         onPointerDown={(event) => event.stopPropagation()}

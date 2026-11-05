@@ -12,10 +12,12 @@ export function BlockSpacingControl({
   value,
   onChange,
   label,
+  description,
 }: {
   value?: BlockSpacing;
   onChange: (value: BlockSpacing) => void;
   label: string;
+  description?: string;
 }) {
   const id = useId();
   const legacyPadding = useEditor((state) => state.selectedItem?.props.padding);
@@ -23,9 +25,10 @@ export function BlockSpacingControl({
     <fieldset className="block-spacing">
       <legend>{label} · px</legend>
       <p className="editor-panel-hint">
-        {label === "Padding"
-          ? "Space inside this block."
-          : "Space outside this block."}{" "}
+        {description ??
+          (label === "Padding"
+            ? "Space inside this block."
+            : "Space outside this block.")}{" "}
         Leave blank to use the default.
         {label === "Padding" && typeof legacyPadding === "number" && (
           <> Existing all-side padding: {legacyPadding} px.</>

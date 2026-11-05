@@ -797,6 +797,9 @@
     600 16px/24px Arial,
     sans-serif;
 }
+.editor-page-settings .recovery-action button {
+  margin: 0;
+}
 .editor-page-settings .sharing-fields {
   border: 0;
   padding: 0;

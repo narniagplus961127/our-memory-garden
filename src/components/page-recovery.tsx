@@ -127,15 +127,19 @@ export function RestoreVersion({
 export function TrashAction({
   page: initialPage,
   icon = false,
+  editor = false,
+  disabled = false,
   onDone,
 }: {
   page: PageCardData;
   icon?: boolean;
+  editor?: boolean;
+  disabled?: boolean;
   onDone?: (message: string) => void;
 }) {
   const router = useRouter();
   const recovery = useContext(RecoveryPageContext);
-  const page =
+  const basePage =
     recovery?.page.id === initialPage.id ? recovery.page : initialPage;
   const [action, setAction] = useState<"trash" | "restore" | "delete" | null>(
       null,
@@ -145,7 +149,10 @@ export function TrashAction({
     [success, setSuccess] = useState(""),
     [references, setReferences] = useState<InboundReference[] | null>(null),
     [referencesLoading, setReferencesLoading] = useState(false),
-    [referenceAttempt, setReferenceAttempt] = useState(0);
+    [referenceAttempt, setReferenceAttempt] = useState(0),
+    [reviewedPage, setReviewedPage] = useState<PageCardData | null>(null);
+  const page =
+    editor && action === "trash" && reviewedPage ? reviewedPage : basePage;
   const pending = useRef(false),
     trigger = useRef<HTMLButtonElement>(null);
   useEffect(() => {
@@ -161,6 +168,14 @@ export function TrashAction({
           throw Error(data.error ?? "Could not check links. Try again.");
         if (!Array.isArray(data.references))
           throw Error("Could not check links. Try again.");
+        if (
+          editor &&
+          (!data.page ||
+            data.page.id !== page.id ||
+            !Number.isSafeInteger(data.page.version))
+        )
+          throw Error("Could not review this page. Close the popup and retry.");
+        if (editor && !controller.signal.aborted) setReviewedPage(data.page);
         if (!controller.signal.aborted) setReferences(data.references);
       })
       .catch((failure) => {
@@ -175,14 +190,14 @@ export function TrashAction({
         if (!controller.signal.aborted) setReferencesLoading(false);
       });
     return () => controller.abort();
-  }, [action, page.id, referenceAttempt]);
+  }, [action, page.id, referenceAttempt, editor]);
   function cancel() {
     setAction(null);
     setError("");
     requestAnimationFrame(() => trigger.current?.focus());
   }
   async function submit() {
-    if (!action || pending.current || referencesLoading) return;
+    if (!action || disabled || pending.current || referencesLoading) return;
     if (action === "trash" && references === null) {
       setError("");
       setReferencesLoading(true);
@@ -210,7 +225,8 @@ export function TrashAction({
       setSuccess(message);
       setAction(null);
       onDone?.(message);
-      router.refresh();
+      if (editor && action === "trash") router.replace("/admin/pages");
+      else router.refresh();
     } catch (e) {
       setError(
         e instanceof Error
@@ -261,13 +277,16 @@ export function TrashAction({
                   : undefined
             }
             onClick={() => {
+              setReviewedPage(null);
               setReferences(null);
               setReferencesLoading(true);
               setAction("trash");
               setError("");
               setSuccess("");
             }}
-            disabled={page.is_homepage || busy || (icon && Boolean(success))}
+            disabled={
+              disabled || page.is_homepage || busy || (icon && Boolean(success))
+            }
           >
             {icon ? (
               <svg
@@ -283,6 +302,8 @@ export function TrashAction({
               >
                 <path d="M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7M14 10v7" />
               </svg>
+            ) : editor ? (
+              "Delete page"
             ) : (
               "Move to trash"
             )}
@@ -312,7 +333,7 @@ export function TrashAction({
                 : "The page will be hidden from visitors. You can restore it from trash."
           }
           busy={busy}
-          confirmDisabled={referencesLoading}
+          confirmDisabled={disabled || referencesLoading}
           error={error}
           confirmLabel={
             action === "delete"

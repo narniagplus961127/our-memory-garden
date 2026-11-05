@@ -11,16 +11,19 @@ import type { Category } from "@/lib/organization";
 import { displayPhotoUrl } from "@/lib/media";
 import { PhotoPicker } from "./media-library";
 import { detailsOf, usePageDetails } from "./use-page-details";
+import { TrashAction } from "./page-recovery";
 export function PageDetails({
   page,
   accountId,
   visibility,
   onSaved,
+  contentSaved,
 }: {
   page: GardenPage;
   accountId: string;
   visibility: GardenPage["visibility"];
   onSaved: (page: GardenPage) => void;
+  contentSaved: boolean;
 }) {
   const save = usePageDetails(page, accountId, onSaved),
     { details, status, change } = save;
@@ -356,6 +359,22 @@ export function PageDetails({
           </Button>
         </>
       )}
+      <section className="settings-field" aria-label="Delete page">
+        <h3>Delete page</h3>
+        <p className="muted m-0">
+          Move this page to trash. You can restore it later.
+        </p>
+        <TrashAction
+          page={page}
+          editor
+          disabled={!contentSaved || status !== "Saved" || categoryBusy}
+        />
+        {(!contentSaved || status !== "Saved" || categoryBusy) && (
+          <small className="muted">
+            Finish saving or resolve any changes before deleting this page.
+          </small>
+        )}
+      </section>
     </div>
   );
 }
