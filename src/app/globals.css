@@ -2157,8 +2157,10 @@ button.primary {
   text-decoration: none;
   overflow-wrap: anywhere;
 }
-.admin-page-cards a:hover {
-  background: var(--paper);
+@media (hover: hover) {
+  .admin-page-cards > li > [data-slot="card"]:hover {
+    background: var(--paper);
+  }
 }
 .page-card-trash {
   flex: 0 0 auto;

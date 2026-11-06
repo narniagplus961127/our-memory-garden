@@ -238,12 +238,12 @@ test("upload with per-file feedback, inspect protected details and reuse a photo
   await page.goto("/admin/pages/" + garden.id);
   await page.getByRole("button", { name: "Open content panel" }).click();
   await selectBlock(page, "Select Image 1");
-  const close = page.getByRole("button", { name: "Close panel", exact: true });
-  if (isMobile && (await close.isVisible())) await close.click();
-  await page
-    .frameLocator("iframe")
-    .getByRole("button", { name: "Choose photo", exact: true })
-    .click();
+  await page.getByRole("button", { name: "Open settings panel" }).click();
+  const choosePhoto = page.getByRole("button", {
+    name: "Choose photo",
+    exact: true,
+  });
+  await choosePhoto.click();
   const chooser = page.getByRole("dialog", {
     name: "Choose a photo",
     exact: true,
@@ -252,12 +252,7 @@ test("upload with per-file feedback, inspect protected details and reuse a photo
     .getByRole("button", { name: "Use photo " + name, exact: true })
     .click();
   await expect(chooser).not.toBeVisible();
-  await expect(
-    page
-      .frameLocator("iframe")
-      .getByRole("button", { name: "Replace photo", exact: true }),
-  ).toBeFocused();
-  await page.getByRole("button", { name: "Open settings panel" }).click();
+  await expect(choosePhoto).toBeFocused();
   await page
     .getByLabel("Alternative text", { exact: true })
     .fill("Rosemary in the sun");
