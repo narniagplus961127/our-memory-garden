@@ -302,9 +302,32 @@ test("upload with per-file feedback, inspect protected details and reuse a photo
   await page
     .getByRole("button", { name: "Photo details " + name, exact: true })
     .click();
+  const photoDetails = page.getByRole("dialog", {
+    name: "Photo details",
+    exact: true,
+  });
+  const overview = photoDetails.getByRole("tab", {
+    name: "Overview",
+    exact: true,
+  });
+  const usage = photoDetails.getByRole("tab", { name: "Usage", exact: true });
+  const linkedPage = photoDetails.getByRole("link", {
+    name: garden.title,
+    exact: true,
+  });
+  await expect(overview).toHaveAttribute("aria-selected", "true");
+  await expect(linkedPage).not.toBeVisible();
+  if (isMobile) await usage.click();
+  else {
+    await overview.focus();
+    await overview.press("ArrowRight");
+  }
+  await expect(usage).toHaveAttribute("aria-selected", "true");
+  await expect(linkedPage).toBeVisible();
   await expect(
-    page.getByRole("link", { name: garden.title, exact: true }),
-  ).toBeVisible();
+    photoDetails.getByRole("img", { name, exact: true }),
+  ).not.toBeVisible();
+  await overview.click();
   await expect(
     page.getByRole("button", { name: "Delete photo", exact: true }),
   ).toBeDisabled();

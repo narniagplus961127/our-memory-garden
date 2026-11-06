@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { useEffect, useRef, useState, useId } from "react";
+import { Tabs } from "radix-ui";
 import Link from "next/link";
 import { displayPhotoUrl, MAX_PHOTO_BYTES, type Photo } from "@/lib/media";
 type Upload = {
@@ -109,84 +110,89 @@ export function PhotoDetails({
       busy={deleting}
       className="photo-details"
     >
-      {!photo.deletionPending && (
-        <img
-          className="photo-detail-preview"
-          src={displayPhotoUrl(photo.id)}
-          alt={photo.name}
-        />
-      )}
-      {photo.deletionPending && (
-        <p className="muted">
-          Deletion is incomplete. Retry to remove the remaining stored copies.
-        </p>
-      )}
-      <h3>{photo.name}</h3>
-      <p className="badge">
-        {photo.publiclyAccessible ? "Publicly accessible" : "Private photo"}
-      </p>
-      <p>
-        {photo.publiclyAccessible
-          ? "Used on a public page. Anyone with the display address can view this copy. Previously downloaded copies cannot be recalled."
-          : "Private — no public page uses this photo."}
-      </p>
-      <p className="muted">
-        The original is always protected. Display copies have hidden metadata
-        removed.
-      </p>
-      <h3>
-        Used on {photo.usages.length}{" "}
-        {photo.usages.length === 1 ? "page" : "pages"}
-      </h3>
-      {photo.usages.length ? (
-        <ul className="photo-usages">
-          {photo.usages.map((usage) => (
-            <li key={usage.id + (usage.history ? "-history" : "-current")}>
-              <Link href={"/admin/pages/" + usage.id}>{usage.title}</Link>
-              <span className="badge">
-                {usage.history
-                  ? "Retained history"
-                  : usage.deleted
-                    ? "In trash"
-                    : usage.visibility === "public"
-                      ? "Public"
-                      : "Private"}
-              </span>
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <p className="muted">Not used on any current page.</p>
-      )}
-      <p className="muted">
-        <small>
-          {photo.width} × {photo.height} pixels · Original{" "}
-          {(photo.original_bytes / 1024 / 1024).toFixed(2)} MB · Display{" "}
-          {(photo.display_bytes / 1024).toFixed(1)} KB
-        </small>
-      </p>
-      <div className="actions">
-        {!photo.deletionPending && (
-          <Button asChild className="button">
-            <a href={"/api/media/" + photo.id + "/original"}>
-              Download original
-            </a>
-          </Button>
-        )}
-        {photo.usages.length > 0 && (
-          <Button disabled aria-describedby="photo-in-use">
-            Delete photo
-          </Button>
-        )}
+      <div className="photo-detail-identity">
+        <h3>{photo.name}</h3>
+        <span className="badge">
+          {photo.publiclyAccessible ? "Publicly accessible" : "Private photo"}
+        </span>
       </div>
-      {photo.usages.length === 0 && (
-        <div className="photo-delete">
-          {!confirm && !photo.deletionPending ? (
-            <Button className="secondary" onClick={() => setConfirm(true)}>
-              Delete photo
-            </Button>
-          ) : (
-            <>
+      <Tabs.Root defaultValue="overview">
+        <Tabs.List
+          className="photo-detail-tabs"
+          aria-label="Photo details sections"
+        >
+          <Tabs.Trigger value="overview">Overview</Tabs.Trigger>
+          <Tabs.Trigger value="usage" disabled={deleting}>
+            Usage
+          </Tabs.Trigger>
+        </Tabs.List>
+        <Tabs.Content value="overview">
+          <div className="photo-overview">
+            {!photo.deletionPending && (
+              <img
+                className="photo-detail-preview"
+                src={displayPhotoUrl(photo.id)}
+                alt={photo.name}
+              />
+            )}
+            <div className="photo-overview-info">
+              {photo.deletionPending && (
+                <p className="muted">
+                  Deletion is incomplete. Retry to remove the remaining stored
+                  copies.
+                </p>
+              )}
+              <p>
+                {photo.publiclyAccessible
+                  ? "Used on a public page. Anyone with the display address can view this copy. Previously downloaded copies cannot be recalled."
+                  : "Private — no public page uses this photo."}
+              </p>
+              <p className="muted">
+                The original is always protected. Display copies have hidden
+                metadata removed.
+              </p>
+              <p className="muted">
+                <small>
+                  {photo.width} × {photo.height} pixels · Original{" "}
+                  {(photo.original_bytes / 1024 / 1024).toFixed(2)} MB · Display{" "}
+                  {(photo.display_bytes / 1024).toFixed(1)} KB
+                </small>
+              </p>
+              <div className="actions">
+                {!photo.deletionPending && (
+                  <Button asChild className="button">
+                    <a href={"/api/media/" + photo.id + "/original"}>
+                      Download original
+                    </a>
+                  </Button>
+                )}
+                {photo.usages.length > 0 && (
+                  <Button disabled aria-describedby="photo-in-use">
+                    Delete photo
+                  </Button>
+                )}
+                {!photo.usages.length && !confirm && !photo.deletionPending && (
+                  <Button
+                    className="secondary"
+                    onClick={() => setConfirm(true)}
+                  >
+                    Delete photo
+                  </Button>
+                )}
+              </div>
+              {photo.usages.length > 0 && (
+                <p id="photo-in-use" className="muted">
+                  <small>
+                    This photo is in use. Remove it from current pages and cover
+                    settings before deleting it. Save those changes, then reopen
+                    photo details.
+                  </small>
+                </p>
+              )}
+            </div>
+          </div>
+          {!photo.usages.length && (confirm || photo.deletionPending) && (
+            <div className="photo-delete">
               <h3>Delete this photo permanently?</h3>
               <p>
                 This removes its original and display copies from the shared
@@ -211,24 +217,41 @@ export function PhotoDetails({
                   </Button>
                 )}
               </div>
-            </>
+            </div>
           )}
-        </div>
-      )}
-      {deleteError && (
-        <p role="alert" className="error">
-          {deleteError}
-        </p>
-      )}
-      {photo.usages.length > 0 && (
-        <p id="photo-in-use" className="muted">
-          <small>
-            This photo is in use. Remove it from current pages and cover
-            settings before deleting it. Save those changes, then reopen photo
-            details.
-          </small>
-        </p>
-      )}
+          {deleteError && (
+            <p role="alert" className="error">
+              {deleteError}
+            </p>
+          )}
+        </Tabs.Content>
+        <Tabs.Content value="usage">
+          <h3>
+            Used on {photo.usages.length}{" "}
+            {photo.usages.length === 1 ? "page" : "pages"}
+          </h3>
+          {photo.usages.length ? (
+            <ul className="photo-usages">
+              {photo.usages.map((usage) => (
+                <li key={usage.id + (usage.history ? "-history" : "-current")}>
+                  <Link href={"/admin/pages/" + usage.id}>{usage.title}</Link>
+                  <span className="badge">
+                    {usage.history
+                      ? "Retained history"
+                      : usage.deleted
+                        ? "In trash"
+                        : usage.visibility === "public"
+                          ? "Public"
+                          : "Private"}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="muted">Not used on any current page.</p>
+          )}
+        </Tabs.Content>
+      </Tabs.Root>
     </Modal>
   );
 }

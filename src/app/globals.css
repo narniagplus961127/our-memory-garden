@@ -1314,28 +1314,102 @@ button.primary {
 .upload-progress p {
   margin: 8px 0;
 }
+.photo-details :is(h3, p) {
+  margin: 0;
+}
 .photo-details h3 {
   overflow-wrap: anywhere;
+}
+.photo-detail-identity {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  margin-bottom: 12px;
+}
+.photo-detail-identity h3 {
+  font-family: var(--font-sans);
+  font-size: 16px;
+  font-weight: 600;
+}
+.photo-detail-identity .badge {
+  background: var(--sage);
+}
+.photo-detail-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid var(--line);
+}
+.photo-detail-tabs button {
+  min-height: 44px;
+  padding: 8px 12px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  border-radius: var(--control-radius) var(--control-radius) 0 0;
+  background: transparent;
+  color: var(--garden-muted);
+  cursor: pointer;
+}
+.photo-detail-tabs button:hover:enabled {
+  background: var(--sage);
+}
+.photo-detail-tabs button[data-state="active"] {
+  border-bottom-color: var(--garden-muted);
+  color: var(--ink);
+  font-weight: 600;
+}
+.photo-detail-tabs button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+.photo-overview,
+.photo-overview-info {
+  display: grid;
+  align-items: start;
+  gap: 12px;
+}
+.photo-details
+  .garden-modal-body
+  :is(.photo-overview-info, .photo-delete)
+  .actions {
+  margin-top: 0;
 }
 .photo-detail-preview {
   display: block;
   width: 100%;
-  max-height: 340px;
+  height: min(180px, 30dvh);
   object-fit: contain;
   background: var(--sage);
-  margin: 20px 0;
+  border-radius: 8px;
+}
+@media (min-width: 601px) {
+  .photo-overview:has(> .photo-detail-preview) {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr);
+    gap: 20px;
+  }
+  .photo-detail-preview {
+    height: min(240px, 35dvh);
+  }
 }
 .photo-usages {
   list-style: none;
   padding: 0;
-  margin-bottom: 24px;
+  margin: 8px 0 0;
 }
 .photo-usages li {
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
   gap: 12px;
   padding: 12px 0;
   border-bottom: 1px solid var(--line);
+}
+.photo-usages a {
+  overflow-wrap: anywhere;
+}
+.photo-details [data-state="active"] > h3 + p {
+  margin-top: 8px;
 }
 .photo-details .actions {
   flex-wrap: wrap;
@@ -2394,13 +2468,19 @@ button.primary {
   margin: 24px 0;
 }
 .photo-delete {
-  margin-top: 24px;
-  padding: 20px;
+  display: grid;
+  gap: 12px;
+  margin-top: 16px;
+  padding: 16px;
+  border: 1px solid var(--line);
   background: var(--cream);
   border-radius: 5px;
 }
 .photo-delete h3 {
   margin-top: 0;
+}
+.photo-details .error {
+  margin-top: 12px;
 }
 .photo-delete .actions {
   flex-wrap: wrap;
