@@ -23,10 +23,10 @@ export function ConfirmationDialog({
   error: string;
   confirmLabel: string;
   retryLabel: string;
-  reloadLabel: string;
+  reloadLabel?: string;
   onConfirm: () => void;
   onCancel: () => void;
-  onReload: () => void;
+  onReload?: () => void;
   confirmDisabled?: boolean;
 }) {
   const cancel = useRef<HTMLButtonElement>(null);
@@ -65,15 +65,17 @@ export function ConfirmationDialog({
           {error && (
             <div className="grid gap-3 text-destructive" role="alert">
               <p className="m-0">{error}</p>
-              <Button
-                type="button"
-                variant="outline"
-                className="justify-self-start"
-                disabled={busy}
-                onClick={onReload}
-              >
-                {reloadLabel}
-              </Button>
+              {onReload && reloadLabel && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="justify-self-start"
+                  disabled={busy}
+                  onClick={onReload}
+                >
+                  {reloadLabel}
+                </Button>
+              )}
             </div>
           )}
         </div>

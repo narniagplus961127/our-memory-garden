@@ -1369,10 +1369,7 @@ button.primary {
   align-items: start;
   gap: 12px;
 }
-.photo-details
-  .garden-modal-body
-  :is(.photo-overview-info, .photo-delete)
-  .actions {
+.photo-details .garden-modal-body .photo-overview-info .actions {
   margin-top: 0;
 }
 .photo-detail-preview {
@@ -2467,24 +2464,6 @@ button.primary {
 .backup-settings > p {
   margin: 24px 0;
 }
-.photo-delete {
-  display: grid;
-  gap: 12px;
-  margin-top: 16px;
-  padding: 16px;
-  border: 1px solid var(--line);
-  background: var(--cream);
-  border-radius: 5px;
-}
-.photo-delete h3 {
-  margin-top: 0;
-}
-.photo-details .error {
-  margin-top: 12px;
-}
-.photo-delete .actions {
-  flex-wrap: wrap;
-}
 .backup-settings .actions {
   flex-wrap: wrap;
 }
@@ -2493,9 +2472,6 @@ button.primary {
     margin-top: 28px;
   }
   .backup-settings .actions {
-    display: grid;
-  }
-  .photo-delete .actions {
     display: grid;
   }
 }

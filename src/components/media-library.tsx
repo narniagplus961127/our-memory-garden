@@ -1,5 +1,6 @@
 "use client";
 import { Modal } from "./modal";
+import { ConfirmationDialog } from "./confirmation-dialog";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -166,19 +167,16 @@ export function PhotoDetails({
                     </a>
                   </Button>
                 )}
-                {photo.usages.length > 0 && (
-                  <Button disabled aria-describedby="photo-in-use">
-                    Delete photo
-                  </Button>
-                )}
-                {!photo.usages.length && !confirm && !photo.deletionPending && (
-                  <Button
-                    className="secondary"
-                    onClick={() => setConfirm(true)}
-                  >
-                    Delete photo
-                  </Button>
-                )}
+                <Button
+                  className="secondary"
+                  disabled={photo.usages.length > 0}
+                  aria-describedby={
+                    photo.usages.length > 0 ? "photo-in-use" : undefined
+                  }
+                  onClick={() => setConfirm(true)}
+                >
+                  {photo.deletionPending ? "Retry deletion" : "Delete photo"}
+                </Button>
               </div>
               {photo.usages.length > 0 && (
                 <p id="photo-in-use" className="muted">
@@ -191,39 +189,6 @@ export function PhotoDetails({
               )}
             </div>
           </div>
-          {!photo.usages.length && (confirm || photo.deletionPending) && (
-            <div className="photo-delete">
-              <h3>Delete this photo permanently?</h3>
-              <p>
-                This removes its original and display copies from the shared
-                library, including access from saved page versions. This cannot
-                be undone.
-              </p>
-              <div className="actions">
-                <Button disabled={deleting} onClick={() => void remove()}>
-                  {deleting
-                    ? "Deleting…"
-                    : deleteError || photo.deletionPending
-                      ? "Retry deletion"
-                      : "Delete permanently"}
-                </Button>
-                {!photo.deletionPending && (
-                  <Button
-                    className="secondary"
-                    disabled={deleting}
-                    onClick={() => setConfirm(false)}
-                  >
-                    Keep photo
-                  </Button>
-                )}
-              </div>
-            </div>
-          )}
-          {deleteError && (
-            <p role="alert" className="error">
-              {deleteError}
-            </p>
-          )}
         </Tabs.Content>
         <Tabs.Content value="usage">
           <h3>
@@ -252,6 +217,25 @@ export function PhotoDetails({
           )}
         </Tabs.Content>
       </Tabs.Root>
+      {confirm && (
+        <ConfirmationDialog
+          title="Delete this photo permanently?"
+          description={
+            photo.deletionPending
+              ? "Deletion is incomplete. Retry to remove the remaining stored copies."
+              : "This removes its original and display copies from the shared library, including access from saved page versions. This cannot be undone."
+          }
+          busy={deleting}
+          confirmDisabled={photo.usages.length > 0}
+          error={deleteError}
+          confirmLabel={
+            photo.deletionPending ? "Retry deletion" : "Delete permanently"
+          }
+          retryLabel="Retry deletion"
+          onConfirm={() => void remove()}
+          onCancel={() => setConfirm(false)}
+        />
+      )}
     </Modal>
   );
 }

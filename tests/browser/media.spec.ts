@@ -118,21 +118,53 @@ test("a removed editor image becomes deletable while its page and history remain
       .getByRole("button", { name: "Close photo details", exact: true })
       .locator("svg"),
   ).toHaveCount(1);
-  await expect(
-    details.getByRole("button", { name: "Delete photo", exact: true }),
-  ).toBeEnabled();
-  await details
-    .getByRole("button", { name: "Delete photo", exact: true })
-    .click();
-  await expect(details).toContainText(
+  const deletePhoto = details.getByRole("button", {
+    name: "Delete photo",
+    exact: true,
+  });
+  const confirmation = page.getByRole("dialog", {
+    name: "Delete this photo permanently?",
+    exact: true,
+  });
+  await expect(deletePhoto).toBeEnabled();
+  await deletePhoto.click();
+  await expect(confirmation).toBeVisible();
+  await expect(confirmation).toContainText(
     "including access from saved page versions",
   );
+  const cancel = confirmation.getByRole("button", { name: "Cancel" });
+  await expect(cancel).toBeFocused();
+  await cancel.click();
+  await expect(confirmation).toHaveCount(0);
+  await expect(deletePhoto).toBeFocused();
+  await deletePhoto.click();
+  await page.keyboard.press("Escape");
+  await expect(confirmation).toHaveCount(0);
+  await expect(deletePhoto).toBeFocused();
+
+  await deletePhoto.click();
   await page.screenshot({
     path: testInfo.outputPath("unused-photo-modal.png"),
   });
-  await details
+  const mediaRoute = "**/api/media/" + upload.id;
+  await page.route(mediaRoute, async (route) => {
+    if (route.request().method() !== "DELETE") return route.fallback();
+    await route.fulfill({
+      status: 503,
+      json: { error: "Try deleting again." },
+    });
+  });
+  await confirmation
     .getByRole("button", { name: "Delete permanently", exact: true })
     .click();
+  await expect(confirmation.getByRole("alert")).toHaveText(
+    "Try deleting again.",
+  );
+  const retry = confirmation.getByRole("button", { name: "Retry deletion" });
+  await expect(retry).toBeEnabled();
+  await page.unroute(mediaRoute);
+  await retry.click();
+  await expect(confirmation).toHaveCount(0);
   await expect(details).toHaveCount(0);
   expect((await page.request.get("/api/media/" + upload.id)).status()).toBe(
     404,
