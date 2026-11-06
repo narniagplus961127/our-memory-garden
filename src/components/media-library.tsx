@@ -517,13 +517,24 @@ export function PhotoPicker({
   onChange,
   label = "Photo",
   hideLabel = false,
+  inModal = false,
 }: {
   value?: string;
   label?: string;
   hideLabel?: boolean;
+  inModal?: boolean;
   onChange: (value: string) => void;
 }) {
   const [open, setOpen] = useState(false);
+  const opener = useRef<HTMLButtonElement>(null);
+  const library = open && (
+    <MediaLibrary
+      onSelect={(id) => {
+        onChange(id);
+        setOpen(false);
+      }}
+    />
+  );
   return (
     <div className="photo-picker">
       {!hideLabel && <span className="field-label">{label}</span>}
@@ -535,11 +546,13 @@ export function PhotoPicker({
       )}
       <div className="actions">
         <Button
+          ref={opener}
           type="button"
           className="secondary"
+          aria-haspopup={inModal ? "dialog" : undefined}
           onClick={() => setOpen(!open)}
         >
-          {open
+          {open && !inModal
             ? "Close " + label.toLowerCase() + " library"
             : "Choose " + label.toLowerCase()}
         </Button>
@@ -553,13 +566,18 @@ export function PhotoPicker({
           </Button>
         )}
       </div>
-      {open && (
-        <MediaLibrary
-          onSelect={(id) => {
-            onChange(id);
-            setOpen(false);
-          }}
-        />
+      {open && inModal ? (
+        <Modal
+          title="Choose a photo"
+          closeLabel="Close photo library"
+          onClose={() => setOpen(false)}
+          returnFocus={opener}
+          className="canvas-photo-dialog modal-wide"
+        >
+          {library}
+        </Modal>
+      ) : (
+        library
       )}
     </div>
   );

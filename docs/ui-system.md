@@ -22,7 +22,7 @@ New buttons start with No link. Optional button/image destinations can retain an
 
 ## Website shortcuts
 
-The seedling icon remains in the bottom-right corner. Desktop hover and mobile tap reveal Dashboard; authenticated owners viewing an actual page also get Edit this page by stable ID. Anonymous and not-found screens never receive an editor shortcut. The popover supports keyboard, Escape, outside dismissal and hover travel between trigger and links.
+The seedling icon sits in the bottom-right corner. Click or tap to reveal Dashboard. Authenticated owners viewing an actual page also get Edit this page by stable ID. The popover supports keyboard activation, Escape and outside dismissal.
 
 Native FigCraft frames have not been redrawn for this implementation refinement; the approved garden visual direction remains unchanged. Application screenshots and functional checks are recorded in tickets 37–39.
 

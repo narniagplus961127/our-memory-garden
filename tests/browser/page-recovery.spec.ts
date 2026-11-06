@@ -12,6 +12,7 @@ const env = Object.fromEntries(
 
 test("Pages cards keep right-edge bin icons and load link warnings safely before trashing", async ({
   page,
+  isMobile,
 }, testInfo) => {
   test.setTimeout(120000);
   const headers = { Origin: env.NEXT_PUBLIC_APP_URL };
@@ -58,6 +59,15 @@ test("Pages cards keep right-edge bin icons and load link warnings safely before
     });
     await expect(trigger).toHaveCSS("width", "44px");
     await expect(trigger).toHaveCSS("height", "44px");
+    if (!isMobile) {
+      const surface = card.locator('[data-slot="card"]');
+      const link = card.getByRole("link");
+      await link.hover();
+      await expect(surface).toHaveCSS("background-color", "rgb(246, 241, 231)");
+      await expect(link).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+      await trigger.hover();
+      await expect(surface).toHaveCSS("background-color", "rgb(246, 241, 231)");
+    }
     await trigger.scrollIntoViewIfNeeded();
     const row = (await card.boundingBox())!,
       bin = (await trigger.boundingBox())!;

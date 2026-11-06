@@ -65,7 +65,7 @@ async function fixture(page: Page) {
   return result.json();
 }
 
-test("garden shortcuts open on hover or tap and only administrators see the current-page editor link", async ({
+test("garden shortcuts open on click or tap and only administrators see the current-page editor link", async ({
   page,
   isMobile,
   browser,
@@ -78,12 +78,17 @@ test("garden shortcuts open on hover or tap and only administrators see the curr
     name: "Garden tools",
     exact: true,
   });
-  if (isMobile) await trigger.click();
-  else await trigger.hover();
   const tools = page.getByRole("navigation", {
     name: "Garden shortcuts",
     exact: true,
   });
+  if (!isMobile) {
+    await page.clock.install();
+    await trigger.hover();
+    await page.clock.runFor(200);
+    await expect(tools).toHaveCount(0);
+  }
+  await trigger.click();
   await expect(
     tools.getByRole("link", { name: "Garden dashboard", exact: true }),
   ).toHaveAttribute("href", "/admin");

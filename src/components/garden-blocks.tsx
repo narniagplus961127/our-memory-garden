@@ -474,7 +474,7 @@ export const gardenConfig: Config<
           type: "custom",
           label: "Photo",
           render: ({ value, onChange }) => (
-            <PhotoPicker value={value} onChange={onChange} />
+            <PhotoPicker value={value} onChange={onChange} inModal />
           ),
         },
         alt: { type: "text", label: "Alternative text" },
