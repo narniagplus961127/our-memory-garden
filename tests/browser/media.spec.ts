@@ -248,6 +248,14 @@ test("upload with per-file feedback, inspect protected details and reuse a photo
     name: "Choose a photo",
     exact: true,
   });
+  await expect(chooser.locator(".media-grid")).toHaveCSS(
+    "grid-template-columns",
+    /px .+px/,
+  );
+  await expect(chooser.getByRole("img", { name, exact: true })).toHaveCSS(
+    "height",
+    "112px",
+  );
   await chooser
     .getByRole("button", { name: "Use photo " + name, exact: true })
     .click();

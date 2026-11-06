@@ -1367,6 +1367,28 @@ button.primary {
 .media-picker .media-search {
   flex-wrap: wrap;
 }
+.canvas-photo-dialog .media-picker .media-grid {
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 156px), 1fr));
+  align-items: start;
+  gap: 12px;
+}
+.canvas-photo-dialog .media-card > :is(img, .media-cleanup-preview) {
+  height: 112px;
+  background: var(--sage);
+  object-fit: contain;
+}
+.canvas-photo-dialog .media-card > div:not(.media-cleanup-preview) {
+  padding: 10px;
+}
+.canvas-photo-dialog .media-card small {
+  margin: 4px 0 8px;
+}
+.canvas-photo-dialog .media-card .actions {
+  gap: 6px;
+}
+.canvas-photo-dialog .media-card .actions button {
+  padding-inline: 6px;
+}
 @media (max-width: 760px) {
   .media-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1385,6 +1407,9 @@ button.primary {
   }
   .media-picker .media-grid {
     grid-template-columns: 1fr;
+  }
+  .canvas-photo-dialog .media-picker .media-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
