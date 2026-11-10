@@ -1,4 +1,5 @@
 "use client";
+import { Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   createContext,
@@ -239,7 +240,7 @@ export function TrashAction({
     }
   }
   return (
-    <div className={icon ? "page-card-trash" : "recovery-action"}>
+    <div className={icon ? undefined : "recovery-action"}>
       {page.deleted_at ? (
         <>
           <Button
@@ -266,7 +267,9 @@ export function TrashAction({
       ) : (
         <>
           <Button
-            className={"button secondary" + (icon ? " page-trash-icon" : "")}
+            className={icon ? undefined : "button secondary"}
+            variant="outline"
+            size={icon ? "icon" : "default"}
             ref={trigger}
             aria-label={icon ? "Move " + page.title + " to trash" : undefined}
             title={
@@ -289,19 +292,7 @@ export function TrashAction({
             }
           >
             {icon ? (
-              <svg
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.7"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden="true"
-              >
-                <path d="M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7M14 10v7" />
-              </svg>
+              <Trash2 aria-hidden="true" />
             ) : editor ? (
               "Delete page"
             ) : (

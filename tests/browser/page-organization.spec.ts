@@ -25,6 +25,69 @@ async function signIn(page: Page) {
   ).toBeTruthy();
 }
 
+test("Pages and Categories share row actions and save keyboard drag order", async ({
+  page,
+}) => {
+  test.setTimeout(120000);
+  await signIn(page);
+  const suffix = crypto.randomUUID().slice(0, 8);
+  for (const list of ["pages", "categories"]) {
+    const first = "Apple " + suffix;
+    const second = "Zinnia " + suffix;
+    // Both fallback orders put Apple ahead of Zinnia.
+    for (const name of [second, first]) {
+      const created = await page.request.post("/api/" + list, {
+        headers,
+        data: list === "pages" ? { title: name } : { name },
+      });
+      expect(created.status()).toBe(201);
+    }
+    await page.goto("/admin/" + list);
+    const titles = page
+      .locator(".admin-list-row strong")
+      .filter({ hasText: suffix });
+    await expect(titles).toHaveText([first, second]);
+    const handle = page.getByRole("button", {
+      name: "Drag " + second,
+      exact: true,
+    });
+    const row = page.locator(".admin-list-row").filter({ has: handle });
+    await expect(
+      row.getByRole("link", { name: "Edit " + second }),
+    ).toBeVisible();
+    await expect(
+      row.getByRole("button", {
+        name:
+          list === "pages"
+            ? "Move " + second + " to trash"
+            : "Delete " + second,
+      }),
+    ).toHaveCSS("width", "44px");
+    await handle.press("Space");
+    await handle.press("ArrowUp");
+    await handle.press("Escape");
+    await expect(titles).toHaveText([first, second]);
+    await handle.press("Space");
+    await handle.press("Home");
+    const responsePromise = page.waitForResponse((response) =>
+      response.url().endsWith("/api/admin-list-order"),
+    );
+    await handle.press("Enter");
+    const response = await responsePromise;
+    expect(response.ok()).toBeTruthy();
+    await expect(titles).toHaveText([second, first]);
+    await expect(handle).toBeFocused();
+    const { ids, version } = await response.json();
+    const stale = await page.request.put("/api/admin-list-order", {
+      headers,
+      data: { list, ids: [...ids].reverse(), version: version - 1 },
+    });
+    expect(stale.status()).toBe(409);
+    await page.reload();
+    await expect(titles).toHaveText([second, first]);
+  }
+});
+
 test("new page URL follows its title until edited and rejects duplicates without creating a page", async ({
   page,
 }) => {

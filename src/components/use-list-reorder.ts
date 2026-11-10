@@ -1,17 +1,19 @@
 "use client";
 import {
   useEffect,
+  useId,
   useRef,
   useState,
   type PointerEvent,
   type KeyboardEvent,
 } from "react";
-import type { MenuItem } from "@/lib/destinations";
+
+type SortableItem = { id: string; label: string; parentId?: string | null };
 
 type Drag = {
   id: string;
   label: string;
-  parentId: string | null;
+  parentId: SortableItem["parentId"];
   index: number;
   original: number;
   input: "pointer" | "keyboard";
@@ -23,15 +25,16 @@ type Press = {
   id: number;
   x: number;
   y: number;
-  item: MenuItem;
+  item: SortableItem;
   handle: HTMLButtonElement;
 };
 
-export function useMenuReorder(
-  items: MenuItem[],
+export function useListReorder<T extends SortableItem>(
+  items: T[],
   busy: boolean,
-  onReorder: (items: MenuItem[]) => void,
+  onReorder: (items: T[]) => void,
 ) {
+  const instructionsId = useId();
   const [drag, setDrag] = useState<Drag | null>(null),
     [announcement, setAnnouncement] = useState("");
   const active = useRef<Drag | null>(null),
@@ -73,14 +76,14 @@ export function useMenuReorder(
     }
     function outside(event: globalThis.PointerEvent) {
       const handle = (event.target as Element).closest(
-        ".navigation-drag-handle",
+        ".admin-list-drag-handle",
       );
       if (
         active.current?.input === "keyboard" &&
         handle !==
           rows.current
             .get(active.current.id)
-            ?.querySelector(".navigation-drag-handle")
+            ?.querySelector(".admin-list-drag-handle")
       )
         cancel();
     }
@@ -96,7 +99,7 @@ export function useMenuReorder(
     // Refs hold the active gesture; the listener never reads an old arrangement.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-  function begin(item: MenuItem, input: Drag["input"], x = 0, y = 0) {
+  function begin(item: SortableItem, input: Drag["input"], x = 0, y = 0) {
     const siblings = items.filter((i) => i.parentId === item.parentId),
       index = siblings.findIndex((i) => i.id === item.id);
     update({
@@ -178,11 +181,14 @@ export function useMenuReorder(
       requestAnimationFrame(() =>
         rows.current
           .get(current.id)
-          ?.querySelector<HTMLButtonElement>(".navigation-drag-handle")
+          ?.querySelector<HTMLButtonElement>(".admin-list-drag-handle")
           ?.focus({ preventScroll: true }),
       );
   }
-  function pointerDown(event: PointerEvent<HTMLButtonElement>, item: MenuItem) {
+  function pointerDown(
+    event: PointerEvent<HTMLButtonElement>,
+    item: SortableItem,
+  ) {
     if (busy || !event.isPrimary || event.button !== 0 || active.current)
       return;
     event.preventDefault();
@@ -207,7 +213,10 @@ export function useMenuReorder(
     }
     point(event.clientX, event.clientY);
   }
-  function keyDown(event: KeyboardEvent<HTMLButtonElement>, item: MenuItem) {
+  function keyDown(
+    event: KeyboardEvent<HTMLButtonElement>,
+    item: SortableItem,
+  ) {
     if (busy) return;
     const current = active.current;
     if (event.key === "Escape" && (current || press.current)) {
@@ -254,19 +263,23 @@ export function useMenuReorder(
   return {
     drag,
     announcement,
-    registerRow: (id: string, node: HTMLLIElement | null) => {
-      if (node) rows.current.set(id, node);
-      else rows.current.delete(id);
-    },
-    marker: (id: string) =>
-      id === markerId
-        ? drag!.index < remaining.length
-          ? "before"
-          : "after"
-        : undefined,
-    handleProps: (item: MenuItem) => ({
+    instructionsId,
+    rowProps: (id: string) => ({
+      ref: (node: HTMLLIElement | null) => {
+        if (node) rows.current.set(id, node);
+        else rows.current.delete(id);
+      },
+      "data-dragging": drag?.id === id || undefined,
+      "data-drop":
+        id === markerId && drag
+          ? drag.index < remaining.length
+            ? "before"
+            : "after"
+          : undefined,
+    }),
+    handleProps: (item: SortableItem) => ({
       "aria-label": "Drag " + item.label,
-      "aria-describedby": "menu-drag-instructions",
+      "aria-describedby": instructionsId,
       "aria-pressed": drag?.id === item.id,
       "aria-disabled": busy,
       onPointerDown: (event: PointerEvent<HTMLButtonElement>) =>

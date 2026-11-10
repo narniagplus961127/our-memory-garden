@@ -1,32 +1,48 @@
 "use client";
-import Link from "next/link";
 import { useState } from "react";
+import type { AdminListOrder } from "@/lib/admin-list-order";
 import type { PageCardData } from "@/lib/pages";
+import {
+  AdminListGrip,
+  AdminListOrderStatus,
+  AdminListRow,
+  ListDragFeedback,
+} from "./admin-list-row";
+import { useAdminListOrder } from "./use-admin-list-order";
 import { TrashAction } from "./page-recovery";
 import { Toast } from "./toast";
-import { Card } from "./ui/card";
+const pageLabel = (page: PageCardData) => page.title;
 export function AdminPageCards({
   pages,
+  order,
   allowTrash = false,
 }: {
   pages: PageCardData[];
+  order?: AdminListOrder;
   allowTrash?: boolean;
 }) {
   const [notice, setNotice] = useState("");
+  const sort = useAdminListOrder("pages", pages, pageLabel, order);
   return (
     <>
       {notice && <Toast message={notice} onDismiss={() => setNotice("")} />}
       {pages.length ? (
-        <ul className="admin-page-cards">
-          {pages.map((page) => (
-            <li key={page.id}>
-              <Card className="flex-row items-center gap-0 rounded-md py-0 shadow-none">
-                <Link
-                  className="block min-h-[76px] min-w-0 flex-1 p-4 no-underline"
-                  href={"/admin/pages/" + page.id}
-                >
-                  <span className="admin-page-card-title">{page.title}</span>
-                  <span className="admin-page-card-meta">
+        <ul className="admin-list admin-page-cards">
+          {sort.ordered.map((page) => (
+            <li key={page.id} {...(order && sort.rowProps(page.id))}>
+              <AdminListRow
+                title={page.title}
+                href={"/admin/pages/" + page.id}
+                showEdit={allowTrash}
+                grip={
+                  order && (
+                    <AdminListGrip
+                      {...sort.handleProps({ id: page.id, label: page.title })}
+                    />
+                  )
+                }
+                detail={
+                  <>
                     {page.is_homepage && "Homepage · "}
                     {page.visibility === "private" ? "Private" : "Public"}
                     <span>
@@ -36,21 +52,24 @@ export function AdminPageCards({
                         {new Date(page.updated_at).toLocaleDateString("en-GB")}
                       </time>
                     </span>
-                  </span>
-                </Link>
-                {allowTrash && (
-                  <TrashAction
-                    page={page}
-                    icon
-                    onDone={(message) => {
-                      setNotice(message);
-                      requestAnimationFrame(() =>
-                        document.getElementById("pages-title")?.focus(),
-                      );
-                    }}
-                  />
-                )}
-              </Card>
+                  </>
+                }
+                trailing={
+                  allowTrash && (
+                    <TrashAction
+                      page={page}
+                      icon
+                      disabled={sort.busy}
+                      onDone={(message) => {
+                        setNotice(message);
+                        requestAnimationFrame(() =>
+                          document.getElementById("pages-title")?.focus(),
+                        );
+                      }}
+                    />
+                  )
+                }
+              />
             </li>
           ))}
         </ul>
@@ -61,6 +80,12 @@ export function AdminPageCards({
             Create a private page and give a memory a place to grow.
           </p>
         </div>
+      )}
+      {order && (
+        <>
+          <ListDragFeedback {...sort} />
+          <AdminListOrderStatus {...sort} />
+        </>
       )}
     </>
   );
