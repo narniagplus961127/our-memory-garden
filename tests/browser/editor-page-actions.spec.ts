@@ -269,9 +269,8 @@ test("button padding and radius persist, reset and render with default configura
   }
 });
 
-test("website submenus expand without changing header height and support keyboard, mobile and reduced motion", async ({
+test("the website drawer and nested menus support keyboard and reduced motion at all sizes", async ({
   page,
-  isMobile,
 }, info) => {
   await login(page);
   const original = await (await page.request.get("/api/navigation")).json();
@@ -304,28 +303,30 @@ test("website submenus expand without changing header height and support keyboar
     await expect(
       page.getByRole("heading", { name: "Your menu", exact: true }),
     ).toHaveCount(0);
-    await expect(page.locator("#menu-drag-instructions")).toHaveClass(
-      "visually-hidden",
-    );
+    await expect(
+      page
+        .locator(".visually-hidden")
+        .filter({ hasText: "Drop on the center" }),
+    ).toHaveCount(1);
     await page.goto("/");
     const height = await page
       .locator(".public-header")
       .evaluate((el) => el.getBoundingClientRect().height);
     const drawer = page.getByRole("dialog", { name: "Menu", exact: true });
-    if (isMobile) {
-      await page
-        .getByRole("button", { name: "Open website menu", exact: true })
-        .click();
-      await expect(drawer).toHaveCSS("animation-name", "website-menu-slide-in");
-      await expect(drawer).toHaveCSS("transform", "matrix(1, 0, 0, 1, 0, 0)");
-      const bounds = (await drawer.boundingBox())!;
-      const viewport = page.viewportSize()!;
-      expect(bounds.y).toBe(0);
-      expect(bounds.height).toBe(viewport.height);
-      expect(bounds.x + bounds.width).toBe(viewport.width);
-    }
+    const opener = page.getByRole("button", {
+      name: "Open website menu",
+      exact: true,
+    });
+    await opener.click();
+    await expect(drawer).toHaveCSS("animation-name", "website-menu-slide-in");
+    await expect(drawer).toHaveCSS("transform", "matrix(1, 0, 0, 1, 0, 0)");
+    const bounds = (await drawer.boundingBox())!;
+    const viewport = page.viewportSize()!;
+    expect(bounds.y).toBe(0);
+    expect(bounds.height).toBe(viewport.height);
+    expect(bounds.x + bounds.width).toBe(viewport.width);
     const nav = page.getByRole("navigation", {
-        name: isMobile ? "Mobile navigation" : "Main navigation",
+        name: "Main navigation",
         exact: true,
       }),
       toggle = nav.getByRole("button", {
@@ -341,10 +342,7 @@ test("website submenus expand without changing header height and support keyboar
     await expect(
       nav.getByRole("link", { name: "Garden", exact: true }),
     ).toHaveAttribute("href", "https://example.com/garden");
-    if (isMobile) await toggle.click();
-    else {
-      await nav.getByRole("link", { name: "Garden", exact: true }).hover();
-    }
+    await toggle.click();
     await expect(
       nav.getByRole("link", { name: "Trips", exact: true }),
     ).toBeVisible();
@@ -357,11 +355,7 @@ test("website submenus expand without changing header height and support keyboar
       name: "Submenu for Trips",
       exact: true,
     });
-    if (isMobile) await tripsToggle.click();
-    else {
-      const box = (await tripsToggle.boundingBox())!;
-      await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
-    }
+    await tripsToggle.click();
     await expect(
       nav.getByRole("link", { name: "Reef", exact: true }),
     ).toBeVisible();
@@ -370,9 +364,7 @@ test("website submenus expand without changing header height and support keyboar
         .getByRole("button", { name: "Submenu for Trips", exact: true })
         .locator("svg"),
     ).toHaveCSS("transform", "matrix(-1, 0, 0, -1, 0, 0)");
-    if (!isMobile)
-      expect((await page.locator(".public-header").boundingBox())!.y).toBe(0);
-    await page.screenshot({ path: info.outputPath("website-dropdown.png") });
+    await page.screenshot({ path: info.outputPath("website-drawer.png") });
     await nav.getByRole("link", { name: "Reef", exact: true }).focus();
     await page.keyboard.press("Escape");
     await expect(
@@ -386,18 +378,12 @@ test("website submenus expand without changing header height and support keyboar
     ).toBeFocused();
     await page.emulateMedia({ reducedMotion: "reduce" });
     await expect(toggle.locator("svg")).toHaveCSS("transition-duration", "0s");
-    if (isMobile) {
-      await expect(drawer).toHaveCSS("animation-name", "none");
-      await page.keyboard.press("Escape");
-      await expect(toggle).toBeFocused();
-      await page.keyboard.press("Escape");
-      await expect(
-        page.getByRole("dialog", { name: "Menu", exact: true }),
-      ).toHaveCount(0);
-    } else {
-      await page.getByRole("heading", { level: 1 }).click();
-      await expect(toggle).toHaveAttribute("aria-expanded", "false");
-    }
+    await expect(drawer).toHaveCSS("animation-name", "none");
+    await page.keyboard.press("Escape");
+    await expect(toggle).toBeFocused();
+    await page.keyboard.press("Escape");
+    await expect(drawer).toHaveCount(0);
+    await expect(opener).toBeFocused();
   } finally {
     const current = await (await page.request.get("/api/navigation")).json();
     await page.request.put("/api/navigation", {

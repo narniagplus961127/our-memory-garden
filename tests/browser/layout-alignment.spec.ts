@@ -45,11 +45,9 @@ async function sample(page: Page, content?: unknown) {
   ).toBeEnabled();
   return created.id;
 }
-test("desktop navigation text shares a baseline with the dashboard action", async ({
+test("the public header centers the brand and menu button vertically", async ({
   page,
-  isMobile,
 }) => {
-  test.skip(isMobile, "Mobile has the separate menu dialog.");
   await signIn(page);
   const original = await (await page.request.get("/api/navigation")).json();
   try {
@@ -68,15 +66,17 @@ test("desktop navigation text shares a baseline with the dashboard action", asyn
       ).ok(),
     ).toBeTruthy();
     await page.goto("/");
-    const centres = await page.locator(".public-nav a").evaluateAll((links) =>
-      links.map((link) => {
-        const range = document.createRange();
-        range.selectNodeContents(link);
-        const rect = range.getBoundingClientRect();
-        return rect.y + rect.height / 2;
-      }),
-    );
-    expect(Math.max(...centres) - Math.min(...centres)).toBeLessThanOrEqual(1);
+    const header = page.locator(".public-header");
+    const brand = (await header
+      .getByRole("link", { name: "Our Memory Garden" })
+      .boundingBox())!;
+    const menu = (await header
+      .getByRole("button", { name: "Open website menu" })
+      .boundingBox())!;
+    expect(
+      Math.abs(brand.y + brand.height / 2 - menu.y - menu.height / 2),
+    ).toBeLessThanOrEqual(1);
+    await expect(header.getByRole("link")).toHaveCount(1);
   } finally {
     const current = await (await page.request.get("/api/navigation")).json();
     expect(

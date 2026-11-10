@@ -216,12 +216,11 @@ test("drag handles reorder siblings with mouse/touch, preserve children, cancel 
     });
     const view = await visitor.newPage();
     await view.goto(baseURL + "/");
-    if (isMobile)
-      await view
-        .getByRole("button", { name: "Open website menu", exact: true })
-        .click();
+    await view
+      .getByRole("button", { name: "Open website menu", exact: true })
+      .click();
     const nav = view.getByRole("navigation", {
-      name: isMobile ? "Mobile navigation" : "Main navigation",
+      name: "Main navigation",
       exact: true,
     });
     await expect(nav.locator(":scope > ul > li > a")).toHaveText([

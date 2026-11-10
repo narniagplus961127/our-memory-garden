@@ -23,6 +23,7 @@ export function sameMenuItem(a: MenuItem | undefined, b: MenuItem | undefined) {
     a.id === b.id &&
     a.label === b.label &&
     a.parentId === b.parentId &&
+    Boolean(a.openInNewTab) === Boolean(b.openInNewTab) &&
     (a.destination.kind === "page" && b.destination.kind === "page"
       ? a.destination.pageId === b.destination.pageId
       : a.destination.kind === "category" && b.destination.kind === "category"

@@ -344,21 +344,6 @@ input[type="radio"] {
   height: 36px;
   object-fit: contain;
 }
-.public-nav {
-  overflow-anchor: none;
-  display: flex;
-  gap: 24px;
-  align-items: flex-start;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  min-width: 0;
-}
-.public-nav > a:not(.button),
-.public-nav > .public-menu-items > li > a {
-  display: flex;
-  align-items: center;
-  min-height: 48px;
-}
 .garden-dashboard-fab {
   position: fixed;
   right: 24px;
@@ -420,9 +405,6 @@ input[type="radio"] {
   color: #713e30;
   padding: 16px;
   border-radius: 4px;
-}
-.public-menu {
-  display: none;
 }
 .admin-shell {
   min-height: 100vh;
@@ -618,16 +600,6 @@ td:last-child {
   .brand img {
     width: 32px;
     height: 32px;
-  }
-  .public-nav {
-    display: none;
-  }
-  .public-menu {
-    display: block;
-  }
-  .public-menu > button {
-    min-width: 44px;
-    padding: 10px 14px;
   }
   .auth-main {
     margin: 40px auto;
@@ -1594,31 +1566,6 @@ button.primary {
   min-height: 0;
   overflow: hidden;
 }
-.public-nav .public-submenu[data-depth="0"] {
-  position: absolute;
-  z-index: 40;
-  top: 100%;
-  right: 0;
-  width: min(260px, calc(100vw - 32px));
-  display: block;
-  transform: translateY(-6px);
-  transition:
-    opacity 180ms ease,
-    transform 180ms ease,
-    visibility 180ms;
-}
-.public-nav .public-submenu[data-depth="0"][data-open="true"] {
-  transform: translateY(0);
-}
-.public-nav .public-submenu[data-depth="0"] > .public-submenu-inner {
-  max-height: 70dvh;
-  overflow-y: auto;
-  background: var(--cream);
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  padding: 8px;
-  box-shadow: 0 8px 24px #30463718;
-}
 .public-submenu a {
   display: flex;
   align-items: center;
@@ -1631,9 +1578,6 @@ button.primary {
 .public-submenu a:hover,
 .public-submenu a:focus-visible {
   background: var(--sage);
-}
-.public-nav .public-submenu .public-submenu .public-submenu-inner {
-  padding-left: 12px;
 }
 .website-menu {
   width: min(100%, 360px);
@@ -1700,10 +1644,10 @@ button.primary {
   text-decoration: none;
   overflow-wrap: anywhere;
 }
-.website-menu .mobile-submenu > .public-submenu-inner > ul {
+.website-menu .public-submenu > .public-submenu-inner > ul {
   padding: 4px 0 8px 16px;
 }
-.website-menu .mobile-submenu a {
+.website-menu .public-submenu a {
   min-height: 44px;
   color: var(--garden-muted);
 }
@@ -1749,7 +1693,6 @@ button.primary {
 }
 @media (prefers-reduced-motion: reduce) {
   .public-submenu,
-  .public-nav .public-submenu[data-depth="0"],
   .submenu-toggle svg {
     transition: none;
   }
@@ -1862,7 +1805,7 @@ button.primary {
 .navigation-item-form .destination-picker .error {
   margin: 0;
 }
-.navigation-item-form :is(input, select) {
+.navigation-item-form :is(input:not([type="checkbox"]), select) {
   width: 100%;
 }
 .navigation-item-form .actions,

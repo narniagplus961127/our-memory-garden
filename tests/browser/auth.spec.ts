@@ -22,7 +22,6 @@ test("administrators see sign in and password recovery, with no registration ent
 test("website navigation keeps custom links and returns with Back and Escape", async ({
   page,
   browser,
-  isMobile,
 }, testInfo) => {
   const env = parseEnv(readFileSync(".env.test", "utf8"));
   if (!env.NEXT_PUBLIC_APP_URL) throw Error("Missing local app URL");
@@ -70,34 +69,24 @@ test("website navigation keeps custom links and returns with Back and Escape", a
     await expect(
       page.getByRole("link", { name: "Our Memory Garden", exact: true }),
     ).toHaveAttribute("href", "/");
-    if (isMobile) {
-      const opener = page.getByRole("button", { name: "Open website menu" });
-      await opener.click();
-      const menu = page.getByRole("dialog", { name: "Menu", exact: true });
-      await expect(
-        menu.getByRole("link", { name: "Our adventures", exact: true }),
-      ).toHaveAttribute("href", "https://example.com/adventures");
-      await page.screenshot({
-        path: testInfo.outputPath("website-menu.png"),
-        fullPage: true,
-      });
-      await menu
-        .getByRole("button", { name: "Close menu", exact: true })
-        .click();
-      await expect(menu).not.toBeVisible();
-      await expect(opener).toBeFocused();
-      await expect(page).toHaveURL(/\/login$/);
-      await opener.click();
-      await page.keyboard.press("Escape");
-      await expect(menu).not.toBeVisible();
-      await expect(opener).toBeFocused();
-    } else {
-      await expect(
-        page
-          .getByRole("navigation", { name: "Main navigation" })
-          .getByRole("link", { name: "Our adventures", exact: true }),
-      ).toHaveAttribute("href", "https://example.com/adventures");
-    }
+    const opener = page.getByRole("button", { name: "Open website menu" });
+    await opener.click();
+    const menu = page.getByRole("dialog", { name: "Menu", exact: true });
+    await expect(
+      menu.getByRole("link", { name: "Our adventures", exact: true }),
+    ).toHaveAttribute("href", "https://example.com/adventures");
+    await page.screenshot({
+      path: testInfo.outputPath("website-menu.png"),
+      fullPage: true,
+    });
+    await menu.getByRole("button", { name: "Close menu", exact: true }).click();
+    await expect(menu).not.toBeVisible();
+    await expect(opener).toBeFocused();
+    await expect(page).toHaveURL(/\/login$/);
+    await opener.click();
+    await page.keyboard.press("Escape");
+    await expect(menu).not.toBeVisible();
+    await expect(opener).toBeFocused();
     await setItems([]);
     await page.reload();
     await expect(
@@ -212,13 +201,16 @@ test("signed-in gardeners return from the public website to their dashboard", as
   await page.getByRole("link", { name: "View website ↗", exact: true }).click();
   await expect(page).toHaveURL(/\/$/);
   await page.getByRole("button", { name: "Garden tools", exact: true }).click();
-  await page
-    .getByRole("link", { name: "Garden dashboard", exact: true })
-    .click();
-  await expect(page).toHaveURL(/\/admin$/);
+  const [dashboard] = await Promise.all([
+    page.context().waitForEvent("page"),
+    page.getByRole("link", { name: "Garden dashboard", exact: true }).click(),
+  ]);
+  await expect(dashboard).toHaveURL(/\/admin$/);
+  await expect(page).toHaveURL("/");
   await expect(
-    page.getByRole("heading", { name: "Hello, gardeners", exact: true }),
+    dashboard.getByRole("heading", { name: "Hello, gardeners", exact: true }),
   ).toBeVisible();
+  await dashboard.close();
   await page.goto("/login");
   await expect(page).toHaveURL(/\/admin$/);
   await expect(
@@ -236,9 +228,14 @@ test("anonymous garden dashboard navigation still asks for sign in", async ({
     exact: true,
   });
   await expect(dashboard).toHaveAttribute("href", "/admin");
-  await dashboard.click();
-  await expect(page).toHaveURL(/\/login$/);
+  const [signIn] = await Promise.all([
+    page.context().waitForEvent("page"),
+    dashboard.click(),
+  ]);
+  await expect(signIn).toHaveURL(/\/login$/);
+  await expect(page).toHaveURL("/");
   await expect(
-    page.getByRole("heading", { name: "Welcome back", exact: true }),
+    signIn.getByRole("heading", { name: "Welcome back", exact: true }),
   ).toBeVisible();
+  await signIn.close();
 });

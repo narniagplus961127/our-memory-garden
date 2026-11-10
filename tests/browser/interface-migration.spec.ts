@@ -96,10 +96,13 @@ test("garden shortcuts open on click or tap and only administrators see the curr
     tools.getByRole("link", { name: "Edit this page", exact: true }),
   ).toHaveAttribute("href", "/admin/pages/" + garden.id);
   await page.screenshot({ path: testInfo.outputPath("garden-tools.png") });
-  await tools
-    .getByRole("link", { name: "Edit this page", exact: true })
-    .click();
-  await expect(page).toHaveURL("/admin/pages/" + garden.id);
+  const [editor] = await Promise.all([
+    page.context().waitForEvent("page"),
+    tools.getByRole("link", { name: "Edit this page", exact: true }).click(),
+  ]);
+  await expect(editor).toHaveURL("/admin/pages/" + garden.id);
+  await expect(page).toHaveURL("/garden/" + garden.slug);
+  await editor.close();
   await page.goto("/garden/" + garden.slug);
   await trigger.focus();
   await page.keyboard.press("Enter");

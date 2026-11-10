@@ -79,7 +79,9 @@ test("manage nested navigation and change addresses through desktop and mobile c
     const fields = await page
       .locator(".navigation-item-form")
       .evaluate((form) => {
-        const labels = [...form.querySelectorAll("label")];
+        const labels = [...form.querySelectorAll("label")].filter(
+          (label) => label.htmlFor !== "menu-new-tab",
+        );
         return labels.map((label, index) => {
           const control = form
             .querySelector<HTMLElement>('[id="' + label.htmlFor + '"]')!
@@ -135,6 +137,12 @@ test("manage nested navigation and change addresses through desktop and mobile c
   await page
     .getByLabel("External web address", { exact: true })
     .fill("https://example.com/garden");
+  const newTab = page.getByRole("checkbox", {
+    name: "Open in a new tab",
+    exact: true,
+  });
+  await expect(newTab).not.toBeChecked();
+  await newTab.check();
   await expectFieldAlignment();
   await page.screenshot({
     path: testInfo.outputPath("navigation-external-fields.png"),
@@ -150,6 +158,7 @@ test("manage nested navigation and change addresses through desktop and mobile c
   await page
     .getByRole("link", { name: "Edit Garden elsewhere", exact: true })
     .click();
+  await expect(newTab).toBeChecked();
   await page.getByLabel("Parent item", { exact: true }).selectOption("");
   await page
     .getByRole("button", { name: "Update menu item", exact: true })
@@ -199,9 +208,9 @@ test("manage nested navigation and change addresses through desktop and mobile c
   });
   const pub = await visitor.newPage();
   await pub.goto(baseURL + "/");
-  if (isMobile) await pub.getByLabel("Open website menu").click();
+  await pub.getByLabel("Open website menu").click();
   const nav = pub.getByRole("navigation", {
-    name: isMobile ? "Mobile navigation" : "Main navigation",
+    name: "Main navigation",
     exact: true,
   });
   await expect(
@@ -213,13 +222,30 @@ test("manage nested navigation and change addresses through desktop and mobile c
   });
   if (isMobile) await submenu.click();
   else await submenu.press("ArrowDown");
-  await expect(
-    nav.getByRole("link", { name: "Garden elsewhere", exact: true }),
-  ).toBeVisible();
+  const external = nav.getByRole("link", {
+    name: "Garden elsewhere",
+    exact: true,
+  });
+  await expect(external).toHaveAttribute("target", "_blank");
+  await expect(external).toHaveAttribute("rel", "noopener");
   await pub.screenshot({
     path: testInfo.outputPath("public-navigation.png"),
     fullPage: true,
   });
+  await visitor.route("https://example.com/garden", (route) =>
+    route.fulfill({ body: "Garden elsewhere" }),
+  );
+  const [externalTab] = await Promise.all([
+    visitor.waitForEvent("page"),
+    external.click(),
+  ]);
+  await expect(externalTab).toHaveURL("https://example.com/garden");
+  await expect(pub).toHaveURL("/");
+  await externalTab.close();
+  await pub.getByLabel("Open website menu").click();
+  await expect(
+    nav.getByRole("link", { name: "Our rosemary", exact: true }),
+  ).not.toHaveAttribute("target", /.+/);
   await nav.getByRole("link", { name: "Our rosemary", exact: true }).click();
   await expect(pub).toHaveURL("/garden/rosemary-" + p.id);
   await pub.evaluate(() => window.scrollTo(0, 400));
@@ -229,12 +255,26 @@ test("manage nested navigation and change addresses through desktop and mobile c
   await expect
     .poll(async () => (await pub.locator(".public-header").boundingBox())?.y)
     .toBeCloseTo(0);
-  if (isMobile) await pub.getByLabel("Open website menu").click();
+  await pub.getByLabel("Open website menu").click();
   await expect(
     nav.getByRole("link", { name: "Our rosemary", exact: true }),
   ).toBeVisible();
   await visitor.close();
   await page.goto("/admin/navigation");
+  await page
+    .getByRole("link", { name: "Edit Garden elsewhere", exact: true })
+    .click();
+  await newTab.uncheck();
+  await page
+    .getByRole("button", { name: "Update menu item", exact: true })
+    .click();
+  await expect(page).toHaveURL("/admin/navigation");
+  const afterEdit = await (await page.request.get("/api/navigation")).json();
+  expect(
+    afterEdit.items.find(
+      (item: { label: string }) => item.label === "Garden elsewhere",
+    ).openInNewTab,
+  ).toBeUndefined();
   await page
     .getByRole("button", { name: "Remove Garden elsewhere", exact: true })
     .click();
