@@ -3,10 +3,14 @@ import { categories } from "@/lib/server/organization";
 import { CategoryManager } from "@/components/category-manager";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { readAdminListOrder } from "@/lib/server/admin-list-order";
 
 export default async function Categories() {
   await requireAdministrator();
-  const list = await categories();
+  const [list, order] = await Promise.all([
+    categories(),
+    readAdminListOrder("categories"),
+  ]);
   return (
     <>
       <div className="admin-heading">
@@ -23,7 +27,11 @@ export default async function Categories() {
           <Link href="/admin/categories/new">Create category</Link>
         </Button>
       </div>
-      <CategoryManager initialCategories={list} />
+      <CategoryManager
+        key={order.version}
+        initialCategories={list}
+        order={order}
+      />
     </>
   );
 }

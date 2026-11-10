@@ -4,8 +4,13 @@ import { requireAdministrator } from "@/lib/server/auth";
 import { listPages } from "@/lib/server/pages";
 import { AdminPageCards } from "@/components/admin-page-cards";
 import { pageCardData } from "@/lib/pages";
+import { readAdminListOrder } from "@/lib/server/admin-list-order";
 export default async function Pages() {
-  const pages = await listPages(await requireAdministrator());
+  const admin = await requireAdministrator();
+  const [pages, order] = await Promise.all([
+    listPages(admin),
+    readAdminListOrder("pages"),
+  ]);
   return (
     <>
       <div className="admin-heading">
@@ -25,7 +30,12 @@ export default async function Pages() {
           <Link href="/admin/trash">Trash</Link>
         </Button>
       </div>
-      <AdminPageCards pages={pages.map(pageCardData)} allowTrash />
+      <AdminPageCards
+        key={order.version}
+        pages={pages.map(pageCardData)}
+        order={order}
+        allowTrash
+      />
     </>
   );
 }

@@ -1,9 +1,15 @@
 "use client";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import { Trash2 } from "lucide-react";
 import { useRef, useState } from "react";
 import { ConfirmationDialog } from "./confirmation-dialog";
-import { useMenuReorder } from "./use-menu-reorder";
+import {
+  AdminListGrip,
+  AdminListRow,
+  ListDragFeedback,
+} from "./admin-list-row";
+import { useListReorder } from "./use-list-reorder";
 import type { MenuItem } from "@/lib/destinations";
 import { isMenuDescendant, type NavigationState } from "@/lib/navigation";
 import { fetchNavigation, putNavigation } from "@/lib/navigation-client";
@@ -24,7 +30,7 @@ export function NavigationEditor({ initial }: { initial: NavigationState }) {
     removalTrigger = useRef<HTMLButtonElement | null>(null);
   const busy = status === "Saving…" || removing;
   const locked = busy || status === "Not saved" || Boolean(removal);
-  const sort = useMenuReorder(
+  const sort = useListReorder(
     items,
     busy || Boolean(removal),
     (next) => void persist(next),
@@ -109,86 +115,31 @@ export function NavigationEditor({ initial }: { initial: NavigationState }) {
   function list(parent: string | null): React.ReactNode {
     const siblings = items.filter((i) => i.parentId === parent);
     return (
-      <ol className="navigation-items">
+      <ol className="admin-list navigation-items">
         {siblings.map((item) => (
           <li
             key={item.id}
-            ref={(node) => sort.registerRow(item.id, node)}
             data-menu-item={item.id}
-            data-dragging={sort.drag?.id === item.id || undefined}
-            data-drop={sort.marker(item.id)}
+            {...sort.rowProps(item.id)}
           >
-            <div className="navigation-item">
-              <Button
-                type="button"
-                className="secondary navigation-drag-handle"
-                {...sort.handleProps(item)}
-              >
-                <svg
-                  width="20"
-                  height="24"
-                  viewBox="0 0 20 24"
-                  fill="currentColor"
-                  aria-hidden="true"
-                >
-                  {[6, 12, 18].flatMap((y) =>
-                    [6, 14].map((x) => (
-                      <circle key={x + ":" + y} cx={x} cy={y} r="1.6" />
-                    )),
-                  )}
-                </svg>
-              </Button>
-              <div className="navigation-item-content">
-                <strong>{item.label}</strong>
-                <p
-                  className="muted"
-                  title={
-                    item.destination.kind === "page"
-                      ? "Garden page"
-                      : item.destination.kind === "category"
-                        ? "Category"
-                        : item.destination.url
-                  }
-                >
-                  <small>
-                    {item.destination.kind === "page"
-                      ? "Garden page"
-                      : item.destination.kind === "category"
-                        ? "Category"
-                        : item.destination.url}
-                  </small>
-                </p>
-              </div>
-              <div className="navigation-item-actions">
-                <Button asChild className="button secondary">
-                  <Link
-                    href={"/admin/navigation/" + item.id + "/edit"}
-                    aria-label={"Edit " + item.label}
-                    title={"Edit " + item.label}
-                    aria-disabled={locked}
-                    tabIndex={locked ? -1 : undefined}
-                    onClick={(event) => {
-                      if (locked) event.preventDefault();
-                    }}
-                  >
-                    <svg
-                      width="20"
-                      height="20"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="1.7"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      aria-hidden="true"
-                    >
-                      <path d="m16 3 5 5-13 13-5 1 1-5ZM14 5l5 5" />
-                    </svg>
-                  </Link>
-                </Button>
+            <AdminListRow
+              className="navigation-item"
+              title={item.label}
+              href={"/admin/navigation/" + item.id + "/edit"}
+              locked={locked}
+              grip={<AdminListGrip {...sort.handleProps(item)} />}
+              detail={
+                item.destination.kind === "page"
+                  ? "Garden page"
+                  : item.destination.kind === "category"
+                    ? "Category"
+                    : item.destination.url
+              }
+              trailing={
                 <Button
                   type="button"
-                  className="secondary"
+                  variant="outline"
+                  size="icon"
                   aria-label={"Remove " + item.label}
                   title={"Remove " + item.label}
                   disabled={locked}
@@ -198,23 +149,11 @@ export function NavigationEditor({ initial }: { initial: NavigationState }) {
                     setRemoval({ item, items, version });
                   }}
                 >
-                  <svg
-                    width="20"
-                    height="20"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.7"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    aria-hidden="true"
-                  >
-                    <path d="M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7M14 10v7" />
-                  </svg>
+                  <Trash2 aria-hidden="true" />
                 </Button>
-              </div>
-            </div>
-            {list(item.id)}
+              }
+            />
+            {items.some((child) => child.parentId === item.id) && list(item.id)}
           </li>
         ))}
       </ol>
@@ -253,20 +192,8 @@ export function NavigationEditor({ initial }: { initial: NavigationState }) {
       </div>
       <div className="navigation-workspace">
         <section aria-label="Menu items">
-          <p id="menu-drag-instructions" className="visually-hidden">
-            Drag the grip to reorder items within their menu level. Keyboard:
-            Space to pick up, arrow keys to move, Enter to drop, Escape to
-            cancel.
-          </p>
           {items.length ? list(null) : <p>No menu items yet.</p>}
-          <span
-            className="visually-hidden"
-            role="status"
-            aria-live="polite"
-            aria-atomic="true"
-          >
-            {sort.announcement}
-          </span>
+          <ListDragFeedback {...sort} />
           <p role="status" aria-label="Navigation status">
             {status}
           </p>
@@ -302,27 +229,6 @@ export function NavigationEditor({ initial }: { initial: NavigationState }) {
           )}
           <p>Your pages and their content will be kept.</p>
         </ConfirmationDialog>
-      )}
-      {sort.drag?.input === "pointer" && (
-        <div
-          className="navigation-drag-preview"
-          aria-hidden="true"
-          style={{
-            left: Math.max(
-              12,
-              Math.min(
-                sort.drag.x + 14,
-                window.innerWidth - Math.min(260, window.innerWidth * 0.7) - 12,
-              ),
-            ),
-            top: Math.max(
-              12,
-              Math.min(sort.drag.y + 14, window.innerHeight - 120),
-            ),
-          }}
-        >
-          <span aria-hidden="true">⠿</span> {sort.drag.label}
-        </div>
       )}
     </>
   );

@@ -1,15 +1,25 @@
 "use client";
-import Link from "next/link";
 import { useRef, useState } from "react";
-import { Pencil, Trash2 } from "lucide-react";
+import { Trash2 } from "lucide-react";
 import { Button } from "./ui/button";
 import { ConfirmationDialog } from "./confirmation-dialog";
 import { Toast } from "./toast";
 import type { Category } from "@/lib/organization";
+import type { AdminListOrder } from "@/lib/admin-list-order";
+import {
+  AdminListGrip,
+  AdminListOrderStatus,
+  AdminListRow,
+  ListDragFeedback,
+} from "./admin-list-row";
+import { useAdminListOrder } from "./use-admin-list-order";
+const categoryLabel = (category: Category) => category.name;
 export function CategoryManager({
   initialCategories,
+  order,
 }: {
   initialCategories: Category[];
+  order: AdminListOrder;
 }) {
   const [list, setList] = useState(initialCategories),
     [selected, setSelected] = useState<Category | null>(null),
@@ -17,6 +27,13 @@ export function CategoryManager({
     [error, setError] = useState(""),
     [notice, setNotice] = useState("");
   const pending = useRef(false);
+  const sort = useAdminListOrder(
+    "categories",
+    list,
+    categoryLabel,
+    order,
+    Boolean(selected),
+  );
   function done(id: string, message: string) {
     setList((current) => current.filter((c) => c.id !== id));
     setSelected(null);
@@ -94,27 +111,28 @@ export function CategoryManager({
       {notice && <Toast message={notice} onDismiss={() => setNotice("")} />}
       <section aria-label="Categories" className="category-list">
         {list.length ? (
-          <ul>
-            {list.map((category) => (
-              <li key={category.id}>
-                <div className="category-row">
-                  <strong className="category-name">{category.name}</strong>
-                  <div className="flex shrink-0 gap-2">
-                    <Button asChild variant="outline" size="icon">
-                      <Link
-                        href={"/admin/categories/" + category.id + "/edit"}
-                        aria-label={"Edit " + category.name}
-                        title={"Edit " + category.name}
-                      >
-                        <Pencil aria-hidden="true" />
-                      </Link>
-                    </Button>
+          <ul className="admin-list">
+            {sort.ordered.map((category) => (
+              <li key={category.id} {...sort.rowProps(category.id)}>
+                <AdminListRow
+                  title={category.name}
+                  href={"/admin/categories/" + category.id + "/edit"}
+                  grip={
+                    <AdminListGrip
+                      {...sort.handleProps({
+                        id: category.id,
+                        label: category.name,
+                      })}
+                    />
+                  }
+                  trailing={
                     <Button
                       type="button"
                       variant="outline"
                       size="icon"
                       aria-label={"Delete " + category.name}
                       title={"Delete " + category.name}
+                      disabled={sort.busy}
                       onClick={() => {
                         setSelected(category);
                         setError("");
@@ -122,8 +140,8 @@ export function CategoryManager({
                     >
                       <Trash2 aria-hidden="true" />
                     </Button>
-                  </div>
-                </div>
+                  }
+                />
               </li>
             ))}
           </ul>
@@ -133,6 +151,8 @@ export function CategoryManager({
             <p>Create a category to organize your pages.</p>
           </div>
         )}
+        <ListDragFeedback {...sort} />
+        <AdminListOrderStatus {...sort} />
       </section>
       {selected && (
         <ConfirmationDialog
