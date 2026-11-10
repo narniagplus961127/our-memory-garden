@@ -3,11 +3,16 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { templates } from "@/lib/blocks";
+import type { PageTemplate } from "@/lib/page-templates";
 import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { addressFromTitle, validSlug } from "@/lib/page-address";
-export function NewPageForm() {
+export function NewPageForm({
+  customTemplates,
+}: {
+  customTemplates: Pick<PageTemplate, "id" | "name">[];
+}) {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
   const [title, setTitle] = useState(""),
@@ -15,6 +20,14 @@ export function NewPageForm() {
     [slugError, setSlugError] = useState("");
   const slug = customSlug ?? addressFromTitle(title);
   const router = useRouter();
+  const choices = [
+    ...templates,
+    ...customTemplates.map(({ id, name }) => ({
+      id,
+      label: name,
+      description: "Saved template",
+    })),
+  ];
   async function create(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!validSlug(slug)) {
@@ -52,7 +65,7 @@ export function NewPageForm() {
       <fieldset className="template-choices" disabled={pending}>
         <legend>Start from a template</legend>
         <div className="template-grid">
-          {templates.map((template) => (
+          {choices.map((template) => (
             <Label className="template-card" key={template.id}>
               <Input
                 type="radio"

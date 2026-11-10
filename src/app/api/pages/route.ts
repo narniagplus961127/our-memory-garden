@@ -1,4 +1,5 @@
-import { templates, type TemplateId } from "@/lib/blocks";
+import { templateData, templates } from "@/lib/blocks";
+import { getPageTemplate } from "@/lib/server/page-templates";
 import { currentAdministrator } from "@/lib/server/auth";
 import { createPrivatePage, listPages } from "@/lib/server/pages";
 import {
@@ -26,16 +27,18 @@ export async function POST(request: Request) {
     const admin = await currentAdministrator(request.headers);
     if (!admin) throw new RequestError(401, "Sign in to manage the garden.");
     const body = await bodyJson(request);
-    if (
-      body.template !== undefined &&
-      !templates.some((template) => template.id === body.template)
-    )
+    const builtin = templates.find((template) => template.id === body.template);
+    const custom =
+      !builtin && typeof body.template === "string"
+        ? await getPageTemplate(body.template)
+        : null;
+    if (body.template !== undefined && !builtin && !custom)
       throw new RequestError(400, "Choose an available template.");
     return Response.json(
       await createPrivatePage(
         admin,
         pageTitle(body.title),
-        body.template as TemplateId | undefined,
+        custom?.content ?? templateData(builtin?.id),
         body.slug,
       ),
       { status: 201, headers: { "Cache-Control": "private, no-store" } },

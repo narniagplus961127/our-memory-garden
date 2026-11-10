@@ -15,6 +15,7 @@ import { BackgroundColour } from "./background-colour";
 import { BlockSpacingControl, type BlockSpacing } from "./block-spacing";
 import { richField } from "./garden-rich-field";
 import { CanvasPhotoAction } from "./canvas-photo-action";
+import { PhotoControls } from "./editor-photo-controls";
 import { PhotoImage } from "./photo-image";
 import { CanvasRichText } from "./canvas-rich-text";
 import {
@@ -474,7 +475,9 @@ export const gardenConfig: Config<
           type: "custom",
           label: "Photo",
           render: ({ value, onChange }) => (
-            <PhotoPicker value={value} onChange={onChange} inModal />
+            <PhotoControls field>
+              <PhotoPicker value={value} onChange={onChange} inModal />
+            </PhotoControls>
           ),
         },
         alt: { type: "text", label: "Alternative text" },
@@ -555,7 +558,9 @@ export const gardenConfig: Config<
             )}
           </ImageLink>
           {puck.isEditing && (
-            <CanvasPhotoAction id={id} hasPhoto={Boolean(photoId)} />
+            <PhotoControls>
+              <CanvasPhotoAction id={id} hasPhoto={Boolean(photoId)} />
+            </PhotoControls>
           )}
           <RichContent id={id} puck={puck} type="Image">
             {captionRich !== undefined ? (
@@ -762,11 +767,13 @@ export const gardenConfig: Config<
           type: "custom",
           label: "Background image",
           render: ({ value, onChange }) => (
-            <PhotoPicker
-              label="Background image"
-              value={value?.photoId}
-              onChange={(photoId) => onChange({ photoId })}
-            />
+            <PhotoControls field>
+              <PhotoPicker
+                label="Background image"
+                value={value?.photoId}
+                onChange={(photoId) => onChange({ photoId })}
+              />
+            </PhotoControls>
           ),
         },
         contentBackground: {

@@ -1,7 +1,7 @@
 import "server-only";
 import { database } from "./db";
 import type { GardenPage, PageData } from "../pages";
-import { templateData, validPageData, type TemplateId } from "../blocks";
+import { templateData, validPageData } from "../blocks";
 import { mergePage, snapshot, equal, type PageSnapshot } from "../page-merge";
 import { RequestError } from "./http";
 import { validSlug } from "../page-address";
@@ -29,7 +29,7 @@ export async function getVisiblePage(
 export async function createPrivatePage(
   administrator: Administrator,
   title: string,
-  template: TemplateId = "blank",
+  content: PageData = templateData(),
   slug?: unknown,
 ): Promise<GardenPage> {
   if (slug !== undefined && !validSlug(slug))
@@ -41,7 +41,7 @@ export async function createPrivatePage(
   try {
     const rows = await database()<
       GardenPage[]
-    >`insert into pages(id,title,slug,content,created_by,updated_by) values (${id},${title},${slug === undefined ? "page-" + id : (slug as string)},${database().json(templateData(template))},${administrator.id},${administrator.id}) returning *`;
+    >`insert into pages(id,title,slug,content,created_by,updated_by) values (${id},${title},${slug === undefined ? "page-" + id : (slug as string)},${database().json(content)},${administrator.id},${administrator.id}) returning *`;
     return JSON.parse(JSON.stringify(rows[0]));
   } catch (error) {
     if (

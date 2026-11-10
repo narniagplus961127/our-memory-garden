@@ -246,7 +246,12 @@ test("manage nested navigation and change addresses through desktop and mobile c
   await expect(
     nav.getByRole("link", { name: "Our rosemary", exact: true }),
   ).not.toHaveAttribute("target", /.+/);
-  await nav.getByRole("link", { name: "Our rosemary", exact: true }).click();
+  const parent = nav.getByRole("link", { name: "Our rosemary", exact: true });
+  await parent.click();
+  await expect(pub).toHaveURL("/");
+  await expect(parent).toHaveAttribute("aria-expanded", "true");
+  await expect(external).toBeVisible();
+  await parent.click();
   await expect(pub).toHaveURL("/garden/rosemary-" + p.id);
   await pub.evaluate(() => window.scrollTo(0, 400));
   await expect

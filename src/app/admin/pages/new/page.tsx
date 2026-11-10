@@ -1,5 +1,6 @@
 import { requireAdministrator } from "@/lib/server/auth";
 import { NewPageForm } from "@/components/new-page-form";
+import { listPageTemplates } from "@/lib/server/page-templates";
 export default async function Templates() {
   await requireAdministrator();
   return (
@@ -9,7 +10,7 @@ export default async function Templates() {
       <p className="muted">
         Choose a starting point. You can change everything later.
       </p>
-      <NewPageForm />
+      <NewPageForm customTemplates={await listPageTemplates()} />
     </>
   );
 }

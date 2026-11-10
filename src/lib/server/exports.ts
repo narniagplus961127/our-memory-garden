@@ -85,6 +85,7 @@ export async function createExport(admin: Administrator) {
         "categories",
         "page_categories",
         "page_versions",
+        "page_templates",
       ]) {
         const [exists] = await sql`select to_regclass(${table}) as name`;
         if (exists?.name)
