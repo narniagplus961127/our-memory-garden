@@ -22,14 +22,9 @@ export function PublicHeader({
       <header className="public-header">
         <Brand />
         {items.length > 0 && (
-          <>
-            <nav className="public-nav" aria-label="Main navigation">
-              <WebsiteNavigation items={items} />
-            </nav>
-            <PublicMenu>
-              <WebsiteNavigation items={items} mobile />
-            </PublicMenu>
-          </>
+          <PublicMenu>
+            <WebsiteNavigation items={items} />
+          </PublicMenu>
         )}
       </header>
       <AdminShortcuts editPageId={editPageId} />

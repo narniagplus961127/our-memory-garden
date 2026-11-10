@@ -7,12 +7,14 @@ export type MenuItem = {
   label: string;
   parentId: string | null;
   destination: Destination;
+  openInNewTab?: boolean;
 };
 export type PublicMenuItem = {
   id: string;
   label: string;
   parentId: string | null;
   href: string;
+  openInNewTab?: boolean;
 };
 export function isWebUrl(value: unknown): value is string {
   if (typeof value !== "string" || value.length > 2000) return false;

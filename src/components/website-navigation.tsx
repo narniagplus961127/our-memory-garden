@@ -6,24 +6,15 @@ import type { PublicMenuItem } from "@/lib/destinations";
 function NavigationItem({
   item,
   items,
-  mobile,
-  depth,
 }: {
   item: PublicMenuItem;
   items: PublicMenuItem[];
-  mobile: boolean;
-  depth: number;
 }) {
   const [open, setOpen] = useState(false),
     id = useId();
   const row = useRef<HTMLLIElement>(null),
-    toggle = useRef<HTMLButtonElement>(null),
-    timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+    toggle = useRef<HTMLButtonElement>(null);
   const children = items.filter((child) => child.parentId === item.id);
-  function cancelTimer() {
-    if (timer.current) clearTimeout(timer.current);
-  }
-  useEffect(() => () => cancelTimer(), []);
   useEffect(() => {
     if (!open) return;
     function outside(event: PointerEvent) {
@@ -36,21 +27,6 @@ function NavigationItem({
     <li
       ref={row}
       className={children.length ? "has-submenu" : undefined}
-      onPointerEnter={(event) => {
-        cancelTimer();
-        if (
-          children.length &&
-          !mobile &&
-          depth === 0 &&
-          event.pointerType === "mouse" &&
-          window.matchMedia("(hover:hover)").matches
-        )
-          setOpen(true);
-      }}
-      onPointerLeave={() => {
-        if (!mobile && !row.current?.contains(document.activeElement))
-          timer.current = setTimeout(() => setOpen(false), 160);
-      }}
       onBlur={(event) => {
         if (!event.currentTarget.contains(event.relatedTarget)) setOpen(false);
       }}
@@ -64,7 +40,14 @@ function NavigationItem({
         }
       }}
     >
-      <a href={item.href}>{item.label}</a>
+      <a
+        href={item.href}
+        target={item.openInNewTab ? "_blank" : undefined}
+        rel={item.openInNewTab ? "noopener" : undefined}
+        aria-description={item.openInNewTab ? "Opens in a new tab" : undefined}
+      >
+        {item.label}
+      </a>
       {children.length > 0 && (
         <>
           <button
@@ -74,10 +57,7 @@ function NavigationItem({
             aria-label={"Submenu for " + item.label}
             aria-expanded={open}
             aria-controls={id}
-            onClick={() => {
-              cancelTimer();
-              setOpen(!open);
-            }}
+            onClick={() => setOpen(!open)}
             onKeyDown={(event) => {
               if (event.key === "ArrowDown") {
                 event.preventDefault();
@@ -94,21 +74,14 @@ function NavigationItem({
           </button>
           <div
             id={id}
-            className={"public-submenu" + (mobile ? " mobile-submenu" : "")}
-            data-depth={depth}
+            className="public-submenu"
             data-open={open}
             inert={!open}
           >
             <div className="public-submenu-inner">
               <ul className="public-menu-items">
                 {children.map((child) => (
-                  <NavigationItem
-                    key={child.id}
-                    item={child}
-                    items={items}
-                    mobile={mobile}
-                    depth={depth + 1}
-                  />
+                  <NavigationItem key={child.id} item={child} items={items} />
                 ))}
               </ul>
             </div>
@@ -118,25 +91,13 @@ function NavigationItem({
     </li>
   );
 }
-export function WebsiteNavigation({
-  items,
-  mobile = false,
-}: {
-  items: PublicMenuItem[];
-  mobile?: boolean;
-}) {
+export function WebsiteNavigation({ items }: { items: PublicMenuItem[] }) {
   return (
     <ul className="public-menu-items">
       {items
         .filter((item) => !item.parentId)
         .map((item) => (
-          <NavigationItem
-            key={item.id}
-            item={item}
-            items={items}
-            mobile={mobile}
-            depth={0}
-          />
+          <NavigationItem key={item.id} item={item} items={items} />
         ))}
     </ul>
   );

@@ -42,6 +42,7 @@ export async function publicNavigation(): Promise<PublicMenuItem[]> {
     id: i.id,
     label: i.label,
     parentId: i.parentId,
+    ...(i.openInNewTab && { openInNewTab: true }),
     href:
       i.destination.kind === "page"
         ? "/garden/" + addresses.get(i.destination.pageId)
@@ -67,7 +68,10 @@ export async function saveNavigation(
       !i ||
       typeof i !== "object" ||
       Object.keys(i).some(
-        (k) => !["id", "label", "parentId", "destination"].includes(k),
+        (k) =>
+          !["id", "label", "parentId", "destination", "openInNewTab"].includes(
+            k,
+          ),
       ) ||
       typeof i.id !== "string" ||
       !/^[0-9a-f-]{36}$/i.test(i.id) ||
@@ -76,6 +80,7 @@ export async function saveNavigation(
       !i.label.trim() ||
       i.label.length > 100 ||
       !(i.parentId === null || typeof i.parentId === "string") ||
+      (i.openInNewTab !== undefined && typeof i.openInNewTab !== "boolean") ||
       !validDestination(i.destination)
     )
       throw new RequestError(

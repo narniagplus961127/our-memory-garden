@@ -27,14 +27,24 @@ export function AdminShortcuts({ editPageId }: { editPageId?: string }) {
       >
         <nav aria-label="Garden shortcuts" className="grid gap-2">
           <Button asChild variant="outline" className="w-full justify-start">
-            <Link href="/admin">
+            <Link
+              href="/admin"
+              target="_blank"
+              rel="noopener"
+              aria-description="Opens in a new tab"
+            >
               <LayoutDashboard aria-hidden="true" />
               Garden dashboard
             </Link>
           </Button>
           {editPageId && (
             <Button asChild variant="outline" className="w-full justify-start">
-              <Link href={"/admin/pages/" + editPageId}>
+              <Link
+                href={"/admin/pages/" + editPageId}
+                target="_blank"
+                rel="noopener"
+                aria-description="Opens in a new tab"
+              >
                 <SquarePen aria-hidden="true" />
                 Edit this page
               </Link>

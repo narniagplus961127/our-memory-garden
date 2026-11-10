@@ -352,10 +352,9 @@ test("category destinations work in menus, inline text and buttons while public 
     await expect(pub.getByText(privatePage.title, { exact: true })).toHaveCount(
       0,
     );
-    if (isMobile)
-      await pub
-        .getByRole("button", { name: "Open website menu", exact: true })
-        .click();
+    await pub
+      .getByRole("button", { name: "Open website menu", exact: true })
+      .click();
     await expect(
       pub.getByRole("link", { name: "Collection " + c.id, exact: true }),
     ).toHaveAttribute("href", "/category/" + c.slug);

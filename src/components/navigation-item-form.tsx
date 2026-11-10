@@ -35,6 +35,7 @@ export function NavigationItemForm({
       item?.destination ?? { kind: "page", pageId: "" },
     ),
     [parentId, setParentId] = useState(item?.parentId ?? ""),
+    [openInNewTab, setOpenInNewTab] = useState(item?.openInNewTab ?? false),
     [busy, setBusy] = useState(false),
     [error, setError] = useState(""),
     [conflict, setConflict] = useState<MenuItem | null>(null);
@@ -64,6 +65,7 @@ export function NavigationItemForm({
         label: label.trim(),
         parentId: parentId || null,
         destination,
+        ...(openInNewTab && { openInNewTab: true }),
       };
       // A lost success response must not create a duplicate or repeat a write.
       if (sameMenuItem(current, nextItem)) {
@@ -169,6 +171,19 @@ export function NavigationItemForm({
               removes its menu children; linked pages are kept.
             </small>
           </div>
+          <Label
+            htmlFor="menu-new-tab"
+            className="flex min-h-11 w-fit cursor-pointer items-center gap-3"
+          >
+            <Input
+              id="menu-new-tab"
+              type="checkbox"
+              className="size-4 min-h-0 shrink-0 p-0"
+              checked={openInNewTab}
+              onChange={(event) => setOpenInNewTab(event.target.checked)}
+            />
+            Open in a new tab
+          </Label>
         </fieldset>
         {error && (
           <div className="navigation-form-error" role="alert">
@@ -194,6 +209,7 @@ export function NavigationItemForm({
                     setLabel(conflict.label);
                     setDestination(conflict.destination);
                     setParentId(conflict.parentId ?? "");
+                    setOpenInNewTab(conflict.openInNewTab ?? false);
                     setConflict(null);
                     setError("");
                   }}

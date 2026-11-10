@@ -3,7 +3,7 @@ import type { MenuItem } from "./destinations";
 export type NavigationState = { items: MenuItem[]; version: number };
 
 export function isMenuDescendant(
-  items: MenuItem[],
+  items: { id: string; parentId?: string | null }[],
   id: string,
   ancestor: string,
 ) {
@@ -23,6 +23,7 @@ export function sameMenuItem(a: MenuItem | undefined, b: MenuItem | undefined) {
     a.id === b.id &&
     a.label === b.label &&
     a.parentId === b.parentId &&
+    Boolean(a.openInNewTab) === Boolean(b.openInNewTab) &&
     (a.destination.kind === "page" && b.destination.kind === "page"
       ? a.destination.pageId === b.destination.pageId
       : a.destination.kind === "category" && b.destination.kind === "category"
