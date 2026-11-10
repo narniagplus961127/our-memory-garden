@@ -98,15 +98,18 @@ export function ListDragFeedback({
   drag,
   announcement,
   instructionsId,
+  dropDescription,
+  tree = false,
 }: Pick<
   ReturnType<typeof useListReorder>,
-  "drag" | "announcement" | "instructionsId"
->) {
+  "drag" | "announcement" | "instructionsId" | "dropDescription"
+> & { tree?: boolean }) {
   return (
     <>
       <p id={instructionsId} className="visually-hidden">
-        Drag the grip to reorder items. Keyboard: Space to pick up, arrow keys
-        to move, Enter to drop, Escape to cancel.
+        {tree
+          ? "Drop on the center of a row to nest under it, or near an edge to move alongside it. With the keyboard, press Space to pick up, Up and Down to reorder, Left to outdent, Right to nest under the previous item, Enter to drop, or Escape to cancel."
+          : "Drag the grip to reorder items. With the keyboard, press Space to pick up, arrow keys to move, Enter to drop, or Escape to cancel."}
       </p>
       <span
         className="visually-hidden"
@@ -132,6 +135,7 @@ export function ListDragFeedback({
           }}
         >
           <span>⠿</span> {drag.label}
+          {dropDescription && <small>{dropDescription}</small>}
         </div>
       )}
     </>

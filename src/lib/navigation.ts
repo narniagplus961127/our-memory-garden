@@ -3,7 +3,7 @@ import type { MenuItem } from "./destinations";
 export type NavigationState = { items: MenuItem[]; version: number };
 
 export function isMenuDescendant(
-  items: MenuItem[],
+  items: { id: string; parentId?: string | null }[],
   id: string,
   ancestor: string,
 ) {

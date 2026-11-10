@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Trash2 } from "lucide-react";
 import { useRef, useState } from "react";
 import { ConfirmationDialog } from "./confirmation-dialog";
+import { Toast } from "./toast";
 import {
   AdminListGrip,
   AdminListRow,
@@ -16,7 +17,8 @@ import { fetchNavigation, putNavigation } from "@/lib/navigation-client";
 export function NavigationEditor({ initial }: { initial: NavigationState }) {
   const [items, setItems] = useState(initial.items),
     [version, setVersion] = useState(initial.version),
-    [status, setStatus] = useState("Saved"),
+    [saving, setSaving] = useState(false),
+    [notice, setNotice] = useState(""),
     [error, setError] = useState(""),
     [removal, setRemoval] = useState<{
       item: MenuItem;
@@ -28,30 +30,31 @@ export function NavigationEditor({ initial }: { initial: NavigationState }) {
   const inFlight = useRef(false),
     heading = useRef<HTMLHeadingElement>(null),
     removalTrigger = useRef<HTMLButtonElement | null>(null);
-  const busy = status === "Saving…" || removing;
-  const locked = busy || status === "Not saved" || Boolean(removal);
+  const busy = saving || removing;
+  const locked = busy || Boolean(error) || Boolean(removal);
   const sort = useListReorder(
     items,
     busy || Boolean(removal),
     (next) => void persist(next),
+    (item, parentId) => ({ ...item, parentId }),
   );
   async function persist(next: MenuItem[]) {
     setItems(next);
-    setStatus("Saving…");
+    setSaving(true);
+    setNotice("");
     setError("");
     try {
       const data = await putNavigation(next, version);
       setVersion(data.version);
-      setStatus("Saved");
-      return true;
+      setNotice("Menu changes saved.");
     } catch (e) {
-      setStatus("Not saved");
       setError(
-        e instanceof Error
+        e instanceof Error && !(e instanceof TypeError)
           ? e.message
-          : "Could not connect. Your menu changes are still here.",
+          : "Could not save the menu. Your changes are still here.",
       );
-      return false;
+    } finally {
+      setSaving(false);
     }
   }
   async function removeConfirmed() {
@@ -68,7 +71,7 @@ export function NavigationEditor({ initial }: { initial: NavigationState }) {
       const saved = await putNavigation(next, removal.version);
       setItems(saved.items);
       setVersion(saved.version);
-      setStatus("Saved");
+      setNotice("Menu item removed.");
       setRemoval(null);
       requestAnimationFrame(() => heading.current?.focus());
     } catch (failure) {
@@ -90,7 +93,6 @@ export function NavigationEditor({ initial }: { initial: NavigationState }) {
       const saved = await fetchNavigation();
       setItems(saved.items);
       setVersion(saved.version);
-      setStatus("Saved");
       setError("");
       closeRemoval();
       setRemovalError("");
@@ -193,20 +195,24 @@ export function NavigationEditor({ initial }: { initial: NavigationState }) {
       <div className="navigation-workspace">
         <section aria-label="Menu items">
           {items.length ? list(null) : <p>No menu items yet.</p>}
-          <ListDragFeedback {...sort} />
-          <p role="status" aria-label="Navigation status">
-            {status}
-          </p>
-          {error && (
-            <div role="alert">
-              <p className="error">{error}</p>
-              <Button onClick={() => void persist(items)}>
-                Retry menu changes
-              </Button>
-            </div>
+          <ListDragFeedback {...sort} tree />
+          {saving && (
+            <p className="visually-hidden" role="status">
+              Saving menu changes…
+            </p>
           )}
         </section>
       </div>
+      {error ? (
+        <Toast
+          message={error}
+          tone="error"
+          actionLabel="Retry menu changes"
+          onAction={() => void persist(items)}
+        />
+      ) : (
+        notice && <Toast message={notice} onDismiss={() => setNotice("")} />
+      )}
       {removal && (
         <ConfirmationDialog
           title="Remove menu item?"

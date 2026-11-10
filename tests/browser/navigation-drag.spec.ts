@@ -12,8 +12,8 @@ const env = Object.fromEntries(
 const headers = { Origin: env.NEXT_PUBLIC_APP_URL };
 async function saved(page: Page) {
   await expect(
-    page.getByRole("status", { name: "Navigation status", exact: true }),
-  ).toHaveText("Saved");
+    page.getByRole("status").filter({ hasText: "Menu changes saved." }),
+  ).toBeVisible();
 }
 test("drag handles reorder siblings with mouse/touch, preserve children, cancel safely and retry failed saves", async ({
   page,
@@ -65,6 +65,8 @@ test("drag handles reorder siblings with mouse/touch, preserve children, cancel 
       'section[aria-label="Menu items"] > ol > li > .navigation-item strong',
     );
     await expect(roots).toHaveText(["Alpha", "Beta", "Gamma"]);
+    await expect(page.getByText("Saved", { exact: true })).toHaveCount(0);
+    await expect(page.locator(".garden-toast")).toHaveCount(0);
     await expect(
       page.getByRole("button", { name: /^Move .* (up|down)$/ }),
     ).toHaveCount(0);
@@ -75,7 +77,12 @@ test("drag handles reorder siblings with mouse/touch, preserve children, cancel 
     await expect(handle).toHaveCSS("cursor", "grab");
     await expect(handle).toHaveCSS("touch-action", "none");
     let capturedDrag = false;
-    async function drag(label: string, target: string, cancel = false) {
+    async function drag(
+      label: string,
+      target: string,
+      placement: "before" | "inside" | "invalid" = "before",
+      cancel = false,
+    ) {
       const control = page.getByRole("button", {
         name: "Drag " + label,
         exact: true,
@@ -88,7 +95,7 @@ test("drag handles reorder siblings with mouse/touch, preserve children, cancel 
       const x = from.x + from.width / 2,
         y = from.y + from.height / 2,
         tx = to.x + 24,
-        ty = to.y + 3;
+        ty = to.y + (placement === "before" ? 3 : to.height / 2);
       if (touch)
         await touch.send("Input.dispatchTouchEvent", {
           type: "touchStart",
@@ -111,9 +118,10 @@ test("drag handles reorder siblings with mouse/touch, preserve children, cancel 
         else await page.mouse.move(point.x, point.y);
       }
       await expect(page.locator(".navigation-drag-preview")).toBeVisible();
-      await expect(
-        page.locator('[data-menu-item="' + target + '"]'),
-      ).toHaveAttribute("data-drop", "before");
+      const targetRow = page.locator('[data-menu-item="' + target + '"]');
+      if (placement === "invalid")
+        await expect(targetRow).not.toHaveAttribute("data-drop", /.+/);
+      else await expect(targetRow).toHaveAttribute("data-drop", placement);
       if (!capturedDrag) {
         capturedDrag = true;
         await page.screenshot({
@@ -159,8 +167,7 @@ test("drag handles reorder siblings with mouse/touch, preserve children, cancel 
         .filter((i: { parentId: string }) => i.parentId === alpha.id)
         .map((i: { id: string }) => i.id),
     ).toEqual([two.id, one.id]);
-    await drag("Beta", gamma.id, true);
-    await saved(page);
+    await drag("Beta", gamma.id, "before", true);
     await expect(roots).toHaveText(["Gamma", "Alpha", "Beta"]);
     expect(
       (await (await page.request.get("/api/navigation")).json()).version,
@@ -190,8 +197,8 @@ test("drag handles reorder siblings with mouse/touch, preserve children, cancel 
     });
     await drag("Beta", alpha.id);
     await expect(
-      page.getByRole("status", { name: "Navigation status", exact: true }),
-    ).toHaveText("Not saved");
+      page.getByRole("alert").filter({ hasText: "Could not save" }),
+    ).toBeVisible();
     await expect(roots).toHaveText(["Beta", "Alpha", "Gamma"]);
     await page
       .getByRole("button", { name: "Retry menu changes", exact: true })
@@ -228,6 +235,44 @@ test("drag handles reorder siblings with mouse/touch, preserve children, cancel 
     await expect(
       nav.getByRole("link", { name: "Two", exact: true }),
     ).toBeVisible();
+
+    await drag("Two", beta.id, "inside");
+    await saved(page);
+    const betaChildren = page.locator(
+      `[data-menu-item="${beta.id}"] > ol > li > .navigation-item strong`,
+    );
+    await expect(betaChildren).toHaveText(["Two"]);
+    await expect(children).toHaveText(["One"]);
+    await page.reload();
+    await expect(betaChildren).toHaveText(["Two"]);
+
+    const version = (await (await page.request.get("/api/navigation")).json())
+      .version;
+    await drag("Alpha", one.id, "invalid");
+    await expect(children).toHaveText(["One"]);
+    expect(
+      (await (await page.request.get("/api/navigation")).json()).version,
+    ).toBe(version);
+
+    await drag("Two", gamma.id);
+    await saved(page);
+    await expect(roots).toHaveText(["Beta", "Alpha", "Two", "Gamma"]);
+    await expect(betaChildren).toHaveCount(0);
+
+    await alphaHandle.press("Space");
+    await alphaHandle.press("ArrowRight");
+    await alphaHandle.press("Enter");
+    await saved(page);
+    await expect(betaChildren).toHaveText(["Alpha"]);
+    await expect(children).toHaveText(["One"]);
+    await expect(alphaHandle).toBeFocused();
+    await alphaHandle.press("Space");
+    await alphaHandle.press("ArrowLeft");
+    await alphaHandle.press("Enter");
+    await saved(page);
+    await page.reload();
+    await expect(roots).toHaveText(["Beta", "Alpha", "Two", "Gamma"]);
+    await expect(children).toHaveText(["One"]);
   } finally {
     await page.unroute("**/api/navigation");
     await visitor.close();

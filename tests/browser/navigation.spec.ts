@@ -41,10 +41,33 @@ test("manage nested navigation and change addresses through desktop and mobile c
       data: { title: "Navigation journey " + Date.now() },
     })
   ).json();
-  await page.request.patch("/api/pages/" + p.id, {
+  const published = await page.request.patch("/api/pages/" + p.id, {
     headers: { Origin: origin },
-    data: { visibility: "public", version: p.version },
+    data: {
+      visibility: "public",
+      version: p.version,
+      content: {
+        root: { props: {} },
+        content: [
+          {
+            type: "Section",
+            props: {
+              id: "long-garden-section",
+              content: Array.from({ length: 36 }, (_, i) => ({
+                type: "Text",
+                props: {
+                  id: `garden-note-${i}`,
+                  text: `A note from the garden ${i + 1}`,
+                  style: "p",
+                },
+              })),
+            },
+          },
+        ],
+      },
+    },
   });
+  expect(published.ok()).toBeTruthy();
   await page.goto("/admin/navigation");
   await page.getByRole("link", { name: "Add menu item", exact: true }).click();
   await page.getByLabel("Menu label", { exact: true }).fill("Our rosemary");
@@ -102,8 +125,8 @@ test("manage nested navigation and change addresses through desktop and mobile c
     .getByRole("button", { name: "Add menu item", exact: true })
     .click();
   await expect(
-    page.getByRole("status", { name: "Navigation status" }),
-  ).toHaveText("Saved");
+    page.getByRole("link", { name: "Edit Our rosemary", exact: true }),
+  ).toBeVisible();
   await page.getByRole("link", { name: "Add menu item", exact: true }).click();
   await page.getByLabel("Menu label", { exact: true }).fill("Garden elsewhere");
   await page
@@ -123,9 +146,7 @@ test("manage nested navigation and change addresses through desktop and mobile c
   await page
     .getByRole("button", { name: "Add menu item", exact: true })
     .click();
-  await expect(
-    page.getByRole("status", { name: "Navigation status" }),
-  ).toHaveText("Saved");
+  await expect(page).toHaveURL("/admin/navigation");
   await page
     .getByRole("link", { name: "Edit Garden elsewhere", exact: true })
     .click();
@@ -133,9 +154,7 @@ test("manage nested navigation and change addresses through desktop and mobile c
   await page
     .getByRole("button", { name: "Update menu item", exact: true })
     .click();
-  await expect(
-    page.getByRole("status", { name: "Navigation status" }),
-  ).toHaveText("Saved");
+  await expect(page).toHaveURL("/admin/navigation");
   await page
     .getByRole("button", { name: "Drag Garden elsewhere", exact: true })
     .focus();
@@ -143,8 +162,8 @@ test("manage nested navigation and change addresses through desktop and mobile c
   await page.keyboard.press("ArrowUp");
   await page.keyboard.press("Enter");
   await expect(
-    page.getByRole("status", { name: "Navigation status" }),
-  ).toHaveText("Saved");
+    page.getByText("Menu changes saved.", { exact: true }),
+  ).toBeVisible();
   await expect(
     page.getByRole("region", { name: "Menu items" }).locator("strong"),
   ).toHaveText(["Garden elsewhere", "Our rosemary"]);
@@ -157,9 +176,7 @@ test("manage nested navigation and change addresses through desktop and mobile c
   await page
     .getByRole("button", { name: "Update menu item", exact: true })
     .click();
-  await expect(
-    page.getByRole("status", { name: "Navigation status" }),
-  ).toHaveText("Saved");
+  await expect(page).toHaveURL("/admin/navigation");
   await page.screenshot({
     path: testInfo.outputPath("navigation-settings.png"),
     fullPage: true,
@@ -190,6 +207,12 @@ test("manage nested navigation and change addresses through desktop and mobile c
   await expect(
     nav.getByRole("link", { name: "Our rosemary", exact: true }),
   ).toHaveAttribute("href", "/garden/rosemary-" + p.id);
+  const submenu = nav.getByRole("button", {
+    name: "Submenu for Our rosemary",
+    exact: true,
+  });
+  if (isMobile) await submenu.click();
+  else await submenu.press("ArrowDown");
   await expect(
     nav.getByRole("link", { name: "Garden elsewhere", exact: true }),
   ).toBeVisible();
@@ -199,6 +222,17 @@ test("manage nested navigation and change addresses through desktop and mobile c
   });
   await nav.getByRole("link", { name: "Our rosemary", exact: true }).click();
   await expect(pub).toHaveURL("/garden/rosemary-" + p.id);
+  await pub.evaluate(() => window.scrollTo(0, 400));
+  await expect
+    .poll(() => pub.evaluate(() => window.scrollY))
+    .toBeGreaterThan(200);
+  await expect
+    .poll(async () => (await pub.locator(".public-header").boundingBox())?.y)
+    .toBeCloseTo(0);
+  if (isMobile) await pub.getByLabel("Open website menu").click();
+  await expect(
+    nav.getByRole("link", { name: "Our rosemary", exact: true }),
+  ).toBeVisible();
   await visitor.close();
   await page.goto("/admin/navigation");
   await page
@@ -210,8 +244,8 @@ test("manage nested navigation and change addresses through desktop and mobile c
     .click();
   await expect(page.getByRole("dialog")).toHaveCount(0);
   await expect(
-    page.getByRole("status", { name: "Navigation status" }),
-  ).toHaveText("Saved");
+    page.getByText("Menu item removed.", { exact: true }),
+  ).toBeVisible();
   await expect(
     page.getByRole("link", { name: "Edit Garden elsewhere", exact: true }),
   ).toHaveCount(0);
