@@ -33,6 +33,8 @@ import { InlineEditingProvider, useActiveInlineText } from "./inline-editing";
 import { InlineFormatMenu } from "./inline-format-menu";
 import { ColumnLayoutPicker, type ColumnRatio } from "./column-layout-picker";
 import { gardenConfig } from "./garden-blocks";
+import { TemplatePlaceholdersOnly } from "./editor-photo-controls";
+import { CreateTemplate } from "./create-template";
 import { PageAddress } from "./page-address";
 import { PageDetails } from "./page-details";
 import {
@@ -408,31 +410,41 @@ function BlockRemovalDialog({
     />
   );
 }
+type WorkspaceProps = {
+  pageSettings?: {
+    page: GardenPage;
+    accountId: string;
+    visibility: GardenPage["visibility"];
+    onDetailsSaved: (page: GardenPage) => void;
+    getVersion: () => number;
+  };
+  templateActions?: React.ReactNode;
+  canLeave?: () => boolean;
+  content: PageData;
+  title: string;
+  status: string;
+  error: string;
+  retry?: () => void;
+  feedback?: React.ReactNode;
+  onMetadata: (changes: Partial<Snapshot>) => void;
+  insertion: RefObject<InsertionNotice | null>;
+};
 function Workspace({
-  page,
-  accountId,
+  pageSettings,
+  templateActions,
+  canLeave,
+  content,
   title,
-  visibility,
   status,
   error,
   retry,
   feedback,
   onMetadata,
-  onDetailsSaved,
   insertion,
-}: {
-  page: GardenPage;
-  accountId: string;
-  title: string;
-  visibility: GardenPage["visibility"];
-  status: string;
-  error: string;
-  retry: () => void;
-  feedback: React.ReactNode;
-  onMetadata: (changes: Partial<Snapshot>) => void;
-  onDetailsSaved: (page: GardenPage) => void;
-  insertion: RefObject<InsertionNotice | null>;
-}) {
+}: WorkspaceProps) {
+  const page = pageSettings?.page;
+  const visibility = pageSettings?.visibility ?? "private";
+  const settingsLabel = page ? "Page settings" : "Template settings";
   const requestRemoval = useContext(RequestBlockRemoval);
   const [panel, setPanel] = useState<
       "content" | "settings" | "outline" | "page" | null
@@ -718,12 +730,22 @@ function Workspace({
   return (
     <div className={"garden-editor editor-inline panel-" + (panel ?? "closed")}>
       <header className="garden-workspace-bar">
-        <Link href="/admin/pages" className="editor-back">
-          ← Pages
+        <Link
+          href={page ? "/admin/pages" : "/admin/templates"}
+          className="editor-back"
+          onNavigate={
+            canLeave
+              ? (event) => {
+                  if (!canLeave()) event.preventDefault();
+                }
+              : undefined
+          }
+        >
+          {page ? "← Pages" : "← Templates"}
         </Link>
         <div className="editor-page-identity">
           <Label className="visually-hidden" htmlFor="page-title">
-            Page title
+            {page ? "Page title" : "Template name"}
           </Label>
           <Input
             id="page-title"
@@ -734,36 +756,46 @@ function Workspace({
         </div>
         <div className="editor-header-state">
           <span className="editor-visibility-badge">
-            {visibility === "public" ? "Public" : "Private"}
-            {page.is_homepage ? " · Homepage" : ""}
+            {page
+              ? visibility === "public"
+                ? "Public"
+                : "Private"
+              : "Template"}
+            {page?.is_homepage ? " · Homepage" : ""}
           </span>
           <span
             role="status"
-            aria-label="Auto-save status"
+            aria-label={page ? "Auto-save status" : "Template save status"}
             className="editor-save-status"
           >
             {status}
           </span>
         </div>
-        <Button asChild className="button secondary editor-view-link">
-          <a
-            href={page.is_homepage ? "/" : "/p/" + page.id}
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label="View page (opens in a new tab)"
-          >
-            View page <span aria-hidden="true">↗</span>
-          </a>
-        </Button>
-        <Button asChild className="button secondary editor-history-link">
-          <Link href={"/admin/pages/" + page.id + "/history"}>History</Link>
-        </Button>
+        {page ? (
+          <>
+            <Button asChild className="button secondary editor-view-link">
+              <a
+                href={page.is_homepage ? "/" : "/p/" + page.id}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="View page (opens in a new tab)"
+              >
+                View page <span aria-hidden="true">↗</span>
+              </a>
+            </Button>
+            <Button asChild className="button secondary editor-history-link">
+              <Link href={"/admin/pages/" + page.id + "/history"}>History</Link>
+            </Button>
+          </>
+        ) : (
+          templateActions
+        )}
       </header>
       {error && (
         <Toast
           message={error + " Your edits remain in this editor."}
           tone="error"
-          actionLabel="Retry save"
+          actionLabel={retry ? "Retry save" : undefined}
           onAction={retry}
         />
       )}
@@ -774,7 +806,7 @@ function Workspace({
             ["content", "Content"],
             ["settings", "Styles"],
             ["outline", "Outline"],
-            ["page", "Page settings"],
+            ["page", settingsLabel],
           ].map(([key, label]) => (
             <Button
               key={key}
@@ -786,7 +818,7 @@ function Workspace({
                     ? "Open settings panel"
                     : key === "outline"
                       ? "Open outline panel"
-                      : "Page settings"
+                      : settingsLabel
               }
               title={label}
               aria-pressed={panel === key}
@@ -806,7 +838,7 @@ function Workspace({
           className="garden-editor-panel"
           aria-label={
             panel === "page"
-              ? "Page settings"
+              ? settingsLabel
               : panel === "settings"
                 ? "Block styles"
                 : panel === "outline"
@@ -827,13 +859,15 @@ function Workspace({
             )}
             <h2>
               {panel === "page"
-                ? "Page settings"
+                ? settingsLabel
                 : panel === "settings"
                   ? selected
                     ? blockLabel(selected.type)
                     : "Block styles"
                   : panel === "outline"
-                    ? "On this page"
+                    ? page
+                      ? "On this page"
+                      : "In this template"
                     : "Add content"}
             </h2>
             <Button
@@ -846,10 +880,14 @@ function Workspace({
           </div>
           <div hidden={panel !== "page"} className="editor-page-settings">
             <div className="settings-field">
-              <Label htmlFor="page-settings-title">Title</Label>
+              <Label htmlFor="page-settings-title">
+                {page ? "Title" : "Template name"}
+              </Label>
               <Input
                 id="page-settings-title"
-                aria-label="Page settings title"
+                aria-label={
+                  page ? "Page settings title" : "Template settings name"
+                }
                 value={title}
                 maxLength={200}
                 onChange={(e) => onMetadata({ title: e.target.value })}
@@ -866,7 +904,7 @@ function Workspace({
                       content: {
                         ...editedPageData(
                           documentData(api.appState.data),
-                          page.content,
+                          content,
                         ),
                         root: { props: { showTitle: event.target.checked } },
                       },
@@ -876,43 +914,56 @@ function Workspace({
                 Show page title
               </Label>
               <p className="muted page-title-help">
-                Show the heading on the website. The page name and sharing title
-                stay the same.
+                {page
+                  ? "Show the heading on the website. The page name and sharing title stay the same."
+                  : "Show the heading on new pages created from this template."}
               </p>
             </div>
-            <PageAddress page={page} accountId={accountId} />
-            <div className="settings-field">
-              <Label htmlFor="page-visibility">Visibility</Label>
-              <NativeSelect
-                id="page-visibility"
-                aria-label="Page visibility"
-                value={visibility}
-                disabled={page.is_homepage}
-                onChange={(e) =>
-                  onMetadata({
-                    visibility:
-                      e.target.value === "public" ? "public" : "private",
-                  })
-                }
-              >
-                <NativeSelectOption value="private">
-                  Private · administrators only
-                </NativeSelectOption>
-                <NativeSelectOption value="public">
-                  Public · everyone
-                </NativeSelectOption>
-              </NativeSelect>
-              {page.is_homepage && (
-                <small>The homepage always stays public.</small>
-              )}
-            </div>
-            <PageDetails
-              page={{ ...page, title }}
-              accountId={accountId}
-              visibility={visibility}
-              onSaved={onDetailsSaved}
-              contentSaved={status === "Saved"}
-            />
+            {pageSettings && page && (
+              <>
+                <PageAddress page={page} accountId={pageSettings.accountId} />
+                <div className="settings-field">
+                  <Label htmlFor="page-visibility">Visibility</Label>
+                  <NativeSelect
+                    id="page-visibility"
+                    aria-label="Page visibility"
+                    value={visibility}
+                    disabled={page.is_homepage}
+                    onChange={(e) =>
+                      onMetadata({
+                        visibility:
+                          e.target.value === "public" ? "public" : "private",
+                      })
+                    }
+                  >
+                    <NativeSelectOption value="private">
+                      Private · administrators only
+                    </NativeSelectOption>
+                    <NativeSelectOption value="public">
+                      Public · everyone
+                    </NativeSelectOption>
+                  </NativeSelect>
+                  {page.is_homepage && (
+                    <small>The homepage always stays public.</small>
+                  )}
+                </div>
+                <PageDetails
+                  page={{ ...page, title }}
+                  accountId={pageSettings.accountId}
+                  visibility={visibility}
+                  onSaved={pageSettings.onDetailsSaved}
+                  contentSaved={status === "Saved"}
+                />
+                <CreateTemplate
+                  source={{
+                    pageId: page.id,
+                    title,
+                    saved: status === "Saved",
+                    version: pageSettings.getVersion,
+                  }}
+                />
+              </>
+            )}
           </div>
           {panel === "content" && (
             <>
@@ -1147,7 +1198,7 @@ function Workspace({
         </aside>
         <section
           className="garden-canvas-workspace"
-          aria-label="Live page canvas"
+          aria-label={page ? "Live page canvas" : "Template canvas"}
           onClickCapture={(event) => {
             if (
               (event.target as HTMLElement).ownerDocument !== window.document &&
@@ -1235,9 +1286,47 @@ export function PageEditor({
   accountId: string;
 }) {
   const save = usePageAutosave(page, accountId);
+  return (
+    <GardenEditor
+      initialContent={page.content}
+      onContent={(content) => save.change({ content })}
+      workspace={{
+        pageSettings: {
+          page,
+          accountId,
+          visibility: save.working.visibility,
+          onDetailsSaved: save.detailsSaved,
+          getVersion: save.getVersion,
+        },
+        title: save.working.title,
+        content: save.working.content,
+        status: save.status,
+        error: save.error,
+        retry: save.retry,
+        onMetadata: save.change,
+        feedback: (
+          <SaveFeedback
+            key={save.comparison?.saved.version ?? "feedback"}
+            save={save}
+          />
+        ),
+      }}
+    />
+  );
+}
+
+export function GardenEditor({
+  initialContent,
+  workspace,
+  onContent,
+}: {
+  initialContent: PageData;
+  workspace: Omit<WorkspaceProps, "insertion">;
+  onContent: (content: PageData) => void;
+}) {
   const initialData = useMemo(
-    () => inlinePageData(page.content),
-    [page.content],
+    () => inlinePageData(initialContent),
+    [initialContent],
   );
   const [ready, setReady] = useState(false);
   const insertion = useRef<InsertionNotice | null>(null);
@@ -1245,64 +1334,50 @@ export function PageEditor({
   useEffect(() => setReady(true), []);
   return (
     <InlineEditingProvider>
-      <RequestBlockRemoval.Provider value={setRemoval}>
-        <fieldset
-          className="garden-editor-init"
-          disabled={!ready}
-          aria-busy={!ready}
-          aria-label="Page editor"
-        >
-          <Puck
-            permissions={{ delete: false }}
-            config={gardenConfig}
-            dnd={{ enableDragHandle: true, behavior: "static" }}
-            data={initialData}
-            onAction={(action) => {
-              if (action.type === "insert" && action.id)
-                insertion.current = {
-                  id: action.id,
-                  type: action.componentType,
-                  zone: action.destinationZone,
-                };
-            }}
-            onChange={(data) =>
-              save.change({
-                content: editedPageData(
-                  documentData(data),
-                  save.working.content,
-                ),
-              })
+      <TemplatePlaceholdersOnly.Provider value={!workspace.pageSettings}>
+        <RequestBlockRemoval.Provider value={setRemoval}>
+          <fieldset
+            className="garden-editor-init"
+            disabled={!ready}
+            aria-busy={!ready}
+            aria-label={
+              workspace.pageSettings ? "Page editor" : "Template editor"
             }
-            overrides={editorOverrides}
           >
-            <EditorSync content={save.working.content} />
-            <Workspace
-              page={page}
-              insertion={insertion}
-              accountId={accountId}
-              onDetailsSaved={save.detailsSaved}
-              title={save.working.title}
-              visibility={save.working.visibility}
-              status={ready ? save.status : "Loading editor…"}
-              error={save.error}
-              retry={save.retry}
-              onMetadata={save.change}
-              feedback={
-                <SaveFeedback
-                  key={save.comparison?.saved.version ?? "feedback"}
-                  save={save}
-                />
+            <Puck
+              permissions={{ delete: false }}
+              config={gardenConfig}
+              dnd={{ enableDragHandle: true, behavior: "static" }}
+              data={initialData}
+              onAction={(action) => {
+                if (action.type === "insert" && action.id)
+                  insertion.current = {
+                    id: action.id,
+                    type: action.componentType,
+                    zone: action.destinationZone,
+                  };
+              }}
+              onChange={(data) =>
+                onContent(editedPageData(documentData(data), workspace.content))
               }
-            />
-            {removal && (
-              <BlockRemovalDialog
-                id={removal}
-                onClose={() => setRemoval(null)}
+              overrides={editorOverrides}
+            >
+              <EditorSync content={workspace.content} />
+              <Workspace
+                {...workspace}
+                insertion={insertion}
+                status={ready ? workspace.status : "Loading editor…"}
               />
-            )}
-          </Puck>
-        </fieldset>
-      </RequestBlockRemoval.Provider>
+              {removal && (
+                <BlockRemovalDialog
+                  id={removal}
+                  onClose={() => setRemoval(null)}
+                />
+              )}
+            </Puck>
+          </fieldset>
+        </RequestBlockRemoval.Provider>
+      </TemplatePlaceholdersOnly.Provider>
     </InlineEditingProvider>
   );
 }

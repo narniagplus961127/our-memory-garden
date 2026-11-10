@@ -8,6 +8,7 @@ import { signOutEditors } from "@/lib/editor-recovery";
 const navigation = [
   ["Overview", "/admin"],
   ["Pages", "/admin/pages"],
+  ["Templates", "/admin/templates"],
   ["Categories", "/admin/categories"],
   ["Media library", "/admin/media"],
   ["Navigation", "/admin/navigation"],
@@ -24,7 +25,7 @@ export function AdminShell({
   const mobileMenu = useRef<HTMLDetailsElement>(null);
   const [signingOut, setSigningOut] = useState(false),
     [signOutError, setSignOutError] = useState("");
-  if (/^\/admin\/pages\/[0-9a-f-]{36}$/i.test(pathname))
+  if (/^\/admin\/(pages|templates)\/[0-9a-f-]{36}$/i.test(pathname))
     return <main className="editor-admin-main">{children}</main>;
   const links = navigation.map(([label, path]) => (
     <Link

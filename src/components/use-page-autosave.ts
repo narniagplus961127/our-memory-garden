@@ -458,6 +458,7 @@ export function usePageAutosave(page: GardenPage, accountId: string) {
   }
   return {
     working,
+    getVersion: () => state.current.version,
     status,
     error,
     warning,
