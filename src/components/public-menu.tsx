@@ -54,7 +54,11 @@ export function PublicMenu({ children }: { children: ReactNode }) {
         <nav
           aria-label="Main navigation"
           onClick={(event) => {
-            if (event.target instanceof Element && event.target.closest("a"))
+            if (
+              !event.defaultPrevented &&
+              event.target instanceof Element &&
+              event.target.closest("a")
+            )
               setOpen(false);
           }}
         >

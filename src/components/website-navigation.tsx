@@ -45,6 +45,21 @@ function NavigationItem({
         target={item.openInNewTab ? "_blank" : undefined}
         rel={item.openInNewTab ? "noopener" : undefined}
         aria-description={item.openInNewTab ? "Opens in a new tab" : undefined}
+        aria-expanded={children.length ? open : undefined}
+        aria-controls={children.length ? id : undefined}
+        onClick={(event) => {
+          if (
+            open ||
+            !children.length ||
+            event.metaKey ||
+            event.ctrlKey ||
+            event.altKey ||
+            event.shiftKey
+          )
+            return;
+          event.preventDefault();
+          setOpen(true);
+        }}
       >
         {item.label}
       </a>
