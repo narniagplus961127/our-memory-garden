@@ -418,7 +418,6 @@ type WorkspaceProps = {
     onDetailsSaved: (page: GardenPage) => void;
     getVersion: () => number;
   };
-  templateActions?: React.ReactNode;
   canLeave?: () => boolean;
   content: PageData;
   title: string;
@@ -431,7 +430,6 @@ type WorkspaceProps = {
 };
 function Workspace({
   pageSettings,
-  templateActions,
   canLeave,
   content,
   title,
@@ -728,7 +726,14 @@ function Workspace({
     </div>
   );
   return (
-    <div className={"garden-editor editor-inline panel-" + (panel ?? "closed")}>
+    <div
+      className={
+        "garden-editor editor-inline " +
+        (page ? "" : "template-workspace ") +
+        "panel-" +
+        (panel ?? "closed")
+      }
+    >
       <header className="garden-workspace-bar">
         <Link
           href={page ? "/admin/pages" : "/admin/templates"}
@@ -771,7 +776,7 @@ function Workspace({
             {status}
           </span>
         </div>
-        {page ? (
+        {page && (
           <>
             <Button asChild className="button secondary editor-view-link">
               <a
@@ -787,8 +792,6 @@ function Workspace({
               <Link href={"/admin/pages/" + page.id + "/history"}>History</Link>
             </Button>
           </>
-        ) : (
-          templateActions
         )}
       </header>
       {error && (

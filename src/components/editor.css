@@ -1137,6 +1137,12 @@
     justify-content: space-between;
     padding: 0 4px;
   }
+  .editor-inline.template-workspace .garden-workspace-bar {
+    min-height: 84px;
+  }
+  .editor-inline.template-workspace .editor-header-state {
+    grid-row: 2;
+  }
   .editor-inline .editor-visibility-badge {
     font-size: 11px;
     border: 0;

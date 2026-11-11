@@ -6,7 +6,7 @@ import {
 import { validGrid } from "./organization";
 import { richFields, validRichText } from "./rich-text";
 export { isWebUrl } from "./destinations";
-import type { PageData, JsonValue } from "./pages";
+import type { PageData } from "./pages";
 export const blockNames = [
   "Text",
   "Banner",
@@ -384,80 +384,6 @@ export function validPageData(
   }
   return list(data.content, 0);
 }
-export const templates = [
-  { id: "blank", label: "Blank page", description: "A quiet space to begin." },
-  {
-    id: "story",
-    label: "Our story",
-    description: "A welcome, two columns and room for memories.",
-  },
-  {
-    id: "journal",
-    label: "Garden journal",
-    description: "A welcome, photograph and written moment.",
-  },
-] as const;
-export type TemplateId = (typeof templates)[number]["id"];
-export function templateData(template: TemplateId = "blank"): PageData {
-  const block = (
-    type: BlockName,
-    props: Record<string, JsonValue>,
-  ): PageBlock => ({ type, props: { id: crypto.randomUUID(), ...props } });
-  const text = (text: string, style = "p") =>
-    block("Text", { text, style, align: "left" });
-  const image = () =>
-    block("Image", {
-      alt: "A photograph from our garden",
-      caption: "",
-      fit: "cover",
-      width: "inset",
-    });
-  const welcome = () =>
-    block("Section", {
-      background: "sage",
-      spacing: "spacious",
-      content: [
-        text("The moments we grow together", "h1"),
-        text("Little stories, gathered with love."),
-      ],
-    });
-  if (template === "story")
-    return {
-      root: { props: {} },
-      content: [
-        welcome(),
-        block("Section", {
-          background: "paper",
-          spacing: "comfortable",
-          content: [
-            block("Columns", {
-              ratio: "equal",
-              gap: "comfortable",
-              left: [
-                text("Our story", "h2"),
-                text("It began with a little moment worth remembering."),
-              ],
-              right: [image()],
-            }),
-          ],
-        }),
-      ],
-    };
-  if (template === "journal")
-    return {
-      root: { props: {} },
-      content: [
-        welcome(),
-        block("Section", {
-          background: "paper",
-          spacing: "comfortable",
-          content: [
-            image(),
-            text("A day to remember", "h2"),
-            text("Write about the things you noticed today."),
-          ],
-        }),
-      ],
-    };
+export function templateData(): PageData {
   return { root: { props: {} }, content: [] };
 }

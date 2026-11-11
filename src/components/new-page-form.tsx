@@ -2,16 +2,16 @@
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { templates } from "@/lib/blocks";
-import type { PageTemplate } from "@/lib/page-templates";
+import { starterTemplates, type TemplateSummary } from "@/lib/page-templates";
+import { LayoutTemplate } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { addressFromTitle, validSlug } from "@/lib/page-address";
 export function NewPageForm({
-  customTemplates,
+  savedTemplates,
 }: {
-  customTemplates: Pick<PageTemplate, "id" | "name">[];
+  savedTemplates: TemplateSummary[];
 }) {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
@@ -21,12 +21,36 @@ export function NewPageForm({
   const slug = customSlug ?? addressFromTitle(title);
   const router = useRouter();
   const choices = [
-    ...templates,
-    ...customTemplates.map(({ id, name }) => ({
-      id,
-      label: name,
-      description: "Saved template",
-    })),
+    {
+      id: "blank",
+      label: "Blank page",
+      description: "A quiet space to begin.",
+      preview: "blank",
+    },
+    ...starterTemplates.flatMap((starter) => {
+      const saved = savedTemplates.find(({ id }) => id === starter.id);
+      return saved
+        ? [
+            {
+              id: saved.id,
+              label: saved.name,
+              description:
+                saved.version === 1 ? starter.description : "Saved template",
+              preview: saved.version === 1 ? starter.alias : "saved",
+            },
+          ]
+        : [];
+    }),
+    ...savedTemplates
+      .filter(
+        ({ id }) => !starterTemplates.some((starter) => starter.id === id),
+      )
+      .map(({ id, name }) => ({
+        id,
+        label: name,
+        description: "Saved template",
+        preview: "saved",
+      })),
   ];
   async function create(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -75,11 +99,15 @@ export function NewPageForm({
                 defaultChecked={template.id === "blank"}
               />
               <span
-                className={"template-preview template-preview-" + template.id}
+                className={
+                  "template-preview template-preview-" + template.preview
+                }
                 aria-hidden="true"
               >
-                {template.id === "blank" ? (
+                {template.preview === "blank" ? (
                   <span className="template-blank-mark">+</span>
+                ) : template.preview === "saved" ? (
+                  <LayoutTemplate className="mx-auto size-8 text-muted-foreground" />
                 ) : (
                   <>
                     <span className="template-mini-banner" />
@@ -91,7 +119,7 @@ export function NewPageForm({
                       </span>
                       <span className="template-mini-photo">❧</span>
                     </span>
-                    {template.id === "journal" && (
+                    {template.preview === "journal" && (
                       <span className="template-mini-lines">
                         <i />
                         <i />

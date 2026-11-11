@@ -1,4 +1,4 @@
-import { templateData, templates } from "@/lib/blocks";
+import { copyTemplateForPage, starterTemplates } from "@/lib/page-templates";
 import { getPageTemplate } from "@/lib/server/page-templates";
 import { currentAdministrator } from "@/lib/server/auth";
 import { createPrivatePage, listPages } from "@/lib/server/pages";
@@ -27,20 +27,20 @@ export async function POST(request: Request) {
     const admin = await currentAdministrator(request.headers);
     if (!admin) throw new RequestError(401, "Sign in to manage the garden.");
     const body = await bodyJson(request);
-    const builtin = templates.find((template) => template.id === body.template);
-    const custom =
-      !builtin && typeof body.template === "string"
-        ? await getPageTemplate(body.template)
-        : null;
-    if (body.template !== undefined && !builtin && !custom)
-      throw new RequestError(400, "Choose an available template.");
+    let content;
+    if (body.template !== undefined && body.template !== "blank") {
+      if (typeof body.template !== "string")
+        throw new RequestError(400, "Choose an available template.");
+      const starter = starterTemplates.find(
+        ({ alias }) => alias === body.template,
+      );
+      const template = await getPageTemplate(starter?.id ?? body.template);
+      if (!template)
+        throw new RequestError(400, "Choose an available template.");
+      content = copyTemplateForPage(template.content);
+    }
     return Response.json(
-      await createPrivatePage(
-        admin,
-        pageTitle(body.title),
-        custom?.content ?? templateData(builtin?.id),
-        body.slug,
-      ),
+      await createPrivatePage(admin, pageTitle(body.title), content, body.slug),
       { status: 201, headers: { "Cache-Control": "private, no-store" } },
     );
   } catch (error) {
