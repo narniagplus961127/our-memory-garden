@@ -164,10 +164,20 @@ test("confirm a page template with photo placeholders, edit it, and create indep
     frame.getByRole("button", { name: "Choose photo", exact: true }),
   ).toHaveCount(0);
   await selectBlock(page, "Select Text 1");
+  await page.route(
+    `**/api/templates/${template.id}`,
+    (route) =>
+      route.fulfill({
+        status: 503,
+        json: { error: "Temporary save failure." },
+      }),
+    { times: 1 },
+  );
   await writeCanvas(page, "Text content", "Template-only edit");
-  await page
-    .getByRole("button", { name: "Save template", exact: true })
-    .click();
+  await expect(
+    page.getByRole("status", { name: "Template save status" }),
+  ).toHaveText("Not saved");
+  await page.getByRole("button", { name: "Retry save", exact: true }).click();
   await expect(
     page.getByRole("status", { name: "Template save status" }),
   ).toHaveText("Saved");
@@ -201,6 +211,14 @@ test("confirm a page template with photo placeholders, edit it, and create indep
   expect(original.content).toEqual(savedContent);
 
   await page.goto("/admin/templates/new");
+  const field = (await page
+    .getByRole("textbox", { name: "Template name" })
+    .boundingBox())!;
+  const action = (await page
+    .getByRole("button", { name: "Create template", exact: true })
+    .boundingBox())!;
+  expect(action.y - field.y - field.height).toBeGreaterThanOrEqual(16);
+  expect(action.x).toBe(field.x);
   await page
     .getByRole("textbox", { name: "Template name" })
     .fill(`Blank layout ${suffix}`);
@@ -209,11 +227,103 @@ test("confirm a page template with photo placeholders, edit it, and create indep
     .click();
   await expect(page).toHaveURL(/\/admin\/templates\/[0-9a-f-]+$/);
   await startWithText(page);
-  await writeCanvas(page, "Text content", "Built from a blank template");
-  await page
-    .getByRole("button", { name: "Save template", exact: true })
-    .click();
+  const blankId = page.url().split("/").at(-1);
+  const [blankSave] = await Promise.all([
+    page.waitForResponse(
+      (response) =>
+        response.request().method() === "PATCH" &&
+        response.url().endsWith(`/api/templates/${blankId}`) &&
+        JSON.stringify(response.request().postDataJSON()).includes(
+          "Built from a blank template",
+        ),
+    ),
+    writeCanvas(page, "Text content", "Built from a blank template"),
+  ]);
+  expect(blankSave.ok()).toBeTruthy();
   await expect(
     page.getByRole("status", { name: "Template save status" }),
   ).toHaveText("Saved");
+
+  await page.goto("/admin/templates");
+  const remove = page.getByRole("button", {
+    name: `Delete ${name}`,
+    exact: true,
+  });
+  const deletion = page.getByRole("dialog", {
+    name: `Delete ${name}?`,
+    exact: true,
+  });
+  await remove.click();
+  await deletion.getByRole("button", { name: "Cancel", exact: true }).click();
+  await expect(remove).toBeFocused();
+  await remove.click();
+  await deletion
+    .getByRole("button", { name: "Delete template", exact: true })
+    .click();
+  await expect(remove).toHaveCount(0);
+  await page.goto("/admin/pages/new");
+  await expect(page.getByRole("radio", { name, exact: true })).toHaveCount(0);
+  expect(
+    (await (await page.request.get(`/api/pages/${derived.id}`)).json()).content,
+  ).toEqual(derived.content);
+});
+
+test("both starter layouts can be renamed with autosave and selected by their new names", async ({
+  page,
+}) => {
+  test.setTimeout(120000);
+  expect(
+    (
+      await page.request.post("/api/auth/sign-in/email", {
+        headers,
+        data: {
+          email: env.TEST_ADMIN_EMAIL,
+          password: env.TEST_ADMIN_PASSWORD,
+        },
+      })
+    ).ok(),
+  ).toBeTruthy();
+  for (const name of ["Our story", "Garden journal"]) {
+    await page.goto("/admin/templates");
+    await page.getByRole("link", { name: `Edit ${name}`, exact: true }).click();
+    const title = page.getByRole("textbox", {
+      name: "Template name",
+      exact: true,
+    });
+    await expect(title).toHaveValue(name);
+    const id = page.url().split("/").at(-1);
+    const renamed = `${name} ${crypto.randomUUID().slice(0, 8)}`;
+    const [response] = await Promise.all([
+      page.waitForResponse(
+        (response) =>
+          response.request().method() === "PATCH" &&
+          response.url().endsWith(`/api/templates/${id}`) &&
+          response.request().postDataJSON().name === renamed,
+      ),
+      title.fill(renamed),
+    ]);
+    expect(response.ok()).toBeTruthy();
+    const saved = await response.json();
+    try {
+      await expect(
+        page.getByRole("status", { name: "Template save status" }),
+      ).toHaveText("Saved");
+      await expect(
+        page.getByRole("button", { name: "Save template", exact: true }),
+      ).toHaveCount(0);
+      await page.goto("/admin/pages/new");
+      await expect(
+        page.getByRole("radio", { name: renamed, exact: true }),
+      ).toBeVisible();
+    } finally {
+      expect(
+        (
+          await page.request.patch(`/api/templates/${id}`, {
+            headers,
+            data: { name, version: saved.version, content: saved.content },
+          })
+        ).ok(),
+      ).toBeTruthy();
+    }
+  }
 });

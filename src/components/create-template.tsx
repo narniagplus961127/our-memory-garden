@@ -81,7 +81,7 @@ export function CreateTemplate({ source }: { source?: Source }) {
   if (!source)
     return (
       <form
-        className="settings-card"
+        className="settings-card grid w-full max-w-[720px] gap-6"
         onSubmit={(event) => {
           event.preventDefault();
           void create();
@@ -89,7 +89,7 @@ export function CreateTemplate({ source }: { source?: Source }) {
       >
         {field}
         {error && (
-          <p role="alert" className="error">
+          <p role="alert" className="error m-0">
             {error}
           </p>
         )}

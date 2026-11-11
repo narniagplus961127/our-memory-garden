@@ -1,4 +1,4 @@
-import { columnSlots, slotContent, type PageBlock } from "./blocks";
+import { columnSlots, slotContent, slotNames, type PageBlock } from "./blocks";
 import type { PageData } from "./pages";
 
 export type PageTemplate = {
@@ -7,6 +7,36 @@ export type PageTemplate = {
   content: PageData;
   version: number;
 };
+export type TemplateSummary = Pick<PageTemplate, "id" | "name" | "version">;
+
+// These IDs are seeded by 0017-editable-starter-templates.sql. The aliases
+// keep the original page-creation API inputs working for these starters.
+export const starterTemplates = [
+  {
+    id: "00000000-0000-4000-8000-000000000001",
+    alias: "story",
+    description: "A welcome, two columns and room for memories.",
+  },
+  {
+    id: "00000000-0000-4000-8000-000000000002",
+    alias: "journal",
+    description: "A welcome, photograph and written moment.",
+  },
+] as const;
+
+export function copyTemplateForPage(data: PageData): PageData {
+  function copy(block: PageBlock): PageBlock {
+    const props: PageBlock["props"] = {
+      ...block.props,
+      id: crypto.randomUUID(),
+    };
+    for (const slot of slotNames(block.type, block.props.count)) {
+      props[slot] = slotContent(block, slot).map(copy);
+    }
+    return { ...block, props };
+  }
+  return { root: data.root, content: data.content.map(copy) };
+}
 
 export function templatePlaceholders(data: PageData): PageData {
   function copy(block: PageBlock): PageBlock {
@@ -24,8 +54,7 @@ export function templatePlaceholders(data: PageData): PageData {
         break;
       case "Columns":
         for (const slot of columnSlots) {
-          if (Array.isArray(props[slot]))
-            props[slot] = slotContent(block, slot).map(copy);
+          props[slot] = slotContent(block, slot).map(copy);
         }
         break;
     }

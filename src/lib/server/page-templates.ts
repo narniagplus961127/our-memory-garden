@@ -2,7 +2,11 @@ import "server-only";
 import { templateData, validPageData } from "../blocks";
 import { uuid } from "../organization";
 import { equal } from "../page-merge";
-import { templatePlaceholders, type PageTemplate } from "../page-templates";
+import {
+  templatePlaceholders,
+  type PageTemplate,
+  type TemplateSummary,
+} from "../page-templates";
 import { database } from "./db";
 import { RequestError } from "./http";
 import { getVisiblePage, type Administrator } from "./pages";
@@ -17,9 +21,26 @@ function templateName(value: unknown) {
 }
 
 export async function listPageTemplates() {
-  return database()<Pick<PageTemplate, "id" | "name">[]>`
-    select id, name from page_templates order by lower(name), id
+  return database()<TemplateSummary[]>`
+    select id, name, version from page_templates order by lower(name), id
   `;
+}
+
+export async function deletePageTemplate(id: string, version: unknown) {
+  if (!uuid.test(id)) throw new RequestError(404, "Template not found.");
+  if (!Number.isSafeInteger(version) || Number(version) < 1)
+    throw new RequestError(
+      400,
+      "Review the saved template before deleting it.",
+    );
+  const [deleted] = await database()<{ id: string }[]>`
+    delete from page_templates where id = ${id} and version = ${Number(version)} returning id
+  `;
+  if (!deleted && (await getPageTemplate(id)))
+    throw new RequestError(
+      409,
+      "This template changed. Reload the list to review it before deleting.",
+    );
 }
 
 export async function getPageTemplate(id: string) {
