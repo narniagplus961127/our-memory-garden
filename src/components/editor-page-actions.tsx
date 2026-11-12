@@ -50,7 +50,7 @@ export function EditorPageActions({
                 type="button"
                 variant="outline"
                 size="icon"
-                className="editor-page-actions"
+                className="editor-page-actions enabled:cursor-pointer"
                 aria-label="Page actions"
                 title="Page actions"
               >
@@ -61,7 +61,7 @@ export function EditorPageActions({
               align="end"
               sideOffset={8}
               collisionPadding={12}
-              className="w-52"
+              className="w-52 [&_[role=menuitem]:not([data-disabled])]:cursor-pointer"
               onCloseAutoFocus={(event) => {
                 if (openingDialog.current) event.preventDefault();
                 openingDialog.current = false;

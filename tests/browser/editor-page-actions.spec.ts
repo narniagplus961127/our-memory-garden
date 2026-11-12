@@ -62,12 +62,16 @@ test("editor deletion reviews the current saved page, keeps failures, protects h
   await page.keyboard.press("Escape");
   await saved(page);
   await page.getByLabel("Page date", { exact: true }).fill("2026-11-05");
+  await expect(
+    page.getByRole("status", { name: "Auto-save status", exact: true }),
+  ).toHaveText("Saving…");
+  await expect(
+    page.getByRole("status", { name: "Page details status", exact: true }),
+  ).toHaveCount(0);
   await actions.click();
   await expect(remove).toBeDisabled();
   await page.keyboard.press("Escape");
-  await expect(
-    page.getByRole("status", { name: "Page details status", exact: true }),
-  ).toHaveText("Saved");
+  await saved(page);
   await openRemoval();
   let dialog = page.getByRole("dialog", {
     name: "Move " + title + " to trash?",

@@ -24,7 +24,7 @@ export function PageDetails({
   categoryBusy: boolean;
   setCategoryBusy: (busy: boolean) => void;
 }) {
-  const { details, status, change } = save;
+  const { details, change } = save;
   const [error, setError] = useState(""),
     [list, setList] = useState<Category[]>([]),
     [name, setName] = useState(""),
@@ -335,9 +335,6 @@ export function PageDetails({
             Review details conflict
           </Button>
         ))}
-      <span role="status" aria-label="Page details status">
-        {status}
-      </span>
       {save.recovered && (
         <p className="muted">
           Recovered page details are unsaved. Retry to save them.

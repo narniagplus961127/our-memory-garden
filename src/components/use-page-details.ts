@@ -198,7 +198,7 @@ export function usePageDetails(
     s.saving = true;
     const submitted = s.working,
       epoch = s.epoch;
-    setStatus("Autosaving…");
+    setStatus("Saving…");
     setError("");
     let again = false;
     try {
@@ -380,7 +380,7 @@ export function usePageDetails(
       return;
     }
     writeRecovery();
-    setStatus("Autosaving…");
+    setStatus("Saving…");
     timer.current = setTimeout(() => void persist(), 650);
   }
   function resolve(keepLocal: boolean) {
@@ -399,7 +399,7 @@ export function usePageDetails(
       setStatus("Saved");
     } else {
       writeRecovery();
-      setStatus("Autosaving…");
+      setStatus("Saving…");
       timer.current = setTimeout(() => void persist(), 0);
     }
   }
