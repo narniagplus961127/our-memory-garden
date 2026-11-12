@@ -446,6 +446,11 @@ function Workspace({
   const page = pageSettings?.page;
   const visibility = pageSettings?.visibility ?? "private";
   const settingsLabel = page ? "Page settings" : "Template settings";
+  const detailsStatus = pageSettings?.details.status ?? "Saved";
+  const headerStatus =
+    (status === "Saved" || status === "Saving…") && detailsStatus !== "Saved"
+      ? detailsStatus
+      : status;
   const requestRemoval = useContext(RequestBlockRemoval);
   const [panel, setPanel] = useState<
       "content" | "settings" | "outline" | "page" | null
@@ -776,7 +781,7 @@ function Workspace({
             aria-label={page ? "Auto-save status" : "Template save status"}
             className="editor-save-status"
           >
-            {status}
+            {headerStatus}
           </span>
         </div>
         {pageSettings && (
@@ -784,8 +789,7 @@ function Workspace({
             page={{ ...pageSettings.page, title }}
             contentSaved={status === "Saved"}
             detailsSaved={
-              pageSettings.details.status === "Saved" &&
-              !pageSettings.categoryBusy
+              detailsStatus === "Saved" && !pageSettings.categoryBusy
             }
             getVersion={pageSettings.getVersion}
           />

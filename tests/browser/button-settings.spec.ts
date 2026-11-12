@@ -228,6 +228,7 @@ test("page actions fit in the header and open the website; sidebar settings and 
     exact: true,
   });
   const menu = page.getByRole("menu");
+  await expect(actions).toHaveCSS("cursor", "pointer");
   await expect(menu).toHaveCount(0);
   await actions.press("Enter");
   const viewLink = menu.getByRole("menuitem", {
@@ -236,6 +237,17 @@ test("page actions fit in the header and open the website; sidebar settings and 
   });
   await expect(viewLink).toHaveAttribute("href", "/p/" + created.id);
   await expect(viewLink).toHaveAttribute("target", "_blank");
+  for (const name of [
+    "View page (opens in a new tab)",
+    "History",
+    "Save as template",
+    "Delete page",
+  ]) {
+    await expect(menu.getByRole("menuitem", { name, exact: true })).toHaveCSS(
+      "cursor",
+      "pointer",
+    );
+  }
   await expect(viewLink).toBeFocused();
   await page.keyboard.press("Escape");
   await expect(actions).toBeFocused();
@@ -327,4 +339,8 @@ test("page actions fit in the header and open the website; sidebar settings and 
   await page.goto("/admin/pages/" + home.id);
   await actions.click();
   await expect(viewLink).toHaveAttribute("href", "/");
+  await expect(menu.getByRole("menuitem", { name: "Delete page" })).toHaveCSS(
+    "cursor",
+    "default",
+  );
 });

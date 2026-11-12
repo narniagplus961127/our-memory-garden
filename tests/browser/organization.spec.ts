@@ -41,7 +41,7 @@ test("failed and unfinished page details recover after refresh and clear after r
     .click();
   await page.getByLabel("Page date", { exact: true }).fill("2026-10-29");
   await expect(
-    page.getByRole("status", { name: "Page details status" }),
+    page.getByRole("status", { name: "Auto-save status" }),
   ).toHaveText("Unsaved · Retry");
   await page.reload();
   await page
@@ -51,14 +51,14 @@ test("failed and unfinished page details recover after refresh and clear after r
     "2026-10-29",
   );
   await expect(
-    page.getByRole("status", { name: "Page details status" }),
+    page.getByRole("status", { name: "Auto-save status" }),
   ).toHaveText("Recovered · unsaved");
   await page.unroute("**/api/pages/" + p.id + "/details");
   await page
     .getByRole("button", { name: "Retry details", exact: true })
     .click();
   await expect(
-    page.getByRole("status", { name: "Page details status" }),
+    page.getByRole("status", { name: "Auto-save status" }),
   ).toHaveText("Saved");
   await expect
     .poll(() =>
@@ -80,13 +80,13 @@ test("failed and unfinished page details recover after refresh and clear after r
     "2026-10-28",
   );
   await expect(
-    page.getByRole("status", { name: "Page details status" }),
+    page.getByRole("status", { name: "Auto-save status" }),
   ).toHaveText("Recovered · unsaved");
   await page
     .getByRole("button", { name: "Retry details", exact: true })
     .click();
   await expect(
-    page.getByRole("status", { name: "Page details status" }),
+    page.getByRole("status", { name: "Auto-save status" }),
   ).toHaveText("Saved");
   await expect
     .poll(
@@ -139,7 +139,7 @@ test("concurrent page details preserve independent changes and require a choice 
     .click();
   await page.getByLabel("Page date", { exact: true }).fill("2026-10-28");
   await expect(
-    page.getByRole("status", { name: "Page details status" }),
+    page.getByRole("status", { name: "Auto-save status" }),
   ).toHaveText("Saved");
   expect(
     (
@@ -165,7 +165,7 @@ test("concurrent page details preserve independent changes and require a choice 
     .getByRole("button", { name: "Keep my details", exact: true })
     .click();
   await expect(
-    page.getByRole("status", { name: "Page details status" }),
+    page.getByRole("status", { name: "Auto-save status" }),
   ).toHaveText("Saved");
   let current = await (await page.request.get("/api/pages/" + p.id)).json();
   expect(current.page_date).toBe("2026-10-30");
@@ -185,7 +185,7 @@ test("concurrent page details preserve independent changes and require a choice 
   ).toBe(200);
   await page.getByLabel("Page date", { exact: true }).fill("2026-10-27");
   await expect(
-    page.getByRole("status", { name: "Page details status" }),
+    page.getByRole("status", { name: "Auto-save status" }),
   ).toHaveText("Saved");
   current = await (await page.request.get("/api/pages/" + p.id)).json();
   expect(current.page_date).toBe("2026-10-27");
@@ -223,7 +223,7 @@ test("concurrent page details preserve independent changes and require a choice 
     "2026-10-26",
   );
   await expect(
-    page.getByRole("status", { name: "Page details status" }),
+    page.getByRole("status", { name: "Auto-save status" }),
   ).toHaveText("Saved");
   await expect
     .poll(() =>
@@ -272,7 +272,7 @@ test("two tabs keep separate details recovery copies through refresh and acknowl
       .click();
     await tab.getByLabel("Page date", { exact: true }).fill(date);
     await expect(
-      tab.getByRole("status", { name: "Page details status" }),
+      tab.getByRole("status", { name: "Auto-save status" }),
     ).toHaveText("Unsaved · Retry");
   }
   await expect
@@ -297,7 +297,7 @@ test("two tabs keep separate details recovery copies through refresh and acknowl
       date,
     );
     await expect(
-      tab.getByRole("status", { name: "Page details status" }),
+      tab.getByRole("status", { name: "Auto-save status" }),
     ).toHaveText("Recovered · unsaved");
   }
   await page.unroute("**/api/pages/" + p.id + "/details");
@@ -305,7 +305,7 @@ test("two tabs keep separate details recovery copies through refresh and acknowl
     .getByRole("button", { name: "Retry details", exact: true })
     .click();
   await expect(
-    page.getByRole("status", { name: "Page details status" }),
+    page.getByRole("status", { name: "Auto-save status" }),
   ).toHaveText("Saved");
   await second.reload();
   await second
@@ -335,7 +335,7 @@ test("two tabs keep separate details recovery copies through refresh and acknowl
     .getByRole("button", { name: "Keep my details", exact: true })
     .click();
   await expect(
-    second.getByRole("status", { name: "Page details status" }),
+    second.getByRole("status", { name: "Auto-save status" }),
   ).toHaveText("Saved");
   await expect
     .poll(() =>
@@ -458,7 +458,7 @@ test("page details autosave and categories can be created and renamed", async ({
     .click();
   await page.getByLabel("Page date", { exact: true }).fill("2026-10-30");
   await expect(
-    page.getByRole("status", { name: "Page details status" }),
+    page.getByRole("status", { name: "Auto-save status" }),
   ).toHaveText("Saved");
   const category = "Garden dates " + Date.now();
   await page.getByLabel("Category name", { exact: true }).fill(category);
@@ -469,7 +469,7 @@ test("page details autosave and categories can be created and renamed", async ({
     /.+/,
   );
   await expect(
-    page.getByRole("status", { name: "Page details status" }),
+    page.getByRole("status", { name: "Auto-save status" }),
   ).toHaveText("Saved");
   await page
     .getByLabel("Category name", { exact: true })
@@ -485,7 +485,7 @@ test("page details autosave and categories can be created and renamed", async ({
     .getByRole("button", { name: "Use photo " + photoName, exact: true })
     .click();
   await expect(
-    page.getByRole("status", { name: "Page details status" }),
+    page.getByRole("status", { name: "Auto-save status" }),
   ).toHaveText("Saved");
   fs.mkdirSync("work/ticket07-evidence", { recursive: true });
   await page.screenshot({

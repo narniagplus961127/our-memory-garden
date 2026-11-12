@@ -97,7 +97,7 @@ test("sharing controls autosave, recover offline edits, and disable public disco
     .fill("A walk under the old trees.");
   await page.getByLabel("Allow search indexing", { exact: true }).uncheck();
   await expect(
-    page.getByRole("status", { name: "Page details status" }),
+    page.getByRole("status", { name: "Auto-save status" }),
   ).toHaveText("Saved");
   await page.reload();
   await page
@@ -120,7 +120,7 @@ test("sharing controls autosave, recover offline edits, and disable public disco
     .getByLabel("Sharing title", { exact: true })
     .fill("An unsaved evening");
   await expect(
-    page.getByRole("status", { name: "Page details status" }),
+    page.getByRole("status", { name: "Auto-save status" }),
   ).toHaveText("Unsaved · Retry");
   await page.reload();
   await page
@@ -130,14 +130,14 @@ test("sharing controls autosave, recover offline edits, and disable public disco
     "An unsaved evening",
   );
   await expect(
-    page.getByRole("status", { name: "Page details status" }),
+    page.getByRole("status", { name: "Auto-save status" }),
   ).toHaveText("Recovered · unsaved");
   await page.unroute("**/api/pages/" + p.id + "/details");
   await page
     .getByRole("button", { name: "Retry details", exact: true })
     .click();
   await expect(
-    page.getByRole("status", { name: "Page details status" }),
+    page.getByRole("status", { name: "Auto-save status" }),
   ).toHaveText("Saved");
   await expect
     .poll(() =>
@@ -210,7 +210,7 @@ test("older details device copies recover organization without overwriting curre
   );
   await page.getByLabel("Page date", { exact: true }).fill("2026-10-28");
   await expect(
-    page.getByRole("status", { name: "Page details status" }),
+    page.getByRole("status", { name: "Auto-save status" }),
   ).toHaveText("Unsaved · Retry");
   await page.evaluate((id) => {
     const key = Object.keys(localStorage).find((k) =>
@@ -259,7 +259,7 @@ test("older details device copies recover organization without overwriting curre
     .getByRole("button", { name: "Retry details", exact: true })
     .click();
   await expect(
-    page.getByRole("status", { name: "Page details status" }),
+    page.getByRole("status", { name: "Auto-save status" }),
   ).toHaveText("Saved");
   const current = await (await page.request.get("/api/pages/" + p.id)).json();
   expect(current.page_date).toBe("2026-10-28");
