@@ -34,7 +34,7 @@ import { InlineFormatMenu } from "./inline-format-menu";
 import { ColumnLayoutPicker, type ColumnRatio } from "./column-layout-picker";
 import { gardenConfig } from "./garden-blocks";
 import { TemplatePlaceholdersOnly } from "./editor-photo-controls";
-import { CreateTemplate } from "./create-template";
+import { EditorPageActions } from "./editor-page-actions";
 import { PageAddress } from "./page-address";
 import { PageDetails } from "./page-details";
 import {
@@ -46,6 +46,7 @@ import {
 } from "@/lib/blocks";
 import type { GardenPage, PageData } from "@/lib/pages";
 import { usePageAutosave } from "./use-page-autosave";
+import { usePageDetails } from "./use-page-details";
 import { SaveFeedback } from "./save-feedback";
 import { Toast } from "./toast";
 import { equal } from "@/lib/page-merge";
@@ -415,7 +416,9 @@ type WorkspaceProps = {
     page: GardenPage;
     accountId: string;
     visibility: GardenPage["visibility"];
-    onDetailsSaved: (page: GardenPage) => void;
+    details: ReturnType<typeof usePageDetails>;
+    categoryBusy: boolean;
+    setCategoryBusy: (busy: boolean) => void;
     getVersion: () => number;
   };
   canLeave?: () => boolean;
@@ -776,22 +779,16 @@ function Workspace({
             {status}
           </span>
         </div>
-        {page && (
-          <>
-            <Button asChild className="button secondary editor-view-link">
-              <a
-                href={page.is_homepage ? "/" : "/p/" + page.id}
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="View page (opens in a new tab)"
-              >
-                View page <span aria-hidden="true">↗</span>
-              </a>
-            </Button>
-            <Button asChild className="button secondary editor-history-link">
-              <Link href={"/admin/pages/" + page.id + "/history"}>History</Link>
-            </Button>
-          </>
+        {pageSettings && (
+          <EditorPageActions
+            page={{ ...pageSettings.page, title }}
+            contentSaved={status === "Saved"}
+            detailsSaved={
+              pageSettings.details.status === "Saved" &&
+              !pageSettings.categoryBusy
+            }
+            getVersion={pageSettings.getVersion}
+          />
         )}
       </header>
       {error && (
@@ -952,18 +949,10 @@ function Workspace({
                 </div>
                 <PageDetails
                   page={{ ...page, title }}
-                  accountId={pageSettings.accountId}
                   visibility={visibility}
-                  onSaved={pageSettings.onDetailsSaved}
-                  contentSaved={status === "Saved"}
-                />
-                <CreateTemplate
-                  source={{
-                    pageId: page.id,
-                    title,
-                    saved: status === "Saved",
-                    version: pageSettings.getVersion,
-                  }}
+                  save={pageSettings.details}
+                  categoryBusy={pageSettings.categoryBusy}
+                  setCategoryBusy={pageSettings.setCategoryBusy}
                 />
               </>
             )}
@@ -1289,6 +1278,8 @@ export function PageEditor({
   accountId: string;
 }) {
   const save = usePageAutosave(page, accountId);
+  const details = usePageDetails(page, accountId, save.detailsSaved);
+  const [categoryBusy, setCategoryBusy] = useState(false);
   return (
     <GardenEditor
       initialContent={page.content}
@@ -1298,7 +1289,9 @@ export function PageEditor({
           page,
           accountId,
           visibility: save.working.visibility,
-          onDetailsSaved: save.detailsSaved,
+          details,
+          categoryBusy,
+          setCategoryBusy,
           getVersion: save.getVersion,
         },
         title: save.working.title,

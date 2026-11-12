@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useRef, useState } from "react";
+import { useRef, useState, type ReactNode, type RefObject } from "react";
 import { ConfirmationDialog } from "./confirmation-dialog";
 import { Toast } from "./toast";
 import { Button } from "./ui/button";
@@ -15,7 +15,19 @@ type Source = {
   version: () => number;
 };
 
-export function CreateTemplate({ source }: { source?: Source }) {
+type CreateTemplateProps =
+  | { source?: undefined; renderTrigger?: never; returnFocus?: never }
+  | {
+      source: Source;
+      renderTrigger: (open: () => void) => ReactNode;
+      returnFocus: RefObject<HTMLElement | null>;
+    };
+
+export function CreateTemplate({
+  source,
+  renderTrigger,
+  returnFocus,
+}: CreateTemplateProps) {
   const router = useRouter();
   const [name, setName] = useState("");
   const [pageVersion, setPageVersion] = useState<number | null>(null);
@@ -105,24 +117,14 @@ export function CreateTemplate({ source }: { source?: Source }) {
     );
 
   return (
-    <div className="settings-field">
-      <Button
-        type="button"
-        variant="outline"
-        disabled={!source.saved}
-        onClick={() => {
-          id.current = null;
-          setName(source.title);
-          setError("");
-          setCreated("");
-          setPageVersion(source.version());
-        }}
-      >
-        Save as template
-      </Button>
-      {!source.saved && (
-        <small>Wait for the page to finish saving before copying it.</small>
-      )}
+    <>
+      {renderTrigger(() => {
+        id.current = null;
+        setName(source.title);
+        setError("");
+        setCreated("");
+        setPageVersion(source.version());
+      })}
       {pageVersion !== null && (
         <ConfirmationDialog
           title="Save page as a template?"
@@ -134,6 +136,7 @@ export function CreateTemplate({ source }: { source?: Source }) {
           confirmDisabled={!name.trim() || !source.saved}
           onConfirm={() => void create()}
           onCancel={() => setPageVersion(null)}
+          returnFocus={returnFocus}
         >
           {field}
         </ConfirmationDialog>
@@ -146,6 +149,6 @@ export function CreateTemplate({ source }: { source?: Source }) {
           onDismiss={() => setCreated("")}
         />
       )}
-    </div>
+    </>
   );
 }

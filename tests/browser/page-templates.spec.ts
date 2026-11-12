@@ -105,10 +105,11 @@ test("confirm a page template with photo placeholders, edit it, and create indep
   const savedContent = (await sourceSaved.json()).content;
 
   await page.goto(`/admin/pages/${source.id}`);
-  await page
-    .getByRole("button", { name: "Page settings", exact: true })
-    .click();
-  const copy = page.getByRole("button", {
+  const actions = page.getByRole("button", {
+    name: "Page actions",
+    exact: true,
+  });
+  const copy = page.getByRole("menuitem", {
     name: "Save as template",
     exact: true,
   });
@@ -121,6 +122,7 @@ test("confirm a page template with photo placeholders, edit it, and create indep
     if (request.method() === "POST" && request.url().endsWith("/api/templates"))
       copies++;
   });
+  await actions.click();
   await copy.click();
   await expect(confirmation).toContainText(
     "Photos will be replaced with placeholders",
@@ -129,7 +131,8 @@ test("confirm a page template with photo placeholders, edit it, and create indep
     .getByRole("button", { name: "Cancel", exact: true })
     .click();
   expect(copies).toBe(0);
-  await expect(copy).toBeFocused();
+  await expect(actions).toBeFocused();
+  await actions.click();
   await copy.click();
   const name = `Memory layout ${suffix}`;
   await confirmation.getByRole("textbox", { name: "Template name" }).fill(name);

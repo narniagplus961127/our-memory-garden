@@ -414,8 +414,9 @@ test("custom colours, preserved column contents and page settings work with touc
   await expect(page.getByLabel("Page title", { exact: true })).toHaveValue(
     "A renamed garden page",
   );
+  await page.getByRole("button", { name: "Page actions", exact: true }).click();
   await expect(
-    page.getByRole("link", {
+    page.getByRole("menuitem", {
       name: "View page (opens in a new tab)",
       exact: true,
     }),
