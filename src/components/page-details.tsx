@@ -10,27 +10,24 @@ import type { GardenPage } from "@/lib/pages";
 import type { Category } from "@/lib/organization";
 import { displayPhotoUrl } from "@/lib/media";
 import { PhotoPicker } from "./media-library";
-import { detailsOf, usePageDetails } from "./use-page-details";
-import { TrashAction } from "./page-recovery";
+import { detailsOf, type usePageDetails } from "./use-page-details";
 export function PageDetails({
   page,
-  accountId,
   visibility,
-  onSaved,
-  contentSaved,
+  save,
+  categoryBusy,
+  setCategoryBusy,
 }: {
   page: GardenPage;
-  accountId: string;
   visibility: GardenPage["visibility"];
-  onSaved: (page: GardenPage) => void;
-  contentSaved: boolean;
+  save: ReturnType<typeof usePageDetails>;
+  categoryBusy: boolean;
+  setCategoryBusy: (busy: boolean) => void;
 }) {
-  const save = usePageDetails(page, accountId, onSaved),
-    { details, status, change } = save;
+  const { details, status, change } = save;
   const [error, setError] = useState(""),
     [list, setList] = useState<Category[]>([]),
     [name, setName] = useState(""),
-    [categoryBusy, setCategoryBusy] = useState(false),
     [showComparison, setShowComparison] = useState(true);
   useEffect(() => {
     let cancelled = false;
@@ -359,22 +356,6 @@ export function PageDetails({
           </Button>
         </>
       )}
-      <section className="settings-field" aria-label="Delete page">
-        <h3>Delete page</h3>
-        <p className="muted m-0">
-          Move this page to trash. You can restore it later.
-        </p>
-        <TrashAction
-          page={page}
-          editor
-          disabled={!contentSaved || status !== "Saved" || categoryBusy}
-        />
-        {(!contentSaved || status !== "Saved" || categoryBusy) && (
-          <small className="muted">
-            Finish saving or resolve any changes before deleting this page.
-          </small>
-        )}
-      </section>
     </div>
   );
 }

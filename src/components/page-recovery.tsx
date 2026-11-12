@@ -8,6 +8,7 @@ import {
   useRef,
   useState,
   type ReactNode,
+  type RefObject,
 } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -128,13 +129,16 @@ export function RestoreVersion({
 export function TrashAction({
   page: initialPage,
   icon = false,
-  editor = false,
+  editor,
   disabled = false,
   onDone,
 }: {
   page: PageCardData;
   icon?: boolean;
-  editor?: boolean;
+  editor?: {
+    onClose: () => void;
+    returnFocus: RefObject<HTMLElement | null>;
+  };
   disabled?: boolean;
   onDone?: (message: string) => void;
 }) {
@@ -143,19 +147,20 @@ export function TrashAction({
   const basePage =
     recovery?.page.id === initialPage.id ? recovery.page : initialPage;
   const [action, setAction] = useState<"trash" | "restore" | "delete" | null>(
-      null,
+      editor ? "trash" : null,
     ),
     [busy, setBusy] = useState(false),
     [error, setError] = useState(""),
     [success, setSuccess] = useState(""),
     [references, setReferences] = useState<InboundReference[] | null>(null),
-    [referencesLoading, setReferencesLoading] = useState(false),
+    [referencesLoading, setReferencesLoading] = useState(Boolean(editor)),
     [referenceAttempt, setReferenceAttempt] = useState(0),
     [reviewedPage, setReviewedPage] = useState<PageCardData | null>(null);
   const page =
     editor && action === "trash" && reviewedPage ? reviewedPage : basePage;
   const pending = useRef(false),
     trigger = useRef<HTMLButtonElement>(null);
+  const inEditor = Boolean(editor);
   useEffect(() => {
     if (action !== "trash") return;
     const controller = new AbortController();
@@ -170,13 +175,13 @@ export function TrashAction({
         if (!Array.isArray(data.references))
           throw Error("Could not check links. Try again.");
         if (
-          editor &&
+          inEditor &&
           (!data.page ||
             data.page.id !== page.id ||
             !Number.isSafeInteger(data.page.version))
         )
           throw Error("Could not review this page. Close the popup and retry.");
-        if (editor && !controller.signal.aborted) setReviewedPage(data.page);
+        if (inEditor && !controller.signal.aborted) setReviewedPage(data.page);
         if (!controller.signal.aborted) setReferences(data.references);
       })
       .catch((failure) => {
@@ -191,11 +196,11 @@ export function TrashAction({
         if (!controller.signal.aborted) setReferencesLoading(false);
       });
     return () => controller.abort();
-  }, [action, page.id, referenceAttempt, editor]);
+  }, [action, page.id, referenceAttempt, inEditor]);
   function cancel() {
     setAction(null);
     setError("");
-    requestAnimationFrame(() => trigger.current?.focus());
+    editor?.onClose();
   }
   async function submit() {
     if (!action || disabled || pending.current || referencesLoading) return;
@@ -226,8 +231,10 @@ export function TrashAction({
       setSuccess(message);
       setAction(null);
       onDone?.(message);
-      if (editor && action === "trash") router.replace("/admin/pages");
-      else router.refresh();
+      if (editor && action === "trash") {
+        editor.onClose();
+        router.replace("/admin/pages");
+      } else router.refresh();
     } catch (e) {
       setError(
         e instanceof Error
@@ -240,8 +247,8 @@ export function TrashAction({
     }
   }
   return (
-    <div className={icon ? undefined : "recovery-action"}>
-      {page.deleted_at ? (
+    <div className={icon || editor ? undefined : "recovery-action"}>
+      {editor ? null : page.deleted_at ? (
         <>
           <Button
             className="button"
@@ -291,13 +298,7 @@ export function TrashAction({
               disabled || page.is_homepage || busy || (icon && Boolean(success))
             }
           >
-            {icon ? (
-              <Trash2 aria-hidden="true" />
-            ) : editor ? (
-              "Delete page"
-            ) : (
-              "Move to trash"
-            )}
+            {icon ? <Trash2 aria-hidden="true" /> : "Move to trash"}
           </Button>
           {page.is_homepage && !icon && (
             <p>
@@ -339,9 +340,13 @@ export function TrashAction({
           reloadLabel="Reload page"
           onConfirm={() => void submit()}
           onCancel={cancel}
+          returnFocus={
+            action === "trash" ? (editor?.returnFocus ?? trigger) : undefined
+          }
           onReload={() => {
             setAction(null);
             setError("");
+            editor?.onClose();
             router.refresh();
           }}
         >

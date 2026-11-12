@@ -248,7 +248,8 @@ test("templates start independently and the device controls resize the actual re
   await page.getByRole("link", { name: new RegExp(second.title) }).click();
   await expect(page).toHaveURL("/admin/pages/" + second.id);
   await expect(page.getByLabel("Page title", { exact: true })).toBeEnabled();
-  await page.getByRole("link", { name: "History", exact: true }).click();
+  await page.getByRole("button", { name: "Page actions", exact: true }).click();
+  await page.getByRole("menuitem", { name: "History", exact: true }).click();
   await expect(
     page.getByRole("heading", { name: "Version history", exact: true }),
   ).toBeVisible();

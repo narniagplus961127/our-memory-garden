@@ -40,18 +40,35 @@ test("editor deletion reviews the current saved page, keeps failures, protects h
   await page
     .getByRole("button", { name: "Page settings", exact: true })
     .click();
-  const remove = page.getByRole("button", { name: "Delete page", exact: true });
+  const actions = page.getByRole("button", {
+    name: "Page actions",
+    exact: true,
+  });
+  const remove = page.getByRole("menuitem", {
+    name: "Delete page",
+    exact: true,
+  });
+  const openRemoval = async () => {
+    await actions.click();
+    await remove.click();
+  };
   const title = "Saved before removing " + Date.now();
   await page.getByLabel("Page title", { exact: true }).fill(title);
+  await actions.click();
   await expect(remove).toBeDisabled();
+  await expect(
+    page.getByRole("menuitem", { name: "Save as template", exact: true }),
+  ).toBeDisabled();
+  await page.keyboard.press("Escape");
   await saved(page);
   await page.getByLabel("Page date", { exact: true }).fill("2026-11-05");
+  await actions.click();
   await expect(remove).toBeDisabled();
+  await page.keyboard.press("Escape");
   await expect(
     page.getByRole("status", { name: "Page details status", exact: true }),
   ).toHaveText("Saved");
-  await expect(remove).toBeEnabled();
-  await remove.click();
+  await openRemoval();
   let dialog = page.getByRole("dialog", {
     name: "Move " + title + " to trash?",
     exact: true,
@@ -66,9 +83,9 @@ test("editor deletion reviews the current saved page, keeps failures, protects h
   ).toBeFocused();
   await page.keyboard.press("Escape");
   await expect(dialog).toHaveCount(0);
-  await expect(remove).toBeFocused();
+  await expect(actions).toBeFocused();
   expect((await page.request.get("/api/pages/" + p.id)).ok()).toBeTruthy();
-  await remove.click();
+  await openRemoval();
   await expect(confirm()).toBeEnabled();
   const current = await (await page.request.get("/api/pages/" + p.id)).json();
   expect(
@@ -82,7 +99,7 @@ test("editor deletion reviews the current saved page, keeps failures, protects h
   await confirm().click();
   await expect(dialog.getByRole("alert")).toContainText("This page changed");
   await dialog.getByRole("button", { name: "Cancel", exact: true }).click();
-  await remove.click();
+  await openRemoval();
   dialog = page.getByRole("dialog", {
     name: "Move " + title + " elsewhere to trash?",
     exact: true,
@@ -113,9 +130,7 @@ test("editor deletion reviews the current saved page, keeps failures, protects h
     (item: { is_homepage: boolean }) => item.is_homepage,
   );
   await page.goto("/admin/pages/" + home.id);
-  await page
-    .getByRole("button", { name: "Page settings", exact: true })
-    .click();
+  await actions.click();
   await expect(remove).toBeDisabled();
 });
 

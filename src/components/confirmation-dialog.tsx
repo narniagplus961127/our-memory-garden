@@ -1,5 +1,5 @@
 "use client";
-import { useRef, type ReactNode } from "react";
+import { useRef, type ReactNode, type RefObject } from "react";
 import { Button } from "./ui/button";
 import { Modal } from "./modal";
 export function ConfirmationDialog({
@@ -15,6 +15,7 @@ export function ConfirmationDialog({
   onCancel,
   onReload,
   confirmDisabled = false,
+  returnFocus,
 }: {
   title: string;
   description: string;
@@ -28,6 +29,7 @@ export function ConfirmationDialog({
   onCancel: () => void;
   onReload?: () => void;
   confirmDisabled?: boolean;
+  returnFocus?: RefObject<HTMLElement | null>;
 }) {
   const cancel = useRef<HTMLButtonElement>(null);
   return (
@@ -37,6 +39,7 @@ export function ConfirmationDialog({
       busy={busy}
       onClose={onCancel}
       initialFocus={cancel}
+      returnFocus={returnFocus}
       className="confirmation-dialog"
       footer={
         <>

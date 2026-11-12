@@ -144,8 +144,9 @@ test("new page URL follows its title until edited and rejects duplicates without
     page.getByRole("link", { name: "History and recovery", exact: true }),
   ).toHaveCount(0);
   await page.locator('.admin-page-cards a[href="' + savedPath + '"]').click();
+  await page.getByRole("button", { name: "Page actions", exact: true }).click();
   await expect(
-    page.getByRole("link", { name: "History", exact: true }),
+    page.getByRole("menuitem", { name: "History", exact: true }),
   ).toBeVisible();
 });
 

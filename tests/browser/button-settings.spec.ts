@@ -181,7 +181,7 @@ test("button width and custom colours autosave, render publicly, reset and rejec
     ).toBe(page.viewportSize()!.width);
 });
 
-test("sidebar page settings and view link replace header actions; simple templates preserve legacy blocks", async ({
+test("page actions fit in the header and open the website; sidebar settings and legacy blocks remain accessible", async ({
   page,
   browser,
   baseURL,
@@ -223,12 +223,35 @@ test("sidebar page settings and view link replace header actions; simple templat
   await expect(
     page.getByRole("link", { name: "Dashboard", exact: true }),
   ).toHaveCount(0);
-  const viewLink = page.getByRole("link", {
+  const actions = page.getByRole("button", {
+    name: "Page actions",
+    exact: true,
+  });
+  const menu = page.getByRole("menu");
+  await expect(menu).toHaveCount(0);
+  await actions.press("Enter");
+  const viewLink = menu.getByRole("menuitem", {
     name: "View page (opens in a new tab)",
     exact: true,
   });
   await expect(viewLink).toHaveAttribute("href", "/p/" + created.id);
   await expect(viewLink).toHaveAttribute("target", "_blank");
+  await expect(viewLink).toBeFocused();
+  await page.keyboard.press("Escape");
+  await expect(actions).toBeFocused();
+  const triggerBounds = (await actions.boundingBox())!;
+  await actions.click();
+  const bounds = (await menu.boundingBox())!;
+  expect(bounds.x).toBeGreaterThanOrEqual(0);
+  expect(bounds.x + bounds.width).toBeLessThanOrEqual(
+    page.viewportSize()!.width,
+  );
+  expect(
+    Math.abs(bounds.x + bounds.width - triggerBounds.x - triggerBounds.width),
+  ).toBeLessThan(2);
+  await page.screenshot({
+    path: testInfo.outputPath("editor-page-actions.png"),
+  });
   const newTab = page.waitForEvent("popup");
   await viewLink.click();
   const view = await newTab;
@@ -302,10 +325,6 @@ test("sidebar page settings and view link replace header actions; simple templat
   const homepage = await (await page.request.get("/api/pages")).json();
   const home = homepage.find((p: { is_homepage: boolean }) => p.is_homepage);
   await page.goto("/admin/pages/" + home.id);
-  await expect(
-    page.getByRole("link", {
-      name: "View page (opens in a new tab)",
-      exact: true,
-    }),
-  ).toHaveAttribute("href", "/");
+  await actions.click();
+  await expect(viewLink).toHaveAttribute("href", "/");
 });
