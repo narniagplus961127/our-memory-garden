@@ -369,6 +369,7 @@ export const gardenConfig: Config<
         <AnimatedBlock
           animation={props.animation}
           editing={puck.isEditing}
+          className="garden-block garden-photo-grid-block"
           style={blockStyle(props)}
         >
           <GridCanvas {...props} editing={puck.isEditing} />

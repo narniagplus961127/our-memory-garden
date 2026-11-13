@@ -1900,6 +1900,9 @@ button.primary {
 .garden-photo-grid {
   min-width: 0;
 }
+.garden-photo-grid-block {
+  padding-block: 0;
+}
 .photo-grid-measured {
   position: relative;
 }
