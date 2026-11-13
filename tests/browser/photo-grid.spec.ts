@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect, type Locator } from "@playwright/test";
 import { readFile } from "node:fs/promises";
 import sharp from "sharp";
 import { selectBlock, setVisibility } from "./editor-controls";
@@ -13,6 +13,17 @@ const env = Object.fromEntries(
     ]),
 );
 const headers = { Origin: env.NEXT_PUBLIC_APP_URL };
+
+function sectionInsets(grid: Locator) {
+  return grid.evaluate((element) => {
+    const section = element.closest(".garden-section")!.getBoundingClientRect();
+    const grid = element.getBoundingClientRect();
+    return [
+      Math.round(grid.left - section.left),
+      Math.round(section.right - grid.right),
+    ];
+  });
+}
 
 test("add a Photo grid, select photos, reorder and open the website viewer", async ({
   page,
@@ -148,6 +159,38 @@ test("add a Photo grid, select photos, reorder and open the website viewer", asy
   await expect(rows).toHaveCount(2);
   await page.getByLabel("Gap (px)", { exact: true }).fill("16");
   await expect(status).toHaveText("Saved");
+  const canvas = page.frameLocator("iframe");
+  const grid = canvas.locator(".garden-photo-grid");
+  const section = canvas.locator(".garden-section");
+  const insets = isMobile ? [28, 28] : [64, 64];
+  await expect.poll(() => sectionInsets(grid)).toEqual(insets);
+  const firstTile = grid.locator(".photo-grid-tile").first();
+  const normalWidth = (await grid.boundingBox())!.width;
+  await selectBlock(page, "Select Section 1");
+  await page
+    .getByRole("button", { name: "Open settings panel", exact: true })
+    .click();
+  const width = page.getByRole("group", { name: "Section width" });
+  await width.getByRole("button", { name: "Full width", exact: true }).click();
+  await expect(status).toHaveText("Saved");
+  await expect(section).toHaveClass(/garden-section-full/);
+  await expect.poll(() => sectionInsets(grid)).toEqual([0, 0]);
+  expect((await grid.boundingBox())!.width).toBeGreaterThan(normalWidth);
+  await expect
+    .poll(() =>
+      firstTile.evaluate((tile) => {
+        const layout = tile.parentElement!;
+        const width = layout.clientWidth;
+        const columns = width < 300 ? 1 : width < 640 ? 2 : width < 960 ? 3 : 4;
+        const expected = (width - 16 * (columns - 1)) / columns;
+        return Math.abs(tile.getBoundingClientRect().width - expected);
+      }),
+    )
+    .toBeLessThan(1);
+  await width
+    .getByRole("button", { name: "Normal container", exact: true })
+    .click();
+  await expect(status).toHaveText("Saved");
   await page.screenshot({ path: info.outputPath("photo-grid-editor.png") });
   await setVisibility(page, "public");
   await expect(status).toHaveText("Saved");
@@ -167,6 +210,8 @@ test("add a Photo grid, select photos, reorder and open the website viewer", asy
       exact: true,
     });
     await expect(open).toBeVisible();
+    const publicGrid = website.locator(".garden-photo-grid");
+    await expect.poll(() => sectionInsets(publicGrid)).toEqual(insets);
     const landscape = await open.locator("img").boundingBox();
     const portrait = await website
       .getByRole("button", { name: "Open Photo 2", exact: true })
@@ -189,6 +234,16 @@ test("add a Photo grid, select photos, reorder and open the website viewer", asy
     await website.screenshot({
       path: info.outputPath("photo-grid-website.png"),
     });
+    await selectBlock(page, "Select Section 1");
+    await page
+      .getByRole("button", { name: "Open settings panel", exact: true })
+      .click();
+    await width
+      .getByRole("button", { name: "Full width", exact: true })
+      .click();
+    await expect(status).toHaveText("Saved");
+    await website.reload();
+    await expect.poll(() => sectionInsets(publicGrid)).toEqual([0, 0]);
     expect(errors).toEqual([]);
   } finally {
     await visitor.close();
