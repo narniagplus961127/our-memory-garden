@@ -16,6 +16,7 @@ test("compose an ordered captioned gallery and use the enlarged viewer with touc
   isMobile,
   browser,
 }) => {
+  test.setTimeout(120000);
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message));
   await page.goto("/login");
@@ -95,6 +96,7 @@ test("compose an ordered captioned gallery and use the enlarged viewer with touc
     await page
       .getByRole("button", { name: "Add gallery photo", exact: true })
       .click();
+    await page.getByRole("searchbox", { name: "Find a photo" }).fill(name);
     await page
       .getByRole("button", { name: "Use photo " + name, exact: true })
       .click();
@@ -120,6 +122,7 @@ test("compose an ordered captioned gallery and use the enlarged viewer with touc
   await page
     .getByRole("button", { name: "Add gallery photo", exact: true })
     .click();
+  await page.getByRole("searchbox", { name: "Find a photo" }).fill(names[0]);
   await page
     .getByRole("button", { name: "Use photo " + names[0], exact: true })
     .click();

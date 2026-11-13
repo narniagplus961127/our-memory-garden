@@ -5,6 +5,7 @@ import { templateData, validPageData } from "../blocks";
 import { mergePage, snapshot, equal, type PageSnapshot } from "../page-merge";
 import { RequestError } from "./http";
 import { validSlug } from "../page-address";
+import { savePhotoGridRefs } from "./photo-grids";
 export type Administrator = { id: string; email: string; name: string };
 const validId =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -39,10 +40,18 @@ export async function createPrivatePage(
     );
   const id = crypto.randomUUID();
   try {
-    const rows = await database()<
-      GardenPage[]
-    >`insert into pages(id,title,slug,content,created_by,updated_by) values (${id},${title},${slug === undefined ? "page-" + id : (slug as string)},${database().json(content)},${administrator.id},${administrator.id}) returning *`;
-    return JSON.parse(JSON.stringify(rows[0]));
+    return await database().begin(async (sql) => {
+      const [page] = await sql<
+        GardenPage[]
+      >`insert into pages(id,title,slug,content,created_by,updated_by)
+        values (${id},${title},${slug === undefined ? "page-" + id : (slug as string)},${sql.json(content)},${administrator.id},${administrator.id}) returning *`;
+      const withGrids = await savePhotoGridRefs(sql, id, null, content);
+      if (withGrids === content) return JSON.parse(JSON.stringify(page));
+      const [updated] = await sql<
+        GardenPage[]
+      >`update pages set content=${sql.json(withGrids)} where id=${id} returning *`;
+      return JSON.parse(JSON.stringify(updated));
+    });
   } catch (error) {
     if (
       error &&
@@ -136,6 +145,12 @@ export async function savePage(
       );
     if (equal(snapshot(current), merged.draft))
       return { kind: "saved" as const, page: current };
+    const content = await savePhotoGridRefs(
+      sql,
+      id,
+      current.content,
+      merged.draft.content,
+    );
     const reuseGroup =
       input.reason !== "resolution" &&
       input.editorSessionId &&
@@ -146,7 +161,7 @@ export async function savePage(
     const group = reuseGroup ? current.edit_group_id : crypto.randomUUID();
     const [updated] = await sql<
       GardenPage[]
-    >`update pages set title=${merged.draft.title},content=${sql.json(merged.draft.content)},visibility=${merged.draft.visibility},version=version+1,updated_at=now(),updated_by=${administrator.id},edit_group_id=${group},editor_session_id=${input.editorSessionId ?? null},edit_reason=${input.reason === "resolution" ? "resolution" : "edit"} where id=${id} returning *, ${Boolean(current.is_homepage)} as is_homepage`;
+    >`update pages set title=${merged.draft.title},content=${sql.json(content)},visibility=${merged.draft.visibility},version=version+1,updated_at=now(),updated_by=${administrator.id},edit_group_id=${group},editor_session_id=${input.editorSessionId ?? null},edit_reason=${input.reason === "resolution" ? "resolution" : "edit"} where id=${id} returning *, ${Boolean(current.is_homepage)} as is_homepage`;
     return {
       kind: "saved" as const,
       page: JSON.parse(JSON.stringify(updated)) as GardenPage,

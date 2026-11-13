@@ -8,6 +8,7 @@ import { useEffect, useRef, useState, useId } from "react";
 import { Tabs } from "radix-ui";
 import Link from "next/link";
 import { displayPhotoUrl, MAX_PHOTO_BYTES, type Photo } from "@/lib/media";
+import { photoGridBatchSize, type GridPickerPhoto } from "@/lib/photo-grid";
 type Upload = {
   id: string;
   file: File;
@@ -241,8 +242,10 @@ export function PhotoDetails({
 }
 export function MediaLibrary({
   onSelect,
+  multiple,
 }: {
   onSelect?: (photoId: string) => void;
+  multiple?: { selected: Set<string>; toggle: (id: string) => void };
 }) {
   const [photos, setPhotos] = useState<Photo[]>([]),
     [loading, setLoading] = useState(true),
@@ -252,11 +255,17 @@ export function MediaLibrary({
     [detail, setDetail] = useState<Photo | null>(null);
   const fieldId = useId();
   const detailsTrigger = useRef<HTMLButtonElement | null>(null);
+  const choosingMany = Boolean(multiple);
+  const [pickerPhotos, setPickerPhotos] = useState<GridPickerPhoto[]>([]);
+  const [pickerMore, setPickerMore] = useState(false);
+  const [pickerPage, setPickerPage] = useState(0);
+  const [pickerRefresh, setPickerRefresh] = useState(0);
   function closeDetails() {
     setDetail(null);
     requestAnimationFrame(() => detailsTrigger.current?.focus());
   }
   useEffect(() => {
+    if (choosingMany) return;
     const controller = new AbortController();
     fetch("/api/media", { cache: "no-store", signal: controller.signal })
       .then(async (response) => {
@@ -278,8 +287,59 @@ export function MediaLibrary({
         if (!controller.signal.aborted) setLoading(false);
       });
     return () => controller.abort();
-  }, []);
+  }, [choosingMany]);
+  useEffect(() => {
+    if (!choosingMany) return;
+    const controller = new AbortController();
+    setLoading(true);
+    setError("");
+    const offset = pickerPage * photoGridBatchSize;
+    const params = new URLSearchParams({
+      view: "grid-picker",
+      search: query,
+      offset: String(offset),
+    });
+    const timer = setTimeout(
+      () => {
+        fetch("/api/media?" + params, { signal: controller.signal })
+          .then(async (response) => {
+            const data: {
+              photos: GridPickerPhoto[];
+              more: boolean;
+              error?: string;
+            } = await response.json();
+            if (!response.ok) throw Error(data.error);
+            if (controller.signal.aborted) return;
+            setPickerPhotos((current) => {
+              const existing = current.slice(0, offset);
+              const ids = new Set(existing.map((photo) => photo.photoId));
+              return [
+                ...existing,
+                ...data.photos.filter((photo) => !ids.has(photo.photoId)),
+              ];
+            });
+            setPickerMore(data.more);
+          })
+          .catch((cause: Error) => {
+            if (!controller.signal.aborted) setError(cause.message);
+          })
+          .finally(() => {
+            if (!controller.signal.aborted) setLoading(false);
+          });
+      },
+      pickerPage ? 0 : 150,
+    );
+    return () => {
+      clearTimeout(timer);
+      controller.abort();
+    };
+  }, [choosingMany, pickerPage, pickerRefresh, query]);
   async function refresh() {
+    if (choosingMany) {
+      setPickerPage(0);
+      setPickerRefresh((current) => current + 1);
+      return;
+    }
     setLoading(true);
     setError("");
     try {
@@ -322,6 +382,10 @@ export function MediaLibrary({
         photo,
         ...current.filter((p) => p.id !== photo.id),
       ]);
+      if (choosingMany) {
+        setPickerPage(0);
+        setPickerRefresh((current) => current + 1);
+      }
       update(item.id, { state: "Ready" });
     } catch (error) {
       update(item.id, {
@@ -346,7 +410,11 @@ export function MediaLibrary({
       .includes(query.toLowerCase()),
   );
   return (
-    <div className={onSelect ? "media-library media-picker" : "media-library"}>
+    <div
+      className={
+        onSelect || multiple ? "media-library media-picker" : "media-library"
+      }
+    >
       <div className="media-upload">
         <Label htmlFor={fieldId + "-upload"}>Upload photos</Label>
         <Input
@@ -427,7 +495,15 @@ export function MediaLibrary({
             id={fieldId + "-search"}
             type="search"
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            maxLength={multiple ? 200 : undefined}
+            onChange={(e) => {
+              setQuery(e.target.value);
+              if (multiple) {
+                setPickerPage(0);
+                setPickerPhotos([]);
+                setPickerMore(false);
+              }
+            }}
           />
         </div>
         <Button
@@ -447,65 +523,101 @@ export function MediaLibrary({
         </p>
       )}
       {loading && <p role="status">Loading photos…</p>}
-      {!loading && !filtered.length && (
+      {!loading && !(multiple ? pickerPhotos.length : filtered.length) && (
         <div className="empty-state">
           <h3>
-            {photos.length ? "No matching photos" : "Let a memory take root"}
+            {query || photos.length
+              ? "No matching photos"
+              : "Let a memory take root"}
           </h3>
           <p className="muted">
-            {photos.length
+            {query || photos.length
               ? "Try another photo name."
               : "Upload your first photo to share it across your pages."}
           </p>
         </div>
       )}
       <div className="media-grid">
-        {filtered.map((photo) => (
-          <article className="media-card" key={photo.id}>
-            {photo.deletionPending ? (
-              <div className="media-cleanup-preview">Deletion unfinished</div>
-            ) : (
-              <img
-                src={displayPhotoUrl(photo.id)}
-                alt={photo.name}
-                loading="lazy"
-              />
-            )}
-            <div>
-              <strong>{photo.name}</strong>
-              <small>
-                {photo.deletionPending
-                  ? "Deletion unfinished · retry in Details"
-                  : photo.publiclyAccessible
-                    ? "Publicly accessible"
-                    : "Private photo"}{" "}
-                · {photo.usages.length}{" "}
-                {photo.usages.length === 1 ? "page" : "pages"}
-              </small>
-              <div className="actions">
-                {onSelect && !photo.deletionPending ? (
-                  <Button
-                    className="secondary"
-                    aria-label={"Use photo " + photo.name}
-                    onClick={() => onSelect(photo.id)}
-                  >
-                    Use photo
-                  </Button>
-                ) : null}
-                <Button
-                  className="secondary"
-                  aria-label={"Photo details " + photo.name}
-                  onClick={(event) =>
-                    void details(photo.id, event.currentTarget)
-                  }
-                >
-                  Details
-                </Button>
-              </div>
-            </div>
-          </article>
-        ))}
+        {multiple
+          ? pickerPhotos.map((photo) => (
+              <Button
+                key={photo.photoId}
+                variant="outline"
+                className="photo-grid-choice"
+                aria-pressed={multiple.selected.has(photo.photoId)}
+                onClick={() => multiple.toggle(photo.photoId)}
+              >
+                <img
+                  src={displayPhotoUrl(photo.photoId)}
+                  alt=""
+                  loading="lazy"
+                />
+                <span>{photo.name}</span>
+                {multiple.selected.has(photo.photoId) && (
+                  <span className="photo-grid-check" aria-hidden="true">
+                    ✓
+                  </span>
+                )}
+              </Button>
+            ))
+          : filtered.map((photo) => (
+              <article className="media-card" key={photo.id}>
+                {photo.deletionPending ? (
+                  <div className="media-cleanup-preview">
+                    Deletion unfinished
+                  </div>
+                ) : (
+                  <img
+                    src={displayPhotoUrl(photo.id)}
+                    alt={photo.name}
+                    loading="lazy"
+                  />
+                )}
+                <div>
+                  <strong>{photo.name}</strong>
+                  <small>
+                    {photo.deletionPending
+                      ? "Deletion unfinished · retry in Details"
+                      : photo.publiclyAccessible
+                        ? "Publicly accessible"
+                        : "Private photo"}{" "}
+                    · {photo.usages.length}{" "}
+                    {photo.usages.length === 1 ? "page" : "pages"}
+                  </small>
+                  <div className="actions">
+                    {onSelect && !photo.deletionPending ? (
+                      <Button
+                        className="secondary"
+                        aria-label={"Use photo " + photo.name}
+                        onClick={() => onSelect(photo.id)}
+                      >
+                        Use photo
+                      </Button>
+                    ) : null}
+                    <Button
+                      className="secondary"
+                      aria-label={"Photo details " + photo.name}
+                      onClick={(event) =>
+                        void details(photo.id, event.currentTarget)
+                      }
+                    >
+                      Details
+                    </Button>
+                  </div>
+                </div>
+              </article>
+            ))}
       </div>
+      {multiple && pickerMore && (
+        <Button
+          type="button"
+          variant="outline"
+          disabled={loading}
+          onClick={() => setPickerPage((current) => current + 1)}
+        >
+          Show more library photos
+        </Button>
+      )}
       {detail && (
         <PhotoDetails
           photo={detail}

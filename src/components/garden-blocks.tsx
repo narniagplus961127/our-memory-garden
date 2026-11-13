@@ -1,6 +1,9 @@
 import { Button } from "@/components/ui/button";
 import { GallerySettings } from "./gallery-settings";
 import { PhotoGallery, type GalleryPhoto } from "./photo-gallery";
+import { GridCanvas, PhotoGridSettings } from "./photo-grid-settings";
+import type { GridPhotoBatch } from "@/lib/photo-grid";
+import { Input } from "./ui/input";
 import { PhotoPicker } from "./media-library";
 import { PageGrid, PageGridSettings } from "./page-grid";
 import type { GridSelection, PageCard } from "@/lib/organization";
@@ -73,6 +76,15 @@ type GardenBlockProps = {
   };
   Gallery: {
     photos: GalleryPhoto[];
+  };
+  PhotoGrid: {
+    gridId?: string;
+    gridRevision?: number;
+    maxColumns?: number;
+    photoGap?: number;
+    photoRadius?: number;
+    initialPhotos?: GridPhotoBatch;
+    photosUrl?: string;
   };
   Button: {
     label: string;
@@ -295,6 +307,74 @@ export const gardenConfig: Config<
     ),
   },
   components: {
+    PhotoGrid: {
+      label: "Photo grid",
+      fields: {
+        ...appearance,
+        gridId: {
+          type: "custom",
+          render: () => <PhotoGridSettings />,
+        },
+        maxColumns: {
+          type: "select",
+          label: "Maximum columns",
+          options: [1, 2, 3, 4].map((value) => ({
+            label: String(value),
+            value,
+          })),
+        },
+        photoGap: {
+          type: "custom",
+          label: "Photo gap",
+          render: ({ value, onChange }) => (
+            <label className="grid gap-2">
+              Gap (px)
+              <Input
+                type="number"
+                min={0}
+                max={40}
+                value={value ?? 12}
+                onChange={(event) => {
+                  const next = event.target.valueAsNumber;
+                  if (Number.isInteger(next) && next >= 0 && next <= 40)
+                    onChange(next);
+                }}
+              />
+            </label>
+          ),
+        },
+        photoRadius: {
+          type: "custom",
+          label: "Photo corner radius",
+          render: ({ value, onChange }) => (
+            <label className="grid gap-2">
+              Corner radius (px)
+              <Input
+                type="number"
+                min={0}
+                max={40}
+                value={value ?? 10}
+                onChange={(event) => {
+                  const next = event.target.valueAsNumber;
+                  if (Number.isInteger(next) && next >= 0 && next <= 40)
+                    onChange(next);
+                }}
+              />
+            </label>
+          ),
+        },
+      },
+      defaultProps: { maxColumns: 4, photoGap: 12, photoRadius: 10 },
+      render: ({ puck, ...props }) => (
+        <AnimatedBlock
+          animation={props.animation}
+          editing={puck.isEditing}
+          style={blockStyle(props)}
+        >
+          <GridCanvas {...props} editing={puck.isEditing} />
+        </AnimatedBlock>
+      ),
+    },
     PageGrid: {
       label: "Page grid",
       fields: {
