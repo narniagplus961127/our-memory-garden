@@ -48,6 +48,10 @@ export function templatePlaceholders(data: PageData): PageData {
       case "Gallery":
         delete props.photos;
         return { type: "Image", props: { ...props, alt: "" } };
+      case "PhotoGrid":
+        delete props.gridId;
+        delete props.gridRevision;
+        break;
       case "Section":
         delete props.backgroundImage;
         props.content = slotContent(block, "content").map(copy);

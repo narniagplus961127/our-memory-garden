@@ -4,6 +4,7 @@ import { database } from "./db";
 import { RequestError } from "./http";
 import type { Administrator } from "./pages";
 import type { GardenPage } from "../pages";
+import { savePhotoGridRefs } from "./photo-grids";
 const validId =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 export type Revision = {
@@ -138,9 +139,16 @@ export async function restoreVersion(
         409,
         "This saved cover photo is unavailable. Current content is preserved.",
       );
+    const content = await savePhotoGridRefs(
+      sql,
+      id,
+      page.content,
+      r.snapshot.content,
+      true,
+    );
     const [saved] = await sql<
       GardenPage[]
-    >`update pages set title=${r.snapshot.title},content=${sql.json(r.snapshot.content)},page_date=${r.snapshot.page_date ?? null},category_id=${category},cover_photo_id=${cover},sharing_title=${sharingTitle},sharing_description=${sharingDescription},sharing_cover_photo_id=${sharingCover},allow_indexing=${allowIndexing},metadata_version=metadata_version+1,version=version+1,updated_at=now(),updated_by=${admin.id},edit_reason='restore',edit_group_id=${crypto.randomUUID()},editor_session_id=null where id=${id} returning *`;
+    >`update pages set title=${r.snapshot.title},content=${sql.json(content)},page_date=${r.snapshot.page_date ?? null},category_id=${category},cover_photo_id=${cover},sharing_title=${sharingTitle},sharing_description=${sharingDescription},sharing_cover_photo_id=${sharingCover},allow_indexing=${allowIndexing},metadata_version=metadata_version+1,version=version+1,updated_at=now(),updated_by=${admin.id},edit_reason='restore',edit_group_id=${crypto.randomUUID()},editor_session_id=null where id=${id} returning *`;
     return saved;
   });
 }

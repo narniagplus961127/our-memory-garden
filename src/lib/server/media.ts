@@ -114,6 +114,17 @@ export async function listPhotos(): Promise<Photo[]> {
     };
   });
 }
+export async function listGridPickerPhotos(
+  query: string,
+  offset: number,
+  limit: number,
+) {
+  return database()<
+    import("../photo-grid").GridPickerPhoto[]
+  >`select id as "photoId",name,width,height from media_photos where status='ready'
+    and strpos(lower(name),lower(${query}))>0
+    order by created_at desc,id limit ${limit} offset ${offset}`;
+}
 async function boundedOriginal(key: string, expected: number) {
   const object = await storage().send(
     new GetObjectCommand({ Bucket: originalsBucket(), Key: key }),

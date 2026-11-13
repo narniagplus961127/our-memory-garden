@@ -33,6 +33,7 @@ import { InlineEditingProvider, useActiveInlineText } from "./inline-editing";
 import { InlineFormatMenu } from "./inline-format-menu";
 import { ColumnLayoutPicker, type ColumnRatio } from "./column-layout-picker";
 import { gardenConfig } from "./garden-blocks";
+import { PhotoGridEditor } from "./photo-grid-settings";
 import { TemplatePlaceholdersOnly } from "./editor-photo-controls";
 import { EditorPageActions } from "./editor-page-actions";
 import { PageAddress } from "./page-address";
@@ -53,7 +54,12 @@ import { equal } from "@/lib/page-merge";
 import { inlinePageData, richPageData, editedPageData } from "@/lib/rich-text";
 const useGardenPuck = createUsePuck<typeof gardenConfig>();
 const RequestBlockRemoval = createContext<(id: string) => void>(() => {});
-const blockLabel = (type: string) => (type === "PageGrid" ? "Page grid" : type);
+const blockLabel = (type: string) =>
+  type === "PageGrid"
+    ? "Page grid"
+    : type === "PhotoGrid"
+      ? "Photo grid"
+      : type;
 type Snapshot = import("@/lib/page-merge").PageSnapshot;
 type InsertionNotice = {
   id: string;
@@ -214,9 +220,11 @@ function InspectorFields({
         ? { title: "Link", keys: ["destination"] }
         : type === "PageGrid"
           ? { title: "Pages", keys: ["selection", "showDate"] }
-          : type === "Gallery"
-            ? { title: "Photos", keys: ["photos"] }
-            : null;
+          : type === "PhotoGrid"
+            ? { title: "Photos", keys: ["gridId"] }
+            : type === "Gallery"
+              ? { title: "Photos", keys: ["photos"] }
+              : null;
   const groups =
     type === "Section"
       ? [
@@ -273,6 +281,9 @@ function InspectorFields({
               "textColor",
               "buttonPadding",
               "buttonRadius",
+              "maxColumns",
+              "photoGap",
+              "photoRadius",
             ],
           },
           {
@@ -420,6 +431,7 @@ type WorkspaceProps = {
     categoryBusy: boolean;
     setCategoryBusy: (busy: boolean) => void;
     getVersion: () => number;
+    photoGridSaved: (page: GardenPage) => void;
   };
   canLeave?: () => boolean;
   content: PageData;
@@ -990,32 +1002,34 @@ function Workspace({
                 </div>
                 <div className="palette-heading">Blocks</div>
                 <div className="garden-palette">
-                  {["Text", "Image", "Button", "PageGrid"].map((name) => (
-                    <div className="palette-card" key={name}>
-                      {target ? (
-                        <Drawer.Item name={name}>
-                          {() => (
-                            <span>
-                              {blockLabel(name)}{" "}
-                              <span aria-hidden="true">⠿</span>
-                            </span>
-                          )}
-                        </Drawer.Item>
-                      ) : (
-                        <span className="palette-unavailable">
-                          {blockLabel(name)}
-                        </span>
-                      )}
-                      <Button
-                        className="secondary palette-add"
-                        aria-label={"Add " + blockLabel(name)}
-                        disabled={!target}
-                        onClick={() => insert(name as BlockName)}
-                      >
-                        ＋
-                      </Button>
-                    </div>
-                  ))}
+                  {["Text", "Image", "PhotoGrid", "Button", "PageGrid"].map(
+                    (name) => (
+                      <div className="palette-card" key={name}>
+                        {target ? (
+                          <Drawer.Item name={name}>
+                            {() => (
+                              <span>
+                                {blockLabel(name)}{" "}
+                                <span aria-hidden="true">⠿</span>
+                              </span>
+                            )}
+                          </Drawer.Item>
+                        ) : (
+                          <span className="palette-unavailable">
+                            {blockLabel(name)}
+                          </span>
+                        )}
+                        <Button
+                          className="secondary palette-add"
+                          aria-label={"Add " + blockLabel(name)}
+                          disabled={!target}
+                          onClick={() => insert(name as BlockName)}
+                        >
+                          ＋
+                        </Button>
+                      </div>
+                    ),
+                  )}
                 </div>
                 <div className="palette-heading">Layout</div>
                 <div className="garden-palette">
@@ -1297,6 +1311,7 @@ export function PageEditor({
           categoryBusy,
           setCategoryBusy,
           getVersion: save.getVersion,
+          photoGridSaved: save.photoGridSaved,
         },
         title: save.working.title,
         content: save.working.content,
@@ -1335,48 +1350,61 @@ export function GardenEditor({
   return (
     <InlineEditingProvider>
       <TemplatePlaceholdersOnly.Provider value={!workspace.pageSettings}>
-        <RequestBlockRemoval.Provider value={setRemoval}>
-          <fieldset
-            className="garden-editor-init"
-            disabled={!ready}
-            aria-busy={!ready}
-            aria-label={
-              workspace.pageSettings ? "Page editor" : "Template editor"
-            }
-          >
-            <Puck
-              permissions={{ delete: false }}
-              config={gardenConfig}
-              dnd={{ enableDragHandle: true, behavior: "static" }}
-              data={initialData}
-              onAction={(action) => {
-                if (action.type === "insert" && action.id)
-                  insertion.current = {
-                    id: action.id,
-                    type: action.componentType,
-                    zone: action.destinationZone,
-                  };
-              }}
-              onChange={(data) =>
-                onContent(editedPageData(documentData(data), workspace.content))
+        <PhotoGridEditor.Provider
+          value={
+            workspace.pageSettings
+              ? {
+                  pageId: workspace.pageSettings.page.id,
+                  saved: workspace.pageSettings.photoGridSaved,
+                }
+              : null
+          }
+        >
+          <RequestBlockRemoval.Provider value={setRemoval}>
+            <fieldset
+              className="garden-editor-init"
+              disabled={!ready}
+              aria-busy={!ready}
+              aria-label={
+                workspace.pageSettings ? "Page editor" : "Template editor"
               }
-              overrides={editorOverrides}
             >
-              <EditorSync content={workspace.content} />
-              <Workspace
-                {...workspace}
-                insertion={insertion}
-                status={ready ? workspace.status : "Loading editor…"}
-              />
-              {removal && (
-                <BlockRemovalDialog
-                  id={removal}
-                  onClose={() => setRemoval(null)}
+              <Puck
+                permissions={{ delete: false }}
+                config={gardenConfig}
+                dnd={{ enableDragHandle: true, behavior: "static" }}
+                data={initialData}
+                onAction={(action) => {
+                  if (action.type === "insert" && action.id)
+                    insertion.current = {
+                      id: action.id,
+                      type: action.componentType,
+                      zone: action.destinationZone,
+                    };
+                }}
+                onChange={(data) =>
+                  onContent(
+                    editedPageData(documentData(data), workspace.content),
+                  )
+                }
+                overrides={editorOverrides}
+              >
+                <EditorSync content={workspace.content} />
+                <Workspace
+                  {...workspace}
+                  insertion={insertion}
+                  status={ready ? workspace.status : "Loading editor…"}
                 />
-              )}
-            </Puck>
-          </fieldset>
-        </RequestBlockRemoval.Provider>
+                {removal && (
+                  <BlockRemovalDialog
+                    id={removal}
+                    onClose={() => setRemoval(null)}
+                  />
+                )}
+              </Puck>
+            </fieldset>
+          </RequestBlockRemoval.Provider>
+        </PhotoGridEditor.Provider>
       </TemplatePlaceholdersOnly.Provider>
     </InlineEditingProvider>
   );

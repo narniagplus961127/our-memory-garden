@@ -62,6 +62,7 @@ export function usePageAutosave(page: GardenPage, accountId: string) {
     source: null as { key: string; value: string | null } | null,
   });
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pendingPhotoGrid = useRef<GardenPage | null>(null);
   const [working, setWorking] = useState(initial),
     [status, setStatus] = useState("Saved"),
     [error, setError] = useState(""),
@@ -140,6 +141,26 @@ export function usePageAutosave(page: GardenPage, accountId: string) {
     setStatus("Conflict · unsaved");
     setError("");
     writeRecovery();
+  }
+  function photoGridSaved(saved: GardenPage) {
+    const s = state.current;
+    if (!s.active || saved.version <= s.version) return;
+    if (s.saving) {
+      if (
+        !pendingPhotoGrid.current ||
+        pendingPhotoGrid.current.version < saved.version
+      )
+        pendingPhotoGrid.current = saved;
+      return;
+    }
+    const next = snapshot(saved);
+    if (equal(s.working, s.base)) {
+      s.base = next;
+      s.version = saved.version;
+      apply(next);
+      return;
+    }
+    showComparison(s.base, saved);
   }
   async function persist() {
     const s = state.current;
@@ -227,6 +248,9 @@ export function usePageAutosave(page: GardenPage, accountId: string) {
       writeRecovery();
     } finally {
       s.saving = false;
+      const grid = pendingPhotoGrid.current;
+      pendingPhotoGrid.current = null;
+      if (grid) photoGridSaved(grid);
       if (again && s.active) void persist();
     }
   }
@@ -485,6 +509,7 @@ export function usePageAutosave(page: GardenPage, accountId: string) {
         if (!equal(s.working, s.base)) writeRecovery();
       }
     },
+    photoGridSaved,
     change,
     editConflictText,
     retry: () => void persist(),

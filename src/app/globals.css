@@ -1896,6 +1896,124 @@ button.primary {
   text-align: center;
   overflow-wrap: anywhere;
 }
+
+.garden-photo-grid {
+  min-width: 0;
+}
+.photo-grid-measured {
+  position: relative;
+}
+.photo-grid-measured .photo-grid-tile {
+  position: absolute;
+}
+.photo-grid-fallback {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr));
+  align-items: start;
+}
+.photo-grid-tile {
+  overflow: hidden;
+  border-radius: var(--tile-radius);
+}
+.photo-grid-tile > button {
+  display: block;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: zoom-in;
+}
+.photo-grid-tile > button:focus-visible {
+  outline-offset: -3px;
+}
+.photo-grid-tile img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.photo-grid-tile .photo-unavailable {
+  height: 100%;
+}
+.photo-grid-placeholder {
+  display: grid;
+  min-height: 112px;
+  place-items: center;
+  padding: 14px;
+  border: 1px dashed var(--line);
+  background: var(--sage);
+  color: var(--garden-muted);
+  text-align: center;
+}
+.photo-grid-feedback {
+  margin-block: 20px 0;
+  text-align: center;
+}
+.photo-grid-editor-item {
+  display: grid;
+  gap: 6px;
+  padding: 6px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+.photo-grid-editor-item img {
+  width: 40px;
+  height: 40px;
+  border-radius: 5px;
+  object-fit: cover;
+}
+.photo-grid-grip {
+  display: grid;
+  min-width: 36px;
+  min-height: 44px;
+  place-items: center;
+  border: 0;
+  background: transparent;
+  cursor: grab;
+}
+.photo-grid-grip:active {
+  cursor: grabbing;
+}
+.photo-grid-picker .media-picker .media-grid {
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 126px), 1fr));
+}
+.photo-grid-choice[data-slot="button"] {
+  position: relative;
+  display: grid;
+  justify-items: start;
+  gap: 6px;
+  min-width: 0;
+  padding: 5px;
+  overflow: hidden;
+  text-align: left;
+  white-space: normal;
+  cursor: pointer;
+}
+.photo-grid-choice img {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  border-radius: 6px;
+  object-fit: cover;
+}
+.photo-grid-choice > span:first-of-type {
+  overflow-wrap: anywhere;
+}
+.photo-grid-check {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  display: grid;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  border-radius: 5px;
+  background: var(--ink);
+  color: var(--cream);
+}
+.photo-grid-selection-count {
+  margin-inline-end: auto;
+  align-self: center;
+}
 .gallery-photo-list {
   list-style: none;
   margin: 0 0 20px;

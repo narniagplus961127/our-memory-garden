@@ -185,6 +185,6 @@ Every block and section has Animation type: Fade in or None. Fade in is enabled 
 
 Navigation removes the visible Your menu subheading and reordering tutorial. Keyboard instructions remain available to assistive technology, and successful removal focuses Navigation. The public header stays at the top while scrolling and uses a menu button at every viewport width. The button opens a full-height drawer. Nested items start collapsed behind a chevron and can expand by click, tap or keyboard. The drawer and submenus respect reduced motion and preserve hidden/private filtering. Each Navigation item can optionally open its destination in a new tab. The default is the current tab. The floating Garden dashboard and Edit this page shortcuts always open in new tabs.
 
-## Photo grid proposal (ticket 56)
+## Photo grid (ticket 56)
 
 Photo grid is an addable widget within a Section. Administrators select photos in batches from the shared Media Library, reorder them, edit captions and alt text, and remove individual entries. The grid keeps photo proportions in a responsive masonry layout with configurable maximum columns, gap and corner radius. Visitors see the first 24 photos, can load another batch, and can open a photo viewer. Collections use a separately stored photo list so the legacy Gallery's 100-photo cap does not apply. Existing media access and page recovery rules apply. See [ticket 56](issues/56-photo-grid.md) for the FigCraft review flows and acceptance criteria.

@@ -139,7 +139,11 @@ export default async function History({
                   page visibility.
                 </p>
                 <div className="history-snapshot">
-                  <GardenContent data={selected.content} />
+                  <GardenContent
+                    data={selected.content}
+                    pageId={id}
+                    history={version}
+                  />
                 </div>
                 <RestoreVersion key={version} page={page} revision={version} />
               </>

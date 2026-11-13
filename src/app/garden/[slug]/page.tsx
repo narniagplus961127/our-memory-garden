@@ -35,7 +35,7 @@ export default async function GardenPage({
         >
           <h1>{page.title}</h1>
         </div>
-        <GardenContent data={page.content} />
+        <GardenContent data={page.content} pageId={page.id} />
       </main>
     </>
   );

@@ -8,7 +8,17 @@ import { currentAdministrator } from "@/lib/server/auth";
 import { slotNames, slotContent, type PageBlock } from "@/lib/blocks";
 import type { GridSelection } from "@/lib/organization";
 import { inlinePageData } from "@/lib/rich-text";
-export async function GardenContent({ data }: { data: PageData }) {
+import { gridPhotosUrl, photoGridRef } from "@/lib/photo-grid";
+import { readGridBatch } from "@/lib/server/photo-grids";
+export async function GardenContent({
+  data,
+  pageId,
+  history,
+}: {
+  data: PageData;
+  pageId: string;
+  history?: number;
+}) {
   const administrator = await currentAdministrator();
   async function resolve(blocks: PageBlock[]): Promise<PageBlock[]> {
     return Promise.all(
@@ -22,6 +32,16 @@ export async function GardenContent({ data }: { data: PageData }) {
           props.cards = cards;
           if (!administrator)
             props.selection = { ...selection, pageIds: cards.map((p) => p.id) };
+        }
+        const photoGrid = photoGridRef(block);
+        if (photoGrid) {
+          props.initialPhotos = await readGridBatch(photoGrid, 0);
+          props.photosUrl = gridPhotosUrl(
+            pageId,
+            block.props.id,
+            photoGrid,
+            history,
+          );
         }
         return { ...block, props };
       }),

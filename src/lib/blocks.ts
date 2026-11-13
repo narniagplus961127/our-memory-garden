@@ -12,6 +12,7 @@ export const blockNames = [
   "Banner",
   "Image",
   "PageGrid",
+  "PhotoGrid",
   "Gallery",
   "Button",
   "Section",
@@ -116,6 +117,13 @@ export function validPageData(
           Banner: ["heading", "description", "background", "align"],
           Image: ["photoId", "alt", "caption", "fit", "width", "destination"],
           PageGrid: ["selection", "showDate"],
+          PhotoGrid: [
+            "gridId",
+            "gridRevision",
+            "maxColumns",
+            "photoGap",
+            "photoRadius",
+          ],
           Gallery: ["photos"],
           Button: [
             "label",
@@ -239,6 +247,29 @@ export function validPageData(
           props[key] === undefined ? !required : values.includes(props[key]);
         if (!opt("align", ["left", "center", "right"])) return false;
         switch (type) {
+          case "PhotoGrid":
+            return (
+              ((props.gridId === undefined &&
+                props.gridRevision === undefined) ||
+                (typeof props.gridId === "string" &&
+                  /^[\da-f]{8}-[\da-f]{4}-[\da-f]{4}-[\da-f]{4}-[\da-f]{12}$/i.test(
+                    props.gridId,
+                  ) &&
+                  Number.isInteger(props.gridRevision) &&
+                  props.gridRevision >= 1 &&
+                  props.gridRevision <= 999999999)) &&
+              [
+                ["maxColumns", 1, 4],
+                ["photoGap", 0, 40],
+                ["photoRadius", 0, 40],
+              ].every(([key, min, max]) => {
+                const value = props[key as string];
+                return (
+                  value === undefined ||
+                  (Number.isInteger(value) && value >= min && value <= max)
+                );
+              })
+            );
           case "PageGrid":
             return (
               validGrid(props.selection) &&
