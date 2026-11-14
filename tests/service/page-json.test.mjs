@@ -4,7 +4,7 @@ import sharp from "sharp";
 
 const origin = process.env.TEST_BASE_URL;
 
-test("page JSON replaces content safely and independent copies retain all media", async () => {
+test("imports older JSON and another page’s content without replacing page settings", async () => {
   const headers = { Origin: origin, "Content-Type": "application/json" };
   async function request(path, method = "GET", body, clientHeaders = headers) {
     return fetch(origin + path, {
@@ -65,6 +65,16 @@ test("page JSON replaces content safely and independent copies retain all media"
     await request("/api/media/" + upload.id + "/complete", "POST", {}),
   );
 
+  const settings = await json(
+    await request(sourcePath + "/details", "PATCH", {
+      date: "2024-11-27",
+      categoryId: null,
+      coverPhotoId: upload.id,
+      metadataVersion: source.metadata_version,
+      sharingTitle: "A memory to share",
+      allowIndexing: false,
+    }),
+  );
   const photo = {
     photoId: upload.id,
     alt: "A pressed flower",
@@ -75,14 +85,15 @@ test("page JSON replaces content safely and independent copies retain all media"
     caption: "Photo " + index,
   }));
   const document = {
+    source: { pageId: source.id, version: 1 },
     format: "our-memory-garden/page",
     version: 1,
     page: {
       title: "An editable memory",
-      date: "2024-11-27",
+      date: "2025-01-01",
       showTitle: false,
-      coverPhotoId: upload.id,
-      sharingTitle: "A memory to share",
+      coverPhotoId: crypto.randomUUID(),
+      sharingTitle: "Ignore this imported title",
       blocks: [
         {
           type: "Section",
@@ -125,9 +136,21 @@ test("page JSON replaces content safely and independent copies retain all media"
     ).status,
     403,
   );
+  const sourcesPath = targetFile + "?sources=1";
   assert.equal(
-    (await request("/api/pages/copy", "POST", {}, anonymous)).status,
+    (await request(sourcesPath, "GET", undefined, anonymous)).status,
     401,
+  );
+  const sources = await json(await request(sourcesPath));
+  assert.ok(sources.some(({ id }) => id === source.id));
+  assert.ok(sources.every(({ id }) => id !== target.id));
+  await json(await request(filePath, "POST", { sourcePageId: source.id }), 400);
+  await json(
+    await request(filePath, "POST", {
+      file: document,
+      sourcePageId: target.id,
+    }),
+    400,
   );
   await json(
     await request(filePath, "POST", { file: { ...document, version: 7 } }),
@@ -153,7 +176,6 @@ test("page JSON replaces content safely and independent copies retain all media"
     await request(filePath, "POST", {
       file: document,
       confirm: true,
-      version: review.version,
     }),
   );
   const response = await request(filePath);
@@ -163,67 +185,46 @@ test("page JSON replaces content safely and independent copies retain all media"
   const bytes = await response.text();
   assert.match(bytes, /\n  "page": \{/);
   const exported = JSON.parse(bytes);
+  assert.deepEqual(Object.keys(exported), ["format", "version", "page"]);
+  assert.deepEqual(Object.keys(exported.page), ["blocks"]);
   assert.doesNotMatch(bytes, /created_by|gridRevision|gridId|visibility/);
   assert.deepEqual(exported.page.blocks[0].blocks[2].photos, photos);
   assert.equal(
     exported.page.blocks[0].blocks[1].html,
     "<h2>Our <em>garden</em></h2>",
   );
-  assert.equal(exported.page.date, "2024-11-27");
-
-  const copyRequest = {
-    title: "Independent copy",
-    slug: "copy-" + label,
-    sourceId: source.id,
-    requestId: crypto.randomUUID(),
-  };
-  const copy = await json(
-    await request("/api/pages/copy", "POST", copyRequest),
-    201,
-  );
-  assert.deepEqual(
-    await json(await request("/api/pages/copy", "POST", copyRequest), 201),
-    copy,
-  );
-  await json(
-    await request("/api/pages/copy", "POST", {
-      ...copyRequest,
-      requestId: crypto.randomUUID(),
-    }),
-    409,
-  );
-  const copyPath = "/api/pages/" + copy.id;
-  const copied = await json(await request(copyPath));
+  const original = await json(await request(sourcePath));
+  assert.equal(original.title, source.title);
+  assert.equal(original.page_date, settings.page_date);
+  assert.equal(original.cover_photo_id, settings.cover_photo_id);
+  assert.equal(original.sharing_title, settings.sharing_title);
+  assert.equal(original.allow_indexing, false);
+  assert.deepEqual(original.content.root, source.content.root);
+  assert.equal(original.metadata_version, settings.metadata_version);
   const gridId = (page) =>
     page.content.content[0].props.content[2].props.gridId;
-  assert.equal(copied.visibility, "private");
-  assert.equal(copied.cover_photo_id, upload.id);
-  const original = await json(await request(sourcePath));
-  assert.notEqual(gridId(original), gridId(copied));
-  assert.deepEqual(
-    (await json(await request(copyPath + "/json"))).page.blocks[0].blocks[2]
-      .photos,
-    photos,
-  );
 
   const changed = structuredClone(exported);
+  changed.source = { pageId: source.id, version: original.version };
   changed.page.title = "Edited outside the editor";
   changed.page.slug = "must-not-change";
   changed.page.blocks[0].blocks[0].text = "Updated in JSON";
   changed.page.blocks[0].blocks[2].photos.reverse();
-  const sameReview = await json(
-    await request(filePath, "POST", { file: changed }),
+  const updatedSinceExport = await json(
+    await request(sourcePath, "PATCH", {
+      version: original.version,
+      title: "Edited after export",
+    }),
   );
+  await json(await request(filePath, "POST", { file: changed }));
   await json(
     await request(filePath, "POST", {
       file: changed,
       confirm: true,
-      version: sameReview.version,
     }),
   );
-  await json(await request(filePath, "POST", { file: changed }), 409);
   const updated = await json(await request(sourcePath));
-  assert.equal(updated.title, changed.page.title);
+  assert.equal(updated.title, updatedSinceExport.title);
   assert.equal(updated.slug, source.slug);
   assert.equal(updated.visibility, "private");
   assert.equal(
@@ -232,8 +233,10 @@ test("page JSON replaces content safely and independent copies retain all media"
   );
 
   const targetReview = await json(
-    await request(targetFile, "POST", { file: changed }),
+    await request(targetFile, "POST", { sourcePageId: source.id }),
   );
+  assert.equal(targetReview.blocks, 4);
+  assert.equal(targetReview.photos, 1);
   const afterReview = await json(
     await request(targetPath, "PATCH", {
       version: target.version,
@@ -243,41 +246,48 @@ test("page JSON replaces content safely and independent copies retain all media"
   assert.equal(afterReview.visibility, "public");
   await json(
     await request(targetFile, "POST", {
-      file: changed,
+      sourcePageId: source.id,
       confirm: true,
-      version: targetReview.version,
-    }),
-    409,
-  );
-  await json(
-    await request(targetFile, "POST", {
-      file: changed,
-      confirm: true,
-      version: afterReview.version,
     }),
   );
   const imported = await json(await request(targetPath));
   assert.equal(imported.visibility, "public");
   assert.equal(imported.slug, target.slug);
+  assert.equal(imported.title, target.title);
+  assert.deepEqual(imported.content.root, target.content.root);
   assert.notEqual(gridId(imported), gridId(updated));
   assert.deepEqual(
     (await json(await request(targetFile))).page.blocks[0].blocks[2].photos,
     [...photos].reverse(),
   );
-  assert.deepEqual(
-    (await json(await request(copyPath + "/json"))).page.blocks[0].blocks[2]
-      .photos,
-    photos,
+  assert.equal(
+    (await json(await request(sourcePath))).version,
+    updated.version,
   );
 
   await json(
-    await request(sourcePath + "/history/" + original.version, "POST", {
-      version: updated.version,
-      confirm: true,
-    }),
+    await request(
+      sourcePath + "/history/" + updatedSinceExport.version,
+      "POST",
+      {
+        version: updated.version,
+        confirm: true,
+      },
+    ),
   );
   const restored = await json(await request(filePath));
   assert.deepEqual(restored.page.blocks[0].blocks[2].photos, photos);
-  assert.equal(restored.page.title, original.title);
-  assert.equal(restored.page.date, "2024-11-27");
+  const restoredPage = await json(await request(sourcePath));
+  assert.equal(restoredPage.title, updatedSinceExport.title);
+  assert.equal(restoredPage.page_date, "2024-11-27");
+  await json(
+    await request(targetFile, "POST", { file: restored, confirm: true }),
+  );
+  const fromFile = await json(await request(targetPath));
+  assert.equal(fromFile.title, target.title);
+  assert.equal(fromFile.visibility, "public");
+  assert.deepEqual(
+    (await json(await request(targetFile))).page.blocks[0].blocks[2].photos,
+    photos,
+  );
 });

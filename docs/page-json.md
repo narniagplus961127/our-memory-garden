@@ -1,8 +1,10 @@
-# Edit a page with JSON
+# Replace a page’s editor content
 
-Open the page and choose **Page actions → Download page JSON**. Edit the file in a text editor. On the destination page, choose **Page actions → Import page JSON**, review the file, and confirm **Replace page content**. The destination keeps its URL and visibility. A public page shows the imported content immediately. Use **History** to restore the previous layout and details.
+Open the page and choose **Page actions → Download page JSON**. Edit the file in a text editor. On the destination page, choose **Page actions → Import page content → Upload JSON**, review the file, and confirm **Replace page content**. The destination keeps its title, URL, visibility and other page settings. A public page shows the imported content immediately. Use **History** to restore the version that was saved before import.
 
-An export preserves the source page and version so the editor can detect an older copy. If the source page has changed, export it again and reapply your edits. To use a page layout on another existing page, import its file there. To create a new private page with the same content, use **Pages → Copy from page**.
+You can import an older export or a file from another page. A file from an earlier version of the feature imports its blocks and ignores any page settings in the file.
+
+To reuse an existing layout without downloading a file, choose **Import page content → Use another page**. Select the source, review the block and photo counts, and confirm **Replace page content**. The editor uses the source’s latest saved blocks when you confirm. The source page keeps its own blocks and Photo grid entries.
 
 ## What to edit
 
@@ -11,4 +13,4 @@ Start with [this example](examples/page.json) or export a page that already has 
 - Change a Text block’s `text` for plain text. Text blocks with formatting use `html`, which accepts the editor’s supported headings, paragraphs, links, and emphasis. To replace formatted text with plain text, remove `html` and add `text`.
 - A Section has a `blocks` list. Columns have a `columns` list with one list of blocks per column. Reorder items in these lists to change their order.
 - A Photo grid has a `photos` list. Each entry can include a caption and alternative text. The `photoId` refers to an existing Media Library photo. Reuse IDs from your own export when moving or copying photos. The file contains references to photos, and the garden backup can be used to export the original photo files.
-- Keep private page exports somewhere private. Import accepts JSON files up to 2 MB. The URL shown in the export is informational when replacing a page.
+- Keep private page exports somewhere private. Import accepts JSON files up to 2 MB.
