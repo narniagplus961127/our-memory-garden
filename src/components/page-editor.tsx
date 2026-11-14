@@ -459,6 +459,7 @@ function Workspace({
   const visibility = pageSettings?.visibility ?? "private";
   const settingsLabel = page ? "Page settings" : "Template settings";
   const detailsStatus = pageSettings?.details.status ?? "Saved";
+  const [addressStatus, setAddressStatus] = useState("Saved");
   const headerStatus =
     (status === "Saved" || status === "Saving…") && detailsStatus !== "Saved"
       ? detailsStatus
@@ -803,6 +804,7 @@ function Workspace({
             detailsSaved={
               detailsStatus === "Saved" && !pageSettings.categoryBusy
             }
+            addressSaved={addressStatus === "Saved"}
             getVersion={pageSettings.getVersion}
           />
         )}
@@ -937,7 +939,11 @@ function Workspace({
             </div>
             {pageSettings && page && (
               <>
-                <PageAddress page={page} accountId={pageSettings.accountId} />
+                <PageAddress
+                  page={page}
+                  accountId={pageSettings.accountId}
+                  onStatus={setAddressStatus}
+                />
                 <div className="settings-field">
                   <Label htmlFor="page-visibility">Visibility</Label>
                   <NativeSelect

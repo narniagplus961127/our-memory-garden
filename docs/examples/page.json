@@ -1,0 +1,46 @@
+{
+  "format": "our-memory-garden/page",
+  "version": 1,
+  "page": {
+    "title": "A day to remember",
+    "slug": "a-day-to-remember",
+    "date": "2024-11-27",
+    "showTitle": true,
+    "blocks": [
+      {
+        "type": "Section",
+        "id": "opening",
+        "settings": {
+          "background": "paper",
+          "spacing": "comfortable"
+        },
+        "blocks": [
+          {
+            "type": "Text",
+            "id": "intro",
+            "settings": {
+              "style": "p",
+              "align": "left"
+            },
+            "text": "This is the line you can change in a text editor."
+          },
+          {
+            "type": "Text",
+            "id": "note",
+            "html": "<p>One small moment <em>worth keeping</em>.</p>"
+          },
+          {
+            "type": "PhotoGrid",
+            "id": "memories",
+            "settings": {
+              "maxColumns": 3,
+              "photoGap": 12,
+              "photoRadius": 4
+            },
+            "photos": []
+          }
+        ]
+      }
+    ]
+  }
+}

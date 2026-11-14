@@ -1,9 +1,18 @@
 "use client";
 
-import { Copy, ExternalLink, History, Settings, Trash2 } from "lucide-react";
+import {
+  Copy,
+  Download,
+  ExternalLink,
+  History,
+  Settings,
+  Trash2,
+  Upload,
+} from "lucide-react";
 import Link from "next/link";
 import { useRef, useState } from "react";
 import type { GardenPage } from "@/lib/pages";
+import { PageJsonImport } from "./page-json-import";
 import { CreateTemplate } from "./create-template";
 import { TrashAction } from "./page-recovery";
 import { Button } from "./ui/button";
@@ -20,16 +29,20 @@ export function EditorPageActions({
   page,
   contentSaved,
   detailsSaved,
+  addressSaved,
   getVersion,
 }: {
   page: GardenPage;
   contentSaved: boolean;
   detailsSaved: boolean;
+  addressSaved: boolean;
   getVersion: () => number;
 }) {
   const trigger = useRef<HTMLButtonElement>(null);
   const openingDialog = useRef(false);
   const [trashOpen, setTrashOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
+  const jsonReady = contentSaved && detailsSaved && addressSaved;
   const canDelete = contentSaved && detailsSaved && !page.is_homepage;
 
   return (
@@ -97,6 +110,38 @@ export function EditorPageActions({
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
+                asChild
+                disabled={!jsonReady}
+                className="min-h-11"
+              >
+                <a
+                  href={
+                    jsonReady ? "/api/pages/" + page.id + "/json" : undefined
+                  }
+                  download
+                >
+                  <Download aria-hidden="true" />
+                  Download page JSON
+                </a>
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                className="min-h-11"
+                disabled={!jsonReady}
+                onSelect={() => {
+                  openingDialog.current = true;
+                  setImportOpen(true);
+                }}
+              >
+                <Upload aria-hidden="true" />
+                Import page JSON
+              </DropdownMenuItem>
+              {!jsonReady && (
+                <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">
+                  Finish saving your changes to use page JSON.
+                </DropdownMenuLabel>
+              )}
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
                 className="min-h-11"
                 variant="destructive"
                 disabled={!canDelete}
@@ -121,6 +166,14 @@ export function EditorPageActions({
           </DropdownMenu>
         )}
       />
+      {importOpen && (
+        <PageJsonImport
+          pageId={page.id}
+          title={page.title}
+          returnFocus={trigger}
+          onClose={() => setImportOpen(false)}
+        />
+      )}
       {trashOpen && (
         <TrashAction
           page={page}

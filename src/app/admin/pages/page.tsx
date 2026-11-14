@@ -27,6 +27,9 @@ export default async function Pages() {
           <Link href="/admin/pages/new">Create page</Link>
         </Button>
         <Button asChild className="button secondary">
+          <Link href="/admin/pages/copy">Copy from page</Link>
+        </Button>
+        <Button asChild className="button secondary">
           <Link href="/admin/trash">Trash</Link>
         </Button>
       </div>
