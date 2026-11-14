@@ -5,7 +5,7 @@ import {
   validPageData,
 } from "./blocks";
 import { uuid } from "./organization";
-import type { GardenPage, JsonValue, PageData } from "./pages";
+import type { JsonValue, PageData } from "./pages";
 import { richFields, richPageData, validRichText } from "./rich-text";
 
 export const pageJsonFormat = "our-memory-garden/page";
@@ -32,10 +32,6 @@ function checkedString(value: unknown, max: number, label: string) {
   return value;
 }
 
-function optionalText(value: unknown, max: number, label: string) {
-  return value == null ? null : checkedString(value, max, label) || null;
-}
-
 function optionalId(value: unknown, label: string) {
   if (value == null || value === "") return null;
   if (typeof value !== "string" || !uuid.test(value))
@@ -43,23 +39,11 @@ function optionalId(value: unknown, label: string) {
   return value.toLowerCase();
 }
 
-function pageDate(value: unknown) {
-  if (value == null || value === "") return null;
-  if (
-    typeof value !== "string" ||
-    !/^(?!0000)\d{4}-\d{2}-\d{2}$/.test(value) ||
-    !Number.isFinite(Date.parse(value)) ||
-    new Date(value).toISOString().slice(0, 10) !== value
-  )
-    throw Error("Use a valid page date in YYYY-MM-DD format.");
-  return value;
-}
-
 function htmlKey(plain: string) {
   return plain === "text" ? "html" : plain + "Html";
 }
 
-export function makePageJson(page: GardenPage, gridPhotos: JsonGridPhotos) {
+export function makePageJson(content: PageData, gridPhotos: JsonGridPhotos) {
   function serialize(block: PageBlock): JsonBlock {
     const {
       id,
@@ -99,19 +83,7 @@ export function makePageJson(page: GardenPage, gridPhotos: JsonGridPhotos) {
   return {
     format: pageJsonFormat,
     version: 1,
-    source: { pageId: page.id, version: page.version },
-    page: {
-      title: page.title,
-      slug: page.slug,
-      date: page.page_date ?? null,
-      categoryId: page.category_id ?? null,
-      coverPhotoId: page.cover_photo_id ?? null,
-      sharingTitle: page.sharing_title ?? null,
-      sharingDescription: page.sharing_description ?? null,
-      sharingCoverPhotoId: page.sharing_cover_photo_id ?? null,
-      showTitle: page.content.root.props.showTitle !== false,
-      blocks: page.content.content.map(serialize),
-    },
+    page: { blocks: content.content.map(serialize) },
   };
 }
 
@@ -123,20 +95,6 @@ export function parsePageJson(value: unknown) {
   const page = value.page;
   if (!record(page) || !Array.isArray(page.blocks))
     throw Error("The JSON file needs a page with a blocks array.");
-  const title = checkedString(page.title, 200, "Page title").trim();
-  if (!title) throw Error("Enter a page title.");
-  if (page.showTitle !== undefined && typeof page.showTitle !== "boolean")
-    throw Error("Set showTitle to true or false.");
-  const source = value.source;
-  if (
-    source !== undefined &&
-    (!record(source) ||
-      typeof source.pageId !== "string" ||
-      !uuid.test(source.pageId) ||
-      !Number.isSafeInteger(source.version) ||
-      Number(source.version) < 1)
-  )
-    throw Error("The source page information is invalid.");
   const gridPhotos: JsonGridPhotos = new Map();
   let count = 0;
   function parseBlocks(blocks: unknown, depth: number): PageBlock[] {
@@ -267,37 +225,11 @@ export function parsePageJson(value: unknown) {
     });
   }
   const raw: PageData = {
-    root: {
-      props:
-        page.showTitle === undefined
-          ? {}
-          : { showTitle: page.showTitle as boolean },
-    },
+    root: { props: {} },
     content: parseBlocks(page.blocks, 0),
   };
   const content = richPageData(raw);
   if (!validPageData(content))
     throw Error("Check the block types, IDs and settings in the JSON file.");
-  return {
-    source: source as { pageId: string; version: number } | undefined,
-    title,
-    content,
-    gridPhotos,
-    count,
-    details: {
-      date: pageDate(page.date),
-      categoryId: optionalId(page.categoryId, "Category ID"),
-      coverPhotoId: optionalId(page.coverPhotoId, "Cover photo ID"),
-      sharingTitle: optionalText(page.sharingTitle, 200, "Sharing title"),
-      sharingDescription: optionalText(
-        page.sharingDescription,
-        2000,
-        "Sharing description",
-      ),
-      sharingCoverPhotoId: optionalId(
-        page.sharingCoverPhotoId,
-        "Sharing cover photo ID",
-      ),
-    },
-  };
+  return { content, gridPhotos, count };
 }

@@ -7,7 +7,7 @@ const headers = {
   Origin: process.env.PLAYWRIGHT_BASE_URL ?? env.NEXT_PUBLIC_APP_URL!,
 };
 
-test("review, replace, download, and copy a page", async ({
+test("review and replace editor content from JSON and another page", async ({
   page,
   isMobile,
 }) => {
@@ -30,8 +30,8 @@ test("review, replace, download, and copy a page", async ({
 
   async function openImport() {
     await page.getByRole("button", { name: "Page actions" }).click();
-    await page.getByRole("menuitem", { name: "Import page JSON" }).click();
-    return page.getByRole("dialog", { name: "Import page JSON" });
+    await page.getByRole("menuitem", { name: "Import page content" }).click();
+    return page.getByRole("dialog", { name: "Import page content" });
   }
   const document = {
     format: "our-memory-garden/page",
@@ -91,7 +91,7 @@ test("review, replace, download, and copy a page", async ({
   await dialog.getByRole("button", { name: "Replace page content" }).click();
   await expect(
     page.getByRole("textbox", { name: "Page title", exact: true }),
-  ).toHaveValue(document.page.title);
+  ).toHaveValue(title);
   await expect(
     page
       .frameLocator("#preview-frame")
@@ -103,38 +103,46 @@ test("review, replace, download, and copy a page", async ({
   const download = await downloading;
   expect(download.suggestedFilename()).toBe(slug + ".json");
   const path = await download.path();
-  expect(JSON.parse(readFileSync(path!, "utf8")).page.title).toBe(
-    document.page.title,
-  );
+  const downloaded = JSON.parse(readFileSync(path!, "utf8"));
+  expect(Object.keys(downloaded.page)).toEqual(["blocks"]);
 
-  const pages = page.getByRole("link", { name: "← Pages" });
-  await expect(pages).toHaveAttribute("href", "/admin/pages");
-  await page.goto("/admin/pages");
-  await page.getByRole("link", { name: "Copy from page" }).click();
-  await page.getByLabel("Source page").selectOption(source.id);
-  await expect(page.getByLabel("New page title")).toHaveValue(
-    document.page.title + " (copy)",
-  );
-  await expect(page.getByLabel("New page URL")).toHaveValue(
-    "edited-" + suffix + "-copy",
-  );
-  await page.getByLabel("New page URL").fill(slug);
-  await page.getByRole("button", { name: "Create private copy" }).click();
-  await expect(
-    page.getByText("This page URL is already in use.", { exact: false }),
-  ).toBeVisible();
-  await page.getByRole("button", { name: "Use title" }).click();
-  await page.getByRole("button", { name: "Create private copy" }).click();
+  const other = await page.request.post("/api/pages", {
+    headers,
+    data: { title: "Source " + suffix, slug: "source-" + suffix },
+  });
+  expect(other.status()).toBe(201);
+  const otherPage = await other.json();
+  const original = await page.request.patch("/api/pages/" + otherPage.id, {
+    headers,
+    data: { version: otherPage.version, text: "A different saved memory" },
+  });
+  expect(original.ok()).toBeTruthy();
+
+  // Navigate to the destination afresh after verifying the file download.
+  await page.goto("/admin/pages/" + source.id);
+  dialog = await openImport();
+  await dialog.getByRole("tab", { name: "Use another page" }).click();
+  const picker = dialog.getByLabel("Source page");
+  await expect(picker.locator("option", { hasText: title })).toHaveCount(0);
+  await picker.selectOption(otherPage.id);
+  await expect(dialog).toContainText("1 block");
+  await dialog.getByRole("button", { name: "Replace page content" }).click();
   await expect(
     page.getByRole("textbox", { name: "Page title", exact: true }),
-  ).toHaveValue(document.page.title + " (copy)");
+  ).toHaveValue(title);
   await expect(
     page
       .frameLocator("#preview-frame")
-      .getByText("Edited in JSON.", { exact: true }),
+      .getByText("A different saved memory", { exact: true }),
   ).toBeVisible();
-  await expect(
-    page.getByText("Private", { exact: true }).first(),
-  ).toBeVisible();
-  expect(new URL(page.url()).pathname).not.toBe("/admin/pages/" + source.id);
+  const destination = await (
+    await page.request.get("/api/pages/" + source.id)
+  ).json();
+  expect(destination.slug).toBe(slug);
+  expect(destination.visibility).toBe("private");
+
+  await page.goto("/admin/pages");
+  await expect(page.getByRole("link", { name: "Copy from page" })).toHaveCount(
+    0,
+  );
 });

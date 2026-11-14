@@ -2,10 +2,6 @@
   "format": "our-memory-garden/page",
   "version": 1,
   "page": {
-    "title": "A day to remember",
-    "slug": "a-day-to-remember",
-    "date": "2024-11-27",
-    "showTitle": true,
     "blocks": [
       {
         "type": "Section",

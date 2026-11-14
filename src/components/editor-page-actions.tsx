@@ -133,7 +133,7 @@ export function EditorPageActions({
                 }}
               >
                 <Upload aria-hidden="true" />
-                Import page JSON
+                Import page content
               </DropdownMenuItem>
               {!jsonReady && (
                 <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">
