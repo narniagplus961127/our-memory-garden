@@ -26,9 +26,11 @@ type AddressCopy = {
 export function PageAddress({
   page,
   accountId,
+  onStatus,
 }: {
   page: GardenPage;
   accountId: string;
+  onStatus: (status: string) => void;
 }) {
   const [slug, setSlug] = useState(page.slug),
     [saved, setSaved] = useState(page.slug),
@@ -267,6 +269,7 @@ export function PageAddress({
     const timer = setTimeout(() => void persist(), 650);
     return () => clearTimeout(timer);
   }, [slug, saved, conflict]);
+  useEffect(() => onStatus(status), [status, onStatus]);
   const canRecover =
     state.current.active &&
     !state.current.busy &&

@@ -14,9 +14,14 @@ export function assertSameOrigin(request: Request) {
 }
 export async function bodyJson(
   request: Request,
+  maxSize?: number,
 ): Promise<Record<string, unknown>> {
   const body = await request.text();
-  if (body.length > 1000000)
+  if (
+    maxSize === undefined
+      ? body.length > 1_000_000
+      : Buffer.byteLength(body) > maxSize
+  )
     throw new RequestError(413, "Content is too large.");
   try {
     const data = JSON.parse(body);

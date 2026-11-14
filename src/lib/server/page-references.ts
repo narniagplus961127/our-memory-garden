@@ -1,4 +1,5 @@
 import "server-only";
+import type postgres from "postgres";
 import { database } from "./db";
 import { RequestError } from "./http";
 import { slotNames, slotContent, type PageBlock } from "../blocks";
@@ -42,7 +43,9 @@ function referenceIds(data: PageData) {
 export async function validatePageReferences(
   content: PageData,
   previous: PageData,
+  transaction?: postgres.TransactionSql,
 ) {
+  const sql = transaction ?? database();
   function categoryReferences(data: PageData) {
     const categoryIds = new Set<string>();
     function categories(blocks: PageBlock[]) {
@@ -72,7 +75,7 @@ export async function validatePageReferences(
   );
   if (categoryIds.length) {
     const found =
-      await database()`select id from page_categories where id in ${database()(categoryIds)}`;
+      await sql`select id from page_categories where id in ${sql(categoryIds)}`;
     if (found.length !== categoryIds.length)
       throw new RequestError(
         400,
@@ -82,9 +85,9 @@ export async function validatePageReferences(
   const existing = referenceIds(previous);
   const ids = [...referenceIds(content)].filter((id) => !existing.has(id));
   if (!ids.length) return;
-  const available = await database()<
+  const available = await sql<
     { id: string }[]
-  >`select id from pages where id in ${database()(ids)} and deleted_at is null`;
+  >`select id from pages where id in ${sql(ids)} and deleted_at is null`;
   if (available.length !== ids.length)
     throw new RequestError(
       400,
