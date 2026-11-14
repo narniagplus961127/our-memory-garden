@@ -1,6 +1,10 @@
 "use client";
 import { useMemo, useState } from "react";
-import type { AdminList, AdminListOrder } from "@/lib/admin-list-order";
+import {
+  applyAdminListOrder,
+  type AdminList,
+  type AdminListOrder,
+} from "@/lib/admin-list-order";
 import { useListReorder } from "./use-list-reorder";
 
 const emptyOrder: AdminListOrder = { ids: [], version: 1 };
@@ -17,13 +21,7 @@ export function useAdminListOrder<T extends { id: string }>(
   const [error, setError] = useState("");
   const [conflict, setConflict] = useState(false);
   const ids = pending ?? saved.ids;
-  const ordered = useMemo(() => {
-    if (!ids.length) return items;
-    const rank = new Map(ids.map((id, index) => [id, index]));
-    return [...items].sort(
-      (a, b) => (rank.get(a.id) ?? ids.length) - (rank.get(b.id) ?? ids.length),
-    );
-  }, [items, ids]);
+  const ordered = useMemo(() => applyAdminListOrder(items, ids), [items, ids]);
   const rows = useMemo(
     () => ordered.map((item) => ({ id: item.id, label: label(item) })),
     [ordered, label],

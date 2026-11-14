@@ -10,7 +10,7 @@ const env = Object.fromEntries(
     }),
 );
 
-test("Pages cards keep right-edge bin icons and load link warnings safely before trashing", async ({
+test("Pages cards keep right-edge action menus and load link warnings safely before trashing", async ({
   page,
   isMobile,
 }, testInfo) => {
@@ -54,7 +54,7 @@ test("Pages cards keep right-edge bin icons and load link warnings safely before
       has: page.locator('a[href="/admin/pages/' + created.id + '"]'),
     });
     const trigger = card.getByRole("button", {
-      name: "Move " + created.title + " to trash",
+      name: "Actions for " + created.title,
       exact: true,
     });
     await expect(trigger).toHaveCSS("width", "44px");
@@ -80,7 +80,9 @@ test("Pages cards keep right-edge bin icons and load link warnings safely before
         () => document.documentElement.scrollWidth <= innerWidth,
       ),
     ).toBeTruthy();
-    await page.screenshot({ path: testInfo.outputPath("page-list-bin.png") });
+    await page.screenshot({
+      path: testInfo.outputPath("page-list-actions.png"),
+    });
     let fail = true,
       posts = 0;
     page.on("request", (request) => {
@@ -99,6 +101,9 @@ test("Pages cards keep right-edge bin icons and load link warnings safely before
         : route.continue(),
     );
     await trigger.click();
+    await page
+      .getByRole("menuitem", { name: "Move to trash", exact: true })
+      .click();
     const dialog = page.getByRole("dialog", {
       name: "Move " + created.title + " to trash?",
       exact: true,
@@ -122,6 +127,9 @@ test("Pages cards keep right-edge bin icons and load link warnings safely before
     await dialog.getByRole("button", { name: "Cancel", exact: true }).click();
     await expect(trigger).toBeFocused();
     await trigger.click();
+    await page
+      .getByRole("menuitem", { name: "Move to trash", exact: true })
+      .click();
     await expect(
       dialog.getByRole("button", {
         name: "Confirm move to trash",
@@ -150,7 +158,11 @@ test("Pages cards keep right-edge bin icons and load link warnings safely before
       .getByRole("button", { name: "Reload page", exact: true })
       .click();
     await expect(dialog).toHaveCount(0);
+    await expect(card).toContainText("Public");
     await trigger.click();
+    await page
+      .getByRole("menuitem", { name: "Move to trash", exact: true })
+      .click();
     await dialog
       .getByRole("button", { name: "Confirm move to trash", exact: true })
       .click();
@@ -193,11 +205,14 @@ test("recovery popups are centered, trap focus, cancel safely and stay open duri
   ).json();
   await page.goto("/admin/pages");
   const trigger = page.getByRole("button", {
-    name: "Move " + created.title + " to trash",
+    name: "Actions for " + created.title,
     exact: true,
   });
   const dialog = page.getByRole("dialog", { name: /^Move .* to trash\?$/ });
   await trigger.click();
+  await page
+    .getByRole("menuitem", { name: "Move to trash", exact: true })
+    .click();
   await expect(
     dialog.getByRole("button", { name: "Confirm move to trash", exact: true }),
   ).toBeEnabled();
@@ -227,6 +242,9 @@ test("recovery popups are centered, trap focus, cancel safely and stay open duri
   await expect(dialog).toHaveCount(0);
   await expect(trigger).toBeFocused();
   await trigger.click();
+  await page
+    .getByRole("menuitem", { name: "Move to trash", exact: true })
+    .click();
   await dialog.getByRole("button", { name: "Cancel", exact: true }).click();
   await expect(dialog).toHaveCount(0);
   expect(
@@ -249,6 +267,9 @@ test("recovery popups are centered, trap focus, cancel safely and stay open duri
   });
   try {
     await trigger.click();
+    await page
+      .getByRole("menuitem", { name: "Move to trash", exact: true })
+      .click();
     await dialog
       .getByRole("button", { name: "Confirm move to trash", exact: true })
       .click();
@@ -334,7 +355,10 @@ test("administrator reviews history, confirms restore and safely recovers a tras
     expect(saved.visibility).toBe("public");
     await page.goto("/admin/pages");
     await page
-      .getByRole("button", { name: "Move " + title + " to trash", exact: true })
+      .getByRole("button", { name: "Actions for " + title, exact: true })
+      .click();
+    await page
+      .getByRole("menuitem", { name: "Move to trash", exact: true })
       .click();
     await expect(
       page.getByRole("dialog", { name: /^Move .* to trash\?$/ }),
@@ -370,7 +394,10 @@ test("administrator reviews history, confirms restore and safely recovers a tras
   ).toBe("private");
   await page.goto("/admin/pages");
   await page
-    .getByRole("button", { name: "Move " + title + " to trash", exact: true })
+    .getByRole("button", { name: "Actions for " + title, exact: true })
+    .click();
+  await page
+    .getByRole("menuitem", { name: "Move to trash", exact: true })
     .click();
   await page
     .getByRole("button", { name: "Confirm move to trash", exact: true })
@@ -497,7 +524,10 @@ test("failed trash and permanent deletion keep the original state and offer retr
         }),
   );
   await page
-    .getByRole("button", { name: "Move " + p.title + " to trash", exact: true })
+    .getByRole("button", { name: "Actions for " + p.title, exact: true })
+    .click();
+  await page
+    .getByRole("menuitem", { name: "Move to trash", exact: true })
     .click();
   await page
     .getByRole("button", { name: "Confirm move to trash", exact: true })
@@ -616,10 +646,10 @@ test("restoring the homepage keeps trash out of History and protects the Pages-l
     await page.unrouteAll({ behavior: "wait" });
   }
   await page.goto("/admin/pages");
+  await page
+    .getByRole("button", { name: "Actions for " + created.title, exact: true })
+    .click();
   await expect(
-    page.getByRole("button", {
-      name: "Move " + created.title + " to trash",
-      exact: true,
-    }),
+    page.getByRole("menuitem", { name: "Move to trash", exact: true }),
   ).toBeDisabled();
 });

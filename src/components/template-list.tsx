@@ -1,14 +1,28 @@
 "use client";
-import { Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState, type RefObject } from "react";
+import type { AdminListOrder } from "@/lib/admin-list-order";
 import { starterTemplates, type TemplateSummary } from "@/lib/page-templates";
-import { AdminListRow } from "./admin-list-row";
+import {
+  AdminListActions,
+  AdminListGrip,
+  AdminListOrderStatus,
+  AdminListRow,
+  ListDragFeedback,
+} from "./admin-list-row";
 import { ConfirmationDialog } from "./confirmation-dialog";
 import { Toast } from "./toast";
-import { Button } from "./ui/button";
+import { useAdminListOrder } from "./use-admin-list-order";
 
-export function TemplateList({ templates }: { templates: TemplateSummary[] }) {
+const templateLabel = (template: TemplateSummary) => template.name;
+
+export function TemplateList({
+  templates,
+  order,
+}: {
+  templates: TemplateSummary[];
+  order: AdminListOrder;
+}) {
   const router = useRouter();
   const [removed, setRemoved] = useState<string[]>([]);
   const [selected, setSelected] = useState<TemplateSummary | null>(null);
@@ -16,7 +30,20 @@ export function TemplateList({ templates }: { templates: TemplateSummary[] }) {
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const pending = useRef(false);
-  const available = templates.filter(({ id }) => !removed.includes(id));
+  const returnFocus = useRef<RefObject<HTMLButtonElement | null> | undefined>(
+    undefined,
+  );
+  const available = useMemo(
+    () => templates.filter(({ id }) => !removed.includes(id)),
+    [templates, removed],
+  );
+  const sort = useAdminListOrder(
+    "templates",
+    available,
+    templateLabel,
+    order,
+    Boolean(selected),
+  );
 
   async function remove() {
     if (!selected || pending.current) return;
@@ -56,8 +83,8 @@ export function TemplateList({ templates }: { templates: TemplateSummary[] }) {
     <>
       {available.length ? (
         <ul className="admin-list">
-          {available.map((template) => (
-            <li key={template.id}>
+          {sort.ordered.map((template) => (
+            <li key={template.id} {...sort.rowProps(template.id)}>
               <AdminListRow
                 title={template.name}
                 detail={
@@ -66,21 +93,29 @@ export function TemplateList({ templates }: { templates: TemplateSummary[] }) {
                     : undefined
                 }
                 href={"/admin/templates/" + template.id}
+                showEdit={false}
+                grip={
+                  <AdminListGrip
+                    {...sort.handleProps({
+                      id: template.id,
+                      label: template.name,
+                    })}
+                  />
+                }
                 trailing={
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="icon"
-                    aria-label={"Delete " + template.name}
-                    title={"Delete " + template.name}
-                    onClick={() => {
+                  <AdminListActions
+                    list="templates"
+                    id={template.id}
+                    title={template.name}
+                    href={"/admin/templates/" + template.id}
+                    disabled={sort.busy}
+                    onRemove={(trigger) => {
+                      returnFocus.current = trigger;
                       setError("");
                       setNotice("");
                       setSelected(template);
                     }}
-                  >
-                    <Trash2 aria-hidden="true" />
-                  </Button>
+                  />
                 }
               />
             </li>
@@ -92,6 +127,8 @@ export function TemplateList({ templates }: { templates: TemplateSummary[] }) {
           <p>Create one here or save a layout from Page settings.</p>
         </div>
       )}
+      <ListDragFeedback {...sort} />
+      <AdminListOrderStatus {...sort} />
       {selected && (
         <ConfirmationDialog
           title={`Delete ${selected.name}?`}
@@ -107,6 +144,7 @@ export function TemplateList({ templates }: { templates: TemplateSummary[] }) {
           }}
           onConfirm={() => void remove()}
           onCancel={() => setSelected(null)}
+          returnFocus={returnFocus.current}
         />
       )}
       {notice && <Toast message={notice} onDismiss={() => setNotice("")} />}

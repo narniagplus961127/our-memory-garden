@@ -13,7 +13,7 @@ export default async function Pages() {
   ]);
   return (
     <>
-      <div className="admin-heading">
+      <div className="admin-heading admin-list-heading">
         <div>
           <p className="eyebrow">Your garden</p>
           <h1 id="pages-title" tabIndex={-1}>
@@ -21,14 +21,14 @@ export default async function Pages() {
           </h1>
           <p className="muted">Manage and organize your pages.</p>
         </div>
-      </div>
-      <div className="actions create-page-link">
-        <Button asChild className="button">
-          <Link href="/admin/pages/new">Create page</Link>
-        </Button>
-        <Button asChild className="button secondary">
-          <Link href="/admin/trash">Trash</Link>
-        </Button>
+        <div className="admin-list-heading-actions">
+          <Button asChild>
+            <Link href="/admin/pages/new">Create page</Link>
+          </Button>
+          <Button asChild variant="outline">
+            <Link href="/admin/trash">Trash</Link>
+          </Button>
+        </div>
       </div>
       <AdminPageCards
         key={order.version}

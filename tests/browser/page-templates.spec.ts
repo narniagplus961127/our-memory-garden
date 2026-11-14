@@ -249,7 +249,7 @@ test("confirm a page template with photo placeholders, edit it, and create indep
 
   await page.goto("/admin/templates");
   const remove = page.getByRole("button", {
-    name: `Delete ${name}`,
+    name: `Actions for ${name}`,
     exact: true,
   });
   const deletion = page.getByRole("dialog", {
@@ -257,9 +257,11 @@ test("confirm a page template with photo placeholders, edit it, and create indep
     exact: true,
   });
   await remove.click();
+  await page.getByRole("menuitem", { name: "Delete", exact: true }).click();
   await deletion.getByRole("button", { name: "Cancel", exact: true }).click();
   await expect(remove).toBeFocused();
   await remove.click();
+  await page.getByRole("menuitem", { name: "Delete", exact: true }).click();
   await deletion
     .getByRole("button", { name: "Delete template", exact: true })
     .click();

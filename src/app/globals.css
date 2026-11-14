@@ -2232,8 +2232,14 @@ button.primary {
 .section-heading > a {
   font-size: 14px;
 }
-.create-page-link {
-  margin-bottom: 28px;
+.admin-list-heading {
+  display: flex;
+  flex-wrap: wrap;
+}
+.admin-list-heading-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 .admin-list {
   list-style: none;

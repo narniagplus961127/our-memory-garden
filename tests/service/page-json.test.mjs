@@ -203,6 +203,48 @@ test("imports older JSON and another page’s content without replacing page set
   assert.equal(original.metadata_version, settings.metadata_version);
   const gridId = (page) =>
     page.content.content[0].props.content[2].props.gridId;
+  const cloneId = crypto.randomUUID();
+  const cloneRequest = { list: "pages", sourceId: source.id, id: cloneId };
+  const clonePath = "/api/admin-list-clone";
+  assert.equal(
+    (await request(clonePath, "POST", cloneRequest, anonymous)).status,
+    401,
+  );
+  assert.deepEqual(
+    await json(await request(clonePath, "POST", cloneRequest), 201),
+    { id: cloneId },
+  );
+  assert.deepEqual(
+    await json(await request(clonePath, "POST", cloneRequest), 201),
+    { id: cloneId },
+  );
+  const copy = await json(await request("/api/pages/" + cloneId));
+  assert.equal(copy.title, source.title + " (copy)");
+  assert.equal(copy.slug, source.slug + "-copy");
+  assert.equal(copy.visibility, "private");
+  assert.equal(copy.is_homepage, false);
+  assert.notEqual(gridId(copy), gridId(original));
+  for (const field of [
+    "page_date",
+    "cover_photo_id",
+    "sharing_title",
+    "allow_indexing",
+  ])
+    assert.equal(copy[field], original[field]);
+  assert.deepEqual(copy.content.root, original.content.root);
+  assert.deepEqual(
+    await json(await request(`/api/pages/${cloneId}/json`)),
+    exported,
+  );
+  const nextCloneId = crypto.randomUUID();
+  await json(
+    await request(clonePath, "POST", { ...cloneRequest, id: nextCloneId }),
+    201,
+  );
+  assert.equal(
+    (await json(await request(`/api/pages/${nextCloneId}`))).slug,
+    source.slug + "-copy-2",
+  );
 
   const changed = structuredClone(exported);
   changed.source = { pageId: source.id, version: original.version };
@@ -227,6 +269,10 @@ test("imports older JSON and another page’s content without replacing page set
   assert.equal(updated.title, updatedSinceExport.title);
   assert.equal(updated.slug, source.slug);
   assert.equal(updated.visibility, "private");
+  assert.deepEqual(
+    await json(await request(`/api/pages/${cloneId}/json`)),
+    exported,
+  );
   assert.equal(
     updated.content.content[0].props.content[0].props.text,
     "Updated in JSON",
@@ -259,6 +305,19 @@ test("imports older JSON and another page’s content without replacing page set
   assert.deepEqual(
     (await json(await request(targetFile))).page.blocks[0].blocks[2].photos,
     [...photos].reverse(),
+  );
+  const privateCopyId = crypto.randomUUID();
+  await json(
+    await request(clonePath, "POST", {
+      ...cloneRequest,
+      sourceId: target.id,
+      id: privateCopyId,
+    }),
+    201,
+  );
+  assert.equal(
+    (await json(await request(`/api/pages/${privateCopyId}`))).visibility,
+    "private",
   );
   assert.equal(
     (await json(await request(sourcePath))).version,

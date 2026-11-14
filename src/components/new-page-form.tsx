@@ -27,30 +27,16 @@ export function NewPageForm({
       description: "A quiet space to begin.",
       preview: "blank",
     },
-    ...starterTemplates.flatMap((starter) => {
-      const saved = savedTemplates.find(({ id }) => id === starter.id);
-      return saved
-        ? [
-            {
-              id: saved.id,
-              label: saved.name,
-              description:
-                saved.version === 1 ? starter.description : "Saved template",
-              preview: saved.version === 1 ? starter.alias : "saved",
-            },
-          ]
-        : [];
-    }),
-    ...savedTemplates
-      .filter(
-        ({ id }) => !starterTemplates.some((starter) => starter.id === id),
-      )
-      .map(({ id, name }) => ({
+    ...savedTemplates.map(({ id, name, version }) => {
+      const starter =
+        version === 1 && starterTemplates.find((item) => item.id === id);
+      return {
         id,
         label: name,
-        description: "Saved template",
-        preview: "saved",
-      })),
+        description: starter ? starter.description : "Saved template",
+        preview: starter ? starter.alias : "saved",
+      };
+    }),
   ];
   async function create(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();

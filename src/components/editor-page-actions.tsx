@@ -3,9 +3,9 @@
 import {
   Copy,
   Download,
+  Ellipsis,
   ExternalLink,
   History,
-  Settings,
   Trash2,
   Upload,
 } from "lucide-react";
@@ -67,7 +67,7 @@ export function EditorPageActions({
                 aria-label="Page actions"
                 title="Page actions"
               >
-                <Settings aria-hidden="true" />
+                <Ellipsis aria-hidden="true" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent

@@ -1,13 +1,12 @@
 "use client";
-import { useRef, useState } from "react";
-import { Trash2 } from "lucide-react";
-import { Button } from "./ui/button";
+import { useRef, useState, type RefObject } from "react";
 import { ConfirmationDialog } from "./confirmation-dialog";
 import { Toast } from "./toast";
 import type { Category } from "@/lib/organization";
 import type { AdminListOrder } from "@/lib/admin-list-order";
 import {
   AdminListGrip,
+  AdminListActions,
   AdminListOrderStatus,
   AdminListRow,
   ListDragFeedback,
@@ -27,6 +26,9 @@ export function CategoryManager({
     [error, setError] = useState(""),
     [notice, setNotice] = useState("");
   const pending = useRef(false);
+  const returnFocus = useRef<RefObject<HTMLButtonElement | null> | undefined>(
+    undefined,
+  );
   const sort = useAdminListOrder(
     "categories",
     list,
@@ -117,6 +119,7 @@ export function CategoryManager({
                 <AdminListRow
                   title={category.name}
                   href={"/admin/categories/" + category.id + "/edit"}
+                  showEdit={false}
                   grip={
                     <AdminListGrip
                       {...sort.handleProps({
@@ -126,20 +129,18 @@ export function CategoryManager({
                     />
                   }
                   trailing={
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="icon"
-                      aria-label={"Delete " + category.name}
-                      title={"Delete " + category.name}
+                    <AdminListActions
+                      list="categories"
+                      id={category.id}
+                      title={category.name}
+                      href={"/admin/categories/" + category.id + "/edit"}
                       disabled={sort.busy}
-                      onClick={() => {
+                      onRemove={(trigger) => {
+                        returnFocus.current = trigger;
                         setSelected(category);
                         setError("");
                       }}
-                    >
-                      <Trash2 aria-hidden="true" />
-                    </Button>
+                    />
                   }
                 />
               </li>
@@ -166,6 +167,7 @@ export function CategoryManager({
           onConfirm={() => void remove()}
           onCancel={() => setSelected(null)}
           onReload={() => void review()}
+          returnFocus={returnFocus.current}
         >
           <p>
             Links to this category will lead to not found. Menu items pointing
