@@ -4,6 +4,7 @@ import { RequestError } from "./http";
 import type { Administrator } from "./pages";
 import { uuid, type Category } from "../organization";
 import { addressFromTitle, validSlug } from "../page-address";
+import { cloneName, cloneSlug } from "./clone-name";
 
 export async function categories(): Promise<Category[]> {
   return database()<
@@ -23,6 +24,29 @@ export async function categoryBySlug(slug: string) {
     Category[]
   >`select id,name,slug from page_categories where slug=${slug}`;
   return category ?? null;
+}
+export async function cloneCategory(
+  admin: Administrator,
+  sourceId: string,
+  id: string,
+) {
+  const existing = await categoryById(id);
+  if (existing) return { id };
+  const source = await categoryById(sourceId);
+  if (!source) throw new RequestError(404, "Category not found.");
+  const sql = database();
+  for (let copy = 1; copy <= 100; copy++) {
+    const [inserted] = await sql<{ id: string }[]>`
+      insert into page_categories(id, name, slug, created_by)
+      values (${id}, ${cloneName(source.name, 100, copy)}, ${cloneSlug(source.slug, copy)}, ${admin.id})
+      on conflict do nothing returning id
+    `;
+    if (inserted || (await categoryById(id))) return { id };
+  }
+  throw new RequestError(
+    409,
+    "Could not find an unused name and URL for this copy.",
+  );
 }
 export async function editCategory(
   admin: Administrator,

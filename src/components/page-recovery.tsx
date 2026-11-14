@@ -1,5 +1,4 @@
 "use client";
-import { Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   createContext,
@@ -128,14 +127,17 @@ export function RestoreVersion({
 }
 export function TrashAction({
   page: initialPage,
-  icon = false,
   editor,
+  list,
   disabled = false,
   onDone,
 }: {
   page: PageCardData;
-  icon?: boolean;
   editor?: {
+    onClose: () => void;
+    returnFocus: RefObject<HTMLElement | null>;
+  };
+  list?: {
     onClose: () => void;
     returnFocus: RefObject<HTMLElement | null>;
   };
@@ -147,13 +149,15 @@ export function TrashAction({
   const basePage =
     recovery?.page.id === initialPage.id ? recovery.page : initialPage;
   const [action, setAction] = useState<"trash" | "restore" | "delete" | null>(
-      editor ? "trash" : null,
+      editor || list ? "trash" : null,
     ),
     [busy, setBusy] = useState(false),
     [error, setError] = useState(""),
     [success, setSuccess] = useState(""),
     [references, setReferences] = useState<InboundReference[] | null>(null),
-    [referencesLoading, setReferencesLoading] = useState(Boolean(editor)),
+    [referencesLoading, setReferencesLoading] = useState(
+      Boolean(editor || list),
+    ),
     [referenceAttempt, setReferenceAttempt] = useState(0),
     [reviewedPage, setReviewedPage] = useState<PageCardData | null>(null);
   const page =
@@ -201,6 +205,7 @@ export function TrashAction({
     setAction(null);
     setError("");
     editor?.onClose();
+    list?.onClose();
   }
   async function submit() {
     if (!action || disabled || pending.current || referencesLoading) return;
@@ -230,6 +235,7 @@ export function TrashAction({
             : "Page moved to trash.";
       setSuccess(message);
       setAction(null);
+      list?.onClose();
       onDone?.(message);
       if (editor && action === "trash") {
         editor.onClose();
@@ -247,8 +253,8 @@ export function TrashAction({
     }
   }
   return (
-    <div className={icon || editor ? undefined : "recovery-action"}>
-      {editor ? null : page.deleted_at ? (
+    <div className={editor || list ? undefined : "recovery-action"}>
+      {editor || list ? null : page.deleted_at ? (
         <>
           <Button
             className="button"
@@ -274,17 +280,13 @@ export function TrashAction({
       ) : (
         <>
           <Button
-            className={icon ? undefined : "button secondary"}
+            className="button secondary"
             variant="outline"
-            size={icon ? "icon" : "default"}
             ref={trigger}
-            aria-label={icon ? "Move " + page.title + " to trash" : undefined}
             title={
               page.is_homepage
                 ? "Choose another homepage in Settings before moving this page to trash."
-                : icon
-                  ? "Move " + page.title + " to trash"
-                  : undefined
+                : undefined
             }
             onClick={() => {
               setReviewedPage(null);
@@ -294,13 +296,11 @@ export function TrashAction({
               setError("");
               setSuccess("");
             }}
-            disabled={
-              disabled || page.is_homepage || busy || (icon && Boolean(success))
-            }
+            disabled={disabled || page.is_homepage || busy}
           >
-            {icon ? <Trash2 aria-hidden="true" /> : "Move to trash"}
+            Move to trash
           </Button>
-          {page.is_homepage && !icon && (
+          {page.is_homepage && (
             <p>
               Choose another homepage in Settings before moving this page to
               trash.
@@ -341,12 +341,15 @@ export function TrashAction({
           onConfirm={() => void submit()}
           onCancel={cancel}
           returnFocus={
-            action === "trash" ? (editor?.returnFocus ?? trigger) : undefined
+            action === "trash"
+              ? (editor?.returnFocus ?? list?.returnFocus ?? trigger)
+              : undefined
           }
           onReload={() => {
             setAction(null);
             setError("");
             editor?.onClose();
+            list?.onClose();
             router.refresh();
           }}
         >
@@ -384,7 +387,7 @@ export function TrashAction({
           )}
         </ConfirmationDialog>
       )}
-      {success && !icon && <p role="status">{success}</p>}
+      {success && !list && <p role="status">{success}</p>}
     </div>
   );
 }

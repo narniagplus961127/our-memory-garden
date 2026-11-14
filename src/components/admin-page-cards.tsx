@@ -1,9 +1,10 @@
 "use client";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import type { AdminListOrder } from "@/lib/admin-list-order";
 import type { PageCardData } from "@/lib/pages";
 import {
   AdminListGrip,
+  AdminListActions,
   AdminListOrderStatus,
   AdminListRow,
   ListDragFeedback,
@@ -22,7 +23,15 @@ export function AdminPageCards({
   allowTrash?: boolean;
 }) {
   const [notice, setNotice] = useState("");
-  const sort = useAdminListOrder("pages", pages, pageLabel, order);
+  const [removal, setRemoval] = useState<PageCardData | null>(null);
+  const returnFocus = useRef<HTMLElement | null>(null);
+  const sort = useAdminListOrder(
+    "pages",
+    pages,
+    pageLabel,
+    order,
+    Boolean(removal),
+  );
   return (
     <>
       {notice && <Toast message={notice} onDismiss={() => setNotice("")} />}
@@ -33,7 +42,7 @@ export function AdminPageCards({
               <AdminListRow
                 title={page.title}
                 href={"/admin/pages/" + page.id}
-                showEdit={allowTrash}
+                showEdit={false}
                 grip={
                   order && (
                     <AdminListGrip
@@ -56,15 +65,16 @@ export function AdminPageCards({
                 }
                 trailing={
                   allowTrash && (
-                    <TrashAction
-                      page={page}
-                      icon
+                    <AdminListActions
+                      list="pages"
+                      id={page.id}
+                      title={page.title}
+                      href={"/admin/pages/" + page.id}
                       disabled={sort.busy}
-                      onDone={(message) => {
-                        setNotice(message);
-                        requestAnimationFrame(() =>
-                          document.getElementById("pages-title")?.focus(),
-                        );
+                      removalDisabled={page.is_homepage}
+                      onRemove={(trigger) => {
+                        returnFocus.current = trigger.current;
+                        setRemoval(page);
                       }}
                     />
                   )
@@ -86,6 +96,19 @@ export function AdminPageCards({
           <ListDragFeedback {...sort} />
           <AdminListOrderStatus {...sort} />
         </>
+      )}
+      {removal && (
+        <TrashAction
+          page={removal}
+          list={{
+            onClose: () => setRemoval(null),
+            returnFocus,
+          }}
+          onDone={(message) => {
+            returnFocus.current = document.getElementById("pages-title");
+            setNotice(message);
+          }}
+        />
       )}
     </>
   );

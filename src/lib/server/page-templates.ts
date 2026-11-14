@@ -1,15 +1,18 @@
 import "server-only";
 import { templateData, validPageData } from "../blocks";
+import { applyAdminListOrder } from "../admin-list-order";
 import { uuid } from "../organization";
 import { equal } from "../page-merge";
 import {
   templatePlaceholders,
+  starterTemplates,
   type PageTemplate,
   type TemplateSummary,
 } from "../page-templates";
 import { database } from "./db";
 import { RequestError } from "./http";
 import { getVisiblePage, type Administrator } from "./pages";
+import { cloneName } from "./clone-name";
 
 function templateName(value: unknown) {
   if (typeof value !== "string" || !value.trim() || value.trim().length > 200)
@@ -21,9 +24,13 @@ function templateName(value: unknown) {
 }
 
 export async function listPageTemplates() {
-  return database()<TemplateSummary[]>`
+  const templates = await database()<TemplateSummary[]>`
     select id, name, version from page_templates order by lower(name), id
   `;
+  return applyAdminListOrder(
+    templates,
+    starterTemplates.map(({ id }) => id),
+  );
 }
 
 export async function deletePageTemplate(id: string, version: unknown) {
@@ -49,6 +56,19 @@ export async function getPageTemplate(id: string) {
     select id, name, content, version from page_templates where id = ${id}
   `;
   return template ?? null;
+}
+
+export async function clonePageTemplate(sourceId: string, id: string) {
+  if (await getPageTemplate(id)) return { id };
+  const source = await getPageTemplate(sourceId);
+  if (!source) throw new RequestError(404, "Template not found.");
+  const sql = database();
+  await sql`
+    insert into page_templates (id, name, content)
+    values (${id}, ${cloneName(source.name, 200)}, ${sql.json(source.content)})
+    on conflict (id) do nothing
+  `;
+  return { id };
 }
 
 export async function createPageTemplate(

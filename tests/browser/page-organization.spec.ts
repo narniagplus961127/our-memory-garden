@@ -25,13 +25,13 @@ async function signIn(page: Page) {
   ).toBeTruthy();
 }
 
-test("Pages and Categories share row actions and save keyboard drag order", async ({
+test("Pages, Categories and Templates share row actions and save keyboard drag order", async ({
   page,
 }) => {
   test.setTimeout(120000);
   await signIn(page);
   const suffix = crypto.randomUUID().slice(0, 8);
-  for (const list of ["pages", "categories"]) {
+  for (const list of ["pages", "categories", "templates"]) {
     const first = "Apple " + suffix;
     const second = "Zinnia " + suffix;
     // Both fallback orders put Apple ahead of Zinnia.
@@ -57,10 +57,7 @@ test("Pages and Categories share row actions and save keyboard drag order", asyn
     ).toBeVisible();
     await expect(
       row.getByRole("button", {
-        name:
-          list === "pages"
-            ? "Move " + second + " to trash"
-            : "Delete " + second,
+        name: "Actions for " + second,
       }),
     ).toHaveCSS("width", "44px");
     await handle.press("Space");
@@ -85,6 +82,68 @@ test("Pages and Categories share row actions and save keyboard drag order", asyn
     expect(stale.status()).toBe(409);
     await page.reload();
     await expect(titles).toHaveText([second, first]);
+    if (list === "templates") {
+      await page.goto("/admin/pages/new");
+      await expect(
+        page.locator(".template-name").filter({ hasText: suffix }),
+      ).toHaveText([second, first]);
+    }
+  }
+});
+
+test("three-dot menus clone pages, categories and templates and open the copy", async ({
+  page,
+}) => {
+  test.setTimeout(120000);
+  await signIn(page);
+  const suffix = crypto.randomUUID().slice(0, 8);
+  for (const [list, label] of [
+    ["pages", "page"],
+    ["categories", "category"],
+    ["templates", "template"],
+  ]) {
+    const name = `Original ${label} ${suffix}`;
+    const original = await page.request.post(`/api/${list}`, {
+      headers,
+      data: list === "pages" ? { title: name } : { name },
+    });
+    expect(original.status()).toBe(201);
+    const { id } = await original.json();
+    await page.goto(`/admin/${list}`);
+    const actions = page.getByRole("button", {
+      name: `Actions for ${name}`,
+      exact: true,
+    });
+    const edit = page.getByRole("link", { name: `Edit ${name}`, exact: true });
+    const href = await edit.getAttribute("href");
+    await actions.click();
+    const menu = page.getByRole("menu");
+    await expect(menu.getByRole("menuitem", { name: "Edit" })).toHaveAttribute(
+      "href",
+      href!,
+    );
+    await menu.getByRole("menuitem", { name: "Clone", exact: true }).click();
+    const dialog = page.getByRole("dialog", { name: `Clone ${name}?` });
+    await dialog.getByRole("button", { name: "Cancel" }).click();
+    await expect(actions).toBeFocused();
+    await actions.click();
+    await menu.getByRole("menuitem", { name: "Clone", exact: true }).click();
+    const responseReady = page.waitForResponse((res) =>
+      res.url().endsWith("/api/admin-list-clone"),
+    );
+    await dialog
+      .getByRole("button", { name: `Clone ${label}`, exact: true })
+      .click();
+    const response = await responseReady;
+    expect(response.status(), await response.text()).toBe(201);
+    const copy = await response.json();
+    expect(copy.id).not.toBe(id);
+    await expect(page).toHaveURL(href!.replace(id, copy.id));
+    await page.goto(`/admin/${list}`);
+    await expect(
+      page.getByRole("link", { name: `Edit ${name} (copy)`, exact: true }),
+    ).toBeVisible();
+    await expect(edit).toBeVisible();
   }
 });
 

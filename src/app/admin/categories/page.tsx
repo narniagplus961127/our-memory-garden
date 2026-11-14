@@ -13,7 +13,7 @@ export default async function Categories() {
   ]);
   return (
     <>
-      <div className="admin-heading">
+      <div className="admin-heading admin-list-heading">
         <div>
           <p className="eyebrow">Your garden</p>
           <h1 id="categories-title" tabIndex={-1}>

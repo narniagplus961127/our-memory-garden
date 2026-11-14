@@ -94,7 +94,7 @@ test("category forms use dedicated pages, generate editable addresses and retain
       exact: true,
     }),
     remove = page.getByRole("button", {
-      name: "Delete A renamed collection " + suffix,
+      name: "Actions for A renamed collection " + suffix,
       exact: true,
     });
   await expect(edit).toBeVisible();
@@ -142,10 +142,11 @@ test("category removal confirms, retains failures, blocks busy dismissal and kee
   ).toBeTruthy();
   await page.goto("/admin/categories");
   const remove = page.getByRole("button", {
-    name: "Delete " + c.name,
+    name: "Actions for " + c.name,
     exact: true,
   });
   await remove.click();
+  await page.getByRole("menuitem", { name: "Delete", exact: true }).click();
   const dialog = page.getByRole("dialog", {
     name: "Delete " + c.name + "?",
     exact: true,
@@ -175,6 +176,7 @@ test("category removal confirms, retains failures, blocks busy dismissal and kee
   });
   try {
     await remove.click();
+    await page.getByRole("menuitem", { name: "Delete", exact: true }).click();
     await dialog
       .getByRole("button", { name: "Delete category", exact: true })
       .click();

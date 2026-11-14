@@ -13,6 +13,7 @@ import { database } from "./db";
 import { RequestError } from "./http";
 import { validatePageReferences } from "./page-references";
 import type { Administrator } from "./pages";
+import { cloneName, cloneSlug } from "./clone-name";
 
 type Sql = postgres.TransactionSql;
 type PageContent = ReturnType<typeof parsePageJson>;
@@ -101,12 +102,11 @@ async function readImportSource(
   }
 }
 
-async function checkReferences(
+async function checkPhotos(
   sql: Sql,
-  incoming: PageContent,
-  previous: PageData,
+  incoming: Pick<PageContent, "content" | "gridPhotos">,
+  source: "import" | "clone" = "import",
 ) {
-  await validatePageReferences(incoming.content, previous, sql);
   const photos = Array.from(incoming.gridPhotos.values()).flatMap((grid) =>
     grid.map(({ photoId }) => photoId),
   );
@@ -131,13 +131,15 @@ async function checkReferences(
       "Unavailable Media Library photos: " +
         ids +
         (missing.length > 3 ? " and more" : "") +
-        ". Replace or remove these IDs in the JSON file.",
+        (source === "clone"
+          ? ". Review the source page before cloning."
+          : ". Replace or remove these IDs in the JSON file."),
     );
   }
   return wanted.length;
 }
 
-function prepareGrids(incoming: PageContent) {
+function prepareGrids(incoming: Pick<PageContent, "content" | "gridPhotos">) {
   const grids: { id: string; blockId: string; photos: JsonGridPhoto[] }[] = [];
   const content = mapPhotoGrids(incoming.content, (block) => {
     const id = crypto.randomUUID();
@@ -168,9 +170,10 @@ export async function reviewPageJson(id: string, input: ImportSource) {
   return database().begin(async (sql) => {
     const page = await getPage(sql, id);
     const incoming = await readImportSource(sql, id, input);
+    await validatePageReferences(incoming.content, page.content, sql);
     return {
       blocks: incoming.count,
-      photos: await checkReferences(sql, incoming, page.content),
+      photos: await checkPhotos(sql, incoming),
       visibility: page.visibility,
     };
   });
@@ -184,7 +187,8 @@ export async function importPageJson(
   return database().begin(async (sql) => {
     const page = await getPage(sql, id, true);
     const incoming = await readImportSource(sql, id, input);
-    await checkReferences(sql, incoming, page.content);
+    await validatePageReferences(incoming.content, page.content, sql);
+    await checkPhotos(sql, incoming);
     const { content, grids } = prepareGrids(incoming);
     const replacement = { ...content, root: page.content.root };
     await writeGrids(sql, id, grids);
@@ -195,5 +199,48 @@ export async function importPageJson(
       where id=${id}
     `;
     return { id };
+  });
+}
+
+export async function clonePrivatePage(
+  admin: Administrator,
+  sourceId: string,
+  id: string,
+) {
+  return database().begin(async (sql) => {
+    async function existing() {
+      const [page] = await sql<{ id: string }[]>`
+        select id from pages where id=${id} and deleted_at is null
+      `;
+      return page;
+    }
+    if (await existing()) return { id };
+    const source = await getPage(sql, sourceId, true);
+    if (await existing()) return { id };
+    const incoming = {
+      content: source.content,
+      gridPhotos: await readPageGridPhotos(sql, source),
+    };
+    await checkPhotos(sql, incoming, "clone");
+    const { content, grids } = prepareGrids(incoming);
+    for (let copy = 1; copy <= 100; copy++) {
+      const [inserted] = await sql<{ id: string }[]>`
+        insert into pages (id, title, slug, visibility, content, created_by, updated_by,
+          page_date, category_id, cover_photo_id, sharing_title, sharing_description,
+          sharing_cover_photo_id, allow_indexing)
+        select ${id}::uuid, ${cloneName(source.title, 200, copy)}, ${cloneSlug(source.slug, copy)},
+          'private', ${sql.json(content)}, ${admin.id}, ${admin.id}, page_date,
+          category_id, cover_photo_id, sharing_title, sharing_description,
+          sharing_cover_photo_id, allow_indexing
+        from pages where id=${sourceId}
+        on conflict do nothing returning id
+      `;
+      if (inserted) {
+        await writeGrids(sql, id, grids);
+        return inserted;
+      }
+      if (await existing()) return { id };
+    }
+    throw new RequestError(409, "Could not find an unused URL for this copy.");
   });
 }
