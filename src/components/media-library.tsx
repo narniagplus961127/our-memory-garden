@@ -4,7 +4,7 @@ import { ConfirmationDialog } from "./confirmation-dialog";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { useEffect, useRef, useState, useId } from "react";
+import { useEffect, useRef, useState, useId, type ComponentProps } from "react";
 import { Tabs } from "radix-ui";
 import Link from "next/link";
 import { displayPhotoUrl, MAX_PHOTO_BYTES, type Photo } from "@/lib/media";
@@ -631,29 +631,53 @@ export function MediaLibrary({
     </div>
   );
 }
+export function PhotoLibraryDialog({
+  title = "Choose a photo",
+  onClose,
+  returnFocus,
+  busy,
+  footer,
+  children,
+  ...picker
+}: Pick<
+  ComponentProps<typeof Modal>,
+  "onClose" | "returnFocus" | "busy" | "footer" | "children"
+> & {
+  title?: string;
+} & ComponentProps<typeof MediaLibrary>) {
+  return (
+    <Modal
+      title={title}
+      closeLabel="Close photo library"
+      onClose={onClose}
+      returnFocus={returnFocus}
+      busy={busy}
+      footer={footer}
+      className={
+        picker.multiple
+          ? "canvas-photo-dialog modal-wide photo-grid-picker"
+          : "canvas-photo-dialog modal-wide"
+      }
+    >
+      {children}
+      <MediaLibrary {...picker} />
+    </Modal>
+  );
+}
+
 export function PhotoPicker({
   value,
   onChange,
   label = "Photo",
   hideLabel = false,
-  inModal = false,
 }: {
   value?: string;
   label?: string;
   hideLabel?: boolean;
-  inModal?: boolean;
   onChange: (value: string) => void;
 }) {
   const [open, setOpen] = useState(false);
   const opener = useRef<HTMLButtonElement>(null);
-  const library = open && (
-    <MediaLibrary
-      onSelect={(id) => {
-        onChange(id);
-        setOpen(false);
-      }}
-    />
-  );
   return (
     <div className="photo-picker">
       {!hideLabel && <span className="field-label">{label}</span>}
@@ -668,12 +692,10 @@ export function PhotoPicker({
           ref={opener}
           type="button"
           className="secondary"
-          aria-haspopup={inModal ? "dialog" : undefined}
-          onClick={() => setOpen(!open)}
+          aria-haspopup="dialog"
+          onClick={() => setOpen(true)}
         >
-          {open && !inModal
-            ? "Close " + label.toLowerCase() + " library"
-            : "Choose " + label.toLowerCase()}
+          {"Choose " + label.toLowerCase()}
         </Button>
         {value && (
           <Button
@@ -685,18 +707,15 @@ export function PhotoPicker({
           </Button>
         )}
       </div>
-      {open && inModal ? (
-        <Modal
-          title="Choose a photo"
-          closeLabel="Close photo library"
+      {open && (
+        <PhotoLibraryDialog
           onClose={() => setOpen(false)}
           returnFocus={opener}
-          className="canvas-photo-dialog modal-wide"
-        >
-          {library}
-        </Modal>
-      ) : (
-        library
+          onSelect={(id) => {
+            onChange(id);
+            setOpen(false);
+          }}
+        />
       )}
     </div>
   );

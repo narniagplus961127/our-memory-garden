@@ -5,10 +5,11 @@ import {
   useContext,
   useEffect,
   useId,
+  useMemo,
   useRef,
   useState,
 } from "react";
-import { GripVertical, Pencil, Trash2 } from "lucide-react";
+import { GripVertical, Ellipsis, Pencil, Trash2 } from "lucide-react";
 import { createUsePuck } from "@puckeditor/core";
 import {
   gridPhotosUrl,
@@ -25,7 +26,14 @@ import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { Textarea } from "./ui/textarea";
-import { MediaLibrary } from "./media-library";
+import { PhotoLibraryDialog } from "./media-library";
+import { useListReorder } from "./use-list-reorder";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "./ui/dropdown-menu";
 import { Modal } from "./modal";
 import { PhotoControls } from "./editor-photo-controls";
 import { fetchGridBatch, PhotoGridBlock } from "./photo-grid-block";
@@ -115,12 +123,29 @@ function GridPhotoList({
   const [selected, setSelected] = useState(new Set<string>());
   const [editing, setEditing] = useState<GridPhoto | null>(null);
   const opener = useRef<HTMLButtonElement>(null);
-  const editOpener = useRef<HTMLButtonElement>(null);
-  const moving = useRef<string | null>(null);
+  const editOpener = useRef<HTMLElement>(null);
   const pending = useRef(false);
   const field = useId();
   const url = gridPhotosUrl(pageId, blockId, reference);
-  const photos = batch?.photos ?? [];
+  const photos = batch?.photos;
+  const items = useMemo(
+    () =>
+      (photos ?? []).map((photo, index) => ({
+        id: photo.entryId,
+        label: photo.name ?? "Photo " + (index + 1),
+      })),
+    [photos],
+  );
+  const sorter = useListReorder(
+    items,
+    busy || loading,
+    (next, id) => {
+      const index = next.findIndex((item) => item.id === id);
+      void move(id, next[index + 1]?.id ?? null);
+    },
+    undefined,
+    "grid",
+  );
   useEffect(() => {
     const controller = new AbortController();
     setLoading(true);
@@ -207,8 +232,26 @@ function GridPhotoList({
       setLoading(false);
     }
   }
-  function move(entryId: string, before: string | null) {
-    if (entryId !== before) void submit({ action: "move", entryId, before });
+  async function move(entryId: string, before: string | null) {
+    if (entryId === before || pending.current) return;
+    if (before === null && batch?.next != null) {
+      // Keep a move to the last visible position ahead of unloaded photos.
+      pending.current = true;
+      setBusy(true);
+      setError("");
+      setFailed(null);
+      try {
+        before =
+          (await fetchGridBatch(url, batch.next)).photos[0]?.entryId ?? null;
+      } catch (error) {
+        setError((error as Error).message);
+        return;
+      } finally {
+        pending.current = false;
+        setBusy(false);
+      }
+    }
+    await submit({ action: "move", entryId, before });
   }
   const failure = error && (
     <div role="alert" className="grid gap-2">
@@ -228,7 +271,7 @@ function GridPhotoList({
     </div>
   );
   return (
-    <div className="grid gap-3">
+    <div className="photo-grid-manager grid gap-3">
       {batch && (
         <small className="muted">
           {batch.total} {batch.total === 1 ? "photo" : "photos"}
@@ -236,6 +279,7 @@ function GridPhotoList({
       )}
       <Button
         ref={opener}
+        aria-haspopup="dialog"
         type="button"
         disabled={busy || loading}
         onClick={() => {
@@ -258,112 +302,75 @@ function GridPhotoList({
         </p>
       )}
       {!library && !editing && failure}
-      <ol className="grid gap-2 p-0 m-0 list-none" aria-label="Grid photos">
-        {photos.map((photo, index) => {
-          const name = photo.name ?? "Photo " + (index + 1);
+      <span id={sorter.instructionsId} className="sr-only">
+        Drag a photo to reorder it. With a keyboard, press Space, use the arrow
+        keys, then press Enter to drop.
+      </span>
+      <span className="sr-only" role="status">
+        {sorter.announcement}
+      </span>
+      <ol className="photo-grid-editor-list" aria-label="Grid photos">
+        {photos?.map((photo, index) => {
+          const item = items[index];
+          const actionId = field + "-" + photo.entryId;
           return (
             <li
-              key={photo.entryId}
+              key={item.id}
+              {...sorter.rowProps(item.id)}
               className="photo-grid-editor-item"
-              onDragOver={(event) => {
-                if (moving.current && !busy && !loading) event.preventDefault();
-              }}
-              onDrop={(event) => {
-                event.preventDefault();
-                const entry = moving.current;
-                moving.current = null;
-                if (!entry || entry === photo.entryId) return;
-                const bounds = event.currentTarget.getBoundingClientRect();
-                const after = event.clientY >= bounds.top + bounds.height / 2;
-                if (after && index === photos.length - 1 && batch?.next != null)
-                  return;
-                move(
-                  entry,
-                  after ? (photos[index + 1]?.entryId ?? null) : photo.entryId,
-                );
-              }}
             >
-              <div className="flex min-w-0 items-center gap-2">
-                <button
-                  type="button"
-                  className="photo-grid-grip"
-                  draggable={!busy && !loading}
-                  aria-label={"Drag " + name}
-                  onDragStart={(event) => {
-                    moving.current = photo.entryId;
-                    event.dataTransfer.effectAllowed = "move";
-                    event.dataTransfer.setData("text/plain", photo.entryId);
-                  }}
-                  onDragEnd={() => {
-                    moving.current = null;
-                  }}
-                >
-                  <GripVertical size={16} aria-hidden="true" />
-                </button>
+              <button
+                type="button"
+                className="photo-grid-grip admin-list-drag-handle"
+                disabled={busy || loading}
+                title={item.label}
+                {...sorter.handleProps(item)}
+              >
                 <img
                   src={displayPhotoUrl(photo.photoId)}
                   alt=""
-                  width={40}
-                  height={40}
+                  loading="lazy"
+                  width={96}
+                  height={96}
+                  draggable={false}
                 />
-                <span className="min-w-0 truncate">{name}</span>
-              </div>
-              <div className="flex flex-wrap gap-1">
-                <Button
-                  type="button"
-                  size="icon"
-                  variant="outline"
-                  disabled={busy || loading || index === 0}
-                  aria-label={"Move " + name + " up"}
-                  onClick={() => move(photo.entryId, photos[index - 1].entryId)}
-                >
-                  ↑
-                </Button>
-                <Button
-                  type="button"
-                  size="icon"
-                  variant="outline"
-                  disabled={
-                    busy ||
-                    loading ||
-                    index === photos.length - 1 ||
-                    (index === photos.length - 2 && batch?.next != null)
-                  }
-                  aria-label={"Move " + name + " down"}
-                  onClick={() =>
-                    move(photo.entryId, photos[index + 2]?.entryId ?? null)
-                  }
-                >
-                  ↓
-                </Button>
-                <Button
-                  type="button"
-                  size="icon"
-                  variant="outline"
-                  disabled={busy || loading}
-                  aria-label={"Edit " + name}
-                  onClick={(event) => {
-                    editOpener.current = event.currentTarget;
-                    setError("");
-                    setFailed(null);
-                    setEditing(photo);
-                  }}
-                >
-                  <Pencil aria-hidden="true" />
-                </Button>
-                <Button
-                  type="button"
-                  size="icon"
-                  variant="outline"
-                  disabled={busy || loading}
-                  aria-label={"Remove " + name + " from grid"}
-                  onClick={() =>
-                    void submit({ action: "remove", entryId: photo.entryId })
-                  }
-                >
-                  <Trash2 aria-hidden="true" />
-                </Button>
-              </div>
+                <GripVertical size={16} aria-hidden="true" />
+              </button>
+              <DropdownMenu modal={false}>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    id={actionId}
+                    className="photo-grid-item-actions"
+                    aria-label={"Actions for " + item.label}
+                    disabled={busy || loading}
+                  >
+                    <Ellipsis aria-hidden="true" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem
+                    onSelect={() => {
+                      editOpener.current = document.getElementById(actionId);
+                      setError("");
+                      setFailed(null);
+                      setEditing(photo);
+                    }}
+                  >
+                    <Pencil aria-hidden="true" /> Edit details
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    variant="destructive"
+                    onSelect={() =>
+                      void submit({ action: "remove", entryId: photo.entryId })
+                    }
+                  >
+                    <Trash2 aria-hidden="true" /> Remove from grid
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </li>
           );
         })}
@@ -379,7 +386,7 @@ function GridPhotoList({
         </Button>
       )}
       {library && (
-        <Modal
+        <PhotoLibraryDialog
           title="Choose photos"
           onClose={() => {
             setLibrary(false);
@@ -388,7 +395,18 @@ function GridPhotoList({
           }}
           busy={busy}
           returnFocus={opener}
-          className="modal-wide photo-grid-picker"
+          multiple={{
+            selected,
+            toggle: (id) => {
+              if (busy) return;
+              setSelected((current) => {
+                const next = new Set(current);
+                if (next.has(id)) next.delete(id);
+                else if (next.size < photoGridAddLimit) next.add(id);
+                return next;
+              });
+            },
+          }}
           footer={
             <>
               <span className="photo-grid-selection-count" role="status">
@@ -417,24 +435,10 @@ function GridPhotoList({
           }
         >
           {failure}
-          <MediaLibrary
-            multiple={{
-              selected,
-              toggle: (id) => {
-                if (busy) return;
-                setSelected((current) => {
-                  const next = new Set(current);
-                  if (next.has(id)) next.delete(id);
-                  else if (next.size < photoGridAddLimit) next.add(id);
-                  return next;
-                });
-              },
-            }}
-          />
           {selected.size === photoGridAddLimit && (
             <p>Save this batch to select more photos.</p>
           )}
-        </Modal>
+        </PhotoLibraryDialog>
       )}
       {editing && (
         <Modal

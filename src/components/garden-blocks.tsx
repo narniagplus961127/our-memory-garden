@@ -310,7 +310,13 @@ export const gardenConfig: Config<
       },
     },
     render: ({ children, puck }) => (
-      <div className="garden-document">
+      <div
+        className={
+          puck.isEditing
+            ? "garden-document garden-document-editing"
+            : "garden-document"
+        }
+      >
         {/* Puck supplies its root drop area as children. Restrict that existing area;
                     nested content uses Slot allow lists, without adding deprecated DropZones. */}
         {puck.isEditing &&
@@ -792,7 +798,7 @@ export const gardenConfig: Config<
           label: "Photo",
           render: ({ value, onChange }) => (
             <PhotoControls field>
-              <PhotoPicker value={value} onChange={onChange} inModal />
+              <PhotoPicker value={value} onChange={onChange} />
             </PhotoControls>
           ),
         },

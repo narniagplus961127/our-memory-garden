@@ -25,7 +25,7 @@ export default async function GardenPage({
   return (
     <>
       <GardenHeader pageId={page.id} />
-      <main className="public-page">
+      <main className="public-page public-visual-page">
         <div
           className="page-content public-page-heading"
           style={{

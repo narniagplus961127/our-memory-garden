@@ -36,8 +36,9 @@ type Press = {
 export function useListReorder<T extends SortableItem>(
   items: T[],
   busy: boolean,
-  onReorder: (items: T[]) => void,
+  onReorder: (items: T[], movedId: string) => void,
   changeParent?: (item: T, parentId: string | null) => T,
+  layout: "list" | "grid" = "list",
 ) {
   const instructionsId = useId();
   const [drag, setDrag] = useState<Drag | null>(null),
@@ -179,6 +180,25 @@ export function useListReorder<T extends SortableItem>(
     const remaining = items.filter(
       (i) => i.parentId === parentId && i.id !== current.id,
     );
+    if (layout === "grid") {
+      const card = document
+        .elementFromPoint(x, y)
+        ?.closest("[data-reorder-id]");
+      const target = remaining.findIndex(
+        (item) => item.id === (card as HTMLElement | null)?.dataset.reorderId,
+      );
+      const rect = card?.getBoundingClientRect();
+      update({
+        ...current,
+        x,
+        y,
+        target: undefined,
+        valid: valid && target >= 0 && card?.parentElement === list,
+        index:
+          target + Number(Boolean(rect && x >= rect.left + rect.width / 2)),
+      });
+      return;
+    }
     let index = remaining.findIndex((item) => {
       const rect = rows.current.get(item.id)?.getBoundingClientRect();
       return rect && y < rect.top + rect.height / 2;
@@ -189,10 +209,21 @@ export function useListReorder<T extends SortableItem>(
   function scroll() {
     const current = active.current;
     if (current?.input !== "pointer") return;
-    const step =
-      current.y < 72 ? -16 : current.y > window.innerHeight - 72 ? 16 : 0;
+    let scroller =
+      layout === "grid"
+        ? rows.current.get(current.id)?.parentElement
+        : undefined;
+    while (
+      scroller &&
+      !/(auto|scroll)/.test(getComputedStyle(scroller).overflowY)
+    )
+      scroller = scroller.parentElement;
+    const bounds = scroller?.getBoundingClientRect();
+    const top = bounds?.top ?? 0;
+    const bottom = bounds?.bottom ?? window.innerHeight;
+    const step = current.y < top + 48 ? -16 : current.y > bottom - 48 ? 16 : 0;
     if (step) {
-      window.scrollBy(0, step);
+      (scroller ?? window).scrollBy(0, step);
       point(current.x, current.y);
     }
     animation.current = requestAnimationFrame(scroll);
@@ -226,12 +257,13 @@ export function useListReorder<T extends SortableItem>(
           ? next.indexOf(last) + 1
           : next.length;
       next.splice(index, 0, changeParent(moved, current.parentId ?? null));
-      onReorder(next);
+      onReorder(next, moved.id);
     } else if (current.index !== current.original) {
       siblings.splice(current.index, 0, moved);
       let n = 0;
       onReorder(
         items.map((i) => (i.parentId === current.parentId ? siblings[n++] : i)),
+        moved.id,
       );
     }
     clear();
@@ -340,7 +372,10 @@ export function useListReorder<T extends SortableItem>(
           `${item.label} ${location(parent.parentId)}, position ${index + 1}.`,
         );
       }
-    } else if (["ArrowUp", "ArrowDown", "Home", "End"].includes(event.key)) {
+    } else if (
+      ["ArrowUp", "ArrowDown", "Home", "End"].includes(event.key) ||
+      (layout === "grid" && ["ArrowLeft", "ArrowRight"].includes(event.key))
+    ) {
       event.preventDefault();
       const count = siblings.length + 1;
       const index = Math.max(
@@ -351,7 +386,8 @@ export function useListReorder<T extends SortableItem>(
             ? 0
             : event.key === "End"
               ? count - 1
-              : current.index + (event.key === "ArrowUp" ? -1 : 1),
+              : current.index +
+                (["ArrowUp", "ArrowLeft"].includes(event.key) ? -1 : 1),
         ),
       );
       update({ ...current, index, target: undefined });

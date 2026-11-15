@@ -2,8 +2,8 @@
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { useId, useState } from "react";
-import { MediaLibrary } from "./media-library";
+import { useId, useRef, useState } from "react";
+import { PhotoLibraryDialog } from "./media-library";
 import { displayPhotoUrl } from "@/lib/media";
 import type { GalleryPhoto } from "./photo-gallery";
 export function GallerySettings({
@@ -14,6 +14,7 @@ export function GallerySettings({
   onChange: (value: GalleryPhoto[]) => void;
 }) {
   const fieldId = useId();
+  const opener = useRef<HTMLButtonElement>(null);
   const [libraryOpen, setLibraryOpen] = useState(false);
   function move(index: number, delta: number) {
     const next = [...value];
@@ -82,12 +83,16 @@ export function GallerySettings({
         type="button"
         className="secondary"
         disabled={value.length >= 100}
-        onClick={() => setLibraryOpen(!libraryOpen)}
+        ref={opener}
+        aria-haspopup="dialog"
+        onClick={() => setLibraryOpen(true)}
       >
-        {libraryOpen ? "Close gallery library" : "Add gallery photo"}
+        Add gallery photo
       </Button>
       {libraryOpen && (
-        <MediaLibrary
+        <PhotoLibraryDialog
+          onClose={() => setLibraryOpen(false)}
+          returnFocus={opener}
           onSelect={(photoId) => {
             onChange([...value, { photoId, caption: "" }]);
             setLibraryOpen(false);
