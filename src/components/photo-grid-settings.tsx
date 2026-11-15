@@ -56,6 +56,7 @@ export function GridCanvas({
   maxColumns,
   photoGap,
   photoRadius,
+  photoAnimation,
 }: GardenBlocks["PhotoGrid"] & {
   id: string;
   editing: boolean;
@@ -74,6 +75,7 @@ export function GridCanvas({
       maxColumns={maxColumns}
       gap={photoGap}
       radius={photoRadius}
+      photoAnimation={photoAnimation}
     />
   );
 }

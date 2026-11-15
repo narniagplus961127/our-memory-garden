@@ -133,6 +133,7 @@ export function validPageData(
             "maxColumns",
             "photoGap",
             "photoRadius",
+            "photoAnimation",
           ],
           Gallery: ["photos"],
           Divider: ["dividerIcon", "dividerEmoji"],
@@ -325,6 +326,7 @@ export function validPageData(
             );
           case "PhotoGrid":
             return (
+              opt("photoAnimation", ["none", "fade-in"]) &&
               ((props.gridId === undefined &&
                 props.gridRevision === undefined) ||
                 (typeof props.gridId === "string" &&

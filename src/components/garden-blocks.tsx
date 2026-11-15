@@ -99,6 +99,7 @@ type GardenBlockProps = {
     maxColumns?: number;
     photoGap?: number;
     photoRadius?: number;
+    photoAnimation?: Appearance["animation"];
     initialPhotos?: GridPhotoBatch;
     photosUrl?: string;
   };
@@ -674,8 +675,23 @@ export const gardenConfig: Config<
             </label>
           ),
         },
+        photoAnimation: {
+          type: "custom",
+          render: ({ value, onChange }) => (
+            <AnimationSettings
+              label="Photo animation"
+              value={value}
+              onChange={onChange}
+            />
+          ),
+        },
       },
-      defaultProps: { maxColumns: 4, photoGap: 12, photoRadius: 10 },
+      defaultProps: {
+        maxColumns: 4,
+        photoGap: 12,
+        photoRadius: 10,
+        photoAnimation: "fade-in",
+      },
       render: ({ puck, ...props }) => (
         <AnimatedBlock
           animation={props.animation}

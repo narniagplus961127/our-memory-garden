@@ -5,14 +5,16 @@ import { NativeSelect, NativeSelectOption } from "./ui/native-select";
 export function AnimationSettings({
   value,
   onChange,
+  label = "Animation type",
 }: {
   value?: "none" | "fade-in";
+  label?: string;
   onChange: (value: "none" | "fade-in") => void;
 }) {
   const id = useId();
   return (
     <div className="grid gap-2">
-      <Label htmlFor={id}>Animation type</Label>
+      <Label htmlFor={id}>{label}</Label>
       <NativeSelect
         id={id}
         value={value ?? "fade-in"}

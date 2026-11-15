@@ -330,7 +330,7 @@ function InspectorFields({
   groups.push({
     id: "animation",
     title: "Animation",
-    keys: ["digitMotion", "animation"],
+    keys: ["digitMotion", "animation", "photoAnimation"],
   });
   const assigned = new Set(groups.flatMap((group) => group.keys));
   const others = Object.keys(fields).filter((key) => !assigned.has(key));
