@@ -1,16 +1,12 @@
 import { requireAdministrator } from "@/lib/server/auth";
-import { categories } from "@/lib/server/organization";
+import { readCategoryTree } from "@/lib/server/categories";
 import { CategoryManager } from "@/components/category-manager";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { readAdminListOrder } from "@/lib/server/admin-list-order";
 
 export default async function Categories() {
   await requireAdministrator();
-  const [list, order] = await Promise.all([
-    categories(),
-    readAdminListOrder("categories"),
-  ]);
+  const { items, order } = await readCategoryTree();
   return (
     <>
       <div className="admin-heading admin-list-heading">
@@ -29,7 +25,7 @@ export default async function Categories() {
       </div>
       <CategoryManager
         key={order.version}
-        initialCategories={list}
+        initialCategories={items}
         order={order}
       />
     </>

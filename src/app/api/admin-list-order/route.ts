@@ -1,6 +1,7 @@
 import { currentAdministrator } from "@/lib/server/auth";
 import { isAdminList } from "@/lib/admin-list-order";
 import { saveAdminListOrder } from "@/lib/server/admin-list-order";
+import { saveCategoryTree } from "@/lib/server/categories";
 import {
   assertSameOrigin,
   bodyJson,
@@ -14,11 +15,15 @@ export async function PUT(request: Request) {
     if (!(await currentAdministrator(request.headers))) {
       throw new RequestError(401, "Sign in to reorder this list.");
     }
-    const { list, ids, version } = await bodyJson(request);
+    const { list, ids, version, move } = await bodyJson(request);
     if (!isAdminList(list)) {
       throw new RequestError(400, "Invalid admin list.");
     }
-    return Response.json(await saveAdminListOrder(list, ids, version), {
+    const order =
+      list === "categories"
+        ? await saveCategoryTree(ids, version, move)
+        : await saveAdminListOrder(list, ids, version);
+    return Response.json(order, {
       headers: { "Cache-Control": "private, no-store" },
     });
   } catch (error) {
