@@ -13,7 +13,13 @@ export default async function HomePage() {
   return (
     <>
       <GardenHeader pageId={page?.id} />
-      <main className="public-page public-homepage">
+      <main
+        className={
+          page
+            ? "public-page public-homepage public-visual-page"
+            : "public-page public-homepage"
+        }
+      >
         <div
           className="page-content public-page-heading"
           style={{
@@ -26,11 +32,11 @@ export default async function HomePage() {
         {page ? (
           <GardenContent data={page.content} pageId={page.id} />
         ) : (
-          <p className="muted">A little place for the moments we share.</p>
+          <div className="page-content">
+            <p className="muted">A little place for the moments we share.</p>
+            <GardenCat />
+          </div>
         )}
-        <div className="page-content">
-          <GardenCat />
-        </div>
       </main>
     </>
   );

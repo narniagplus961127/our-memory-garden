@@ -1,8 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { registerOverlayPortal, useGetPuck } from "@puckeditor/core";
-import { MediaLibrary } from "./media-library";
-import { Modal } from "./modal";
+import { PhotoLibraryDialog } from "./media-library";
 import { Button } from "./ui/button";
 export function CanvasPhotoAction({
   id,
@@ -30,6 +29,7 @@ export function CanvasPhotoAction({
     <div ref={ref} className="canvas-photo-action">
       <Button
         ref={opener}
+        aria-haspopup="dialog"
         type="button"
         variant="outline"
         onClick={(event) => {
@@ -46,29 +46,23 @@ export function CanvasPhotoAction({
         {hasPhoto ? "Replace photo" : "Choose photo"}
       </Button>
       {open && (
-        <Modal
-          closeLabel="Close photo library"
-          title="Choose a photo"
+        <PhotoLibraryDialog
           onClose={close}
           returnFocus={opener}
-          className="canvas-photo-dialog modal-wide"
-        >
-          <MediaLibrary
-            onSelect={(photoId) => {
-              const api = getPuck(),
-                selector = api.getSelectorForId(id),
-                data = selector ? api.getItemById(id) : undefined;
-              if (selector && data?.type === "Image")
-                api.dispatch({
-                  type: "replace",
-                  destinationIndex: selector.index,
-                  destinationZone: selector.zone,
-                  data: { ...data, props: { ...data.props, photoId } },
-                });
-              close();
-            }}
-          />
-        </Modal>
+          onSelect={(photoId) => {
+            const api = getPuck(),
+              selector = api.getSelectorForId(id),
+              data = selector ? api.getItemById(id) : undefined;
+            if (selector && data?.type === "Image")
+              api.dispatch({
+                type: "replace",
+                destinationIndex: selector.index,
+                destinationZone: selector.zone,
+                data: { ...data, props: { ...data.props, photoId } },
+              });
+            close();
+          }}
+        />
       )}
     </div>
   );

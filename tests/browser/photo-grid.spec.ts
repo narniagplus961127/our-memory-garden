@@ -1,4 +1,4 @@
-import { test, expect, type Locator } from "@playwright/test";
+import { test, expect, type Locator, type Page } from "@playwright/test";
 import { readFile } from "node:fs/promises";
 import sharp from "sharp";
 import { selectBlock, setVisibility } from "./editor-controls";
@@ -13,6 +13,45 @@ const env = Object.fromEntries(
     ]),
 );
 const headers = { Origin: env.NEXT_PUBLIC_APP_URL };
+
+async function drag(
+  page: Page,
+  mobile: boolean,
+  from: { x: number; y: number },
+  to: { x: number; y: number },
+) {
+  if (!mobile) {
+    await page.mouse.move(from.x, from.y);
+    await page.mouse.down();
+    await page.mouse.move(to.x, to.y, { steps: 8 });
+    await page.mouse.up();
+    return;
+  }
+  const session = await page.context().newCDPSession(page);
+  try {
+    await session.send("Input.dispatchTouchEvent", {
+      type: "touchStart",
+      touchPoints: [from],
+    });
+    for (let step = 1; step <= 8; step++) {
+      await session.send("Input.dispatchTouchEvent", {
+        type: "touchMove",
+        touchPoints: [
+          {
+            x: from.x + ((to.x - from.x) * step) / 8,
+            y: from.y + ((to.y - from.y) * step) / 8,
+          },
+        ],
+      });
+    }
+    await session.send("Input.dispatchTouchEvent", {
+      type: "touchEnd",
+      touchPoints: [],
+    });
+  } finally {
+    await session.detach();
+  }
+}
 
 function sectionInsets(grid: Locator) {
   return grid.evaluate((element) => {
@@ -134,13 +173,26 @@ test("add a Photo grid, select photos, reorder and open the website viewer", asy
     .getByRole("list", { name: "Grid photos" })
     .getByRole("listitem");
   await expect(rows).toHaveCount(3);
-  await page
-    .getByRole("button", { name: "Move " + names[1] + " up", exact: true })
-    .click();
-  await expect(rows.first()).toContainText(names[1]);
-  await page
-    .getByRole("button", { name: "Edit " + names[1], exact: true })
-    .click();
+  let first = (await rows.nth(0).boundingBox())!;
+  let second = (await rows.nth(1).boundingBox())!;
+  expect(Math.round(first.y)).toBe(Math.round(second.y));
+  await rows.nth(1).scrollIntoViewIfNeeded();
+  first = (await rows.nth(0).boundingBox())!;
+  second = (await rows.nth(1).boundingBox())!;
+  await drag(
+    page,
+    isMobile,
+    { x: second.x + 12, y: second.y + second.height / 2 },
+    { x: first.x + 10, y: first.y + first.height / 2 },
+  );
+  await expect(
+    rows.first().getByRole("button", { name: "Drag " + names[1] }),
+  ).toBeVisible();
+  const landscapeActions = page.getByRole("button", {
+    name: "Actions for " + names[1],
+  });
+  await landscapeActions.click();
+  await page.getByRole("menuitem", { name: "Edit details" }).click();
   const details = page.getByRole("dialog", { name: "Edit photo details" });
   await details
     .getByLabel("Alt text", { exact: true })
@@ -150,16 +202,16 @@ test("add a Photo grid, select photos, reorder and open the website viewer", asy
     .getByRole("button", { name: "Save photo details", exact: true })
     .click();
   await expect(details).toHaveCount(0);
-  await page
-    .getByRole("button", {
-      name: "Remove " + names[2] + " from grid",
-      exact: true,
-    })
-    .click();
+  await page.getByRole("button", { name: "Actions for " + names[2] }).click();
+  await page.getByRole("menuitem", { name: "Remove from grid" }).click();
   await expect(rows).toHaveCount(2);
   await page.getByLabel("Gap (px)", { exact: true }).fill("16");
   await expect(status).toHaveText("Saved");
   const canvas = page.frameLocator("iframe");
+  await expect(canvas.locator(".garden-document")).toHaveCSS(
+    "padding-top",
+    "0px",
+  );
   const grid = canvas.locator(".garden-photo-grid");
   const section = canvas.locator(".garden-section");
   const insets = isMobile ? [28, 28] : [64, 64];
@@ -191,9 +243,34 @@ test("add a Photo grid, select photos, reorder and open the website viewer", asy
     .getByRole("button", { name: "Normal container", exact: true })
     .click();
   await expect(status).toHaveText("Saved");
+  const background = page.getByRole("button", {
+    name: "Choose background image",
+    exact: true,
+  });
+  await background.click();
+  const library = page.getByRole("dialog", { name: "Choose a photo" });
+  await expect(
+    library.getByRole("searchbox", { name: "Find a photo" }),
+  ).toBeVisible();
+  await library.getByRole("button", { name: "Close photo library" }).click();
+  await expect(background).toBeFocused();
   await page.screenshot({ path: info.outputPath("photo-grid-editor.png") });
   await setVisibility(page, "public");
   await expect(status).toHaveText("Saved");
+  const cover = page.getByRole("button", { name: "Choose photo", exact: true });
+  await cover.click();
+  await expect(
+    library.getByRole("searchbox", { name: "Find a photo" }),
+  ).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(cover).toBeFocused();
+  await page
+    .getByRole("button", { name: "Choose sharing cover photo", exact: true })
+    .click();
+  await expect(
+    library.getByRole("searchbox", { name: "Find a photo" }),
+  ).toBeVisible();
+  await page.keyboard.press("Escape");
   const visitor = await browser.newContext({
     viewport: isMobile
       ? { width: 390, height: 844 }
@@ -211,6 +288,14 @@ test("add a Photo grid, select photos, reorder and open the website viewer", asy
     });
     await expect(open).toBeVisible();
     const publicGrid = website.locator(".garden-photo-grid");
+    await expect(website.locator(".public-visual-page")).toHaveCSS(
+      "padding-bottom",
+      "0px",
+    );
+    await expect(website.locator(".garden-document")).toHaveCSS(
+      "padding-top",
+      "0px",
+    );
     await expect.poll(() => sectionInsets(publicGrid)).toEqual(insets);
     const landscape = await open.locator("img").boundingBox();
     const portrait = await website
@@ -221,10 +306,66 @@ test("add a Photo grid, select photos, reorder and open the website viewer", asy
     expect(landscape!.width).toBeCloseTo(portrait!.width, 0);
     await open.click();
     const viewer = website.getByRole("dialog", { name: "Photo grid viewer" });
-    await expect(
-      viewer.getByRole("heading", { name: "A long afternoon" }),
-    ).toBeVisible();
-    await viewer.getByRole("button", { name: "Next →", exact: true }).click();
+    await expect(viewer.getByText("A long afternoon")).toBeVisible();
+    const dialogBox = (await viewer.boundingBox())!;
+    expect(Math.round(dialogBox.x)).toBe(0);
+    expect(Math.round(dialogBox.y)).toBe(0);
+    expect(Math.round(dialogBox.width)).toBe(website.viewportSize()!.width);
+    expect(Math.round(dialogBox.height)).toBe(website.viewportSize()!.height);
+    await website.screenshot({
+      path: info.outputPath("photo-grid-fullscreen.png"),
+    });
+    await viewer.getByRole("button", { name: "Zoom in" }).click();
+    await expect(viewer.getByRole("button", { name: "Reset zoom" })).toHaveText(
+      "150%",
+    );
+    await viewer.getByRole("button", { name: "Reset zoom" }).click();
+    const next = viewer.getByRole("button", { name: "Next photo" });
+    const pan = (await viewer.locator(".photo-lightbox-pan").boundingBox())!;
+    const nextBox = (await next.boundingBox())!;
+    expect(
+      Math.abs(nextBox.y + nextBox.height / 2 - pan.y - pan.height / 2),
+    ).toBeLessThan(2);
+    if (isMobile) {
+      const center = pan.y + pan.height / 2;
+      const pinch = await visitor.newCDPSession(website);
+      const pinchPoints = (radius: number) =>
+        [-1, 1].map((side, id) => ({
+          id,
+          x: pan.x + pan.width / 2 + side * radius,
+          y: center,
+        }));
+      try {
+        await pinch.send("Input.dispatchTouchEvent", {
+          type: "touchStart",
+          touchPoints: pinchPoints(32),
+        });
+        for (const radius of [38, 45, 55, 64])
+          await pinch.send("Input.dispatchTouchEvent", {
+            type: "touchMove",
+            touchPoints: pinchPoints(radius),
+          });
+        await pinch.send("Input.dispatchTouchEvent", {
+          type: "touchEnd",
+          touchPoints: [],
+        });
+      } finally {
+        await pinch.detach();
+      }
+      await expect(viewer.locator(".photo-lightbox-pan")).toHaveAttribute(
+        "data-zoom",
+        "true",
+      );
+      await viewer.getByRole("button", { name: "Reset zoom" }).click();
+      await drag(
+        website,
+        true,
+        { x: pan.x + pan.width * 0.75, y: center },
+        { x: pan.x + pan.width * 0.25, y: center },
+      );
+    } else {
+      await next.click({ timeout: 6000 });
+    }
     await expect(
       viewer.getByRole("img", { name: "Photo 2", exact: true }),
     ).toBeVisible();

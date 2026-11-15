@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { displayPhotoUrl } from "@/lib/media";
 import type { GridPhoto, GridPhotoBatch } from "@/lib/photo-grid";
-import { Modal } from "./modal";
+import { PhotoGridViewer } from "./photo-grid-viewer";
 import { PhotoImage } from "./photo-image";
 import { Button } from "./ui/button";
 
@@ -76,7 +76,10 @@ export function PhotoGridBlock({
     try {
       const next = await fetchGridBatch(url, batch.next);
       setBatch({ ...next, photos: [...photos, ...next.photos] });
-      if (openNext && next.photos.length) setActive(photos.length);
+      if (openNext && next.photos.length)
+        setActive((open) =>
+          open === photos.length - 1 ? photos.length : open,
+        );
     } catch (error) {
       setError((error as Error).message);
     } finally {
@@ -188,50 +191,17 @@ export function PhotoGridBlock({
         </div>
       )}
       {selected && active !== null && (
-        <Modal
-          title={selected.caption || selected.alt || "Photos"}
-          label="Photo grid viewer"
-          closeLabel="Close photo viewer"
+        <PhotoGridViewer
+          photo={selected}
+          index={active}
+          total={batch?.total ?? photos.length}
+          canNext={active < photos.length - 1 || batch?.next != null}
+          loading={loading}
+          error={error}
+          trigger={trigger}
           onClose={() => setActive(null)}
-          returnFocus={trigger}
-          className="gallery-viewer modal-wide"
-          onKeyDown={(event) => {
-            if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
-              event.preventDefault();
-              move(event.key === "ArrowLeft" ? -1 : 1);
-            }
-          }}
-        >
-          <figure className="gallery-enlarged">
-            <PhotoImage
-              src={displayPhotoUrl(selected.photoId)}
-              alt={selected.alt || selected.caption || "Photo " + (active + 1)}
-            />
-          </figure>
-          <div className="gallery-viewer-controls">
-            <span aria-live="polite">
-              {active + 1} of {batch?.total ?? photos.length}
-            </span>
-            <Button
-              variant="outline"
-              disabled={active === 0}
-              onClick={() => move(-1)}
-            >
-              ← Previous
-            </Button>
-            <Button
-              variant="outline"
-              disabled={
-                loading ||
-                (active === photos.length - 1 && batch?.next === null)
-              }
-              onClick={() => move(1)}
-            >
-              Next →
-            </Button>
-          </div>
-          {error && <p role="alert">{error}</p>}
-        </Modal>
+          onMove={move}
+        />
       )}
     </div>
   );
