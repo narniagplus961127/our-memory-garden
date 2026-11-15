@@ -5,6 +5,8 @@ import { readAdminListOrder } from "@/lib/server/admin-list-order";
 import { applyAdminListOrder } from "@/lib/admin-list-order";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+export const metadata = { title: "Create page" };
+
 export default async function Templates() {
   await requireAdministrator();
   const [templates, order] = await Promise.all([

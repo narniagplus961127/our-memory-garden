@@ -1,6 +1,8 @@
 import { CreateTemplate } from "@/components/create-template";
 import { requireAdministrator } from "@/lib/server/auth";
 
+export const metadata = { title: "Create template" };
+
 export default async function NewTemplate() {
   await requireAdministrator();
   return (

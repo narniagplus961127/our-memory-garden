@@ -153,7 +153,8 @@ test("create a Swiper, round-trip its slides, and browse with responsive paginat
     await expect(inactiveDot.locator("span")).toHaveCSS("width", "7px");
     const rail = (await swiper.locator(".garden-swiper-rail").boundingBox())!;
     const pageDots = (await pagination.boundingBox())!;
-    expect(pageDots.y).toBeGreaterThanOrEqual(rail.y + rail.height);
+    expect(pageDots.y - (rail.y + rail.height)).toBeCloseTo(2, 0);
+    expect(pageDots.height).toBeCloseTo(24, 0);
     const viewport = swiper.locator(".garden-swiper-viewport");
     const width = (await viewport.boundingBox())!.width;
     const slides = swiper.locator(".garden-swiper-track > *");

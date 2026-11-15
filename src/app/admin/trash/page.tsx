@@ -2,6 +2,8 @@ import Link from "next/link";
 import { requireAdministrator } from "@/lib/server/auth";
 import { listTrash } from "@/lib/server/page-recovery";
 import { TrashList } from "@/components/page-recovery";
+export const metadata = { title: "Trash" };
+
 export default async function Trash() {
   await requireAdministrator();
   const pages = await listTrash();

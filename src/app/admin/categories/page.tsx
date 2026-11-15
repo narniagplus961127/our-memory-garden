@@ -4,6 +4,8 @@ import { CategoryManager } from "@/components/category-manager";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
+export const metadata = { title: "Categories" };
+
 export default async function Categories() {
   await requireAdministrator();
   const { items, order } = await readCategoryTree();

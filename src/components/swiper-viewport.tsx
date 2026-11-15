@@ -1,14 +1,68 @@
 "use client";
 
-import { useEffect, useId, useRef, useState, type ReactNode } from "react";
+import {
+  createContext,
+  useCallback,
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "./ui/button";
+import { PhotoViewer, type ViewerPhoto } from "./photo-viewer";
+
+export const SwiperPhotos = createContext<{
+  register: (element: HTMLButtonElement, photo: ViewerPhoto) => () => void;
+  open: (element: HTMLButtonElement) => boolean;
+} | null>(null);
 
 export function SwiperViewport({ children }: { children: ReactNode }) {
   const id = useId();
   const viewport = useRef<HTMLDivElement>(null);
   const offsets = useRef([0]);
   const [navigation, setNavigation] = useState({ page: 0, count: 1 });
+  const photoTriggers = useRef(new Map<HTMLButtonElement, ViewerPhoto>());
+  const photoOpener = useRef<HTMLButtonElement | null>(null);
+  const [gallery, setGallery] = useState<{
+    photos: ViewerPhoto[];
+    index: number;
+  } | null>(null);
+
+  const registerPhoto = useCallback(
+    (element: HTMLButtonElement, photo: ViewerPhoto) => {
+      photoTriggers.current.set(element, photo);
+      return () => {
+        photoTriggers.current.delete(element);
+      };
+    },
+    [],
+  );
+  const openPhoto = useCallback((element: HTMLButtonElement) => {
+    const track = viewport.current;
+    const entries = [...photoTriggers.current].filter(([button]) =>
+      track?.contains(button),
+    );
+    if (entries.length < 2) return false;
+    // Use the rendered order, even if the slides have been reordered.
+    entries.sort(([a], [b]) => {
+      if (a === b) return 0;
+      return a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING
+        ? -1
+        : 1;
+    });
+    const index = entries.findIndex(([button]) => button === element);
+    if (index < 0) return false;
+    photoOpener.current = element;
+    setGallery({ photos: entries.map(([, photo]) => photo), index });
+    return true;
+  }, []);
+  const photos = useMemo(
+    () => ({ register: registerPhoto, open: openPhoto }),
+    [registerPhoto, openPhoto],
+  );
 
   useEffect(() => {
     const element = viewport.current;
@@ -105,7 +159,9 @@ export function SwiperViewport({ children }: { children: ReactNode }) {
             }
           }}
         >
-          {children}
+          <SwiperPhotos.Provider value={photos}>
+            {children}
+          </SwiperPhotos.Provider>
         </div>
         {count > 1 && (
           <Button
@@ -147,6 +203,34 @@ export function SwiperViewport({ children }: { children: ReactNode }) {
               </button>
             ))}
         </nav>
+      )}
+      {gallery && (
+        <PhotoViewer
+          label="Photo viewer"
+          photo={gallery.photos[gallery.index]}
+          trigger={photoOpener}
+          onClose={() => setGallery(null)}
+          navigation={{
+            index: gallery.index,
+            total: gallery.photos.length,
+            canNext: gallery.index < gallery.photos.length - 1,
+            onMove: (direction) =>
+              setGallery((current) =>
+                current
+                  ? {
+                      ...current,
+                      index: Math.max(
+                        0,
+                        Math.min(
+                          current.photos.length - 1,
+                          current.index + direction,
+                        ),
+                      ),
+                    }
+                  : null,
+              ),
+          }}
+        />
       )}
     </div>
   );

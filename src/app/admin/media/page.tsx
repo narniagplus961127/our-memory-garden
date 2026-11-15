@@ -1,5 +1,7 @@
 import { MediaLibrary } from "@/components/media-library";
 import { requireAdministrator } from "@/lib/server/auth";
+export const metadata = { title: "Media library" };
+
 export default async function MediaPage() {
   await requireAdministrator();
   return (
