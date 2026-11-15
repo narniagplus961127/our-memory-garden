@@ -8,6 +8,7 @@ import { richFields, validRichText } from "./rich-text";
 export { isWebUrl } from "./destinations";
 import type { PageData } from "./pages";
 import { validCountUpDate, validCountUpTime } from "./live-count-up";
+import { dividerEmoji, dividerIcons } from "./divider";
 import {
   customEmbedCodeLimit,
   customEmbedMinHeight,
@@ -19,6 +20,7 @@ export const blockNames = [
   "Image",
   "PageGrid",
   "PhotoGrid",
+  "Divider",
   "LiveCountUp",
   "CustomEmbed",
   "Gallery",
@@ -133,6 +135,7 @@ export function validPageData(
             "photoRadius",
           ],
           Gallery: ["photos"],
+          Divider: ["dividerIcon", "dividerEmoji"],
           LiveCountUp: [
             "heading",
             "startDate",
@@ -280,6 +283,13 @@ export function validPageData(
             props[key].length <= max &&
             !props[key].includes("\0"));
         switch (type) {
+          case "Divider":
+            return (
+              opt("dividerIcon", [...dividerIcons]) &&
+              (props.dividerEmoji === undefined ||
+                (boundedText("dividerEmoji", 64) &&
+                  props.dividerEmoji === dividerEmoji(props.dividerEmoji)))
+            );
           case "LiveCountUp":
             return (
               boundedText("heading", 200) &&

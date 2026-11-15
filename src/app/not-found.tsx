@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { GardenHeader } from "@/components/garden-header";
+import { GardenFooter } from "@/components/garden-footer";
 export default async function NotFound() {
   return (
     <>
@@ -12,6 +13,7 @@ export default async function NotFound() {
           <Link href="/">Back to our garden</Link>
         </Button>
       </main>
+      <GardenFooter />
     </>
   );
 }

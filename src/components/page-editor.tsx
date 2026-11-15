@@ -60,6 +60,7 @@ const paletteBlocks = [
   "PhotoGrid",
   "Button",
   "PageGrid",
+  "Divider",
   "LiveCountUp",
   "CustomEmbed",
 ] as const;
@@ -221,33 +222,35 @@ function InspectorFields({
 }) {
   const type = useGardenPuck((state) => state.selectedItem?.type);
   const content =
-    type === "Image"
-      ? { title: "Image", keys: ["photoId", "alt"] }
-      : type === "Button"
-        ? { title: "Link", keys: ["destination"] }
-        : type === "PageGrid"
-          ? { title: "Pages", keys: ["selection", "showDate"] }
-          : type === "PhotoGrid"
-            ? { title: "Photos", keys: ["gridId"] }
-            : type === "Gallery"
-              ? { title: "Photos", keys: ["photos"] }
-              : type === "LiveCountUp"
-                ? {
-                    title: "Counter",
-                    keys: [
-                      "startDate",
-                      "startTime",
-                      "countFormat",
-                      "showClock",
-                      "heading",
-                      "countLanguage",
-                      "showStartCaption",
-                      "startCaption",
-                    ],
-                  }
-                : type === "CustomEmbed"
-                  ? { title: "Embed code", keys: ["embedTitle", "embedCode"] }
-                  : null;
+    type === "Divider"
+      ? { title: "Divider", keys: ["dividerIcon", "dividerEmoji"] }
+      : type === "Image"
+        ? { title: "Image", keys: ["photoId", "alt"] }
+        : type === "Button"
+          ? { title: "Link", keys: ["destination"] }
+          : type === "PageGrid"
+            ? { title: "Pages", keys: ["selection", "showDate"] }
+            : type === "PhotoGrid"
+              ? { title: "Photos", keys: ["gridId"] }
+              : type === "Gallery"
+                ? { title: "Photos", keys: ["photos"] }
+                : type === "LiveCountUp"
+                  ? {
+                      title: "Counter",
+                      keys: [
+                        "startDate",
+                        "startTime",
+                        "countFormat",
+                        "showClock",
+                        "heading",
+                        "countLanguage",
+                        "showStartCaption",
+                        "startCaption",
+                      ],
+                    }
+                  : type === "CustomEmbed"
+                    ? { title: "Embed code", keys: ["embedTitle", "embedCode"] }
+                    : null;
   const groups =
     type === "Section"
       ? [

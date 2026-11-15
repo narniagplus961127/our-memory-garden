@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { categories, categoryBySlug } from "@/lib/server/categories";
 import { gridPages } from "@/lib/server/organization";
 import { GardenHeader } from "@/components/garden-header";
+import { GardenFooter } from "@/components/garden-footer";
 import { PageGrid } from "@/components/page-grid";
 import { siteUrl } from "@/lib/config";
 import Link from "next/link";
@@ -72,6 +73,7 @@ export default async function CategoryPage({
         </div>
         {cards.length > 0 && <PageGrid selection={selection} cards={cards} />}
       </main>
+      <GardenFooter />
     </>
   );
 }
