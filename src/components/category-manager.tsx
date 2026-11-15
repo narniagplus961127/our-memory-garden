@@ -1,9 +1,19 @@
 "use client";
-import { useRef, useState, type RefObject } from "react";
+import {
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+  type RefObject,
+} from "react";
+import { useRouter } from "next/navigation";
 import { ConfirmationDialog } from "./confirmation-dialog";
 import { Toast } from "./toast";
 import { categoryLabels, type Category } from "@/lib/organization";
-import type { AdminListOrder } from "@/lib/admin-list-order";
+import {
+  applyAdminListOrder,
+  type AdminListOrder,
+} from "@/lib/admin-list-order";
 import {
   AdminListGrip,
   AdminListActions,
@@ -11,8 +21,15 @@ import {
   AdminListRow,
   ListDragFeedback,
 } from "./admin-list-row";
-import { useAdminListOrder } from "./use-admin-list-order";
-const categoryLabel = (category: Category) => category.name;
+import { useListReorder } from "./use-list-reorder";
+
+type CategoryRow = {
+  id: string;
+  label: string;
+  parentId: string | null;
+  category: Category;
+};
+
 export function CategoryManager({
   initialCategories,
   order,
@@ -20,30 +37,112 @@ export function CategoryManager({
   initialCategories: Category[];
   order: AdminListOrder;
 }) {
+  const router = useRouter();
   const [list, setList] = useState(initialCategories),
+    [savedOrder, setSavedOrder] = useState(order),
+    [moving, setMoving] = useState<CategoryRow[] | null>(null),
+    [orderError, setOrderError] = useState(""),
+    [orderConflict, setOrderConflict] = useState(false),
     [selected, setSelected] = useState<Category | null>(null),
     [busy, setBusy] = useState(false),
     [error, setError] = useState(""),
     [notice, setNotice] = useState("");
   const pending = useRef(false);
-  const labels = categoryLabels(list);
   const returnFocus = useRef<RefObject<HTMLButtonElement | null> | undefined>(
     undefined,
   );
-  const sort = useAdminListOrder(
-    "categories",
-    list,
-    categoryLabel,
-    order,
-    Boolean(selected),
+  const rows = useMemo(
+    () =>
+      applyAdminListOrder(list, savedOrder.ids).map((category) => ({
+        id: category.id,
+        label: category.name,
+        parentId: category.parent_id,
+        category,
+      })),
+    [list, savedOrder.ids],
   );
-  function done(id: string, message: string) {
-    setList((current) => {
-      const parent = current.find((c) => c.id === id)?.parent_id ?? null;
-      return current
-        .filter((c) => c.id !== id)
-        .map((c) => (c.parent_id === id ? { ...c, parent_id: parent } : c));
-    });
+  const visible = moving ?? rows;
+  const { labels, children } = useMemo(() => {
+    const children = new Map<string | null, CategoryRow[]>();
+    for (const row of visible) {
+      const siblings = children.get(row.parentId);
+      if (siblings) siblings.push(row);
+      else children.set(row.parentId, [row]);
+    }
+    const labels = categoryLabels(
+      visible.map(({ category, parentId }) => ({
+        ...category,
+        parent_id: parentId,
+      })),
+    );
+    return { labels, children };
+  }, [visible]);
+  const sort = useListReorder(
+    visible,
+    Boolean(moving || selected || orderConflict) || visible.length < 2,
+    (next) => void reorder(next),
+    (item, parentId) => ({ ...item, parentId }),
+  );
+
+  async function reorder(next: CategoryRow[]) {
+    if (pending.current) return;
+    const changed = next.find(
+      ({ parentId, category }) => parentId !== category.parent_id,
+    );
+    const move = changed && {
+      id: changed.id,
+      parentId: changed.parentId,
+      expectedParentId: changed.category.parent_id,
+    };
+    pending.current = true;
+    setMoving(next);
+    setOrderError("");
+    setNotice("");
+    try {
+      const response = await fetch("/api/admin-list-order", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          list: "categories",
+          ids: next.map(({ id }) => id),
+          version: savedOrder.version,
+          move,
+        }),
+      });
+      const result = await response.json();
+      if (!response.ok) {
+        setOrderConflict(response.status === 409);
+        throw Error(result.error);
+      }
+      setList(
+        next.map(({ category, parentId }) => ({
+          ...category,
+          parent_id: parentId,
+        })),
+      );
+      setSavedOrder(result);
+      setNotice("Category order saved.");
+    } catch (failure) {
+      setOrderError(
+        failure instanceof Error && !(failure instanceof TypeError)
+          ? failure.message
+          : "Could not save the category order. Try dragging again.",
+      );
+      if (changed)
+        requestAnimationFrame(() =>
+          document
+            .querySelector<HTMLButtonElement>(
+              `[data-reorder-id="${changed.id}"] > .admin-list-row .admin-list-drag-handle`,
+            )
+            ?.focus(),
+        );
+    } finally {
+      pending.current = false;
+      setMoving(null);
+    }
+  }
+
+  function done(message: string) {
     setSelected(null);
     setError("");
     setNotice(message);
@@ -70,7 +169,11 @@ export function CategoryManager({
       const result = await response.json();
       if (!response.ok)
         throw Error(result.error ?? "Could not delete this category.");
-      done(selected.id, "Category deleted. Its pages were kept.");
+      setList(result.items);
+      setSavedOrder(result.order);
+      setOrderConflict(false);
+      setOrderError("");
+      done("Category deleted. Its pages were kept.");
     } catch (failure) {
       setError(
         failure instanceof Error
@@ -91,18 +194,13 @@ export function CategoryManager({
         cache: "no-store",
       });
       if (response.status === 404) {
-        done(
-          selected.id,
-          "This category was already deleted. Its pages were kept.",
-        );
+        done("This category was already deleted. Its pages were kept.");
+        router.refresh();
         return;
       }
       const result = await response.json();
       if (!response.ok) throw Error(result.error);
       setSelected(result);
-      setList((current) =>
-        current.map((c) => (c.id === result.id ? result : c)),
-      );
       setError("");
     } catch (failure) {
       setError(
@@ -115,57 +213,61 @@ export function CategoryManager({
       setBusy(false);
     }
   }
+  function tree(parent: string | null): ReactNode {
+    return (
+      <ul className="admin-list admin-list-tree">
+        {children.get(parent)?.map((row) => {
+          const { category, id, parentId } = row;
+          const href = "/admin/categories/" + id + "/edit";
+          return (
+            <li key={id} {...sort.rowProps(id)}>
+              <AdminListRow
+                title={category.name}
+                detail={parentId ? labels.get(parentId) : undefined}
+                href={href}
+                locked={Boolean(moving)}
+                showEdit={false}
+                grip={<AdminListGrip {...sort.handleProps(row)} />}
+                trailing={
+                  <AdminListActions
+                    list="categories"
+                    id={id}
+                    title={category.name}
+                    href={href}
+                    disabled={Boolean(moving)}
+                    onRemove={(trigger) => {
+                      returnFocus.current = trigger;
+                      setSelected(category);
+                      setError("");
+                    }}
+                  />
+                }
+              />
+              {children.has(id) && tree(id)}
+            </li>
+          );
+        })}
+      </ul>
+    );
+  }
   return (
     <div className="category-manager">
       {notice && <Toast message={notice} onDismiss={() => setNotice("")} />}
       <section aria-label="Categories" className="category-list">
         {list.length ? (
-          <ul className="admin-list">
-            {sort.ordered.map((category) => (
-              <li key={category.id} {...sort.rowProps(category.id)}>
-                <AdminListRow
-                  title={category.name}
-                  detail={
-                    category.parent_id
-                      ? labels.get(category.parent_id)
-                      : undefined
-                  }
-                  href={"/admin/categories/" + category.id + "/edit"}
-                  showEdit={false}
-                  grip={
-                    <AdminListGrip
-                      {...sort.handleProps({
-                        id: category.id,
-                        label: category.name,
-                      })}
-                    />
-                  }
-                  trailing={
-                    <AdminListActions
-                      list="categories"
-                      id={category.id}
-                      title={category.name}
-                      href={"/admin/categories/" + category.id + "/edit"}
-                      disabled={sort.busy}
-                      onRemove={(trigger) => {
-                        returnFocus.current = trigger;
-                        setSelected(category);
-                        setError("");
-                      }}
-                    />
-                  }
-                />
-              </li>
-            ))}
-          </ul>
+          tree(null)
         ) : (
           <div className="empty-state">
             <h2>A place for every chapter</h2>
             <p>Create a category to organize your pages.</p>
           </div>
         )}
-        <ListDragFeedback {...sort} />
-        <AdminListOrderStatus {...sort} />
+        <ListDragFeedback {...sort} tree />
+        <AdminListOrderStatus
+          busy={Boolean(moving)}
+          error={orderError}
+          conflict={orderConflict}
+        />
       </section>
       {selected && (
         <ConfirmationDialog

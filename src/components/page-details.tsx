@@ -51,6 +51,7 @@ export function PageDetails({
   const choices = [...new Set([...names.keys(), ...details.categoryIds])].sort(
     (a, b) => categoryName(a).localeCompare(categoryName(b)),
   );
+  const selected = details.categoryIds.length;
   return (
     <div className="page-details field">
       <div className="settings-field">
@@ -67,7 +68,7 @@ export function PageDetails({
           onChange={(e) => change({ date: e.target.value || null })}
         />
       </div>
-      <div className="settings-field">
+      <div className="settings-field min-w-0">
         <Label htmlFor="page-category">
           Page categories <small>(optional)</small>
         </Label>
@@ -78,17 +79,19 @@ export function PageDetails({
               variant="outline"
               id="page-category"
               aria-label="Page categories"
-              className="w-full justify-between"
+              className="w-full min-w-0 max-w-full justify-between"
               disabled={!list}
             >
-              <span className="truncate">
+              <span className="min-w-0 flex-1 truncate text-left">
                 {error
                   ? "Categories unavailable"
                   : !list
                     ? "Loading categories…"
-                    : details.categoryIds.length
-                      ? details.categoryIds.map(categoryName).join(", ")
-                      : "Choose categories"}
+                    : selected > 1
+                      ? `${selected} categories selected`
+                      : selected === 1
+                        ? categoryName(details.categoryIds[0])
+                        : "Choose categories"}
               </span>
               <ChevronDown aria-hidden="true" />
             </Button>
@@ -103,11 +106,11 @@ export function PageDetails({
               choices.map((id) => (
                 <label
                   key={id}
-                  className="flex min-h-11 cursor-pointer items-center gap-2 rounded px-2 text-sm hover:bg-accent"
+                  className="m-0 flex min-h-11 cursor-pointer items-center gap-2 rounded px-2 text-sm hover:bg-accent has-[:focus-visible]:bg-accent"
                 >
                   <input
                     type="checkbox"
-                    className="size-4 shrink-0 accent-primary"
+                    className="size-4 min-h-0 shrink-0 p-0 accent-primary focus:outline-none"
                     checked={details.categoryIds.includes(id)}
                     onChange={(event) =>
                       change({
