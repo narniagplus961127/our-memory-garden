@@ -94,8 +94,32 @@ test("author, round-trip and view a live counter and an isolated scripted embed"
   });
   await selectBlock(page, "Select Live Count Up 1");
   await settings.click();
-  await page.getByLabel("Heading", { exact: true }).fill("我们的时光");
-  await page.getByLabel("Start date", { exact: true }).fill("2022-05-02");
+  const heading = page.getByLabel("Heading", { exact: true });
+  const startDate = page.getByLabel("Start date", { exact: true });
+  await expect(heading).toHaveValue("");
+  await expect(startDate).toHaveValue("");
+  const canvas = page.frameLocator("iframe");
+  await expect(
+    canvas.getByText("Set a start date to show the counter."),
+  ).toBeVisible();
+  await startDate.fill("2022-05-02");
+  await expect(canvas.locator(".count-up")).toBeVisible();
+  await expect(canvas.locator(".count-up-caption")).toHaveCount(0);
+  await startDate.fill("");
+  await expect(canvas.locator(".count-up")).toHaveCount(0);
+  await expect(
+    page.getByRole("status", { name: "Auto-save status" }),
+  ).toHaveText("Saved");
+  const emptyExport = await (
+    await page.request.get("/api/pages/" + source.id + "/json")
+  ).json();
+  expect(emptyExport.page.blocks[0].blocks[0].settings).toMatchObject({
+    heading: "",
+    startDate: "",
+    showStartCaption: false,
+  });
+  await heading.fill("我们的时光");
+  await startDate.fill("2022-05-02");
   await page.getByLabel("Start time (Malaysia time)").fill("09:00");
   const numberSize = page.getByLabel("Number size · px");
   await numberSize.fill("52");
@@ -115,7 +139,6 @@ test("author, round-trip and view a live counter and an isolated scripted embed"
     await page
       .getByRole("button", { name: "Close panel", exact: true })
       .click();
-  const canvas = page.frameLocator("iframe");
   await expect(
     canvas.getByRole("heading", { name: "我们的时光" }),
   ).toBeVisible();

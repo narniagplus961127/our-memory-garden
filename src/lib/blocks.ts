@@ -285,6 +285,7 @@ export function validPageData(
               boundedText("heading", 200) &&
               boundedText("startCaption", 200) &&
               (props.startDate === undefined ||
+                props.startDate === "" ||
                 validCountUpDate(props.startDate)) &&
               (props.startTime === undefined ||
                 props.startTime === "" ||
