@@ -54,12 +54,19 @@ import { equal } from "@/lib/page-merge";
 import { inlinePageData, richPageData, editedPageData } from "@/lib/rich-text";
 const useGardenPuck = createUsePuck<typeof gardenConfig>();
 const RequestBlockRemoval = createContext<(id: string) => void>(() => {});
+const paletteBlocks = [
+  "Text",
+  "Image",
+  "PhotoGrid",
+  "Button",
+  "PageGrid",
+  "LiveCountUp",
+  "CustomEmbed",
+] as const;
 const blockLabel = (type: string) =>
-  type === "PageGrid"
-    ? "Page grid"
-    : type === "PhotoGrid"
-      ? "Photo grid"
-      : type;
+  type in gardenConfig.components
+    ? (gardenConfig.components[type as BlockName].label ?? type)
+    : type;
 type Snapshot = import("@/lib/page-merge").PageSnapshot;
 type InsertionNotice = {
   id: string;
@@ -224,7 +231,23 @@ function InspectorFields({
             ? { title: "Photos", keys: ["gridId"] }
             : type === "Gallery"
               ? { title: "Photos", keys: ["photos"] }
-              : null;
+              : type === "LiveCountUp"
+                ? {
+                    title: "Counter",
+                    keys: [
+                      "startDate",
+                      "startTime",
+                      "countFormat",
+                      "showClock",
+                      "heading",
+                      "countLanguage",
+                      "showStartCaption",
+                      "startCaption",
+                    ],
+                  }
+                : type === "CustomEmbed"
+                  ? { title: "Embed code", keys: ["embedTitle", "embedCode"] }
+                  : null;
   const groups =
     type === "Section"
       ? [
@@ -284,6 +307,9 @@ function InspectorFields({
               "maxColumns",
               "photoGap",
               "photoRadius",
+              "digitSize",
+              "digitColor",
+              "embedHeight",
             ],
           },
           {
@@ -298,7 +324,11 @@ function InspectorFields({
           },
           { id: "corners", title: "Corners", keys: ["radius"] },
         ];
-  groups.push({ id: "animation", title: "Animation", keys: ["animation"] });
+  groups.push({
+    id: "animation",
+    title: "Animation",
+    keys: ["digitMotion", "animation"],
+  });
   const assigned = new Set(groups.flatMap((group) => group.keys));
   const others = Object.keys(fields).filter((key) => !assigned.has(key));
   if (others.length)
@@ -380,7 +410,7 @@ function BlockRemovalDialog({
     : 0;
   return (
     <ConfirmationDialog
-      title={"Remove " + (snapshot?.type ?? "block") + "?"}
+      title={"Remove " + (snapshot ? blockLabel(snapshot.type) : "block") + "?"}
       description={
         nested
           ? `This also removes ${nested} nested ${nested === 1 ? "block" : "blocks"}. Photos stay in the shared media library.`
@@ -1002,34 +1032,32 @@ function Workspace({
                 </div>
                 <div className="palette-heading">Blocks</div>
                 <div className="garden-palette">
-                  {["Text", "Image", "PhotoGrid", "Button", "PageGrid"].map(
-                    (name) => (
-                      <div className="palette-card" key={name}>
-                        {target ? (
-                          <Drawer.Item name={name}>
-                            {() => (
-                              <span>
-                                {blockLabel(name)}{" "}
-                                <span aria-hidden="true">⠿</span>
-                              </span>
-                            )}
-                          </Drawer.Item>
-                        ) : (
-                          <span className="palette-unavailable">
-                            {blockLabel(name)}
-                          </span>
-                        )}
-                        <Button
-                          className="secondary palette-add"
-                          aria-label={"Add " + blockLabel(name)}
-                          disabled={!target}
-                          onClick={() => insert(name as BlockName)}
-                        >
-                          ＋
-                        </Button>
-                      </div>
-                    ),
-                  )}
+                  {paletteBlocks.map((name) => (
+                    <div className="palette-card" key={name}>
+                      {target ? (
+                        <Drawer.Item name={name}>
+                          {() => (
+                            <span>
+                              {blockLabel(name)}{" "}
+                              <span aria-hidden="true">⠿</span>
+                            </span>
+                          )}
+                        </Drawer.Item>
+                      ) : (
+                        <span className="palette-unavailable">
+                          {blockLabel(name)}
+                        </span>
+                      )}
+                      <Button
+                        className="secondary palette-add"
+                        aria-label={"Add " + blockLabel(name)}
+                        disabled={!target}
+                        onClick={() => insert(name)}
+                      >
+                        ＋
+                      </Button>
+                    </div>
+                  ))}
                 </div>
                 <div className="palette-heading">Layout</div>
                 <div className="garden-palette">

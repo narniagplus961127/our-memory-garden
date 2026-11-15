@@ -21,6 +21,20 @@ import { CanvasPhotoAction } from "./canvas-photo-action";
 import { PhotoControls } from "./editor-photo-controls";
 import { PhotoImage } from "./photo-image";
 import { CanvasRichText } from "./canvas-rich-text";
+import { Label } from "./ui/label";
+import { BlockNumberInput } from "./block-number-input";
+import { LiveCountUp, type LiveCountUpProps } from "./live-count-up";
+import {
+  CustomEmbed,
+  CustomEmbedCodeField,
+  type CustomEmbedProps,
+} from "./custom-embed";
+import {
+  defaultCountUpDate,
+  validCountUpDate,
+  validCountUpTime,
+} from "@/lib/live-count-up";
+import { customEmbedMaxHeight, customEmbedMinHeight } from "@/lib/custom-embed";
 import {
   cloneElement,
   isValidElement,
@@ -44,6 +58,8 @@ type Appearance = {
   radius?: number;
 };
 type GardenBlockProps = {
+  LiveCountUp: LiveCountUpProps;
+  CustomEmbed: CustomEmbedProps;
   PageGrid: {
     selection: GridSelection;
     showDate?: boolean;
@@ -275,6 +291,10 @@ const spacing = {
     { label: "Spacious", value: "spacious" },
   ],
 };
+const shown = [
+  { label: "Show", value: true },
+  { label: "Hide", value: false },
+];
 export const gardenConfig: Config<
   GardenBlocks,
   {
@@ -307,6 +327,219 @@ export const gardenConfig: Config<
     ),
   },
   components: {
+    LiveCountUp: {
+      label: "Live Count Up",
+      fields: {
+        ...appearance,
+        heading: {
+          type: "custom",
+          render: ({ id, value, onChange }) => (
+            <div className="grid gap-2">
+              <Label htmlFor={id}>Heading</Label>
+              <Input
+                id={id}
+                value={value ?? ""}
+                maxLength={200}
+                onChange={(event) => onChange(event.currentTarget.value)}
+              />
+            </div>
+          ),
+        },
+        startDate: {
+          type: "custom",
+          render: ({ id, value, onChange }) => (
+            <div className="grid gap-2">
+              <Label htmlFor={id}>Start date</Label>
+              <Input
+                id={id}
+                type="date"
+                value={value ?? defaultCountUpDate}
+                min="1000-01-01"
+                max="9999-12-31"
+                required
+                onChange={(event) => {
+                  const next = event.currentTarget.value;
+                  if (validCountUpDate(next)) onChange(next);
+                }}
+              />
+            </div>
+          ),
+        },
+        startTime: {
+          type: "custom",
+          render: ({ id, value, onChange }) => (
+            <div className="grid gap-2">
+              <Label htmlFor={id}>Start time (Malaysia time)</Label>
+              <Input
+                id={id}
+                type="time"
+                value={value ?? ""}
+                aria-describedby={id + "-help"}
+                onChange={(event) => {
+                  const next = event.currentTarget.value;
+                  if (!next || validCountUpTime(next)) onChange(next);
+                }}
+              />
+              <small id={id + "-help"} className="muted">
+                Leave blank to start at midnight.
+              </small>
+            </div>
+          ),
+        },
+        countFormat: {
+          type: "select",
+          label: "Display format",
+          options: [
+            { label: "Years, months and days", value: "calendar" },
+            { label: "Total days", value: "total-days" },
+          ],
+        },
+        countLanguage: {
+          type: "select",
+          label: "Unit labels",
+          options: [
+            { label: "Chinese", value: "zh" },
+            { label: "English", value: "en" },
+          ],
+        },
+        showClock: {
+          type: "radio",
+          label: "Hours, minutes and seconds",
+          options: shown,
+        },
+        showStartCaption: {
+          type: "radio",
+          label: "Start date caption",
+          options: shown,
+        },
+        startCaption: {
+          type: "custom",
+          render: ({ id, value, onChange }) => (
+            <div className="grid gap-2">
+              <Label htmlFor={id}>Caption text</Label>
+              <Input
+                id={id}
+                value={value ?? ""}
+                maxLength={200}
+                placeholder="Use the start date"
+                onChange={(event) => onChange(event.currentTarget.value)}
+              />
+            </div>
+          ),
+        },
+        digitMotion: {
+          type: "select",
+          label: "Digit animation",
+          options: [
+            { label: "Roll upward", value: "roll" },
+            { label: "Off", value: "none" },
+          ],
+        },
+        digitSize: {
+          type: "custom",
+          render: ({ id, value, onChange }) => (
+            <BlockNumberInput
+              id={id}
+              label="Number size · px"
+              placeholder="Auto"
+              min={14}
+              max={80}
+              value={value}
+              onChange={onChange}
+            />
+          ),
+        },
+        digitColor: {
+          type: "custom",
+          render: ({ value, onChange }) => (
+            <BackgroundColour
+              label="Counter colour"
+              defaultLabel="Site default"
+              value={value}
+              onChange={onChange}
+            />
+          ),
+        },
+        align: alignment,
+      },
+      defaultProps: {
+        heading: "我们在一起的时间",
+        startDate: defaultCountUpDate,
+        startTime: "",
+        countFormat: "calendar",
+        countLanguage: "zh",
+        showClock: true,
+        showStartCaption: true,
+        startCaption: "",
+        digitMotion: "roll",
+        align: "center",
+      },
+      render: ({ puck, ...props }) => (
+        <AnimatedBlock
+          animation={props.animation}
+          editing={puck.isEditing}
+          className="garden-block"
+          style={blockStyle(props)}
+        >
+          <LiveCountUp {...props} />
+        </AnimatedBlock>
+      ),
+    },
+    CustomEmbed: {
+      label: "Custom Embed",
+      fields: {
+        ...appearance,
+        embedTitle: {
+          type: "custom",
+          render: ({ id, value, onChange }) => (
+            <div className="grid gap-2">
+              <Label htmlFor={id}>Embed title</Label>
+              <Input
+                id={id}
+                value={value ?? ""}
+                maxLength={150}
+                placeholder="Describe the embed"
+                onChange={(event) => onChange(event.currentTarget.value)}
+              />
+            </div>
+          ),
+        },
+        embedCode: {
+          type: "custom",
+          render: ({ value, onChange }) => (
+            <CustomEmbedCodeField value={value} onChange={onChange} />
+          ),
+        },
+        embedHeight: {
+          type: "custom",
+          render: ({ id, value, onChange }) => (
+            <BlockNumberInput
+              id={id}
+              label="Height · px"
+              placeholder="320"
+              min={customEmbedMinHeight}
+              max={customEmbedMaxHeight}
+              value={value}
+              onChange={onChange}
+            />
+          ),
+        },
+      },
+      defaultProps: { embedTitle: "", embedCode: "", embedHeight: 320 },
+      render: ({ puck, ...props }) =>
+        puck.isEditing || props.embedCode?.trim() ? (
+          <AnimatedBlock
+            animation={props.animation}
+            editing={puck.isEditing}
+            className="garden-block"
+            style={blockStyle(props)}
+          >
+            <CustomEmbed {...props} editing={puck.isEditing} />
+          </AnimatedBlock>
+        ) : (
+          <></>
+        ),
+    },
     PhotoGrid: {
       label: "Photo grid",
       fields: {

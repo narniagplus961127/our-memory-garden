@@ -7,12 +7,20 @@ import { validGrid } from "./organization";
 import { richFields, validRichText } from "./rich-text";
 export { isWebUrl } from "./destinations";
 import type { PageData } from "./pages";
+import { validCountUpDate, validCountUpTime } from "./live-count-up";
+import {
+  customEmbedCodeLimit,
+  customEmbedMinHeight,
+  customEmbedMaxHeight,
+} from "./custom-embed";
 export const blockNames = [
   "Text",
   "Banner",
   "Image",
   "PageGrid",
   "PhotoGrid",
+  "LiveCountUp",
+  "CustomEmbed",
   "Gallery",
   "Button",
   "Section",
@@ -125,6 +133,21 @@ export function validPageData(
             "photoRadius",
           ],
           Gallery: ["photos"],
+          LiveCountUp: [
+            "heading",
+            "startDate",
+            "startTime",
+            "countFormat",
+            "countLanguage",
+            "showClock",
+            "showStartCaption",
+            "startCaption",
+            "digitMotion",
+            "digitSize",
+            "digitColor",
+            "align",
+          ],
+          CustomEmbed: ["embedCode", "embedTitle", "embedHeight"],
           Button: [
             "label",
             "href",
@@ -246,7 +269,49 @@ export function validPageData(
         const opt = (key: string, values: string[], required = false) =>
           props[key] === undefined ? !required : values.includes(props[key]);
         if (!opt("align", ["left", "center", "right"])) return false;
+        const boundedInteger = (key: string, min: number, max: number) =>
+          props[key] === undefined ||
+          (Number.isInteger(props[key]) &&
+            props[key] >= min &&
+            props[key] <= max);
+        const boundedText = (key: string, max: number) =>
+          props[key] === undefined ||
+          (typeof props[key] === "string" &&
+            props[key].length <= max &&
+            !props[key].includes("\0"));
         switch (type) {
+          case "LiveCountUp":
+            return (
+              boundedText("heading", 200) &&
+              boundedText("startCaption", 200) &&
+              (props.startDate === undefined ||
+                validCountUpDate(props.startDate)) &&
+              (props.startTime === undefined ||
+                props.startTime === "" ||
+                validCountUpTime(props.startTime)) &&
+              opt("countFormat", ["calendar", "total-days"]) &&
+              opt("countLanguage", ["zh", "en"]) &&
+              opt("digitMotion", ["roll", "none"]) &&
+              (props.showClock === undefined ||
+                typeof props.showClock === "boolean") &&
+              (props.showStartCaption === undefined ||
+                typeof props.showStartCaption === "boolean") &&
+              boundedInteger("digitSize", 14, 80) &&
+              (props.digitColor === undefined ||
+                props.digitColor === "" ||
+                (typeof props.digitColor === "string" &&
+                  /^#(?:[\da-f]{3}|[\da-f]{6})$/i.test(props.digitColor)))
+            );
+          case "CustomEmbed":
+            return (
+              boundedText("embedCode", customEmbedCodeLimit) &&
+              boundedText("embedTitle", 150) &&
+              boundedInteger(
+                "embedHeight",
+                customEmbedMinHeight,
+                customEmbedMaxHeight,
+              )
+            );
           case "PhotoGrid":
             return (
               ((props.gridId === undefined &&
