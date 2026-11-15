@@ -194,3 +194,9 @@ Photo grid is an addable widget within a Section. Administrators select photos i
 ## Editor content JSON (ticket 57)
 
 Administrators can download editable, versioned JSON for a page’s editor blocks, including layout, text, styling and ordered Photo grid entries. Existing Media Library photos are referenced by ID. Under Import page content, choose Upload JSON or Use another page to review and replace the destination’s blocks on confirmation. Import accepts a valid file regardless of when it was exported and copies another page’s latest saved blocks and ordered Photo grid entries. Older exports remain compatible, including files with legacy page metadata. The destination keeps all page settings, and History preserves the version present at the time of import. See [ticket 57](issues/57-page-json-and-copies.md) for verification.
+
+## Editor controls and garden index
+
+The Photo Grid picker supports Shift-click to select a range and Ctrl+A or Command+A to select loaded search results when a photo has focus. Plain clicks, taps and Ctrl-click or Command-click toggle individual photos. Text blocks have a Mobile alignment setting that can centre content at the mobile breakpoint. The default follows desktop alignment.
+
+Selecting a subcategory in Page settings selects and saves its ancestors. Deselecting a parent clears its selected descendants. The public `/garden` index uses the category page grid and shows public pages other than the current homepage. See [ticket 66](issues/66-editor-and-garden-index.md).

@@ -84,8 +84,9 @@ test("add a Photo grid, select photos, reorder and open the website viewer", asy
       })
     ).status(),
   ).toBe(200);
+  const photoKey = crypto.randomUUID().slice(0, 8);
   const names = ["portrait", "landscape", "square"].map(
-    (name) => name + "-" + Date.now() + ".png",
+    (name) => name + "-" + photoKey + ".png",
   );
   const photoIds: string[] = [];
   for (const [index, [width, height]] of [
@@ -163,6 +164,23 @@ test("add a Photo grid, select photos, reorder and open the website viewer", asy
   const add = page.getByRole("button", { name: "+ Add photos", exact: true });
   await add.click();
   const chooser = page.getByRole("dialog", { name: "Choose photos" });
+  if (!isMobile) {
+    await chooser
+      .getByRole("searchbox", { name: "Find a photo" })
+      .fill(photoKey);
+    const tiles = chooser.getByRole("button", { name: new RegExp(photoKey) });
+    await expect(tiles).toHaveCount(3);
+    const count = chooser.locator(".photo-grid-selection-count");
+    await tiles.first().click();
+    await tiles.last().click({ modifiers: ["Shift"] });
+    await expect(count).toHaveText("3 selected");
+    await tiles.nth(1).click({ modifiers: ["Control"] });
+    await expect(count).toHaveText("2 selected");
+    await tiles.nth(1).press("Control+a");
+    await expect(count).toHaveText("3 selected");
+    for (let i = 0; i < 3; i++) await tiles.nth(i).click();
+    await expect(count).toHaveText("0 selected");
+  }
   for (const name of names) {
     await chooser.getByRole("searchbox", { name: "Find a photo" }).fill(name);
     await chooser.getByRole("button", { name, exact: true }).click();

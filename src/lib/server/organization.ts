@@ -108,6 +108,17 @@ export async function updateDetails(
     return JSON.parse(JSON.stringify(rows[0]));
   });
 }
+export async function publicGardenPages(): Promise<PageCard[]> {
+  return database()<PageCard[]>`
+    select p.id, p.title, p.slug, to_char(p.page_date, 'YYYY-MM-DD') as page_date,
+      p.cover_photo_id, p.visibility
+    from pages p
+    where p.visibility = 'public' and p.deleted_at is null
+      and not exists (select 1 from garden_settings where homepage_id = p.id)
+    order by p.page_date desc nulls last, p.created_at desc, p.id
+  `;
+}
+
 export async function gridPages(
   selection: GridSelection,
   admin: Administrator | null,

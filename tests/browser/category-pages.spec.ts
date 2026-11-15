@@ -82,11 +82,16 @@ test("create a subcategory in Categories and autosave multiple page tags", async
   ).toHaveCount(0);
   await categories.click();
   await nestedTag.check();
+  const parentTag = page.getByRole("checkbox", {
+    name: parent.name,
+    exact: true,
+  });
+  await expect(parentTag).toBeChecked();
   await otherTag.check();
   await expect(otherTag).toHaveCSS("height", "16px");
   await expect(otherTag).toHaveCSS("outline-style", "none");
   await page.keyboard.press("Escape");
-  await expect(categories).toHaveText("2 categories selected");
+  await expect(categories).toHaveText("3 categories selected");
   const picker = (await categories.boundingBox())!;
   const date = (await page
     .getByLabel("Page date", { exact: true })
@@ -101,13 +106,15 @@ test("create a subcategory in Categories and autosave multiple page tags", async
   await settings.click();
   await categories.click();
   await expect(nestedTag).toBeChecked();
+  await expect(parentTag).toBeChecked();
   await expect(otherTag).toBeChecked();
+  const remote = await category(page);
   const current = await (await page.request.get(`/api/pages/${id}`)).json();
   const remoteSave = await page.request.patch(`/api/pages/${id}/details`, {
     headers,
     data: {
       date: null,
-      categoryIds: [...current.category_ids, parent.id],
+      categoryIds: [...current.category_ids, remote.id],
       coverPhotoId: null,
       metadataVersion: current.metadata_version,
     },
@@ -119,7 +126,7 @@ test("create a subcategory in Categories and autosave multiple page tags", async
     page.getByRole("status", { name: "Auto-save status" }),
   ).toHaveText("Saved");
   const saved = await (await page.request.get(`/api/pages/${id}`)).json();
-  expect(saved.category_ids).toEqual([other.id, parent.id].sort());
+  expect(saved.category_ids).toEqual([other.id, parent.id, remote.id].sort());
 });
 
 test("drag a category under another category and out to the top level", async ({

@@ -72,6 +72,7 @@ type GardenBlockProps = {
     textRich?: RichText;
     style: TextStyle;
     align?: "left" | "center" | "right";
+    mobileAlign?: "inherit" | "center";
     linkText?: string;
     destination?: Destination | null;
   };
@@ -781,6 +782,14 @@ export const gardenConfig: Config<
           })),
         },
         align: alignment,
+        mobileAlign: {
+          type: "select",
+          label: "Text alignment",
+          options: [
+            { label: "Same as desktop", value: "inherit" },
+            { label: "Centre", value: "center" },
+          ],
+        },
         linkText: { type: "text", label: "Linked text", visible: false },
         destination: {
           type: "custom",
@@ -795,6 +804,7 @@ export const gardenConfig: Config<
         textRich: "<p>Write a little memory…</p>",
         style: "p",
         align: "left",
+        mobileAlign: "inherit",
       },
       render: ({
         id,
@@ -803,6 +813,7 @@ export const gardenConfig: Config<
         textRich,
         style,
         align,
+        mobileAlign,
         linkText,
         destination,
         ...surface
@@ -815,6 +826,7 @@ export const gardenConfig: Config<
             animation={surface.animation}
             editing={puck.isEditing}
             className="garden-block garden-text"
+            data-mobile-align={mobileAlign}
             style={{ textAlign: align, ...blockStyle(surface) }}
           >
             <RichContent id={id} puck={puck} type="Text">

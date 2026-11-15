@@ -11,7 +11,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { useEffect, useState } from "react";
 import { ChevronDown } from "lucide-react";
 import type { GardenPage } from "@/lib/pages";
-import { categoryLabels, type Category } from "@/lib/organization";
+import {
+  categoryLabels,
+  categoryPath,
+  type Category,
+} from "@/lib/organization";
 import { displayPhotoUrl } from "@/lib/media";
 import { PhotoPicker } from "./media-library";
 import { detailsOf, type usePageDetails } from "./use-page-details";
@@ -52,6 +56,25 @@ export function PageDetails({
     (a, b) => categoryName(a).localeCompare(categoryName(b)),
   );
   const selected = details.categoryIds.length;
+  function chooseCategory(id: string, checked: boolean) {
+    const categories = list ?? [];
+    if (checked) {
+      const category = categories.find((entry) => entry.id === id);
+      const path = category
+        ? categoryPath(category, categories).map((entry) => entry.id)
+        : [id];
+      change({ categoryIds: [...details.categoryIds, ...path] });
+      return;
+    }
+    const removed = new Set([id]);
+    for (const category of categories) {
+      if (categoryPath(category, categories).some((entry) => entry.id === id))
+        removed.add(category.id);
+    }
+    change({
+      categoryIds: details.categoryIds.filter((entry) => !removed.has(entry)),
+    });
+  }
   return (
     <div className="page-details field">
       <div className="settings-field">
@@ -113,13 +136,7 @@ export function PageDetails({
                     className="size-4 min-h-0 shrink-0 p-0 accent-primary focus:outline-none"
                     checked={details.categoryIds.includes(id)}
                     onChange={(event) =>
-                      change({
-                        categoryIds: event.target.checked
-                          ? [...details.categoryIds, id]
-                          : details.categoryIds.filter(
-                              (selected) => selected !== id,
-                            ),
-                      })
+                      chooseCategory(id, event.target.checked)
                     }
                   />
                   <span className="min-w-0 break-words">
