@@ -173,6 +173,22 @@ test("add a Photo grid, select photos, reorder and open the website viewer", asy
     .getByRole("list", { name: "Grid photos" })
     .getByRole("listitem");
   await expect(rows).toHaveCount(3);
+  const tile = rows.first();
+  const thumbnail = (await tile
+    .getByRole("button", { name: "Drag " + names[0] })
+    .boundingBox())!;
+  const actions = tile.getByRole("button", { name: "Actions for " + names[0] });
+  await expect(actions).toHaveCSS("position", "absolute");
+  const overlay = (await actions.boundingBox())!;
+  expect(overlay.width).toBeLessThan(thumbnail.width);
+  expect(overlay.y).toBeCloseTo(thumbnail.y, 0);
+  expect(overlay.y + overlay.height).toBeLessThanOrEqual(
+    thumbnail.y + thumbnail.height,
+  );
+  expect(overlay.x + overlay.width).toBeCloseTo(
+    thumbnail.x + thumbnail.width,
+    0,
+  );
   let first = (await rows.nth(0).boundingBox())!;
   let second = (await rows.nth(1).boundingBox())!;
   expect(Math.round(first.y)).toBe(Math.round(second.y));

@@ -2034,14 +2034,38 @@ button.primary {
   color: #fff;
   pointer-events: none;
 }
-.photo-grid-item-actions[data-slot="button"] {
+.photo-grid-editor-list .photo-grid-editor-item > .photo-grid-item-actions {
   position: absolute;
-  top: 3px;
-  right: 3px;
+  z-index: 1;
+  top: 0;
+  right: 0;
+  display: grid;
   width: 36px;
   height: 36px;
+  min-height: 0;
   min-width: 0;
-  background: var(--cream);
+  place-items: center;
+  padding: 0;
+  border: 0;
+  box-shadow: none;
+  background: transparent;
+  color: #fff;
+}
+.photo-grid-item-actions::before {
+  position: absolute;
+  inset: 6px;
+  border-radius: 5px;
+  background: #142019dc;
+  content: "";
+}
+.photo-grid-item-actions:hover::before,
+.photo-grid-item-actions[data-state="open"]::before {
+  background: #142019;
+}
+.photo-grid-item-actions > svg {
+  position: relative;
+  width: 14px;
+  height: 14px;
 }
 
 [data-slot="dialog-content"].garden-modal.photo-lightbox {
