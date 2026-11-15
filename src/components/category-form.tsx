@@ -6,23 +6,35 @@ import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { addressFromTitle, validSlug } from "@/lib/page-address";
-import type { Category } from "@/lib/organization";
+import { categoryPath, type Category } from "@/lib/organization";
+import { NativeSelect, NativeSelectOption } from "./ui/native-select";
 export function CategoryForm({
   id,
   category,
+  categories,
 }: {
   id: string;
   category?: Category;
+  categories: Category[];
 }) {
   const router = useRouter(),
     pending = useRef(false),
     expected = useRef(category);
   const [name, setName] = useState(category?.name ?? ""),
     [slug, setSlug] = useState(category?.slug ?? ""),
+    [parentId, setParentId] = useState(category?.parent_id ?? ""),
     [follow, setFollow] = useState(!category),
     [busy, setBusy] = useState(false),
     [error, setError] = useState(""),
     [conflict, setConflict] = useState<Category | null>(null);
+  const parents = categories
+    .map((candidate) => categoryPath(candidate, categories))
+    .filter((path) => !path.some((item) => item.id === id))
+    .map((path) => ({
+      id: path[path.length - 1].id,
+      label: path.map(({ name }) => name).join(" › "),
+    }))
+    .sort((a, b) => a.label.localeCompare(b.label));
   const generated = (value: string) =>
     value.trim() ? addressFromTitle(value) || "category-" + id.slice(0, 8) : "";
   function back() {
@@ -49,10 +61,12 @@ export function CategoryForm({
           body: JSON.stringify({
             name,
             slug,
+            parentId: parentId || null,
             ...(category
               ? {
                   expectedName: expected.current?.name,
                   expectedSlug: expected.current?.slug,
+                  expectedParentId: expected.current?.parent_id,
                 }
               : { id }),
           }),
@@ -121,6 +135,29 @@ export function CategoryForm({
             />
           </div>
           <div className="navigation-form-field">
+            <Label htmlFor="category-parent">
+              Parent category <small>(optional)</small>
+            </Label>
+            <NativeSelect
+              id="category-parent"
+              value={parentId}
+              onChange={(event) => setParentId(event.target.value)}
+            >
+              <NativeSelectOption value="">Top level</NativeSelectOption>
+              {parentId &&
+                !parents.some((parent) => parent.id === parentId) && (
+                  <NativeSelectOption value={parentId}>
+                    Current parent
+                  </NativeSelectOption>
+                )}
+              {parents.map((parent) => (
+                <NativeSelectOption key={parent.id} value={parent.id}>
+                  {parent.label}
+                </NativeSelectOption>
+              ))}
+            </NativeSelect>
+          </div>
+          <div className="navigation-form-field">
             <Label htmlFor="category-slug">Category address</Label>
             <div className="page-url-input">
               <span aria-hidden="true">/category/</span>
@@ -172,6 +209,7 @@ export function CategoryForm({
                     expected.current = conflict;
                     setName(conflict.name);
                     setSlug(conflict.slug);
+                    setParentId(conflict.parent_id ?? "");
                     setFollow(false);
                     setConflict(null);
                     setError("");

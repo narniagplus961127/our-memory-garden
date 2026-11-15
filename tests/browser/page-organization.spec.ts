@@ -289,12 +289,12 @@ test("Categories navigation supports creating, renaming and duplicate-name recov
   await page
     .getByRole("button", { name: "Page settings", exact: true })
     .click();
-  await expect(page.getByLabel("Page category", { exact: true })).toHaveValue(
-    category.id,
-  );
+  await page
+    .getByRole("button", { name: "Page categories", exact: true })
+    .click();
   await expect(
-    page.getByLabel("Page category", { exact: true }).locator("option:checked"),
-  ).toHaveText(renamed);
+    page.getByRole("checkbox", { name: renamed, exact: true }),
+  ).toBeChecked();
 });
 
 test("creation validates URLs and atomically rejects concurrent duplicates", async ({

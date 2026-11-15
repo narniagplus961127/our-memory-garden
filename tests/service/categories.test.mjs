@@ -27,11 +27,149 @@ async function call(path, method = "GET", data, cookie = "", origin = base) {
     ...(data === undefined ? {} : { body: JSON.stringify(data) }),
   });
 }
-async function create(cookie, name, slug) {
-  const r = await call("/api/categories", "POST", { name, slug }, cookie);
+async function create(cookie, name, slug, parentId) {
+  const r = await call(
+    "/api/categories",
+    "POST",
+    { name, slug, parentId },
+    cookie,
+  );
   assert.equal(r.status, 201);
   return r.json();
 }
+
+test("multiple category tags survive cloning and history while parent grids deduplicate and filter", async () => {
+  const cookie = await login();
+  const stamp = crypto.randomUUID();
+  const parent = await create(cookie, "Event " + stamp);
+  const child = await create(
+    cookie,
+    "Anniversary " + stamp,
+    undefined,
+    parent.id,
+  );
+  const location = await create(cookie, "Penang " + stamp);
+  assert.equal(child.parent_id, parent.id);
+
+  const parentalCycle = await call(
+    "/api/categories/" + parent.id,
+    "PATCH",
+    {
+      name: parent.name,
+      expectedName: parent.name,
+      parentId: child.id,
+      expectedParentId: null,
+    },
+    cookie,
+  );
+  assert.equal(parentalCycle.status, 400);
+  const publicPage = await page(
+    cookie,
+    "Multi-tag public " + stamp,
+    child,
+    "public",
+  );
+  const privatePage = await page(cookie, "Multi-tag private " + stamp, child);
+  const api = "/api/pages/" + publicPage.id;
+  const tags = [child.id, parent.id, location.id].sort();
+  const update = (categoryIds, metadataVersion) =>
+    call(
+      api + "/details",
+      "PATCH",
+      {
+        date: null,
+        coverPhotoId: null,
+        categoryIds,
+        metadataVersion,
+      },
+      cookie,
+    );
+  assert.equal(
+    (await update([crypto.randomUUID()], publicPage.metadata_version)).status,
+    400,
+  );
+  const savedResponse = await update(
+    [...tags, child.id],
+    publicPage.metadata_version,
+  );
+  assert.equal(savedResponse.status, 200);
+  const saved = await savedResponse.json();
+  assert.deepEqual(saved.category_ids, tags);
+  const grid = (categoryId) =>
+    "/api/page-grid?selection=" +
+    encodeURIComponent(
+      JSON.stringify({ mode: "category", categoryId, pageIds: [] }),
+    );
+  const publicCards = await (await call(grid(parent.id))).json();
+  assert.deepEqual(
+    publicCards.map(({ id }) => id),
+    [publicPage.id],
+  );
+  assert.ok(
+    (await (await call(grid(parent.id), "GET", undefined, cookie)).json()).some(
+      ({ id }) => id === privatePage.id,
+    ),
+  );
+  const archive = await (await call("/category/" + child.slug)).text();
+  assert.ok(archive.includes("/category/" + parent.slug));
+  assert.ok(archive.includes(publicPage.title));
+  assert.ok(!archive.includes(privatePage.title));
+
+  const cloneId = crypto.randomUUID();
+  assert.equal(
+    (
+      await call(
+        "/api/admin-list-clone",
+        "POST",
+        { list: "pages", sourceId: saved.id, id: cloneId },
+        cookie,
+      )
+    ).status,
+    201,
+  );
+  const cloned = await (
+    await call("/api/pages/" + cloneId, "GET", undefined, cookie)
+  ).json();
+  assert.deepEqual(cloned.category_ids, tags);
+  assert.equal(cloned.visibility, "private");
+
+  const removed = await (
+    await update([location.id], saved.metadata_version)
+  ).json();
+  const restore = await call(
+    api + "/history/" + saved.version,
+    "POST",
+    { confirm: true, version: removed.version },
+    cookie,
+  );
+  assert.equal(restore.status, 200);
+  assert.deepEqual((await restore.json()).category_ids, tags);
+  assert.equal(
+    (
+      await call(
+        "/api/categories/" + parent.id,
+        "DELETE",
+        {
+          confirm: true,
+          expectedName: parent.name,
+          expectedSlug: parent.slug,
+          expectedParentId: null,
+        },
+        cookie,
+      )
+    ).status,
+    200,
+  );
+  const childAfter = await (
+    await call("/api/categories/" + child.id, "GET", undefined, cookie)
+  ).json();
+  assert.equal(childAfter.parent_id, null);
+  assert.equal(childAfter.slug, child.slug);
+  assert.deepEqual(
+    (await (await call(api, "GET", undefined, cookie)).json()).category_ids,
+    [child.id, location.id].sort(),
+  );
+});
 async function page(cookie, title, category, visibility = "private") {
   let p = await (await call("/api/pages", "POST", { title }, cookie)).json();
   p = await (

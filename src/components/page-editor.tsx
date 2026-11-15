@@ -428,8 +428,6 @@ type WorkspaceProps = {
     accountId: string;
     visibility: GardenPage["visibility"];
     details: ReturnType<typeof usePageDetails>;
-    categoryBusy: boolean;
-    setCategoryBusy: (busy: boolean) => void;
     getVersion: () => number;
     photoGridSaved: (page: GardenPage) => void;
   };
@@ -801,9 +799,7 @@ function Workspace({
           <EditorPageActions
             page={{ ...pageSettings.page, title }}
             contentSaved={status === "Saved"}
-            detailsSaved={
-              detailsStatus === "Saved" && !pageSettings.categoryBusy
-            }
+            detailsSaved={detailsStatus === "Saved"}
             addressSaved={addressStatus === "Saved"}
             getVersion={pageSettings.getVersion}
           />
@@ -973,8 +969,6 @@ function Workspace({
                   page={{ ...page, title }}
                   visibility={visibility}
                   save={pageSettings.details}
-                  categoryBusy={pageSettings.categoryBusy}
-                  setCategoryBusy={pageSettings.setCategoryBusy}
                 />
               </>
             )}
@@ -1303,7 +1297,6 @@ export function PageEditor({
 }) {
   const save = usePageAutosave(page, accountId);
   const details = usePageDetails(page, accountId, save.detailsSaved);
-  const [categoryBusy, setCategoryBusy] = useState(false);
   return (
     <GardenEditor
       initialContent={page.content}
@@ -1314,8 +1307,6 @@ export function PageEditor({
           accountId,
           visibility: save.working.visibility,
           details,
-          categoryBusy,
-          setCategoryBusy,
           getVersion: save.getVersion,
           photoGridSaved: save.photoGridSaved,
         },

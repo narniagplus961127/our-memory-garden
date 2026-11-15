@@ -745,6 +745,17 @@ test("cover/date/category records and exact scanner keys survive the consistent 
   );
   assert.equal(categoryResponse.status, 201);
   const category = await categoryResponse.json();
+  const childResponse = await call(
+    "/api/categories",
+    "POST",
+    {
+      name: "Backup subcategory " + Date.now(),
+      parentId: category.id,
+    },
+    cookie,
+  );
+  assert.equal(childResponse.status, 201);
+  const child = await childResponse.json();
   let page = await (
     await call("/api/pages", "POST", { title: "Organized backup page" }, cookie)
   ).json();
@@ -754,7 +765,7 @@ test("cover/date/category records and exact scanner keys survive the consistent 
     {
       metadataVersion: page.metadata_version,
       date: "2026-11-01",
-      categoryId: category.id,
+      categoryIds: [category.id, child.id],
       coverPhotoId: cover.id,
       sharingCoverPhotoId: sharing.id,
       sharingTitle: "Sharing snapshot",
@@ -785,7 +796,7 @@ test("cover/date/category records and exact scanner keys survive the consistent 
     {
       metadataVersion: page.metadata_version,
       date: null,
-      categoryId: null,
+      categoryIds: [],
       coverPhotoId: null,
       sharingCoverPhotoId: null,
       sharingTitle: "Later title",
@@ -831,7 +842,7 @@ test("cover/date/category records and exact scanner keys survive the consistent 
   assert.equal(backupPage.sharing_title, "Sharing snapshot");
   assert.equal(backupPage.sharing_description, "Sharing snapshot description");
   assert.equal(backupPage.allow_indexing, false);
-  assert.equal(backupPage.category_id, category.id);
+  assert.deepEqual(backupPage.category_ids, [category.id, child.id].sort());
   assert.equal(backupPage.page_date, "2026-11-01");
   assert.ok(
     records.some(
@@ -839,6 +850,14 @@ test("cover/date/category records and exact scanner keys survive the consistent 
         record.kind === "page_categories" &&
         record.value.id === category.id &&
         record.value.name === category.name,
+    ),
+  );
+  assert.ok(
+    records.some(
+      (record) =>
+        record.kind === "page_categories" &&
+        record.value.id === child.id &&
+        record.value.parent_id === category.id,
     ),
   );
   const postgres = (await import("postgres")).default;

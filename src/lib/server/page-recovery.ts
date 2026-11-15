@@ -5,6 +5,7 @@ import { RequestError } from "./http";
 import type { Administrator } from "./pages";
 import type { GardenPage } from "../pages";
 import { savePhotoGridRefs } from "./photo-grids";
+import { pageCategoryIds } from "../organization";
 const validId =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 export type Revision = {
@@ -81,7 +82,7 @@ export async function restoreVersion(
       { snapshot: GardenPage }[]
     >`select snapshot from page_versions where page_id=${id} and version=${revision}`;
     if (!r) throw new RequestError(404, "Version not found.");
-    const category = r.snapshot.category_id ?? null;
+    const categoryIds = pageCategoryIds(r.snapshot);
     const cover = r.snapshot.cover_photo_id ?? null;
     const sharingTitle = Object.hasOwn(r.snapshot, "sharing_title")
       ? (r.snapshot.sharing_title ?? null)
@@ -120,10 +121,10 @@ export async function restoreVersion(
         "This saved sharing cover photo is unavailable. Current content is preserved.",
       );
     if (
-      category &&
-      !(
-        await sql`select id from page_categories where id=${category} for key share`
-      ).length
+      categoryIds.length &&
+      (
+        await sql`select id from page_categories where id in ${sql(categoryIds)} order by id for key share`
+      ).length !== categoryIds.length
     )
       throw new RequestError(
         409,
@@ -148,7 +149,7 @@ export async function restoreVersion(
     );
     const [saved] = await sql<
       GardenPage[]
-    >`update pages set title=${r.snapshot.title},content=${sql.json(content)},page_date=${r.snapshot.page_date ?? null},category_id=${category},cover_photo_id=${cover},sharing_title=${sharingTitle},sharing_description=${sharingDescription},sharing_cover_photo_id=${sharingCover},allow_indexing=${allowIndexing},metadata_version=metadata_version+1,version=version+1,updated_at=now(),updated_by=${admin.id},edit_reason='restore',edit_group_id=${crypto.randomUUID()},editor_session_id=null where id=${id} returning *`;
+    >`update pages set title=${r.snapshot.title},content=${sql.json(content)},page_date=${r.snapshot.page_date ?? null},category_ids=${sql.array(categoryIds, 2950)}::uuid[],cover_photo_id=${cover},sharing_title=${sharingTitle},sharing_description=${sharingDescription},sharing_cover_photo_id=${sharingCover},allow_indexing=${allowIndexing},metadata_version=metadata_version+1,version=version+1,updated_at=now(),updated_by=${admin.id},edit_reason='restore',edit_group_id=${crypto.randomUUID()},editor_session_id=null where id=${id} returning *`;
     return saved;
   });
 }
@@ -159,9 +160,18 @@ export async function listTrash() {
 }
 export async function inboundReferences(id: string) {
   const target = await recoveryPage(id);
-  const pages = await database()<
-    (GardenPage & { category_id?: string })[]
-  >`select * from pages where deleted_at is null and id<>${id}`;
+  const sql = database();
+  const [pages, ancestors] = await Promise.all([
+    sql<
+      GardenPage[]
+    >`select * from pages where deleted_at is null and id<>${id}`,
+    sql<{ id: string }[]>`with recursive tree as (
+      select id,parent_id from page_categories where id=any(${sql.array(pageCategoryIds(target), 2950)}::uuid[])
+      union
+      select c.id,c.parent_id from page_categories c join tree on c.id=tree.parent_id
+    ) select id from tree`,
+  ]);
+  const categoryIds = new Set(ancestors.map(({ id }) => id));
   const refs: InboundReference[] = [];
   function scan(value: unknown, page: GardenPage) {
     if (!value || typeof value !== "object") return;
@@ -201,9 +211,8 @@ export async function inboundReferences(id: string) {
         refs.push({ id: page.id, title: page.title, kind: "Manual page grid" });
       if (
         props?.mode === "category" &&
-        props.categoryId &&
-        (target as GardenPage & { category_id?: string }).category_id ===
-          props.categoryId
+        typeof props.categoryId === "string" &&
+        categoryIds.has(props.categoryId)
       )
         refs.push({
           id: page.id,

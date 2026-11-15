@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { useEffect, useId, useState } from "react";
 import { isWebUrl, type Destination } from "@/lib/destinations";
 import type { GardenPage } from "@/lib/pages";
-import type { Category } from "@/lib/organization";
+import { categoryLabels, type Category } from "@/lib/organization";
 export function DestinationPicker({
   value,
   onChange,
@@ -157,11 +157,13 @@ export function DestinationPicker({
                   Unavailable category
                 </NativeSelectOption>
               )}
-            {categories.map((category) => (
-              <NativeSelectOption key={category.id} value={category.id}>
-                {category.name}
-              </NativeSelectOption>
-            ))}
+            {[...categoryLabels(categories)]
+              .sort(([, a], [, b]) => a.localeCompare(b))
+              .map(([id, label]) => (
+                <NativeSelectOption key={id} value={id}>
+                  {label}
+                </NativeSelectOption>
+              ))}
           </NativeSelect>
           {(!value || value.kind !== "category" || !value.categoryId) && (
             <p

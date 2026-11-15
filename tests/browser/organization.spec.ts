@@ -158,9 +158,9 @@ test("concurrent page details preserve independent changes and require a choice 
   await expect(
     page.getByRole("region", { name: "Page details conflict" }),
   ).toBeVisible();
-  await expect(page.getByLabel("Page category", { exact: true })).toHaveValue(
-    category.id,
-  );
+  await expect(
+    page.getByRole("region", { name: "Page details conflict" }),
+  ).toContainText(category.name);
   await page
     .getByRole("button", { name: "Keep my details", exact: true })
     .click();
@@ -405,7 +405,7 @@ test("sign-out clears pending details recovery before a late response can rewrit
   ).toEqual([]);
 });
 
-test("page details autosave and categories can be created and renamed", async ({
+test("page details autosave a selected category, date and cover photo", async ({
   page,
 }, testInfo) => {
   await page.goto("/login");
@@ -461,25 +461,23 @@ test("page details autosave and categories can be created and renamed", async ({
     page.getByRole("status", { name: "Auto-save status" }),
   ).toHaveText("Saved");
   const category = "Garden dates " + Date.now();
-  await page.getByLabel("Category name", { exact: true }).fill(category);
+  const createdCategory = await page.request.post("/api/categories", {
+    headers: { Origin: new URL(page.url()).origin },
+    data: { name: category },
+  });
+  expect(createdCategory.status()).toBe(201);
+  await page.reload();
   await page
-    .getByRole("button", { name: "Create category", exact: true })
+    .getByRole("button", { name: "Page settings", exact: true })
     .click();
-  await expect(page.getByLabel("Page category", { exact: true })).toHaveValue(
-    /.+/,
-  );
+  await page
+    .getByRole("button", { name: "Page categories", exact: true })
+    .click();
+  await page.getByRole("checkbox", { name: category, exact: true }).check();
+  await page.keyboard.press("Escape");
   await expect(
     page.getByRole("status", { name: "Auto-save status" }),
   ).toHaveText("Saved");
-  await page
-    .getByLabel("Category name", { exact: true })
-    .fill(category + " renamed");
-  await page
-    .getByRole("button", { name: "Rename category", exact: true })
-    .click();
-  await expect(
-    page.getByLabel("Page category", { exact: true }).locator("option:checked"),
-  ).toHaveText(category + " renamed");
   await page.getByRole("button", { name: "Choose photo", exact: true }).click();
   await page
     .getByRole("button", { name: "Use photo " + photoName, exact: true })
@@ -500,8 +498,8 @@ test("page details autosave and categories can be created and renamed", async ({
     "2026-10-30",
   );
   await expect(
-    page.getByLabel("Page category", { exact: true }).locator("option:checked"),
-  ).toHaveText(category + " renamed");
+    page.getByRole("button", { name: "Page categories", exact: true }),
+  ).toContainText(category);
   await expect(
     page.getByRole("img", { name: "Selected photo", exact: true }),
   ).toHaveAttribute("src", "/api/media/" + upload.id + "/display");

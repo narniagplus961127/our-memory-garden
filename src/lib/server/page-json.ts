@@ -226,11 +226,11 @@ export async function clonePrivatePage(
     for (let copy = 1; copy <= 100; copy++) {
       const [inserted] = await sql<{ id: string }[]>`
         insert into pages (id, title, slug, visibility, content, created_by, updated_by,
-          page_date, category_id, cover_photo_id, sharing_title, sharing_description,
+          page_date, category_ids, cover_photo_id, sharing_title, sharing_description,
           sharing_cover_photo_id, allow_indexing)
         select ${id}::uuid, ${cloneName(source.title, 200, copy)}, ${cloneSlug(source.slug, copy)},
           'private', ${sql.json(content)}, ${admin.id}, ${admin.id}, page_date,
-          category_id, cover_photo_id, sharing_title, sharing_description,
+          category_ids, cover_photo_id, sharing_title, sharing_description,
           sharing_cover_photo_id, allow_indexing
         from pages where id=${sourceId}
         on conflict do nothing returning id

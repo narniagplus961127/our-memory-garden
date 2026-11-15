@@ -22,7 +22,12 @@ export async function PATCH(
         body.name,
         (await params).id,
         body.expectedName,
-        { slug: body.slug, expectedSlug: body.expectedSlug },
+        {
+          slug: body.slug,
+          expectedSlug: body.expectedSlug,
+          parentId: body.parentId,
+          expectedParentId: body.expectedParentId,
+        },
       ),
       { headers: { "Cache-Control": "private, no-store" } },
     );

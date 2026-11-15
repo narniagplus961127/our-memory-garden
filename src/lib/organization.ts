@@ -1,7 +1,56 @@
-export type Category = { id: string; name: string; slug: string };
+export type Category = {
+  id: string;
+  name: string;
+  slug: string;
+  parent_id: string | null;
+};
+
+export function categoryPath(category: Category, categories: Category[]) {
+  const path = [category];
+  const seen = new Set([category.id]);
+  let parent = category.parent_id;
+  while (parent && !seen.has(parent)) {
+    const match = categories.find(({ id }) => id === parent);
+    if (!match) break;
+    path.unshift(match);
+    seen.add(parent);
+    parent = match.parent_id;
+  }
+  return path;
+}
+
+export function categoryLabels(categories: Category[]) {
+  return new Map(
+    categories.map((category) => [
+      category.id,
+      categoryPath(category, categories)
+        .map(({ name }) => name)
+        .join(" › "),
+    ]),
+  );
+}
+
+export function pageCategoryIds(page: {
+  category_ids?: string[];
+  category_id?: string | null;
+}) {
+  return page.category_ids ?? (page.category_id ? [page.category_id] : []);
+}
+
+export function validCategoryIds(value: unknown): value is string[] {
+  return (
+    Array.isArray(value) &&
+    value.every((id: unknown) => typeof id === "string" && uuid.test(id))
+  );
+}
+
+export function sortedCategoryIds(ids: string[]) {
+  return [...new Set(ids.map((id) => id.toLowerCase()))].sort();
+}
+
 export type PageDetails = {
   date: string | null;
-  categoryId: string | null;
+  categoryIds: string[];
   coverPhotoId: string | null;
   sharingTitle: string | null;
   sharingDescription: string | null;

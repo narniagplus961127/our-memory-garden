@@ -13,6 +13,7 @@ export type GardenPage = {
   is_homepage?: boolean;
   page_date?: string | null;
   category_id?: string | null;
+  category_ids?: string[];
   cover_photo_id?: string | null;
   metadata_version?: number;
   sharing_title?: string | null;

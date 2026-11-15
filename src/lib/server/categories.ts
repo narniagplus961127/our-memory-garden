@@ -5,24 +5,33 @@ import type { Administrator } from "./pages";
 import { uuid, type Category } from "../organization";
 import { addressFromTitle, validSlug } from "../page-address";
 import { cloneName, cloneSlug } from "./clone-name";
+import type postgres from "postgres";
+
+// Serialize changes to the tree so concurrent moves cannot create a cycle.
+async function lockCategories(sql: postgres.TransactionSql) {
+  await sql`select pg_advisory_xact_lock(hashtext('garden:category-tree'))`;
+}
 
 export async function categories(): Promise<Category[]> {
   return database()<
     Category[]
-  >`select id,name,slug from page_categories order by lower(name),id`;
+  >`select id,name,slug,parent_id from page_categories order by lower(name),id`;
 }
-export async function categoryById(id: string) {
+export async function categoryById(
+  id: string,
+  sql: ReturnType<typeof database> | postgres.TransactionSql = database(),
+) {
   if (!uuid.test(id)) return null;
-  const [category] = await database()<
+  const [category] = await sql<
     Category[]
-  >`select id,name,slug from page_categories where id=${id}`;
+  >`select id,name,slug,parent_id from page_categories where id=${id}`;
   return category ?? null;
 }
 export async function categoryBySlug(slug: string) {
   if (!validSlug(slug)) return null;
   const [category] = await database()<
     Category[]
-  >`select id,name,slug from page_categories where slug=${slug}`;
+  >`select id,name,slug,parent_id from page_categories where slug=${slug}`;
   return category ?? null;
 }
 export async function cloneCategory(
@@ -30,30 +39,37 @@ export async function cloneCategory(
   sourceId: string,
   id: string,
 ) {
-  const existing = await categoryById(id);
-  if (existing) return { id };
-  const source = await categoryById(sourceId);
-  if (!source) throw new RequestError(404, "Category not found.");
-  const sql = database();
-  for (let copy = 1; copy <= 100; copy++) {
-    const [inserted] = await sql<{ id: string }[]>`
-      insert into page_categories(id, name, slug, created_by)
-      values (${id}, ${cloneName(source.name, 100, copy)}, ${cloneSlug(source.slug, copy)}, ${admin.id})
-      on conflict do nothing returning id
-    `;
-    if (inserted || (await categoryById(id))) return { id };
-  }
-  throw new RequestError(
-    409,
-    "Could not find an unused name and URL for this copy.",
-  );
+  return database().begin(async (sql) => {
+    await lockCategories(sql);
+    if (await categoryById(id, sql)) return { id };
+    const source = await categoryById(sourceId, sql);
+    if (!source) throw new RequestError(404, "Category not found.");
+    for (let copy = 1; copy <= 100; copy++) {
+      const [inserted] = await sql<{ id: string }[]>`
+        insert into page_categories(id, name, slug, created_by, parent_id)
+        values (${id}, ${cloneName(source.name, 100, copy)}, ${cloneSlug(source.slug, copy)}, ${admin.id}, ${source.parent_id})
+        on conflict do nothing returning id
+      `;
+      if (inserted) return inserted;
+    }
+    throw new RequestError(
+      409,
+      "Could not find an unused name and URL for this copy.",
+    );
+  });
 }
 export async function editCategory(
   admin: Administrator,
   name: unknown,
   id?: string,
   expectedName?: unknown,
-  address: { slug?: unknown; expectedSlug?: unknown; createId?: unknown } = {},
+  address: {
+    slug?: unknown;
+    expectedSlug?: unknown;
+    createId?: unknown;
+    parentId?: unknown;
+    expectedParentId?: unknown;
+  } = {},
 ) {
   if (typeof name !== "string" || !name.trim() || name.trim().length > 100)
     throw new RequestError(
@@ -64,56 +80,87 @@ export async function editCategory(
   const createId = address.createId ?? crypto.randomUUID();
   if (!id && (typeof createId !== "string" || !uuid.test(createId)))
     throw new RequestError(400, "Invalid category request.");
-  const current = id
-    ? await categoryById(id)
-    : await categoryById(String(createId));
-  if (id && !current) throw new RequestError(404, "Category not found.");
-  const slug =
-    address.slug ??
-    current?.slug ??
-    (addressFromTitle(name) || "category-" + String(createId).slice(0, 8));
-  if (!validSlug(slug))
-    throw new RequestError(
-      400,
-      "Use lowercase letters, numbers and single hyphens for the category address.",
-    );
-  if (current && current.name === name.trim() && current.slug === slug)
-    return current;
-  if (!id && current)
-    throw new RequestError(
-      409,
-      "This category request was already used. Reopen Create category.",
-    );
-  if (
-    id &&
-    (current!.name !== expectedName ||
-      (address.slug !== undefined && current!.slug !== address.expectedSlug))
-  )
-    throw new RequestError(
-      409,
-      "This category changed elsewhere. Review the saved category before updating.",
-    );
   try {
-    const rows = id
-      ? await database()<
-          Category[]
-        >`update page_categories set name=${name.trim()},slug=${slug} where id=${id} and name=${current!.name} and slug=${current!.slug} returning id,name,slug`
-      : await database()<
-          Category[]
-        >`insert into page_categories(id,name,slug,created_by) values(${String(createId)},${name.trim()},${slug},${admin.id}) returning id,name,slug`;
-    if (!rows[0])
-      throw new RequestError(
-        409,
-        "This category changed elsewhere. Review the saved category before updating.",
-      );
-    return rows[0];
+    return await database().begin(async (sql) => {
+      await lockCategories(sql);
+      const current = await categoryById(id ?? String(createId), sql);
+      if (id && !current) throw new RequestError(404, "Category not found.");
+      const slug =
+        address.slug ??
+        current?.slug ??
+        (addressFromTitle(name) || "category-" + String(createId).slice(0, 8));
+      if (!validSlug(slug))
+        throw new RequestError(
+          400,
+          "Use lowercase letters, numbers and single hyphens for the category address.",
+        );
+      const parent =
+        address.parentId === undefined
+          ? (current?.parent_id ?? null)
+          : address.parentId;
+      if (parent !== null && (typeof parent !== "string" || !uuid.test(parent)))
+        throw new RequestError(400, "Choose an existing parent category.");
+      const parentId = parent?.toLowerCase() ?? null;
+      if (
+        current &&
+        current.name === name.trim() &&
+        current.slug === slug &&
+        current.parent_id === parentId
+      )
+        return current;
+      if (!id && current)
+        throw new RequestError(
+          409,
+          "This category request was already used. Reopen Create category.",
+        );
+      if (
+        id &&
+        current &&
+        (current.name !== expectedName ||
+          (address.slug !== undefined &&
+            current.slug !== address.expectedSlug) ||
+          (address.parentId !== undefined &&
+            current.parent_id !== address.expectedParentId))
+      )
+        throw new RequestError(
+          409,
+          "This category changed elsewhere. Review the saved category before updating.",
+        );
+      if (parentId) {
+        const ancestors = await sql<{ id: string }[]>`
+          with recursive tree as (
+            select id,parent_id from page_categories where id=${parentId}
+            union
+            select c.id,c.parent_id from page_categories c join tree on c.id=tree.parent_id
+          ) select id from tree
+        `;
+        if (!ancestors.length)
+          throw new RequestError(400, "Choose an existing parent category.");
+        if (
+          ancestors.some(
+            (ancestor) =>
+              ancestor.id === (id ?? String(createId)).toLowerCase(),
+          )
+        )
+          throw new RequestError(
+            400,
+            "Choose a parent outside this category and its subcategories.",
+          );
+      }
+      const [saved] = id
+        ? await sql<Category[]>`
+        update page_categories set name=${name.trim()},slug=${slug},parent_id=${parentId}
+        where id=${id} returning id,name,slug,parent_id
+      `
+        : await sql<Category[]>`
+        insert into page_categories(id,name,slug,created_by,parent_id)
+        values(${String(createId)},${name.trim()},${slug},${admin.id},${parentId}) returning id,name,slug,parent_id
+      `;
+      return saved;
+    });
   } catch (error) {
     const failure = error as { code?: string; constraint_name?: string };
     if (failure.code === "23505") {
-      // A repeated create with the same request ID acknowledges a lost response.
-      const existing = !id ? await categoryById(String(createId)) : null;
-      if (existing?.name === name.trim() && existing.slug === slug)
-        return existing;
       throw new RequestError(
         400,
         failure.constraint_name === "page_categories_slug_idx"
@@ -138,19 +185,23 @@ export async function deleteCategory(
     throw new RequestError(400, "Review the category and confirm deletion.");
   try {
     return await database().begin(async (sql) => {
+      await lockCategories(sql);
       const [category] = await sql<
         Category[]
-      >`select id,name,slug from page_categories where id=${id} for update`;
+      >`select id,name,slug,parent_id from page_categories where id=${id} for update`;
       if (!category) return { deleted: true };
       if (
         category.name !== body.expectedName ||
-        category.slug !== body.expectedSlug
+        category.slug !== body.expectedSlug ||
+        (body.expectedParentId !== undefined &&
+          category.parent_id !== body.expectedParentId)
       )
         throw new RequestError(
           409,
           "This category changed elsewhere. Review the saved category before deleting.",
         );
-      await sql`update pages set category_id=null,metadata_version=metadata_version+1,version=version+1,updated_at=now(),updated_by=${admin.id},edit_reason='details',edit_group_id=gen_random_uuid(),editor_session_id=null where category_id=${id}`;
+      await sql`update pages set category_ids=array_remove(category_ids,${id}::uuid),metadata_version=metadata_version+1,version=version+1,updated_at=now(),updated_by=${admin.id},edit_reason='details',edit_group_id=gen_random_uuid(),editor_session_id=null where category_ids @> array[${id}::uuid]`;
+      await sql`update page_categories set parent_id=${category.parent_id} where parent_id=${id}`;
       await sql`delete from page_categories where id=${id}`;
       return { deleted: true };
     });
