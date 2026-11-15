@@ -13,6 +13,7 @@ import { RequestError } from "@/lib/server/http";
 import { categories } from "@/lib/server/organization";
 import { displayPhotoUrl } from "@/lib/media";
 import { PhotoImage } from "@/components/photo-image";
+import { categoryLabels, pageCategoryIds } from "@/lib/organization";
 export default async function History({
   params,
   searchParams,
@@ -37,7 +38,7 @@ export default async function History({
     const selected = version
       ? (await historicalPage(id, version)).snapshot
       : null;
-    const categoryList = await categories();
+    const labels = categoryLabels(await categories());
     return (
       <RecoveryPage page={page}>
         <Link href="/admin/pages">← Pages</Link>
@@ -89,10 +90,11 @@ export default async function History({
                 <dl className="history-metadata">
                   <dt>Date</dt>
                   <dd>{selected.page_date ?? "No date"}</dd>
-                  <dt>Category</dt>
+                  <dt>Categories</dt>
                   <dd>
-                    {categoryList.find((c) => c.id === selected.category_id)
-                      ?.name ?? "No category"}
+                    {pageCategoryIds(selected)
+                      .map((id) => labels.get(id) ?? "Unavailable category")
+                      .join(", ") || "No categories"}
                   </dd>
                   <dt>Sharing title</dt>
                   <dd>

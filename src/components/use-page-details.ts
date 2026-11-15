@@ -1,7 +1,13 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import type { GardenPage } from "@/lib/pages";
-import { uuid, type PageDetails } from "@/lib/organization";
+import {
+  pageCategoryIds,
+  sortedCategoryIds,
+  uuid,
+  validCategoryIds,
+  type PageDetails,
+} from "@/lib/organization";
 import {
   recoveryPrefix,
   logoutSignal,
@@ -9,7 +15,6 @@ import {
 } from "@/lib/editor-recovery";
 const fields = [
   "date",
-  "categoryId",
   "coverPhotoId",
   "sharingTitle",
   "sharingDescription",
@@ -17,10 +22,12 @@ const fields = [
   "allowIndexing",
 ] as const;
 const same = (a: PageDetails, b: PageDetails) =>
-  fields.every((key) => a[key] === b[key]);
+  fields.every((key) => a[key] === b[key]) &&
+  a.categoryIds.length === b.categoryIds.length &&
+  a.categoryIds.every((id, index) => id === b.categoryIds[index]);
 export const detailsOf = (page: GardenPage): PageDetails => ({
   date: page.page_date?.slice(0, 10) ?? null,
-  categoryId: page.category_id ?? null,
+  categoryIds: sortedCategoryIds(pageCategoryIds(page)),
   coverPhotoId: page.cover_photo_id ?? null,
   sharingTitle: page.sharing_title ?? null,
   sharingDescription: page.sharing_description ?? null,
@@ -30,17 +37,20 @@ export const detailsOf = (page: GardenPage): PageDetails => ({
 function validDetails(value: unknown): value is PageDetails {
   if (!value || typeof value !== "object") return false;
   const details = value as PageDetails;
-  return fields.every((key) => {
-    const value = details[key];
-    if (key === "allowIndexing") return typeof value === "boolean";
-    if (value === null) return true;
-    if (typeof value !== "string") return false;
-    if (key === "sharingTitle") return value.length <= 200;
-    if (key === "sharingDescription") return value.length <= 2000;
-    return key === "date"
-      ? /^\d{4}-\d{2}-\d{2}$/.test(value)
-      : uuid.test(value);
-  });
+  return (
+    validCategoryIds(details.categoryIds) &&
+    fields.every((key) => {
+      const value = details[key];
+      if (key === "allowIndexing") return typeof value === "boolean";
+      if (value === null) return true;
+      if (typeof value !== "string") return false;
+      if (key === "sharingTitle") return value.length <= 200;
+      if (key === "sharingDescription") return value.length <= 2000;
+      return key === "date"
+        ? /^\d{4}-\d{2}-\d{2}$/.test(value)
+        : uuid.test(value);
+    })
+  );
 }
 type DetailsRecovery = {
   schemaVersion: "page-details-1";
@@ -62,6 +72,20 @@ function parseDetailsRecovery(
   try {
     if (!raw || raw.length > 32768) return null;
     const r = JSON.parse(raw);
+    for (const details of [r.baseDetails, r.details]) {
+      if (!details || typeof details !== "object") continue;
+      if (!Object.hasOwn(details, "categoryIds")) {
+        if (details.categoryId === null) details.categoryIds = [];
+        else if (
+          typeof details.categoryId === "string" &&
+          uuid.test(details.categoryId)
+        )
+          details.categoryIds = [details.categoryId];
+      }
+      if (validCategoryIds(details.categoryIds))
+        details.categoryIds = sortedCategoryIds(details.categoryIds);
+      delete details.categoryId;
+    }
     // Old device copies never expressed sharing intent. Upgrade both sides
     // from the current page so recovery cannot undo independent sharing edits.
     for (const key of [
@@ -222,8 +246,18 @@ export function usePageDetails(
           throw Error(
             "Could not load the saved page details. Retry when connected.",
           );
-        const remote = detailsOf(saved),
-          merged = { ...s.working };
+        const remote = detailsOf(saved);
+        const baseCategories = new Set(s.base.categoryIds);
+        const localCategories = new Set(s.working.categoryIds);
+        const merged = {
+          ...s.working,
+          categoryIds: sortedCategoryIds([
+            ...remote.categoryIds.filter(
+              (id) => !baseCategories.has(id) || localCategories.has(id),
+            ),
+            ...s.working.categoryIds.filter((id) => !baseCategories.has(id)),
+          ]),
+        };
         let conflict = false;
         for (const key of fields) {
           if (s.working[key] === s.base[key])
@@ -364,7 +398,13 @@ export function usePageDetails(
   function change(changes: Partial<PageDetails>) {
     const s = state.current;
     if (!s.active) return;
-    apply({ ...s.working, ...changes });
+    apply({
+      ...s.working,
+      ...changes,
+      ...(changes.categoryIds && {
+        categoryIds: sortedCategoryIds(changes.categoryIds),
+      }),
+    });
     cancelTimer();
     setError("");
     if (s.comparison) {

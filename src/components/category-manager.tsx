@@ -2,7 +2,7 @@
 import { useRef, useState, type RefObject } from "react";
 import { ConfirmationDialog } from "./confirmation-dialog";
 import { Toast } from "./toast";
-import type { Category } from "@/lib/organization";
+import { categoryLabels, type Category } from "@/lib/organization";
 import type { AdminListOrder } from "@/lib/admin-list-order";
 import {
   AdminListGrip,
@@ -26,6 +26,7 @@ export function CategoryManager({
     [error, setError] = useState(""),
     [notice, setNotice] = useState("");
   const pending = useRef(false);
+  const labels = categoryLabels(list);
   const returnFocus = useRef<RefObject<HTMLButtonElement | null> | undefined>(
     undefined,
   );
@@ -37,7 +38,12 @@ export function CategoryManager({
     Boolean(selected),
   );
   function done(id: string, message: string) {
-    setList((current) => current.filter((c) => c.id !== id));
+    setList((current) => {
+      const parent = current.find((c) => c.id === id)?.parent_id ?? null;
+      return current
+        .filter((c) => c.id !== id)
+        .map((c) => (c.parent_id === id ? { ...c, parent_id: parent } : c));
+    });
     setSelected(null);
     setError("");
     setNotice(message);
@@ -58,6 +64,7 @@ export function CategoryManager({
           confirm: true,
           expectedName: selected.name,
           expectedSlug: selected.slug,
+          expectedParentId: selected.parent_id,
         }),
       });
       const result = await response.json();
@@ -118,6 +125,11 @@ export function CategoryManager({
               <li key={category.id} {...sort.rowProps(category.id)}>
                 <AdminListRow
                   title={category.name}
+                  detail={
+                    category.parent_id
+                      ? labels.get(category.parent_id)
+                      : undefined
+                  }
                   href={"/admin/categories/" + category.id + "/edit"}
                   showEdit={false}
                   grip={
@@ -158,7 +170,7 @@ export function CategoryManager({
       {selected && (
         <ConfirmationDialog
           title={"Delete " + selected.name + "?"}
-          description="Your pages and photos will be kept. Their category assignment will be cleared, including pages in trash."
+          description="Your pages and photos will be kept. Only this category’s tag will be removed, including from pages in trash. Its subcategories move up one level."
           busy={busy}
           error={error}
           confirmLabel="Delete category"

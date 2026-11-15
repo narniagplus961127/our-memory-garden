@@ -27,6 +27,7 @@ export async function POST(request: Request) {
       await editCategory(admin, body.name, undefined, undefined, {
         slug: body.slug,
         createId: body.id,
+        parentId: body.parentId,
       }),
       { status: 201, headers: { "Cache-Control": "private, no-store" } },
     );

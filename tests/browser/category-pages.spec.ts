@@ -30,6 +30,87 @@ async function category(page: Page) {
   expect(r.status()).toBe(201);
   return r.json();
 }
+
+test("create a subcategory in Categories and autosave multiple page tags", async ({
+  page,
+}) => {
+  await signIn(page);
+  const parent = await category(page);
+  const other = await category(page);
+  const child = "Anniversary " + crypto.randomUUID().slice(0, 8);
+  await page.goto("/admin/categories/new");
+  await page.getByLabel("Category name", { exact: true }).fill(child);
+  await page
+    .getByLabel("Parent category", { exact: false })
+    .selectOption(parent.id);
+  await page
+    .getByRole("button", { name: "Create category", exact: true })
+    .click();
+  await expect(page).toHaveURL(/\/admin\/categories$/);
+  await expect(
+    page.getByRole("link", { name: `Edit ${child}`, exact: true }),
+  ).toContainText(parent.name);
+  const created = await page.request.post("/api/pages", {
+    headers,
+    data: { title: child },
+  });
+  expect(created.status()).toBe(201);
+  const { id } = await created.json();
+  const settings = page.getByRole("button", {
+    name: "Page settings",
+    exact: true,
+  });
+  const categories = page.getByRole("button", {
+    name: "Page categories",
+    exact: true,
+  });
+  const nestedTag = page.getByRole("checkbox", {
+    name: `${parent.name} › ${child}`,
+    exact: true,
+  });
+  const otherTag = page.getByRole("checkbox", {
+    name: other.name,
+    exact: true,
+  });
+  await page.goto(`/admin/pages/${id}`);
+  await settings.click();
+  await expect(
+    page.getByRole("button", { name: "Create category", exact: true }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole("button", { name: "Rename category", exact: true }),
+  ).toHaveCount(0);
+  await categories.click();
+  await nestedTag.check();
+  await otherTag.check();
+  await page.keyboard.press("Escape");
+  await expect(
+    page.getByRole("status", { name: "Auto-save status" }),
+  ).toHaveText("Saved");
+  await page.reload();
+  await settings.click();
+  await categories.click();
+  await expect(nestedTag).toBeChecked();
+  await expect(otherTag).toBeChecked();
+  const current = await (await page.request.get(`/api/pages/${id}`)).json();
+  const remoteSave = await page.request.patch(`/api/pages/${id}/details`, {
+    headers,
+    data: {
+      date: null,
+      categoryIds: [...current.category_ids, parent.id],
+      coverPhotoId: null,
+      metadataVersion: current.metadata_version,
+    },
+  });
+  expect(remoteSave.status()).toBe(200);
+  await nestedTag.uncheck();
+  await page.keyboard.press("Escape");
+  await expect(
+    page.getByRole("status", { name: "Auto-save status" }),
+  ).toHaveText("Saved");
+  const saved = await (await page.request.get(`/api/pages/${id}`)).json();
+  expect(saved.category_ids).toEqual([other.id, parent.id].sort());
+});
 test("category forms use dedicated pages, generate editable addresses and retain duplicate errors", async ({
   page,
 }, info) => {

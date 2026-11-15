@@ -36,6 +36,13 @@ export function errorResponse(error: unknown) {
   if (
     error &&
     typeof error === "object" &&
+    "constraint_name" in error &&
+    error.constraint_name === "pages_category_ids_fkey"
+  )
+    error = new RequestError(400, "Choose existing categories.");
+  if (
+    error &&
+    typeof error === "object" &&
     "code" in error &&
     error.code === "23503" &&
     "message" in error &&

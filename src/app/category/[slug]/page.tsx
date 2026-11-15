@@ -1,9 +1,11 @@
 import { notFound } from "next/navigation";
-import { categoryBySlug } from "@/lib/server/categories";
+import { categories, categoryBySlug } from "@/lib/server/categories";
 import { gridPages } from "@/lib/server/organization";
 import { GardenHeader } from "@/components/garden-header";
 import { PageGrid } from "@/components/page-grid";
 import { siteUrl } from "@/lib/config";
+import Link from "next/link";
+import { categoryPath } from "@/lib/organization";
 export const dynamic = "force-dynamic";
 export async function generateMetadata({
   params,
@@ -32,12 +34,37 @@ export default async function CategoryPage({
     pageIds: [],
   };
   // Category listings are public even when an administrator is signed in.
-  const cards = await gridPages(selection, null);
+  const [cards, list] = await Promise.all([
+    gridPages(selection, null),
+    categories(),
+  ]);
+  const ancestors = categoryPath(category, list).slice(0, -1);
   return (
     <>
       <GardenHeader />
       <main className="public-page">
         <div className="page-content public-page-heading">
+          {ancestors.length > 0 && (
+            <nav
+              aria-label="Parent categories"
+              className="mb-3 flex flex-wrap items-center gap-2 text-sm"
+            >
+              {ancestors.map((parent) => (
+                <span
+                  key={parent.id}
+                  className="inline-flex items-center gap-2"
+                >
+                  <Link
+                    href={"/category/" + parent.slug}
+                    className="underline underline-offset-4"
+                  >
+                    {parent.name}
+                  </Link>
+                  <span aria-hidden="true">›</span>
+                </span>
+              ))}
+            </nav>
+          )}
           <h1>{category.name}</h1>
           {!cards.length && (
             <p className="muted">No public pages in this category yet.</p>

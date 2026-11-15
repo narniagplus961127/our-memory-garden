@@ -1,13 +1,17 @@
 "use client";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { NativeSelect } from "@/components/ui/native-select";
-import { NativeSelectOption } from "@/components/ui/native-select";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useEffect, useState } from "react";
+import { ChevronDown } from "lucide-react";
 import type { GardenPage } from "@/lib/pages";
-import type { Category } from "@/lib/organization";
+import { categoryLabels, type Category } from "@/lib/organization";
 import { displayPhotoUrl } from "@/lib/media";
 import { PhotoPicker } from "./media-library";
 import { detailsOf, type usePageDetails } from "./use-page-details";
@@ -15,19 +19,14 @@ export function PageDetails({
   page,
   visibility,
   save,
-  categoryBusy,
-  setCategoryBusy,
 }: {
   page: GardenPage;
   visibility: GardenPage["visibility"];
   save: ReturnType<typeof usePageDetails>;
-  categoryBusy: boolean;
-  setCategoryBusy: (busy: boolean) => void;
 }) {
   const { details, change } = save;
   const [error, setError] = useState(""),
-    [list, setList] = useState<Category[]>([]),
-    [name, setName] = useState(""),
+    [list, setList] = useState<Category[] | null>(null),
     [showComparison, setShowComparison] = useState(true);
   useEffect(() => {
     let cancelled = false;
@@ -45,44 +44,13 @@ export function PageDetails({
     };
   }, []);
   useEffect(() => {
-    setName(list.find((c) => c.id === details.categoryId)?.name ?? "");
-  }, [list, details.categoryId]);
-  useEffect(() => {
     if (save.comparison) setShowComparison(true);
   }, [save.comparison?.metadata_version]);
-  async function category(rename: boolean) {
-    if (categoryBusy) return;
-    setCategoryBusy(true);
-    setError("");
-    try {
-      const selected = list.find((c) => c.id === details.categoryId);
-      const r = await fetch(
-        "/api/categories" + (rename && selected ? "/" + selected.id : ""),
-        {
-          method: rename ? "PATCH" : "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name, expectedName: selected?.name }),
-        },
-      );
-      const result = await r.json();
-      if (!r.ok) throw Error(result.error);
-      setList((current) =>
-        [...current.filter((c) => c.id !== result.id), result].sort((a, b) =>
-          a.name.localeCompare(b.name),
-        ),
-      );
-      setName(result.name);
-      if (!rename) change({ categoryId: result.id });
-    } catch (e) {
-      setError(
-        e instanceof Error
-          ? e.message
-          : "Could not change the category. Try again.",
-      );
-    } finally {
-      setCategoryBusy(false);
-    }
-  }
+  const names = categoryLabels(list ?? []);
+  const categoryName = (id: string) => names.get(id) ?? "Unavailable category";
+  const choices = [...new Set([...names.keys(), ...details.categoryIds])].sort(
+    (a, b) => categoryName(a).localeCompare(categoryName(b)),
+  );
   return (
     <div className="page-details field">
       <div className="settings-field">
@@ -101,51 +69,73 @@ export function PageDetails({
       </div>
       <div className="settings-field">
         <Label htmlFor="page-category">
-          Page category <small>(optional)</small>
+          Page categories <small>(optional)</small>
         </Label>
-        <NativeSelect
-          id="page-category"
-          aria-label="Page category"
-          value={details.categoryId ?? ""}
-          onChange={(e) => {
-            change({ categoryId: e.target.value || null });
-            setName(list.find((c) => c.id === e.target.value)?.name ?? "");
-          }}
-        >
-          <NativeSelectOption value="">No category</NativeSelectOption>
-          {list.map((c) => (
-            <NativeSelectOption key={c.id} value={c.id}>
-              {c.name}
-            </NativeSelectOption>
-          ))}
-        </NativeSelect>
-      </div>
-      <div className="settings-field">
-        <Label htmlFor="category-name">Category name</Label>
-        <Input
-          id="category-name"
-          maxLength={100}
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-        />
-        <div className="actions category-actions">
-          <Button
-            className="secondary"
-            aria-label="Create category"
-            disabled={categoryBusy || !name.trim()}
-            onClick={() => void category(false)}
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button
+              type="button"
+              variant="outline"
+              id="page-category"
+              aria-label="Page categories"
+              className="w-full justify-between"
+              disabled={!list}
+            >
+              <span className="truncate">
+                {error
+                  ? "Categories unavailable"
+                  : !list
+                    ? "Loading categories…"
+                    : details.categoryIds.length
+                      ? details.categoryIds.map(categoryName).join(", ")
+                      : "Choose categories"}
+              </span>
+              <ChevronDown aria-hidden="true" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent
+            aria-label="Choose page categories"
+            align="start"
+            collisionPadding={12}
+            className="w-(--radix-popover-trigger-width) max-w-[calc(100vw_-_24px)] max-h-[min(18rem,var(--radix-popover-content-available-height))] overflow-y-auto overscroll-contain p-2"
           >
-            Create
-          </Button>
-          <Button
-            className="secondary"
-            aria-label="Rename category"
-            disabled={categoryBusy || !details.categoryId || !name.trim()}
-            onClick={() => void category(true)}
-          >
-            Rename
-          </Button>
-        </div>
+            {choices.length ? (
+              choices.map((id) => (
+                <label
+                  key={id}
+                  className="flex min-h-11 cursor-pointer items-center gap-2 rounded px-2 text-sm hover:bg-accent"
+                >
+                  <input
+                    type="checkbox"
+                    className="size-4 shrink-0 accent-primary"
+                    checked={details.categoryIds.includes(id)}
+                    onChange={(event) =>
+                      change({
+                        categoryIds: event.target.checked
+                          ? [...details.categoryIds, id]
+                          : details.categoryIds.filter(
+                              (selected) => selected !== id,
+                            ),
+                      })
+                    }
+                  />
+                  <span className="min-w-0 break-words">
+                    {categoryName(id)}
+                  </span>
+                </label>
+              ))
+            ) : (
+              <p className="m-2 text-sm text-muted-foreground">
+                Add categories in the Categories dashboard.
+              </p>
+            )}
+          </PopoverContent>
+        </Popover>
+        {error && (
+          <p role="alert" className="error">
+            {error}
+          </p>
+        )}
       </div>
       <div className="settings-field">
         <span className="field-label">
@@ -290,9 +280,9 @@ export function PageDetails({
                   <br />
                   Search indexing: {value.allowIndexing ? "Allowed" : "Off"}
                   <br />
-                  Category:{" "}
-                  {list.find((c) => c.id === value.categoryId)?.name ??
-                    "No category"}
+                  Categories:{" "}
+                  {value.categoryIds.map(categoryName).join(", ") ||
+                    "No categories"}
                 </p>
                 {value.sharingCoverPhotoId && (
                   <img
@@ -341,11 +331,11 @@ export function PageDetails({
         </p>
       )}
       {save.warning && <p role="status">{save.warning}</p>}
-      {(error || save.error || save.recovered) && (
+      {(save.error || save.recovered) && (
         <>
-          {(error || save.error) && (
+          {save.error && (
             <p role="alert" className="error">
-              {error || save.error}
+              {save.error}
             </p>
           )}
           <Button className="secondary" onClick={save.retry}>

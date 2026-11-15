@@ -4,7 +4,12 @@ import { NativeSelect } from "@/components/ui/native-select";
 import { NativeSelectOption } from "@/components/ui/native-select";
 import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
-import type { Category, GridSelection, PageCard } from "@/lib/organization";
+import {
+  categoryLabels,
+  type Category,
+  type GridSelection,
+  type PageCard,
+} from "@/lib/organization";
 import { displayPhotoUrl } from "@/lib/media";
 export function PageGrid({
   selection,
@@ -155,11 +160,13 @@ export function PageGridSettings({
                   Unavailable category
                 </NativeSelectOption>
               )}
-            {categories.map((c) => (
-              <NativeSelectOption key={c.id} value={c.id}>
-                {c.name}
-              </NativeSelectOption>
-            ))}
+            {[...categoryLabels(categories)]
+              .sort(([, a], [, b]) => a.localeCompare(b))
+              .map(([id, label]) => (
+                <NativeSelectOption key={id} value={id}>
+                  {label}
+                </NativeSelectOption>
+              ))}
           </NativeSelect>
         </>
       ) : (

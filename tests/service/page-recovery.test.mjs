@@ -678,13 +678,24 @@ test("inbound warnings include nested text, button, manual/category grids and me
       owner,
     )
   ).json();
+  const child = await (
+    await call(
+      "/api/categories",
+      "POST",
+      {
+        name: "Inbound subcategory " + crypto.randomUUID(),
+        parentId: category.id,
+      },
+      owner,
+    )
+  ).json();
   target = await (
     await call(
       "/api/pages/" + target.id + "/details",
       "PATCH",
       {
         date: null,
-        categoryId: category.id,
+        categoryIds: [child.id],
         coverPhotoId: null,
         metadataVersion: target.metadata_version,
       },
@@ -777,7 +788,10 @@ test("inbound warnings include nested text, button, manual/category grids and me
     ).json();
     assert.equal(
       references.filter(
-        (r) => r.kind === "Text or button link" && r.id === source.id,
+        (r) =>
+          ["Text or button link", "Text, button or image link"].includes(
+            r.kind,
+          ) && r.id === source.id,
       ).length,
       2,
     );

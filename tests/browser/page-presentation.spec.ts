@@ -149,8 +149,7 @@ test("page settings use equal gutters, field spacing and control heights without
   await fixture(page);
   const inputs = [
     page.getByLabel("Page date", { exact: true }),
-    page.getByLabel("Page category", { exact: true }),
-    page.getByLabel("Category name", { exact: true }),
+    page.getByRole("button", { name: "Page categories", exact: true }),
     page.getByRole("button", { name: "Choose photo", exact: true }),
     page.getByLabel("Sharing title", { exact: true }),
   ];
