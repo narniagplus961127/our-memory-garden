@@ -1,8 +1,9 @@
 "use client";
 
-import { useRef, useState, type ReactNode } from "react";
+import { useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import { ZoomIn } from "lucide-react";
 import { PhotoViewer } from "./photo-viewer";
+import { SwiperPhotos } from "./swiper-viewport";
 import { Button } from "./ui/button";
 
 export function StandalonePhoto({
@@ -20,6 +21,16 @@ export function StandalonePhoto({
 }) {
   const [open, setOpen] = useState(false);
   const trigger = useRef<HTMLButtonElement>(null);
+  const gallery = useContext(SwiperPhotos);
+  useEffect(() => {
+    const element = trigger.current;
+    if (gallery && element)
+      return gallery.register(element, { photoId, alt, caption });
+  }, [gallery, photoId, alt, caption, href]);
+  function openPhoto() {
+    if (trigger.current && gallery?.open(trigger.current)) return;
+    setOpen(true);
+  }
   const label = "Zoom " + (alt || "photo");
   return (
     <div className="garden-photo-frame">
@@ -41,7 +52,7 @@ export function StandalonePhoto({
             aria-label={label}
             title="Zoom photo"
             aria-haspopup="dialog"
-            onClick={() => setOpen(true)}
+            onClick={openPhoto}
           >
             <ZoomIn aria-hidden="true" />
           </Button>
@@ -53,7 +64,7 @@ export function StandalonePhoto({
           className="garden-photo-zoom-trigger"
           aria-label={label}
           aria-haspopup="dialog"
-          onClick={() => setOpen(true)}
+          onClick={openPhoto}
         >
           {children}
         </button>

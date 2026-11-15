@@ -7,7 +7,7 @@ import { Modal } from "./modal";
 import { PhotoImage } from "./photo-image";
 import { Button } from "./ui/button";
 
-type ViewerPhoto = {
+export type ViewerPhoto = {
   photoId: string;
   alt?: string;
   caption?: string;
@@ -178,16 +178,18 @@ function ZoomablePhoto({
 export function PhotoViewer({
   photo,
   navigation,
+  label,
   trigger,
   onClose,
 }: {
   photo: ViewerPhoto;
+  label?: string;
   navigation?: {
     index: number;
     total: number;
     canNext: boolean;
-    loading: boolean;
-    error: string;
+    loading?: boolean;
+    error?: string;
     onMove: (direction: -1 | 1) => void;
   };
   trigger: RefObject<HTMLElement | null>;
@@ -209,7 +211,7 @@ export function PhotoViewer({
   return (
     <Modal
       title={navigation ? "Photos" : "Photo"}
-      label={navigation ? "Photo grid viewer" : "Photo viewer"}
+      label={label ?? (navigation ? "Photo grid viewer" : "Photo viewer")}
       closeLabel="Close photo viewer"
       onClose={onClose}
       returnFocus={trigger}

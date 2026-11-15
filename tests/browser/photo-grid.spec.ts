@@ -477,6 +477,47 @@ test("add a Photo grid, select photos, reorder and open the website viewer", asy
                           },
                         },
                       },
+                      {
+                        type: "Swiper",
+                        props: {
+                          id: "photo-swiper",
+                          slidesPerView: 1,
+                          mobileSlidesPerView: 1,
+                          content: [
+                            {
+                              type: "Image",
+                              props: {
+                                id: "swiper-first",
+                                photoId: photoIds[0],
+                                alt: "First Swiper photo",
+                              },
+                            },
+                            {
+                              type: "Text",
+                              props: {
+                                id: "swiper-text",
+                                text: "An intervening slide",
+                                style: "p",
+                              },
+                            },
+                            {
+                              type: "Image",
+                              props: {
+                                id: "swiper-placeholder",
+                                alt: "Empty slide",
+                              },
+                            },
+                            {
+                              type: "Image",
+                              props: {
+                                id: "swiper-last",
+                                photoId: photoIds[1],
+                                alt: "Last Swiper photo",
+                              },
+                            },
+                          ],
+                        },
+                      },
                     ],
                   },
                 },
@@ -530,6 +571,59 @@ test("add a Photo grid, select photos, reorder and open the website viewer", asy
         exact: true,
       }),
     ).toBeVisible();
+    await standaloneViewer
+      .getByRole("button", { name: "Close photo viewer" })
+      .click();
+
+    const carousel = website.getByRole("region", {
+      name: "Swiper",
+      exact: true,
+    });
+    const swiperPhoto = carousel.getByRole("button", {
+      name: "Zoom First Swiper photo",
+    });
+    await swiperPhoto.click();
+    await expect(standaloneViewer.getByText("1 of 2")).toBeVisible();
+    const nextPhoto = standaloneViewer.getByRole("button", {
+      name: "Next photo",
+    });
+    if (isMobile) {
+      const pan = (await standaloneViewer
+        .locator(".photo-lightbox-pan")
+        .boundingBox())!;
+      await drag(
+        website,
+        true,
+        { x: pan.x + pan.width * 0.75, y: pan.y + pan.height / 2 },
+        { x: pan.x + pan.width * 0.25, y: pan.y + pan.height / 2 },
+      );
+    } else {
+      await nextPhoto.click();
+    }
+    await expect(
+      standaloneViewer.getByRole("img", { name: "Last Swiper photo" }),
+    ).toBeVisible();
+    await expect(standaloneViewer.getByText("2 of 2")).toBeVisible();
+    await expect(nextPhoto).toBeDisabled();
+    await standaloneViewer
+      .getByRole("button", { name: "Zoom in", exact: true })
+      .click();
+    await expect(
+      standaloneViewer.getByRole("button", { name: "Reset zoom" }),
+    ).toHaveText("150%");
+    await standaloneViewer
+      .getByRole("button", { name: "Previous photo" })
+      .click();
+    await expect(
+      standaloneViewer.getByRole("img", { name: "First Swiper photo" }),
+    ).toBeVisible();
+    await expect(
+      standaloneViewer.getByRole("button", { name: "Reset zoom" }),
+    ).toHaveText("100%");
+    await standaloneViewer
+      .getByRole("button", { name: "Close photo viewer" })
+      .click();
+    await expect(swiperPhoto).toBeFocused();
     expect(errors).toEqual([]);
   } finally {
     await visitor.close();
