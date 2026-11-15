@@ -138,9 +138,19 @@ test("create a Swiper, round-trip its slides, and browse with responsive paginat
       name: "Swiper pagination",
     });
     await expect(pagination.getByRole("button")).toHaveCount(isMobile ? 5 : 3);
-    await expect(
-      pagination.getByRole("button", { name: "Go to page 1", exact: true }),
-    ).toHaveAttribute("aria-current", "page");
+    const activeDot = pagination.getByRole("button", {
+      name: "Go to page 1",
+      exact: true,
+    });
+    const inactiveDot = pagination.getByRole("button", {
+      name: "Go to page 2",
+      exact: true,
+    });
+    await expect(activeDot).toHaveAttribute("aria-current", "page");
+    await expect(activeDot).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+    await expect(activeDot).toHaveCSS("border-top-width", "0px");
+    await expect(activeDot.locator("span")).toHaveCSS("width", "10px");
+    await expect(inactiveDot.locator("span")).toHaveCSS("width", "7px");
     const rail = (await swiper.locator(".garden-swiper-rail").boundingBox())!;
     const pageDots = (await pagination.boundingBox())!;
     expect(pageDots.y).toBeGreaterThanOrEqual(rail.y + rail.height);
@@ -155,14 +165,14 @@ test("create a Swiper, round-trip its slides, and browse with responsive paginat
       "color",
       "rgb(255, 255, 255)",
     );
-    await expect(view.locator(".public-header")).toHaveCSS(
-      "background-color",
+    const header = view.locator(".public-header");
+    await expect(header).toHaveCSS("background-color", "rgb(246, 241, 231)");
+    await expect(header).not.toHaveCSS("box-shadow", "none");
+    await expect(header.locator(".brand")).toHaveCSS(
+      "color",
       "rgb(48, 67, 55)",
     );
-    await expect(view.locator(".public-header .brand")).toHaveCSS(
-      "color",
-      "rgb(255, 255, 255)",
-    );
+    await expect(header.locator(".brand img")).toHaveCSS("filter", "none");
 
     await swiper.getByRole("button", { name: "Next slides" }).click();
     await expect(

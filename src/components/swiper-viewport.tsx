@@ -135,18 +135,16 @@ export function SwiperViewport({ children }: { children: ReactNode }) {
           </span>
           {count <= 8 &&
             Array.from({ length: count }, (_, index) => (
-              <Button
+              <button
                 type="button"
                 key={index}
-                variant="ghost"
-                size="icon"
                 aria-label={"Go to page " + (index + 1)}
                 aria-controls={id}
                 aria-current={index === page ? "page" : undefined}
                 onClick={() => go(index)}
               >
                 <span aria-hidden="true" />
-              </Button>
+              </button>
             ))}
         </nav>
       )}
