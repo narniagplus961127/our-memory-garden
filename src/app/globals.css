@@ -1705,8 +1705,9 @@ button.primary {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
 }
-.navigation-items .navigation-items {
-  padding-left: 24px;
+.navigation-items .navigation-items,
+.admin-list-tree .admin-list-tree {
+  padding-inline-start: 24px;
   margin-top: 12px;
 }
 .navigation-item .admin-list-copy small {
@@ -1836,8 +1837,9 @@ button.primary {
   .navigation-workspace {
     grid-template-columns: 1fr;
   }
-  .navigation-items .navigation-items {
-    padding-left: 16px;
+  .navigation-items .navigation-items,
+  .admin-list-tree .admin-list-tree {
+    padding-inline-start: 16px;
   }
 }
 .gallery-grid {

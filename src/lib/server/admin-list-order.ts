@@ -3,9 +3,15 @@ import type { AdminList, AdminListOrder } from "../admin-list-order";
 import { uuid } from "../organization";
 import { database } from "./db";
 import { RequestError } from "./http";
+import type postgres from "postgres";
 
-export async function readAdminListOrder(list: AdminList) {
-  const [order] = await database()<AdminListOrder[]>`
+type OrderSql = ReturnType<typeof database> | postgres.TransactionSql;
+
+export async function readAdminListOrder(
+  list: AdminList,
+  sql: OrderSql = database(),
+) {
+  const [order] = await sql<AdminListOrder[]>`
     select ids, version from garden_admin_list_order where list = ${list}
   `;
   return order;
@@ -15,6 +21,7 @@ export async function saveAdminListOrder(
   list: AdminList,
   ids: unknown,
   version: unknown,
+  sql: OrderSql = database(),
 ) {
   if (
     !Number.isSafeInteger(version) ||
@@ -27,7 +34,6 @@ export async function saveAdminListOrder(
   )
     throw new RequestError(400, "Invalid list order.");
 
-  const sql = database();
   const [order] = await sql<AdminListOrder[]>`
     update garden_admin_list_order
     set ids = ${sql.array(ids, 2950)}::uuid[], version = version + 1

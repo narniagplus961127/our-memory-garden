@@ -83,7 +83,17 @@ test("create a subcategory in Categories and autosave multiple page tags", async
   await categories.click();
   await nestedTag.check();
   await otherTag.check();
+  await expect(otherTag).toHaveCSS("height", "16px");
+  await expect(otherTag).toHaveCSS("outline-style", "none");
   await page.keyboard.press("Escape");
+  await expect(categories).toHaveText("2 categories selected");
+  const picker = (await categories.boundingBox())!;
+  const date = (await page
+    .getByLabel("Page date", { exact: true })
+    .boundingBox())!;
+  expect(
+    Math.abs(picker.x + picker.width - date.x - date.width),
+  ).toBeLessThanOrEqual(1);
   await expect(
     page.getByRole("status", { name: "Auto-save status" }),
   ).toHaveText("Saved");
@@ -110,6 +120,108 @@ test("create a subcategory in Categories and autosave multiple page tags", async
   ).toHaveText("Saved");
   const saved = await (await page.request.get(`/api/pages/${id}`)).json();
   expect(saved.category_ids).toEqual([other.id, parent.id].sort());
+});
+
+test("drag a category under another category and out to the top level", async ({
+  page,
+  isMobile,
+}) => {
+  await signIn(page);
+  const prefix = `Category drag ${crypto.randomUUID().slice(0, 8)}`;
+  async function create(label: string, parentId?: string) {
+    const response = await page.request.post("/api/categories", {
+      headers,
+      data: { name: `${prefix} ${label}`, parentId },
+    });
+    expect(response.status()).toBe(201);
+    return response.json();
+  }
+  const parent = await create("01 Event");
+  const moved = await create("02 Anniversary");
+  const child = await create("03 Dinner", moved.id);
+  await page.goto("/admin/categories");
+  const categoryRow = (id: string) => page.locator(`[data-reorder-id="${id}"]`);
+  const handle = page.getByRole("button", {
+    name: `Drag ${moved.name}`,
+    exact: true,
+  });
+  const card = categoryRow(parent.id).locator(":scope > .admin-list-row");
+  const childOf = (parentId: string, id: string) =>
+    categoryRow(parentId).locator(`:scope > ul > [data-reorder-id="${id}"]`);
+  const touch = isMobile ? await page.context().newCDPSession(page) : null;
+
+  async function drag(placement: "inside" | "before") {
+    await card.evaluate((node) => node.scrollIntoView({ block: "center" }));
+    const from = (await handle.boundingBox())!;
+    const to = (await card.boundingBox())!;
+    const x = from.x + from.width / 2;
+    const y = from.y + from.height / 2;
+    const tx = to.x + to.width / 2;
+    const ty = to.y + (placement === "before" ? 4 : to.height / 2);
+    if (touch) {
+      await touch.send("Input.dispatchTouchEvent", {
+        type: "touchStart",
+        touchPoints: [{ x, y }],
+      });
+      for (let step = 1; step <= 12; step++)
+        await touch.send("Input.dispatchTouchEvent", {
+          type: "touchMove",
+          touchPoints: [
+            { x: x + ((tx - x) * step) / 12, y: y + ((ty - y) * step) / 12 },
+          ],
+        });
+    } else {
+      await page.mouse.move(x, y);
+      await page.mouse.down();
+      await page.mouse.move(tx, ty, { steps: 12 });
+    }
+    await expect(categoryRow(parent.id)).toHaveAttribute(
+      "data-drop",
+      placement,
+    );
+    const pending = page.waitForResponse(
+      (response) =>
+        response.request().method() === "PUT" &&
+        response.url().endsWith("/api/admin-list-order"),
+    );
+    if (touch)
+      await touch.send("Input.dispatchTouchEvent", {
+        type: "touchEnd",
+        touchPoints: [],
+      });
+    else await page.mouse.up();
+    const response = await pending;
+    expect(response.status(), await response.text()).toBe(200);
+    return response.json();
+  }
+
+  const order = await drag("inside");
+  await expect(childOf(parent.id, moved.id)).toHaveCount(1);
+  await expect(childOf(moved.id, child.id)).toHaveCount(1);
+  await expect(
+    page.getByText("Category order saved.", { exact: true }),
+  ).toBeVisible();
+  const cyclic = await page.request.put("/api/admin-list-order", {
+    headers,
+    data: {
+      list: "categories",
+      ids: order.ids,
+      version: order.version,
+      move: { id: parent.id, parentId: child.id, expectedParentId: null },
+    },
+  });
+  expect(cyclic.status()).toBe(400);
+  await page.reload();
+  await expect(childOf(parent.id, moved.id)).toHaveCount(1);
+  const next = await drag("before");
+  await expect(childOf(parent.id, moved.id)).toHaveCount(0);
+  await expect(childOf(moved.id, child.id)).toHaveCount(1);
+  expect(next.ids.indexOf(moved.id)).toBeLessThan(next.ids.indexOf(parent.id));
+  const latest = await (
+    await page.request.get(`/api/categories/${moved.id}`)
+  ).json();
+  expect(latest.parent_id).toBeNull();
+  expect(latest.slug).toBe(moved.slug);
 });
 test("category forms use dedicated pages, generate editable addresses and retain duplicate errors", async ({
   page,
