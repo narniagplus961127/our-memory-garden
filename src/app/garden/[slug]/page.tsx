@@ -1,5 +1,6 @@
 import { GardenContent } from "@/components/garden-content";
 import { GardenHeader } from "@/components/garden-header";
+import { GardenFooter } from "@/components/garden-footer";
 import { currentAdministrator } from "@/lib/server/auth";
 import { getPageBySlug } from "@/lib/server/addresses";
 import { notFound } from "next/navigation";
@@ -37,6 +38,7 @@ export default async function GardenPage({
         </div>
         <GardenContent data={page.content} pageId={page.id} />
       </main>
+      <GardenFooter />
     </>
   );
 }

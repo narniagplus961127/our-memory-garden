@@ -155,6 +155,9 @@ test("add a Photo grid, select photos, reorder and open the website viewer", asy
   await page
     .getByRole("button", { name: "Open settings panel", exact: true })
     .click();
+  await expect(page.getByLabel("Photo animation", { exact: true })).toHaveValue(
+    "fade-in",
+  );
   const add = page.getByRole("button", { name: "+ Add photos", exact: true });
   await add.click();
   const chooser = page.getByRole("dialog", { name: "Choose photos" });
@@ -318,6 +321,9 @@ test("add a Photo grid, select photos, reorder and open the website viewer", asy
     });
     await expect(open).toBeVisible();
     const publicGrid = website.locator(".garden-photo-grid");
+    const photos = publicGrid.locator(".photo-grid-tile");
+    await expect(photos.first()).toHaveAttribute("data-animation", "fade-in");
+    await expect(photos.first()).toHaveAttribute("data-motion", "enter");
     await expect(website.locator(".public-visual-page")).toHaveCSS(
       "padding-bottom",
       "0px",
@@ -415,6 +421,17 @@ test("add a Photo grid, select photos, reorder and open the website viewer", asy
     await expect(status).toHaveText("Saved");
     await website.reload();
     await expect.poll(() => sectionInsets(publicGrid)).toEqual([0, 0]);
+    await selectBlock(page, "Select Photo grid 1");
+    await page
+      .getByRole("button", { name: "Open settings panel", exact: true })
+      .click();
+    await page
+      .getByLabel("Photo animation", { exact: true })
+      .selectOption("none");
+    await expect(status).toHaveText("Saved");
+    await website.reload();
+    await expect(photos.first()).toHaveAttribute("data-animation", "none");
+    await expect(photos.first()).not.toHaveAttribute("data-motion");
     expect(errors).toEqual([]);
   } finally {
     await visitor.close();

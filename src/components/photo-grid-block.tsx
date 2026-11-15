@@ -5,6 +5,7 @@ import { displayPhotoUrl } from "@/lib/media";
 import type { GridPhoto, GridPhotoBatch } from "@/lib/photo-grid";
 import { PhotoGridViewer } from "./photo-grid-viewer";
 import { PhotoImage } from "./photo-image";
+import { AnimatedBlock } from "./animated-block";
 import { Button } from "./ui/button";
 
 export async function fetchGridBatch(
@@ -25,6 +26,7 @@ export function PhotoGridBlock({
   maxColumns = 4,
   gap = 12,
   radius = 10,
+  photoAnimation = "fade-in",
   editing = false,
 }: {
   initial?: GridPhotoBatch;
@@ -32,6 +34,7 @@ export function PhotoGridBlock({
   maxColumns?: number;
   gap?: number;
   radius?: number;
+  photoAnimation?: React.ComponentProps<typeof AnimatedBlock>["animation"];
   editing?: boolean;
 }) {
   const [batch, setBatch] = useState(initial);
@@ -135,8 +138,10 @@ export function PhotoGridBlock({
             />
           );
           return (
-            <div
+            <AnimatedBlock
               key={photo.entryId}
+              animation={photoAnimation}
+              editing={editing}
               className="photo-grid-tile"
               style={{
                 ...(width ? placements[index] : undefined),
@@ -157,7 +162,7 @@ export function PhotoGridBlock({
                   {image}
                 </button>
               )}
-            </div>
+            </AnimatedBlock>
           );
         })}
       </div>

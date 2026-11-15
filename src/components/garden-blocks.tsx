@@ -23,6 +23,9 @@ import { PhotoImage } from "./photo-image";
 import { CanvasRichText } from "./canvas-rich-text";
 import { Label } from "./ui/label";
 import { BlockNumberInput } from "./block-number-input";
+import { GardenDivider } from "./garden-divider";
+import { dividerEmoji, dividerIcons, type DividerIcon } from "@/lib/divider";
+import { NativeSelect, NativeSelectOption } from "./ui/native-select";
 import { LiveCountUp, type LiveCountUpProps } from "./live-count-up";
 import {
   CustomEmbed,
@@ -54,6 +57,7 @@ type Appearance = {
   radius?: number;
 };
 type GardenBlockProps = {
+  Divider: { dividerIcon?: DividerIcon; dividerEmoji?: string };
   LiveCountUp: LiveCountUpProps;
   CustomEmbed: CustomEmbedProps;
   PageGrid: {
@@ -95,6 +99,7 @@ type GardenBlockProps = {
     maxColumns?: number;
     photoGap?: number;
     photoRadius?: number;
+    photoAnimation?: Appearance["animation"];
     initialPhotos?: GridPhotoBatch;
     photosUrl?: string;
   };
@@ -329,6 +334,72 @@ export const gardenConfig: Config<
     ),
   },
   components: {
+    Divider: {
+      label: "Divider",
+      fields: {
+        ...appearance,
+        dividerIcon: {
+          type: "custom",
+          render: ({ id, value, onChange }) => (
+            <div className="grid gap-2">
+              <Label htmlFor={id}>Icon</Label>
+              <NativeSelect
+                id={id}
+                value={value ?? "logo"}
+                onChange={(event) => {
+                  const next = dividerIcons.find(
+                    (icon) => icon === event.currentTarget.value,
+                  );
+                  if (next) onChange(next);
+                }}
+              >
+                <NativeSelectOption value="logo">
+                  Garden logo
+                </NativeSelectOption>
+                <NativeSelectOption value="star">Star</NativeSelectOption>
+                <NativeSelectOption value="heart">Heart</NativeSelectOption>
+                <NativeSelectOption value="custom">
+                  Custom emoji
+                </NativeSelectOption>
+              </NativeSelect>
+            </div>
+          ),
+        },
+        dividerEmoji: {
+          type: "custom",
+          render: ({ id, value, onChange }) => (
+            <div className="grid gap-2">
+              <Label htmlFor={id}>Custom emoji</Label>
+              <Input
+                id={id}
+                value={value ?? ""}
+                placeholder="🌿"
+                maxLength={64}
+                onChange={(event) =>
+                  onChange(dividerEmoji(event.currentTarget.value))
+                }
+              />
+            </div>
+          ),
+        },
+      },
+      resolveFields: ({ props }, { fields }) => {
+        if (props.dividerIcon === "custom") return fields;
+        const { dividerEmoji: _emoji, ...visibleFields } = fields;
+        return visibleFields;
+      },
+      defaultProps: { dividerIcon: "logo", dividerEmoji: "" },
+      render: ({ puck, dividerIcon, dividerEmoji, ...surface }) => (
+        <AnimatedBlock
+          animation={surface.animation}
+          editing={puck.isEditing}
+          className="garden-block"
+          style={blockStyle(surface)}
+        >
+          <GardenDivider icon={dividerIcon} emoji={dividerEmoji} />
+        </AnimatedBlock>
+      ),
+    },
     LiveCountUp: {
       label: "Live Count Up",
       fields: {
@@ -604,8 +675,23 @@ export const gardenConfig: Config<
             </label>
           ),
         },
+        photoAnimation: {
+          type: "custom",
+          render: ({ value, onChange }) => (
+            <AnimationSettings
+              label="Photo animation"
+              value={value}
+              onChange={onChange}
+            />
+          ),
+        },
       },
-      defaultProps: { maxColumns: 4, photoGap: 12, photoRadius: 10 },
+      defaultProps: {
+        maxColumns: 4,
+        photoGap: 12,
+        photoRadius: 10,
+        photoAnimation: "fade-in",
+      },
       render: ({ puck, ...props }) => (
         <AnimatedBlock
           animation={props.animation}

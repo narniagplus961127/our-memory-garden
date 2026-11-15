@@ -363,6 +363,20 @@ input[type="radio"] {
   height: 22px;
   flex-shrink: 0;
 }
+body:has(> .garden-footer) {
+  display: flex;
+  min-height: 100dvh;
+  flex-direction: column;
+}
+body:has(> .garden-footer) > main {
+  flex: 1 0 auto;
+}
+.garden-footer {
+  padding: 16px var(--gutter) max(16px, env(safe-area-inset-bottom));
+  background: var(--ink);
+  color: #fff;
+  text-align: center;
+}
 .public-page:not(.public-visual-page) {
   padding-bottom: calc(88px + env(safe-area-inset-bottom));
 }
@@ -2875,4 +2889,32 @@ button.primary {
 }
 .garden-embed-controls p {
   margin: 0;
+}
+
+.garden-divider {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+.garden-divider::before,
+.garden-divider::after {
+  flex: 1;
+  height: 1px;
+  background: var(--line);
+  content: "";
+}
+.garden-divider-icon {
+  display: grid;
+  flex: none;
+  min-width: 28px;
+  min-height: 28px;
+  margin-inline: clamp(6px, 2vw, 12px);
+  place-items: center;
+  color: var(--ink);
+  font-size: 1.5rem;
+  line-height: 1;
+}
+.garden-divider-icon svg {
+  width: 20px;
+  height: 20px;
 }

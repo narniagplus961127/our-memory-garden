@@ -1,6 +1,7 @@
 import { GardenContent } from "@/components/garden-content";
 import { GardenCat } from "@/components/brand";
 import { GardenHeader } from "@/components/garden-header";
+import { GardenFooter } from "@/components/garden-footer";
 import { getHomepage } from "@/lib/server/homepage";
 import { isConfigured } from "@/lib/config";
 import { publicMetadata } from "@/lib/server/discovery";
@@ -38,6 +39,7 @@ export default async function HomePage() {
           </div>
         )}
       </main>
+      <GardenFooter />
     </>
   );
 }
