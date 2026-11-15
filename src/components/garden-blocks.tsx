@@ -29,11 +29,7 @@ import {
   CustomEmbedCodeField,
   type CustomEmbedProps,
 } from "./custom-embed";
-import {
-  defaultCountUpDate,
-  validCountUpDate,
-  validCountUpTime,
-} from "@/lib/live-count-up";
+import { validCountUpDate, validCountUpTime } from "@/lib/live-count-up";
 import { customEmbedMaxHeight, customEmbedMinHeight } from "@/lib/custom-embed";
 import {
   cloneElement,
@@ -353,13 +349,12 @@ export const gardenConfig: Config<
               <Input
                 id={id}
                 type="date"
-                value={value ?? defaultCountUpDate}
+                value={value ?? ""}
                 min="1000-01-01"
                 max="9999-12-31"
-                required
                 onChange={(event) => {
                   const next = event.currentTarget.value;
-                  if (validCountUpDate(next)) onChange(next);
+                  if (!next || validCountUpDate(next)) onChange(next);
                 }}
               />
             </div>
@@ -463,27 +458,34 @@ export const gardenConfig: Config<
         align: alignment,
       },
       defaultProps: {
-        heading: "我们在一起的时间",
-        startDate: defaultCountUpDate,
+        heading: "",
+        startDate: "",
         startTime: "",
         countFormat: "calendar",
         countLanguage: "zh",
         showClock: true,
-        showStartCaption: true,
+        showStartCaption: false,
         startCaption: "",
         digitMotion: "roll",
         align: "center",
       },
-      render: ({ puck, ...props }) => (
-        <AnimatedBlock
-          animation={props.animation}
-          editing={puck.isEditing}
-          className="garden-block"
-          style={blockStyle(props)}
-        >
-          <LiveCountUp {...props} />
-        </AnimatedBlock>
-      ),
+      render: ({ puck, startDate, ...props }) =>
+        validCountUpDate(startDate) ? (
+          <AnimatedBlock
+            animation={props.animation}
+            editing={puck.isEditing}
+            className="garden-block"
+            style={blockStyle(props)}
+          >
+            <LiveCountUp {...props} startDate={startDate} />
+          </AnimatedBlock>
+        ) : puck.isEditing ? (
+          <div className="garden-block">
+            <p className="muted">Set a start date to show the counter.</p>
+          </div>
+        ) : (
+          <></>
+        ),
     },
     CustomEmbed: {
       label: "Custom Embed",

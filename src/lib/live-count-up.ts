@@ -2,7 +2,6 @@ export type CountUpFormat = "calendar" | "total-days";
 export type CountUpLanguage = "zh" | "en";
 export type CountUpDigitMotion = "roll" | "none";
 
-export const defaultCountUpDate = "2022-05-02";
 const malaysiaOffset = 8 * 60 * 60 * 1000;
 const dayMs = 24 * 60 * 60 * 1000;
 

@@ -3,7 +3,6 @@
 import { useEffect, useState, type CSSProperties } from "react";
 import {
   countUpParts,
-  defaultCountUpDate,
   type CountUpDigitMotion,
   type CountUpFormat,
   type CountUpLanguage,
@@ -80,19 +79,19 @@ const startDateFormatter = new Intl.DateTimeFormat("en-GB", {
 });
 
 export function LiveCountUp({
-  heading = "我们在一起的时间",
-  startDate = defaultCountUpDate,
+  heading = "",
+  startDate,
   startTime = "00:00",
   countFormat = "calendar",
   countLanguage = "zh",
   showClock = true,
-  showStartCaption = true,
+  showStartCaption = false,
   startCaption,
   digitMotion = "roll",
   digitSize,
   digitColor,
   align = "center",
-}: LiveCountUpProps) {
+}: LiveCountUpProps & { startDate: string }) {
   const [tick, setTick] = useState<{ now: number; previous: number } | null>(
     null,
   );
