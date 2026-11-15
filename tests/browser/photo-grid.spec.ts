@@ -192,15 +192,29 @@ test("add a Photo grid, select photos, reorder and open the website viewer", asy
   let first = (await rows.nth(0).boundingBox())!;
   let second = (await rows.nth(1).boundingBox())!;
   expect(Math.round(first.y)).toBe(Math.round(second.y));
-  await rows.nth(1).scrollIntoViewIfNeeded();
+  const landscapeDrag = rows
+    .nth(1)
+    .getByRole("button", { name: "Drag " + names[1] });
+  await landscapeDrag.evaluate((button) =>
+    button.scrollIntoView({ block: "center" }),
+  );
   first = (await rows.nth(0).boundingBox())!;
   second = (await rows.nth(1).boundingBox())!;
-  await drag(
-    page,
-    isMobile,
-    { x: second.x + 12, y: second.y + second.height / 2 },
-    { x: first.x + 10, y: first.y + first.height / 2 },
-  );
+  const from = {
+    x: second.x + second.width / 4,
+    y: second.y + second.height * 0.75,
+  };
+  const to = { x: first.x + first.width / 4, y: first.y + first.height * 0.75 };
+  expect(
+    await landscapeDrag.evaluate(
+      (button, point) =>
+        button.contains(
+          button.ownerDocument.elementFromPoint(point.x, point.y),
+        ),
+      from,
+    ),
+  ).toBeTruthy();
+  await drag(page, isMobile, from, to);
   await expect(
     rows.first().getByRole("button", { name: "Drag " + names[1] }),
   ).toBeVisible();
