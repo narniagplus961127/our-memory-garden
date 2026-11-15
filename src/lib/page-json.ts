@@ -68,7 +68,7 @@ export function makePageJson(content: PageData, gridPhotos: JsonGridPhotos) {
     }
     if (Object.keys(settings).length > 0) result.settings = settings;
     Object.assign(result, text);
-    if (block.type === "Section")
+    if (block.type === "Section" || block.type === "Swiper")
       result.blocks = (content as PageBlock[]).map(serialize);
     if (block.type === "Columns") {
       const columns = [left, right, third, fourth];
@@ -115,7 +115,7 @@ export function parsePageJson(value: unknown) {
       const { id, type, settings = {} } = entry;
       const fields = Object.hasOwn(richFields, type) ? richFields[type] : {};
       const structure =
-        type === "Section"
+        type === "Section" || type === "Swiper"
           ? ["blocks"]
           : type === "Columns"
             ? ["columns"]
@@ -184,7 +184,7 @@ export function parsePageJson(value: unknown) {
         const html = typeof props.textRich === "string" ? props.textRich : "";
         props.style = /^\s*<(h[1-4])\b/i.exec(html)?.[1].toLowerCase() ?? "p";
       }
-      if (type === "Section")
+      if (type === "Section" || type === "Swiper")
         props.content = parseBlocks(entry.blocks, depth + 1);
       if (type === "Columns") {
         const cols = entry.columns;

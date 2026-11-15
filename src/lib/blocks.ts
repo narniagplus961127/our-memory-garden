@@ -27,12 +27,13 @@ export const blockNames = [
   "Button",
   "Section",
   "Columns",
+  "Swiper",
 ] as const;
 export type BlockName = (typeof blockNames)[number];
 export type PageBlock = PageData["content"][number];
 export const columnSlots = ["left", "right", "third", "fourth"] as const;
 export function slotNames(type: string, count: unknown = 2): string[] {
-  return type === "Section"
+  return type === "Section" || type === "Swiper"
     ? ["content"]
     : type === "Columns"
       ? columnSlots.slice(0, typeof count === "number" ? count : 2)
@@ -175,6 +176,7 @@ export function validPageData(
             "borderColor",
             "columnAlignment",
           ],
+          Swiper: ["content", "slidesPerView", "mobileSlidesPerView", "gap"],
           Columns: [
             "ratio",
             "gap",
@@ -461,8 +463,15 @@ export function validPageData(
                   /^#(?:[\da-f]{3}|[\da-f]{6})$/i.test(props.borderColor))) &&
               opt("columnAlignment", ["top", "center", "bottom"]) &&
               opt("width", ["container", "full"]) &&
-              opt("background", ["paper", "sage", "clay"]) &&
+              opt("background", ["paper", "sage", "clay", "dark-green"]) &&
               opt("spacing", ["compact", "comfortable", "spacious"]) &&
+              list(props.content, depth + 1)
+            );
+          case "Swiper":
+            return (
+              boundedInteger("slidesPerView", 1, 6) &&
+              boundedInteger("mobileSlidesPerView", 1, 3) &&
+              opt("gap", ["compact", "comfortable", "spacious"]) &&
               list(props.content, depth + 1)
             );
           case "Columns":

@@ -87,6 +87,7 @@ test("add a Photo grid, select photos, reorder and open the website viewer", asy
   const names = ["portrait", "landscape", "square"].map(
     (name) => name + "-" + Date.now() + ".png",
   );
+  const photoIds: string[] = [];
   for (const [index, [width, height]] of [
     [80, 120],
     [150, 70],
@@ -112,6 +113,7 @@ test("add a Photo grid, select photos, reorder and open the website viewer", asy
     });
     expect(uploaded.status()).toBe(201);
     const upload = await uploaded.json();
+    photoIds.push(upload.id);
     expect(
       (
         await page.request.put(upload.uploadUrl, {
@@ -176,6 +178,7 @@ test("add a Photo grid, select photos, reorder and open the website viewer", asy
     .getByRole("list", { name: "Grid photos" })
     .getByRole("listitem");
   await expect(rows).toHaveCount(3);
+  await expect(rows.first().locator(".photo-grid-grip svg")).toHaveCount(0);
   const tile = rows.first();
   const thumbnail = (await tile
     .getByRole("button", { name: "Drag " + names[0] })
@@ -432,6 +435,101 @@ test("add a Photo grid, select photos, reorder and open the website viewer", asy
     await website.reload();
     await expect(photos.first()).toHaveAttribute("data-animation", "none");
     await expect(photos.first()).not.toHaveAttribute("data-motion");
+    const imagePage = await page.request.post("/api/pages", {
+      headers,
+      data: { title: "Standalone photo " + Date.now() },
+    });
+    expect(imagePage.status()).toBe(201);
+    const standalone = await imagePage.json();
+    expect(
+      (
+        await page.request.patch("/api/pages/" + standalone.id, {
+          headers,
+          data: {
+            version: standalone.version,
+            visibility: "public",
+            content: {
+              root: { props: {} },
+              content: [
+                {
+                  type: "Section",
+                  props: {
+                    id: "photo-section",
+                    content: [
+                      {
+                        type: "Image",
+                        props: {
+                          id: "standalone-photo",
+                          photoId: photoIds[0],
+                          alt: "Portrait memory",
+                          caption: "An afternoon together",
+                        },
+                      },
+                      {
+                        type: "Image",
+                        props: {
+                          id: "linked-photo",
+                          photoId: photoIds[1],
+                          alt: "Linked landscape",
+                          destination: {
+                            kind: "external",
+                            url: "https://example.com/photo",
+                          },
+                        },
+                      },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        })
+      ).ok(),
+    ).toBeTruthy();
+    await website.goto(baseURL + "/p/" + standalone.id);
+    const standaloneViewer = website.getByRole("dialog", {
+      name: "Photo viewer",
+      exact: true,
+    });
+    const photo = website.getByRole("button", {
+      name: "Zoom Portrait memory",
+      exact: true,
+    });
+    await photo.click();
+    await expect(
+      standaloneViewer.getByRole("img", {
+        name: "Portrait memory",
+        exact: true,
+      }),
+    ).toBeVisible();
+    await expect(
+      standaloneViewer.getByText("An afternoon together"),
+    ).toBeVisible();
+    await expect(
+      standaloneViewer.getByRole("button", { name: "Next photo" }),
+    ).toHaveCount(0);
+    await standaloneViewer
+      .getByRole("button", { name: "Zoom in", exact: true })
+      .click();
+    await expect(
+      standaloneViewer.getByRole("button", { name: "Reset zoom" }),
+    ).toHaveText("150%");
+    await standaloneViewer
+      .getByRole("button", { name: "Close photo viewer" })
+      .click();
+    await expect(photo).toBeFocused();
+    await expect(
+      website.getByRole("link", { name: "Linked landscape", exact: true }),
+    ).toHaveAttribute("href", "https://example.com/photo");
+    await website
+      .getByRole("button", { name: "Zoom Linked landscape", exact: true })
+      .click();
+    await expect(
+      standaloneViewer.getByRole("img", {
+        name: "Linked landscape",
+        exact: true,
+      }),
+    ).toBeVisible();
     expect(errors).toEqual([]);
   } finally {
     await visitor.close();

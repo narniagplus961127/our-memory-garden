@@ -3,11 +3,17 @@
 import { useRef, useState, type PointerEvent, type RefObject } from "react";
 import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut } from "lucide-react";
 import { displayPhotoUrl } from "@/lib/media";
-import type { GridPhoto } from "@/lib/photo-grid";
 import { Modal } from "./modal";
 import { PhotoImage } from "./photo-image";
 import { Button } from "./ui/button";
 
+type ViewerPhoto = {
+  photoId: string;
+  alt?: string;
+  caption?: string;
+  width?: number;
+  height?: number;
+};
 type Point = { x: number; y: number };
 type Frame = Point & { zoom: number };
 const fitted: Frame = { x: 0, y: 0, zoom: 1 };
@@ -18,22 +24,26 @@ function ZoomablePhoto({
   alt,
   move,
 }: {
-  photo: GridPhoto;
+  photo: ViewerPhoto;
   alt: string;
   move: (direction: -1 | 1) => void;
 }) {
   const stage = useRef<HTMLDivElement>(null);
   const pointers = useRef(new Map<number, Point>());
   const swipeStart = useRef<Point | null>(null);
+  const imageSize = useRef<{ width: number; height: number }>(null);
   const [frame, setFrame] = useState(fitted);
 
   function constrain(zoom: number, x: number, y: number) {
     zoom = Math.max(1, Math.min(maxZoom, zoom));
     const width = stage.current?.clientWidth ?? 0;
     const height = stage.current?.clientHeight ?? 0;
-    const fit = Math.min(width / photo.width, height / photo.height);
-    const maxX = Math.max(0, (fit * photo.width * zoom - width) / 2);
-    const maxY = Math.max(0, (fit * photo.height * zoom - height) / 2);
+    const imageWidth = photo.width ?? imageSize.current?.width ?? (width || 1);
+    const imageHeight =
+      photo.height ?? imageSize.current?.height ?? (height || 1);
+    const fit = Math.min(width / imageWidth, height / imageHeight);
+    const maxX = Math.max(0, (fit * imageWidth * zoom - width) / 2);
+    const maxY = Math.max(0, (fit * imageHeight * zoom - height) / 2);
     return {
       zoom,
       x: Math.max(-maxX, Math.min(maxX, x)),
@@ -117,6 +127,12 @@ function ZoomablePhoto({
           src={displayPhotoUrl(photo.photoId)}
           alt={alt}
           draggable={false}
+          onLoad={(event) => {
+            imageSize.current = {
+              width: event.currentTarget.naturalWidth,
+              height: event.currentTarget.naturalHeight,
+            };
+          }}
           style={{
             transform: `translate(${frame.x}px, ${frame.y}px) scale(${frame.zoom})`,
           }}
@@ -159,45 +175,50 @@ function ZoomablePhoto({
   );
 }
 
-export function PhotoGridViewer({
+export function PhotoViewer({
   photo,
-  index,
-  total,
-  canNext,
-  loading,
-  error,
+  navigation,
   trigger,
   onClose,
-  onMove,
 }: {
-  photo: GridPhoto;
-  index: number;
-  total: number;
-  canNext: boolean;
-  loading: boolean;
-  error: string;
+  photo: ViewerPhoto;
+  navigation?: {
+    index: number;
+    total: number;
+    canNext: boolean;
+    loading: boolean;
+    error: string;
+    onMove: (direction: -1 | 1) => void;
+  };
   trigger: RefObject<HTMLElement | null>;
   onClose: () => void;
-  onMove: (direction: -1 | 1) => void;
 }) {
-  const alt = photo.alt || photo.caption || "Photo " + (index + 1);
+  const alt =
+    photo.alt ||
+    photo.caption ||
+    (navigation ? "Photo " + (navigation.index + 1) : "Photo");
   function move(direction: -1 | 1) {
     if (
-      (direction === -1 && index > 0) ||
-      (direction === 1 && canNext && !loading)
+      navigation &&
+      ((direction === -1 && navigation.index > 0) ||
+        (direction === 1 && navigation.canNext && !navigation.loading))
     )
-      onMove(direction);
+      navigation.onMove(direction);
   }
+
   return (
     <Modal
-      title="Photos"
-      label="Photo grid viewer"
+      title={navigation ? "Photos" : "Photo"}
+      label={navigation ? "Photo grid viewer" : "Photo viewer"}
       closeLabel="Close photo viewer"
       onClose={onClose}
       returnFocus={trigger}
       className="photo-lightbox"
       onKeyDown={(event) => {
-        if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
+        if (
+          navigation &&
+          (event.key === "ArrowLeft" || event.key === "ArrowRight")
+        ) {
           event.preventDefault();
           move(event.key === "ArrowLeft" ? -1 : 1);
         }
@@ -205,41 +226,49 @@ export function PhotoGridViewer({
     >
       <div className="photo-lightbox-stage">
         <ZoomablePhoto
-          key={photo.entryId}
+          key={navigation?.index ?? photo.photoId}
           photo={photo}
           alt={alt}
           move={move}
         />
-        <Button
-          type="button"
-          variant="outline"
-          size="icon"
-          className="photo-lightbox-previous"
-          aria-label="Previous photo"
-          disabled={index === 0}
-          onClick={() => move(-1)}
-        >
-          <ChevronLeft aria-hidden="true" />
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
-          size="icon"
-          className="photo-lightbox-next"
-          aria-label="Next photo"
-          disabled={!canNext || loading}
-          onClick={() => move(1)}
-        >
-          <ChevronRight aria-hidden="true" />
-        </Button>
+        {navigation && (
+          <>
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              className="photo-lightbox-previous"
+              aria-label="Previous photo"
+              disabled={navigation.index === 0}
+              onClick={() => move(-1)}
+            >
+              <ChevronLeft aria-hidden="true" />
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              className="photo-lightbox-next"
+              aria-label="Next photo"
+              disabled={!navigation.canNext || navigation.loading}
+              onClick={() => move(1)}
+            >
+              <ChevronRight aria-hidden="true" />
+            </Button>
+          </>
+        )}
       </div>
-      <div className="photo-lightbox-caption">
-        {photo.caption && <p>{photo.caption}</p>}
-        <span aria-live="polite">
-          {index + 1} of {total}
-        </span>
-        {error && <p role="alert">{error}</p>}
-      </div>
+      {(navigation || photo.caption) && (
+        <div className="photo-lightbox-caption">
+          {photo.caption && <p>{photo.caption}</p>}
+          {navigation && (
+            <span aria-live="polite">
+              {navigation.index + 1} of {navigation.total}
+            </span>
+          )}
+          {navigation?.error && <p role="alert">{navigation.error}</p>}
+        </div>
+      )}
     </Modal>
   );
 }
