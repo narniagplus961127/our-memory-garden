@@ -4,6 +4,8 @@ import { ensureHomepage, getHomepage } from "@/lib/server/homepage";
 import { listPages } from "@/lib/server/pages";
 import { HomepageSettings } from "@/components/homepage-settings";
 
+export const metadata = { title: "Homepage settings" };
+
 export default async function HomepageSettingsPage() {
   const administrator = await requireAdministrator();
   await ensureHomepage(administrator);

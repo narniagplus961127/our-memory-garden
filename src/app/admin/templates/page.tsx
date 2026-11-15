@@ -5,6 +5,8 @@ import { requireAdministrator } from "@/lib/server/auth";
 import { listPageTemplates } from "@/lib/server/page-templates";
 import { readAdminListOrder } from "@/lib/server/admin-list-order";
 
+export const metadata = { title: "Templates" };
+
 export default async function Templates() {
   await requireAdministrator();
   const [templates, order] = await Promise.all([

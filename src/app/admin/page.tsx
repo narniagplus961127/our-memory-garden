@@ -4,6 +4,8 @@ import { requireAdministrator } from "@/lib/server/auth";
 import { listPages } from "@/lib/server/pages";
 import { AdminPageCards } from "@/components/admin-page-cards";
 import { pageCardData } from "@/lib/pages";
+export const metadata = { title: "Dashboard" };
+
 export default async function Dashboard() {
   const pages = await listPages(await requireAdministrator());
   return (

@@ -1,3 +1,5 @@
+import type { Metadata } from "next";
+import { cache } from "react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -14,21 +16,30 @@ import { categories } from "@/lib/server/organization";
 import { displayPhotoUrl } from "@/lib/media";
 import { PhotoImage } from "@/components/photo-image";
 import { categoryLabels, pageCategoryIds } from "@/lib/organization";
-export default async function History({
-  params,
-  searchParams,
-}: {
-  params: Promise<{
-    id: string;
-  }>;
-  searchParams: Promise<{
-    version?: string;
-  }>;
-}) {
+type Props = {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ version?: string }>;
+};
+
+const loadHistory = cache(async (id: string) => {
   await requireAdministrator();
+  try {
+    return await pageHistory(id);
+  } catch (e) {
+    if (e instanceof RequestError && e.status === 404) notFound();
+    throw e;
+  }
+});
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { page } = await loadHistory((await params).id);
+  return { title: page.title + " · Version history" };
+}
+
+export default async function History({ params, searchParams }: Props) {
   const id = (await params).id;
   try {
-    const { page, groups } = await pageHistory(id);
+    const { page, groups } = await loadHistory(id);
     const requested = (await searchParams).version;
     const version = requested
       ? Number(requested)

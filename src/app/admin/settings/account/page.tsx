@@ -1,6 +1,8 @@
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { requireAdministrator } from "@/lib/server/auth";
+export const metadata = { title: "Your account" };
+
 export default async function Account() {
   const admin = await requireAdministrator();
   return (
