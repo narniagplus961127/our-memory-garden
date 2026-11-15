@@ -223,6 +223,15 @@ test("drag handles reorder siblings with mouse/touch, preserve children, cancel 
       name: "Main navigation",
       exact: true,
     });
+    const drawer = view.getByRole("dialog", { name: "Menu", exact: true });
+    await expect(drawer).toHaveCSS("background-color", "rgb(48, 67, 55)");
+    await expect(drawer.getByRole("heading", { name: "Menu" })).toHaveCSS(
+      "color",
+      "rgb(255, 255, 255)",
+    );
+    await expect(
+      nav.getByRole("link", { name: "Alpha", exact: true }),
+    ).toHaveCSS("color", "rgb(255, 255, 255)");
     await expect(nav.locator(":scope > ul > li > a")).toHaveText([
       "Beta",
       "Alpha",

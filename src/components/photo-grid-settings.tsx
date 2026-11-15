@@ -9,7 +9,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { GripVertical, Ellipsis, Pencil, Trash2 } from "lucide-react";
+import { Ellipsis, Pencil, Trash2 } from "lucide-react";
 import { createUsePuck } from "@puckeditor/core";
 import {
   gridPhotosUrl,
@@ -336,7 +336,6 @@ function GridPhotoList({
                   height={96}
                   draggable={false}
                 />
-                <GripVertical size={16} aria-hidden="true" />
               </button>
               <DropdownMenu modal={false}>
                 <DropdownMenuTrigger asChild>

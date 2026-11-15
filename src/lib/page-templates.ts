@@ -56,6 +56,9 @@ export function templatePlaceholders(data: PageData): PageData {
         delete props.backgroundImage;
         props.content = slotContent(block, "content").map(copy);
         break;
+      case "Swiper":
+        props.content = slotContent(block, "content").map(copy);
+        break;
       case "Columns":
         for (const slot of columnSlots) {
           props[slot] = slotContent(block, slot).map(copy);

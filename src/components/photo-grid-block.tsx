@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { displayPhotoUrl } from "@/lib/media";
 import type { GridPhoto, GridPhotoBatch } from "@/lib/photo-grid";
-import { PhotoGridViewer } from "./photo-grid-viewer";
+import { PhotoViewer } from "./photo-viewer";
 import { PhotoImage } from "./photo-image";
 import { AnimatedBlock } from "./animated-block";
 import { Button } from "./ui/button";
@@ -196,16 +196,18 @@ export function PhotoGridBlock({
         </div>
       )}
       {selected && active !== null && (
-        <PhotoGridViewer
+        <PhotoViewer
           photo={selected}
-          index={active}
-          total={batch?.total ?? photos.length}
-          canNext={active < photos.length - 1 || batch?.next != null}
-          loading={loading}
-          error={error}
+          navigation={{
+            index: active,
+            total: batch?.total ?? photos.length,
+            canNext: active < photos.length - 1 || batch?.next != null,
+            loading,
+            error,
+            onMove: move,
+          }}
           trigger={trigger}
           onClose={() => setActive(null)}
-          onMove={move}
         />
       )}
     </div>

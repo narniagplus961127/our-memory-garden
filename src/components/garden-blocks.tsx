@@ -20,10 +20,12 @@ import { richField } from "./garden-rich-field";
 import { CanvasPhotoAction } from "./canvas-photo-action";
 import { PhotoControls } from "./editor-photo-controls";
 import { PhotoImage } from "./photo-image";
+import { StandalonePhoto } from "./standalone-photo";
 import { CanvasRichText } from "./canvas-rich-text";
 import { Label } from "./ui/label";
 import { BlockNumberInput } from "./block-number-input";
 import { GardenDivider } from "./garden-divider";
+import { SwiperViewport } from "./swiper-viewport";
 import { dividerEmoji, dividerIcons, type DividerIcon } from "@/lib/divider";
 import { NativeSelect, NativeSelectOption } from "./ui/native-select";
 import { LiveCountUp, type LiveCountUpProps } from "./live-count-up";
@@ -118,7 +120,7 @@ type GardenBlockProps = {
   };
   Section: {
     width?: "container" | "full";
-    background?: "paper" | "sage" | "clay";
+    background?: "paper" | "sage" | "clay" | "dark-green";
     spacing?: "compact" | "comfortable" | "spacious";
     content: Slot;
     backgroundImage?: {
@@ -128,6 +130,12 @@ type GardenBlockProps = {
     borderWidth?: number;
     borderColor?: string;
     columnAlignment?: "top" | "center" | "bottom";
+  };
+  Swiper: {
+    content: Slot;
+    slidesPerView?: number;
+    mobileSlidesPerView?: number;
+    gap?: "compact" | "comfortable" | "spacious";
   };
   Columns: {
     count?: number;
@@ -181,13 +189,28 @@ function ImageLink({
   destination,
   editing,
   alt,
+  photoId,
+  caption,
 }: {
   children: ReactNode;
   destination?: Destination | null;
   editing: boolean;
   alt: string;
+  photoId?: string;
+  caption?: string;
 }) {
   const href = destinationHref(destination ?? undefined);
+  if (!editing && photoId)
+    return (
+      <StandalonePhoto
+        photoId={photoId}
+        alt={alt}
+        caption={caption}
+        href={href}
+      >
+        {children}
+      </StandalonePhoto>
+    );
   return href && !editing ? (
     <a
       className="garden-image-link"
@@ -938,6 +961,8 @@ export const gardenConfig: Config<
             destination={destination}
             editing={puck.isEditing}
             alt={alt}
+            photoId={photoId}
+            caption={caption}
           >
             {photoId ? (
               <PhotoImage
@@ -1169,7 +1194,13 @@ export const gardenConfig: Config<
             <SectionWidth value={value} onChange={onChange} />
           ),
         },
-        background: backgrounds,
+        background: {
+          ...backgrounds,
+          options: [
+            ...backgrounds.options,
+            { label: "Dark green", value: "dark-green" },
+          ],
+        },
         spacing,
         backgroundImage: {
           type: "custom",
@@ -1273,7 +1304,13 @@ export const gardenConfig: Config<
         >
           {/* Slot callbacks change with their content; invoking them keeps child editors mounted. */}
           <div
-            className="garden-section-content"
+            className={
+              contentBackground?.mode === "auto" ||
+              (contentBackground?.mode === "custom" &&
+                !contentBackground.colour)
+                ? "garden-section-content garden-section-paper-content"
+                : "garden-section-content"
+            }
             style={{
               backgroundColor:
                 contentBackground?.mode === "auto"
@@ -1287,6 +1324,76 @@ export const gardenConfig: Config<
           </div>
         </AnimatedBlock>
       ),
+    },
+    Swiper: {
+      label: "Swiper",
+      fields: {
+        ...appearance,
+        slidesPerView: {
+          type: "select",
+          label: "Slides per view",
+          options: [1, 2, 3, 4, 5, 6].map((value) => ({
+            label: String(value),
+            value,
+          })),
+        },
+        mobileSlidesPerView: {
+          type: "select",
+          label: "Slides per view on mobile",
+          options: [1, 2, 3].map((value) => ({ label: String(value), value })),
+        },
+        gap: { ...spacing, label: "Slide spacing" },
+        content: { type: "slot", disallow: ["Section"] },
+      },
+      defaultProps: {
+        content: [],
+        slidesPerView: 3,
+        mobileSlidesPerView: 1,
+        gap: "comfortable",
+      },
+      render: ({
+        content: Content,
+        slidesPerView = 3,
+        mobileSlidesPerView = 1,
+        gap,
+        puck,
+        ...surface
+      }) => {
+        const slides = Content({
+          className: "garden-swiper-track",
+          minEmptyHeight: 104,
+        });
+        return (
+          <AnimatedBlock
+            animation={surface.animation}
+            editing={puck.isEditing}
+            className={
+              puck.isEditing
+                ? "garden-block garden-swiper garden-swiper-editing"
+                : "garden-block garden-swiper"
+            }
+            style={
+              {
+                ...blockStyle(surface),
+                "--swiper-desktop": slidesPerView,
+                "--swiper-mobile": mobileSlidesPerView,
+                "--swiper-gap":
+                  gap === "compact"
+                    ? "8px"
+                    : gap === "spacious"
+                      ? "28px"
+                      : "16px",
+              } as CSSProperties
+            }
+          >
+            {puck.isEditing ? (
+              slides
+            ) : (
+              <SwiperViewport>{slides}</SwiperViewport>
+            )}
+          </AnimatedBlock>
+        );
+      },
     },
     Columns: {
       label: "Columns",

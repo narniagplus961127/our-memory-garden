@@ -148,7 +148,13 @@ function documentOutline(content: PageBlock[]) {
         targets.push({
           zone: block.props.id + ":" + slot,
           label:
-            label + " · " + (slot === "content" ? "content" : slot + " column"),
+            label +
+            " · " +
+            (block.type === "Swiper"
+              ? "slides"
+              : slot === "content"
+                ? "content"
+                : slot + " column"),
           items: children,
           insideSection: insideSection || block.type === "Section",
         });
@@ -303,6 +309,8 @@ function InspectorFields({
               "background",
               "spacing",
               "gap",
+              "slidesPerView",
+              "mobileSlidesPerView",
               "buttonColor",
               "textColor",
               "buttonPadding",
@@ -1064,7 +1072,7 @@ function Workspace({
                 </div>
                 <div className="palette-heading">Layout</div>
                 <div className="garden-palette">
-                  {["Columns"].map((name) => (
+                  {(["Columns", "Swiper"] as const).map((name) => (
                     <div className="palette-card" key={name}>
                       {target ? (
                         <Drawer.Item name={name}>
@@ -1081,7 +1089,11 @@ function Workspace({
                         className="secondary palette-add"
                         aria-label={"Add " + name}
                         disabled={!target}
-                        onClick={() => setColumns({ edit: false })}
+                        onClick={() =>
+                          name === "Columns"
+                            ? setColumns({ edit: false })
+                            : insert(name)
+                        }
                       >
                         ＋
                       </Button>
