@@ -245,7 +245,11 @@ export function MediaLibrary({
   multiple,
 }: {
   onSelect?: (photoId: string) => void;
-  multiple?: { selected: Set<string>; toggle: (id: string) => void };
+  multiple?: {
+    selected: Set<string>;
+    toggle: (id: string) => void;
+    add: (ids: string[]) => void;
+  };
 }) {
   const [photos, setPhotos] = useState<Photo[]>([]),
     [loading, setLoading] = useState(true),
@@ -256,10 +260,28 @@ export function MediaLibrary({
   const fieldId = useId();
   const detailsTrigger = useRef<HTMLButtonElement | null>(null);
   const choosingMany = Boolean(multiple);
+  const rangeAnchor = useRef<string | null>(null);
   const [pickerPhotos, setPickerPhotos] = useState<GridPickerPhoto[]>([]);
   const [pickerMore, setPickerMore] = useState(false);
   const [pickerPage, setPickerPage] = useState(0);
   const [pickerRefresh, setPickerRefresh] = useState(0);
+  function choosePhoto(id: string, extend: boolean) {
+    if (!multiple) return;
+    const anchor = pickerPhotos.findIndex(
+      (photo) => photo.photoId === rangeAnchor.current,
+    );
+    if (extend && anchor >= 0) {
+      const end = pickerPhotos.findIndex((photo) => photo.photoId === id);
+      multiple.add(
+        pickerPhotos
+          .slice(Math.min(anchor, end), Math.max(anchor, end) + 1)
+          .map((photo) => photo.photoId),
+      );
+      return;
+    }
+    rangeAnchor.current = id;
+    multiple.toggle(id);
+  }
   function closeDetails() {
     setDetail(null);
     requestAnimationFrame(() => detailsTrigger.current?.focus());
@@ -336,6 +358,7 @@ export function MediaLibrary({
   }, [choosingMany, pickerPage, pickerRefresh, query]);
   async function refresh() {
     if (choosingMany) {
+      rangeAnchor.current = null;
       setPickerPage(0);
       setPickerRefresh((current) => current + 1);
       return;
@@ -499,6 +522,7 @@ export function MediaLibrary({
             onChange={(e) => {
               setQuery(e.target.value);
               if (multiple) {
+                rangeAnchor.current = null;
                 setPickerPage(0);
                 setPickerPhotos([]);
                 setPickerMore(false);
@@ -537,7 +561,28 @@ export function MediaLibrary({
           </p>
         </div>
       )}
-      <div className="media-grid">
+      {multiple && pickerPhotos.length > 0 && (
+        <p className="muted mb-3 text-sm">
+          Shift-click for a range. Ctrl/⌘-click toggles a photo. Ctrl/⌘+A
+          selects loaded photos.
+        </p>
+      )}
+      <div
+        className="media-grid"
+        onKeyDown={
+          multiple
+            ? (event) => {
+                if (
+                  (event.ctrlKey || event.metaKey) &&
+                  event.key.toLowerCase() === "a"
+                ) {
+                  event.preventDefault();
+                  multiple.add(pickerPhotos.map((photo) => photo.photoId));
+                }
+              }
+            : undefined
+        }
+      >
         {multiple
           ? pickerPhotos.map((photo) => (
               <Button
@@ -545,7 +590,7 @@ export function MediaLibrary({
                 variant="outline"
                 className="photo-grid-choice"
                 aria-pressed={multiple.selected.has(photo.photoId)}
-                onClick={() => multiple.toggle(photo.photoId)}
+                onClick={(event) => choosePhoto(photo.photoId, event.shiftKey)}
               >
                 <img
                   src={displayPhotoUrl(photo.photoId)}

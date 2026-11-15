@@ -124,7 +124,14 @@ export function validPageData(
           return false;
         ids.add(props.id);
         const allowed: Record<BlockName, string[]> = {
-          Text: ["text", "style", "align", "linkText", "destination"],
+          Text: [
+            "text",
+            "style",
+            "align",
+            "mobileAlign",
+            "linkText",
+            "destination",
+          ],
           Banner: ["heading", "description", "background", "align"],
           Image: ["photoId", "alt", "caption", "fit", "width", "destination"],
           PageGrid: ["selection", "showDate"],
@@ -275,6 +282,7 @@ export function validPageData(
         const opt = (key: string, values: string[], required = false) =>
           props[key] === undefined ? !required : values.includes(props[key]);
         if (!opt("align", ["left", "center", "right"])) return false;
+        if (!opt("mobileAlign", ["inherit", "center"])) return false;
         const boundedInteger = (key: string, min: number, max: number) =>
           props[key] === undefined ||
           (Number.isInteger(props[key]) &&

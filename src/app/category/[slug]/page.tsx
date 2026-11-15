@@ -3,7 +3,7 @@ import { categories, categoryBySlug } from "@/lib/server/categories";
 import { gridPages } from "@/lib/server/organization";
 import { GardenHeader } from "@/components/garden-header";
 import { GardenFooter } from "@/components/garden-footer";
-import { PageGrid } from "@/components/page-grid";
+import { PageCards } from "@/components/page-cards";
 import { siteUrl } from "@/lib/config";
 import Link from "next/link";
 import { categoryPath } from "@/lib/organization";
@@ -71,7 +71,7 @@ export default async function CategoryPage({
             <p className="muted">No public pages in this category yet.</p>
           )}
         </div>
-        {cards.length > 0 && <PageGrid selection={selection} cards={cards} />}
+        {cards.length > 0 && <PageCards cards={cards} />}
       </main>
       <GardenFooter />
     </>

@@ -398,6 +398,17 @@ function GridPhotoList({
           returnFocus={opener}
           multiple={{
             selected,
+            add: (ids) => {
+              if (busy) return;
+              setSelected((current) => {
+                const next = new Set(current);
+                for (const id of ids) {
+                  if (next.size >= photoGridAddLimit) break;
+                  next.add(id);
+                }
+                return next;
+              });
+            },
             toggle: (id) => {
               if (busy) return;
               setSelected((current) => {

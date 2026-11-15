@@ -335,6 +335,12 @@ function InspectorFields({
           },
           { id: "corners", title: "Corners", keys: ["radius"] },
         ];
+  if (type === "Text")
+    groups.push({
+      id: "mobile",
+      title: "Mobile",
+      keys: ["mobileAlign"],
+    });
   groups.push({
     id: "animation",
     title: "Animation",

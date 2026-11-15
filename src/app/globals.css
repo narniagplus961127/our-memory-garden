@@ -728,6 +728,14 @@ button.primary {
 .garden-text small {
   display: block;
 }
+@media (max-width: 760px) {
+  .garden-text[data-mobile-align="center"],
+  .garden-text[data-mobile-align="center"]
+    .garden-rich-text
+    :is(p, h1, h2, h3, h4) {
+    text-align: center !important;
+  }
+}
 .garden-banner {
   padding: 72px var(--gutter);
   margin: 0 0 28px;
