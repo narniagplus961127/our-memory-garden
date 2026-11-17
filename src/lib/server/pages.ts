@@ -1,6 +1,6 @@
 import "server-only";
 import { database } from "./db";
-import type { GardenPage, PageData } from "../pages";
+import type { GardenPage, PageCardData, PageData } from "../pages";
 import { templateData, validPageData } from "../blocks";
 import { mergePage, snapshot, equal, type PageSnapshot } from "../page-merge";
 import { RequestError } from "./http";
@@ -15,6 +15,19 @@ export async function listPages(
   const rows = await database()<
     GardenPage[]
   >`select pages.*, exists(select 1 from garden_settings where homepage_id=pages.id) as is_homepage from pages where deleted_at is null order by updated_at desc`;
+  return JSON.parse(JSON.stringify(rows));
+}
+export async function listPageCards(
+  _administrator: Administrator,
+  limit?: number,
+): Promise<PageCardData[]> {
+  const rows = await database()<PageCardData[]>`
+    select id, title, slug, visibility, created_at, updated_at, page_date, version, deleted_at,
+      exists(select 1 from garden_settings where homepage_id=pages.id) as is_homepage
+    from pages
+    where deleted_at is null
+    order by updated_at desc, id
+    limit ${limit ?? null}`;
   return JSON.parse(JSON.stringify(rows));
 }
 export async function getVisiblePage(

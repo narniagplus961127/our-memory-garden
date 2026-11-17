@@ -14,6 +14,7 @@ export async function GET(
       id,
       kind,
       await currentAdministrator(request.headers),
+      request.headers.get("If-None-Match"),
     );
   } catch (error) {
     return errorResponse(error);
