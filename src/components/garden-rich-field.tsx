@@ -1,4 +1,9 @@
-import { Extension, Mark } from "@tiptap/core";
+import { Extension, Mark, Node } from "@tiptap/core";
+import {
+  isPageDateFormat,
+  pageDateAttribute,
+  pageDateNode,
+} from "@/lib/page-date";
 import type { RichtextField } from "@puckeditor/core";
 import { InlineEditorBridge } from "./inline-editing";
 import {
@@ -69,7 +74,38 @@ const Small = Mark.create({
   parseHTML: () => [{ tag: "small" }],
   renderHTML: () => ["small", 0],
 });
-export function richField(label: string): RichtextField {
+const PageDate = Node.create({
+  name: pageDateNode,
+  group: "inline",
+  inline: true,
+  atom: true,
+  addAttributes: () => ({ format: { default: "long", rendered: false } }),
+  parseHTML: () => [
+    {
+      tag: "span[" + pageDateAttribute + "]",
+      getAttrs: (element) => {
+        const format = element.getAttribute(pageDateAttribute);
+        return isPageDateFormat(format) ? { format } : false;
+      },
+    },
+  ],
+  renderHTML: ({ node }) => [
+    "span",
+    { [pageDateAttribute]: node.attrs.format },
+  ],
+});
+
+const RenderedPageDate = Mark.create({
+  name: "renderedPageDate",
+  addAttributes: () => ({ datetime: { default: null } }),
+  parseHTML: () => [{ tag: "time[datetime]" }],
+  renderHTML: ({ HTMLAttributes }) => ["time", HTMLAttributes, 0],
+});
+
+export function richField(
+  label: string,
+  pageDate?: "editable" | "rendered",
+): RichtextField {
   const allowLinks = label !== "Button label";
   return {
     type: "richtext",
@@ -104,6 +140,8 @@ export function richField(label: string): RichtextField {
         Small,
         TextAppearance,
         ParagraphAppearance,
+        ...(pageDate === "editable" ? [PageDate] : []),
+        ...(pageDate === "rendered" ? [RenderedPageDate] : []),
         Extension.create({
           name: "gardenFieldLabel",
           onCreate() {

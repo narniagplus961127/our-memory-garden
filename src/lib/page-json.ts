@@ -168,7 +168,14 @@ export function parsePageJson(value: unknown) {
               ".",
           );
         if (formatted !== undefined) {
-          if (!validRichText(formatted, limits[plain], type !== "Button"))
+          if (
+            !validRichText(
+              formatted,
+              limits[plain],
+              type !== "Button",
+              type === "Text",
+            )
+          )
             throw Error("Invalid formatted HTML in block " + id + ".");
           props[plain] = "";
           props[rich] = formatted;

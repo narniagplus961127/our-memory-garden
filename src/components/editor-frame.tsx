@@ -1,5 +1,12 @@
 "use client";
-import { useEffect, type ReactNode } from "react";
+import { createContext, useContext, useEffect, type ReactNode } from "react";
+import {
+  formatPageDate,
+  pageDateAttribute,
+  pageDateFormats,
+} from "@/lib/page-date";
+
+export const EditorPageDate = createContext<string | null>(null);
 export function EditorFrame({
   children,
   document: frameDocument,
@@ -7,6 +14,13 @@ export function EditorFrame({
   children: ReactNode;
   document?: Document;
 }) {
+  const pageDate = useContext(EditorPageDate);
+  const dateStyles = pageDateFormats
+    .map(({ value }) => {
+      const text = formatPageDate(pageDate, value) || "Page date";
+      return `span[${pageDateAttribute}="${value}"]::before { content: ${JSON.stringify(text)}; }`;
+    })
+    .join("\n");
   useEffect(() => {
     const frame = frameDocument?.defaultView
       ?.frameElement as HTMLIFrameElement | null;
@@ -43,6 +57,7 @@ export function EditorFrame({
   return (
     <>
       <style>{`body { margin:0; overflow-x:clip; } .garden-rich-text { overflow-wrap:anywhere; }`}</style>
+      <style>{dateStyles}</style>
       {children}
     </>
   );

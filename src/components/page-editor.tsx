@@ -27,7 +27,7 @@ import {
 } from "@puckeditor/core";
 import "@puckeditor/core/puck.css";
 import "./editor.css";
-import { EditorFrame } from "./editor-frame";
+import { EditorFrame, EditorPageDate } from "./editor-frame";
 import { EditorIcon } from "./editor-icons";
 import { InlineEditingProvider, useActiveInlineText } from "./inline-editing";
 import { InlineFormatMenu } from "./inline-format-menu";
@@ -1313,7 +1313,11 @@ function Workspace({
               className={"garden-canvas-frame canvas-" + device}
               data-device={device}
             >
-              <Puck.Preview />
+              <EditorPageDate.Provider
+                value={pageSettings?.details.details.date ?? null}
+              >
+                <Puck.Preview />
+              </EditorPageDate.Provider>
             </div>
           </div>
         </section>

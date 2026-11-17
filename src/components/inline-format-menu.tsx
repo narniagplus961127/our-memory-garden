@@ -1,5 +1,11 @@
 "use client";
 import { Modal } from "./modal";
+import { CalendarDays } from "lucide-react";
+import {
+  isPageDateFormat,
+  pageDateFormats,
+  pageDateNode,
+} from "@/lib/page-date";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select";
@@ -108,6 +114,9 @@ export function InlineFormatMenu({
   editor: Editor | null;
   allowLinks?: boolean;
 }) {
+  const [dateOpen, setDateOpen] = useState(false);
+  const [dateFormat, setDateFormat] = useState("long");
+  const dateFormatId = useId();
   const [link, setLink] = useState(false),
     [destination, setDestination] = useState<Destination>({
       kind: "external",
@@ -158,6 +167,7 @@ export function InlineFormatMenu({
     };
   }, [editor]);
   useEffect(() => {
+    setDateOpen(false);
     setLink(false);
     setColourOpen(false);
     morePanel.current?.hidePopover();
@@ -170,6 +180,10 @@ export function InlineFormatMenu({
   const lineHeight = disabled
     ? ""
     : String(editor.getAttributes(paragraphType).lineHeight ?? "");
+  function closeDate() {
+    setDateOpen(false);
+    selection.current = null;
+  }
   function closeColour() {
     setColourOpen(false);
     selection.current = null;
@@ -307,6 +321,25 @@ export function InlineFormatMenu({
           onClick={() => setLink(true)}
         >
           Link
+        </Button>
+      )}
+      {editor?.schema.nodes[pageDateNode] && (
+        <Button
+          type="button"
+          disabled={disabled}
+          aria-label="Insert page date"
+          aria-haspopup="dialog"
+          title="Insert page date"
+          onClick={() => {
+            selection.current = {
+              from: editor.state.selection.from,
+              to: editor.state.selection.to,
+            };
+            setDateFormat(editor.getAttributes(pageDateNode).format ?? "long");
+            setDateOpen(true);
+          }}
+        >
+          <CalendarDays aria-hidden="true" />
         </Button>
       )}
       {allowLinks && editor?.isActive("link") && (
@@ -478,6 +511,45 @@ export function InlineFormatMenu({
           Reset text style
         </Button>
       </div>
+      {dateOpen && !disabled && (
+        <Modal
+          title="Insert page date"
+          description="Uses the date from Page settings."
+          onClose={closeDate}
+          footer={
+            <Button
+              type="button"
+              onClick={() => {
+                if (!isPageDateFormat(dateFormat)) return;
+                command()
+                  ?.insertContent({
+                    type: pageDateNode,
+                    attrs: { format: dateFormat },
+                  })
+                  .run();
+                closeDate();
+              }}
+            >
+              Insert date
+            </Button>
+          }
+        >
+          <div className="grid gap-2">
+            <Label htmlFor={dateFormatId}>Date format</Label>
+            <NativeSelect
+              id={dateFormatId}
+              value={dateFormat}
+              onChange={(event) => setDateFormat(event.target.value)}
+            >
+              {pageDateFormats.map(({ value, label }) => (
+                <NativeSelectOption key={value} value={value}>
+                  {label}
+                </NativeSelectOption>
+              ))}
+            </NativeSelect>
+          </div>
+        </Modal>
+      )}
       {colourOpen && !disabled && (
         <Modal
           title="Text colour"

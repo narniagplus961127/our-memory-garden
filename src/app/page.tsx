@@ -31,7 +31,11 @@ export default async function HomePage() {
           <h1>{page?.title ?? "Our Memory Garden"}</h1>
         </div>
         {page ? (
-          <GardenContent data={page.content} pageId={page.id} />
+          <GardenContent
+            data={page.content}
+            pageId={page.id}
+            pageDate={page.page_date}
+          />
         ) : (
           <div className="page-content">
             <p className="muted">A little place for the moments we share.</p>

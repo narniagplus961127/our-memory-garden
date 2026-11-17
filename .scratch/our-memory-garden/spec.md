@@ -205,4 +205,6 @@ Selecting a subcategory in Page settings selects and saves its ancestors. Desele
 
 The Pages list searches titles and URLs and sorts by name, creation date, page date or last update in either direction. Undated pages follow dated pages. The unfiltered Manual order view retains saved drag ordering. The list and Dashboard read only the fields needed by their page cards. See [ticket 68](issues/68-pages-list-search-and-sort.md).
 
+In a Text block, the calendar action inserts the current page date at the cursor. The default format is `07 JULY 2024`, with short English and Chinese formats available. The date follows Page settings and is hidden on the website when unset. Templates and page-content JSON keep the field, so it can display another page’s date when reused. The Pages list uses a search icon and keeps accessible names for search and sort. See [ticket 70](issues/70-inline-page-date-and-list-controls.md).
+
 Browsers can revalidate public display photos. The media endpoint checks current page visibility before returning an empty response when the browser already has the photo. Originals and private photos use no-store. See [ticket 69](issues/69-reduce-repeat-media-transfer.md).

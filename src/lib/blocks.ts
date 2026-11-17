@@ -271,6 +271,7 @@ export function validPageData(
               props[rich],
               options.allowIncomplete ? 100000 : richLimits[plain],
               type !== "Button",
+              type === "Text",
             )
           )
             return false;
