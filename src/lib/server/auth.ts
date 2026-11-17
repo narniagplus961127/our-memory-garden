@@ -7,7 +7,7 @@ import { localAuth } from "./local-auth";
 import { authMode, isConfigured, siteUrl } from "../config";
 import type { Administrator } from "./pages";
 let neon: ReturnType<typeof createNeonAuth> | undefined;
-function neonAuth() {
+export function neonAuth() {
   return (neon ??= createNeonAuth({
     baseUrl: process.env.NEON_AUTH_BASE_URL!,
     cookies: {
