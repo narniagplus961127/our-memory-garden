@@ -1,8 +1,10 @@
 import { betterAuth } from "better-auth";
 import { Pool } from "pg";
 import { mkdir, writeFile } from "node:fs/promises";
+import { emailOTP } from "better-auth/plugins/email-otp";
 function createLocal() {
-  return betterAuth(localAuthOptions());
+  // The garden's Auth route allowlist keeps local signup behind invitations.
+  return betterAuth(localAuthOptions(true));
 }
 let local: ReturnType<typeof createLocal> | undefined;
 export function localAuthOptions(provisioning = false) {
@@ -40,6 +42,18 @@ export function localAuthOptions(provisioning = false) {
       },
     },
     session: { cookieCache: { enabled: false } },
+    plugins: [
+      emailOTP({
+        async sendVerificationOTP({ email, otp, type }) {
+          if (type !== "email-verification") return;
+          await mkdir("work/local-mail", { recursive: true });
+          await writeFile(
+            "work/local-mail/" + encodeURIComponent(email) + ".otp.json",
+            JSON.stringify({ to: email, otp }),
+          );
+        },
+      }),
+    ],
     trustedOrigins: [url],
   };
 }

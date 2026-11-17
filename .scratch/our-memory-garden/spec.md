@@ -211,4 +211,6 @@ Page Grid settings include an optional Maximum pages field. Both manual and cate
 
 Choose Garden index (/garden) under System pages wherever a link destination is configured, including Navigation, inline rich text, buttons and images. Navigation retains the usual menu item settings. See [ticket 72](issues/72-navigation-system-pages.md).
 
+Account settings can generate a private 24-hour invitation for an administrator. The recipient sets their own password through Neon Auth and proves mailbox access using a verification code. The garden then consumes the invitation and adds the verified Auth user ID while enforcing the two-administrator limit. See [ticket 73](issues/73-private-admin-invitations.md).
+
 Browsers can revalidate public display photos. The media endpoint checks current page visibility before returning an empty response when the browser already has the photo. Originals and private photos use no-store. See [ticket 69](issues/69-reduce-repeat-media-transfer.md).
