@@ -18,7 +18,7 @@ The existing project was connected to `narniagplus961127/our-memory-garden` on 2
 
 ## Owner setup and production checks
 
-The first owner identity and immutable administrator allowlist entry exist. The owner sets their own password using **Forgot password** on the canonical application and the emailed link, then signs in. Do not choose a password, disclose reset tokens or log authentication state. Provision the second administrator only when their email is supplied. Direct upstream registration does not grant garden access.
+The first owner identity and immutable administrator allowlist entry exist. The owner sets their own password using **Forgot password** on the canonical application and the emailed link, then signs in. Do not choose a password, disclose reset tokens or log authentication state. Use Account settings to create a private invitation for each additional administrator. Direct upstream registration does not grant garden access.
 
 After owner setup, verify desktop and mobile sign-in, reload/session restoration, sign-out, private page denial anonymously, ordinary page creation/editing, navigation and public visibility changes. Verify a real photo upload, display access before/after the final public use is removed, and protected original download. Verify export preparation, manifest and every downloaded part. Include an original and archive larger than 4.5 MB, exact-byte comparison, authenticated Range resume and denial after sign-out. A local Better Auth fixture and direct Neon object round-trip do not prove these deployed boundaries. Use owner-authorized content and preserve it; do not seed fake production administrators or destructive fixture data.
 

@@ -14,10 +14,6 @@ const sql = postgres(process.env.DATABASE_URL, {
 try {
   await sql.begin(async (transaction) => {
     await transaction`select pg_advisory_xact_lock(17702601)`;
-    const current =
-      await transaction`select user_id from garden_administrators`;
-    if (current.length >= 2 && !current.some((row) => row.user_id === id))
-      throw new Error("The garden supports two administrators.");
     await transaction`insert into garden_administrators(user_id,email) values(${id},${email.toLowerCase()}) on conflict(user_id) do update set email=excluded.email`;
   });
   console.log("Administrator allowlist updated.");
