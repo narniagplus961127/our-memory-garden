@@ -249,34 +249,61 @@ export async function photoResponse(
   id: string,
   kind: "display" | "original",
   admin: Administrator | null,
+  ifNoneMatch: string | null,
 ): Promise<Response> {
-  const photo = await getPhoto(id);
-  if (!photo || (!admin && (kind === "original" || !photo.publiclyAccessible)))
+  if (!validId.test(id) || (kind === "original" && !admin))
     throw new RequestError(404, "Photo not found.");
-  const rows =
-    await database()`select original_key,display_key,original_type from media_photos where id=${id} and status='ready'`;
-  if (!rows[0]) throw new RequestError(404, "Photo not found.");
+  const [photo] = await database()<
+    {
+      id: string;
+      original_key: string;
+      display_key: string;
+      original_type: string;
+      publicly_accessible: boolean;
+    }[]
+  >`
+    select p.id, p.original_key, p.display_key, p.original_type,
+      case when ${kind === "display"} then exists (
+        select 1 from garden_media_usages u
+        where u.photo_id=p.id and u.visibility='public' and not u.deleted and not u.history
+      ) else false end as publicly_accessible
+    from media_photos p where p.id=${id} and p.status='ready'`;
+  if (!photo || (!admin && !photo.publicly_accessible))
+    throw new RequestError(404, "Photo not found.");
+
+  const headers = new Headers({
+    "Content-Type": kind === "original" ? photo.original_type : "image/webp",
+    "Cache-Control": "private, no-store",
+    "X-Content-Type-Options": "nosniff",
+    "Content-Security-Policy": "default-src 'none'; sandbox",
+  });
+  if (photo.publicly_accessible) {
+    // Display bytes are immutable for a ready photo. Check live visibility
+    // before validating the browser copy so making a page private still works.
+    const etag = `"garden-display-v1-${photo.id}"`;
+    headers.set("ETag", etag);
+    headers.set("Cache-Control", "private, no-cache");
+    if (
+      ifNoneMatch?.split(",").some((entry) => {
+        const tag = entry.trim();
+        return tag === "*" || tag.replace(/^W\//, "") === etag;
+      })
+    )
+      return new Response(null, { status: 304, headers });
+  }
+  if (kind === "original")
+    headers.set(
+      "Content-Disposition",
+      `attachment; filename="original-${photo.id}.${photo.original_type.split("/")[1]}"`,
+    );
   const object = await storage().send(
     new GetObjectCommand({
       Bucket: kind === "original" ? originalsBucket() : displayBucket(),
-      Key: kind === "original" ? rows[0].original_key : rows[0].display_key,
+      Key: kind === "original" ? photo.original_key : photo.display_key,
     }),
   );
   if (!object.Body) throw new RequestError(404, "Photo not found.");
-  return new Response(object.Body.transformToWebStream(), {
-    headers: {
-      "Content-Type":
-        kind === "original" ? rows[0].original_type : "image/webp",
-      "Cache-Control": "private, no-store",
-      "X-Content-Type-Options": "nosniff",
-      "Content-Security-Policy": "default-src 'none'; sandbox",
-      ...(kind === "original"
-        ? {
-            "Content-Disposition": `attachment; filename="original-${photo.id}.${rows[0].original_type.split("/")[1]}"`,
-          }
-        : {}),
-    },
-  });
+  return new Response(object.Body.transformToWebStream(), { headers });
 }
 import type { PageData } from "../pages";
 export async function validatePhotoReferences(content: PageData) {

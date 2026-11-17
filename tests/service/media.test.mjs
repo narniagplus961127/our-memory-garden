@@ -262,7 +262,18 @@ test("nested shared photos lose anonymous access immediately after the final pub
   first = await update(first, "private", nested);
   assert.equal((await call(photoPath + "/display")).status, 404);
   second = await update(second, "public", nested);
-  assert.equal((await call(photoPath + "/display")).status, 200);
+  const display = await call(photoPath + "/display");
+  assert.equal(display.status, 200);
+  assert.equal(display.headers.get("cache-control"), "private, no-cache");
+  const etag = display.headers.get("etag");
+  assert.ok(etag);
+  const revalidate = (tag, path = "/display") =>
+    fetch(base + photoPath + path, { headers: { "If-None-Match": tag } });
+  const unchanged = await revalidate('"different", W/' + etag);
+  assert.equal(unchanged.status, 304);
+  assert.equal(unchanged.headers.get("etag"), etag);
+  assert.equal((await unchanged.arrayBuffer()).byteLength, 0);
+  assert.equal((await revalidate('"different"')).status, 200);
   let details = await (await call(photoPath, "GET", undefined, cookie)).json();
   assert.equal(details.publiclyAccessible, true);
   assert.equal(details.usages.length, 2);
@@ -270,7 +281,9 @@ test("nested shared photos lose anonymous access immediately after the final pub
   second = await update(second, "private");
   assert.equal((await call(photoPath + "/display")).status, 200);
   first = await update(first, "private");
-  assert.equal((await call(photoPath + "/display")).status, 404);
+  assert.equal((await revalidate(etag)).status, 404);
+  assert.equal((await revalidate("*")).status, 404);
+  assert.equal((await revalidate(etag, "/original")).status, 404);
   assert.equal(
     (await call(photoPath + "/display", "GET", undefined, cookie)).status,
     200,

@@ -200,3 +200,9 @@ Administrators can download editable, versioned JSON for a page’s editor block
 The Photo Grid picker supports Shift-click to select a range and Ctrl+A or Command+A to select loaded search results when a photo has focus. Plain clicks, taps and Ctrl-click or Command-click toggle individual photos. Text blocks have a Mobile alignment setting that can centre content at the mobile breakpoint. The default follows desktop alignment.
 
 Selecting a subcategory in Page settings selects and saves its ancestors. Deselecting a parent clears its selected descendants. The public `/garden` index uses the category page grid and shows public pages other than the current homepage. See [ticket 66](issues/66-editor-and-garden-index.md).
+
+## Pages search and transfer
+
+The Pages list searches titles and URLs and sorts by name, creation date, page date or last update in either direction. Undated pages follow dated pages. The unfiltered Manual order view retains saved drag ordering. The list and Dashboard read only the fields needed by their page cards. See [ticket 68](issues/68-pages-list-search-and-sort.md).
+
+Browsers can revalidate public display photos. The media endpoint checks current page visibility before returning an empty response when the browser already has the photo. Originals and private photos use no-store. See [ticket 69](issues/69-reduce-repeat-media-transfer.md).
