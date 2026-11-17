@@ -2,6 +2,7 @@ import { test, expect, type Page } from "@playwright/test";
 import { readFile } from "node:fs/promises";
 import type { MenuItem } from "../../src/lib/destinations";
 import type { NavigationState } from "../../src/lib/navigation";
+import { selectBlock } from "./editor-controls";
 
 const env = Object.fromEntries(
   (await readFile(".env.test", "utf8"))
@@ -63,6 +64,151 @@ async function listReady(page: Page) {
     page.getByRole("heading", { name: "Navigation", exact: true }),
   ).toBeVisible();
 }
+
+test("add a Garden index link as a system page", async ({
+  page,
+  browser,
+  baseURL,
+}) => {
+  await signIn(page);
+  const original = await readMenu(page);
+  try {
+    const label = "Browse memories " + crypto.randomUUID().slice(0, 8);
+    await page.goto("/admin/navigation/new");
+    await page.getByLabel("Menu label", { exact: true }).fill(label);
+    const destination = page.getByLabel("Destination type", { exact: true });
+    await destination.selectOption({ label: "Garden index (/garden)" });
+    await page
+      .getByRole("button", { name: "Add menu item", exact: true })
+      .click();
+    await listReady(page);
+    expect(
+      (await readMenu(page)).items.find((item) => item.label === label)
+        ?.destination,
+    ).toEqual({ kind: "system", page: "garden" });
+    await page
+      .getByRole("link", { name: "Edit " + label, exact: true })
+      .click();
+    await expect(destination).toHaveValue("system");
+    await page
+      .getByLabel("Menu label", { exact: true })
+      .fill("All memories " + label);
+    await page
+      .getByRole("button", { name: "Update menu item", exact: true })
+      .click();
+    await listReady(page);
+
+    const visitor = await browser.newPage({ viewport: page.viewportSize()! });
+    try {
+      await visitor.goto(baseURL + "/");
+      await visitor
+        .getByRole("button", { name: "Open website menu", exact: true })
+        .click();
+      const link = visitor.getByRole("link", {
+        name: "All memories " + label,
+        exact: true,
+      });
+      await expect(link).toHaveAttribute("href", "/garden");
+      await link.click();
+      await expect(visitor).toHaveURL(baseURL + "/garden");
+      await expect(
+        visitor.getByRole("heading", { name: "Garden", exact: true }),
+      ).toBeVisible();
+    } finally {
+      await visitor.close();
+    }
+  } finally {
+    await saveMenu(page, original.items);
+  }
+});
+
+test("link text and buttons to the Garden index from the editor", async ({
+  page,
+  browser,
+  baseURL,
+}) => {
+  await signIn(page);
+  const created = await page.request.post("/api/pages", {
+    headers,
+    data: { title: "Garden links " + crypto.randomUUID() },
+  });
+  expect(created.status()).toBe(201);
+  const source = await created.json();
+  const seeded = await page.request.patch("/api/pages/" + source.id, {
+    headers,
+    data: {
+      visibility: "public",
+      version: source.version,
+      content: {
+        root: { props: {} },
+        content: [
+          {
+            type: "Section",
+            props: {
+              id: "links-section",
+              content: [
+                {
+                  type: "Text",
+                  props: {
+                    id: "garden-text",
+                    text: "Browse the garden",
+                    style: "p",
+                  },
+                },
+                {
+                  type: "Button",
+                  props: { id: "garden-button", label: "See all memories" },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  });
+  expect(seeded.ok()).toBeTruthy();
+  await page.goto("/admin/pages/" + source.id);
+  const field = page
+    .frameLocator("iframe")
+    .locator('.garden-text [contenteditable="true"]');
+  await field.click();
+  await field.evaluate((element) => {
+    const range = element.ownerDocument.createRange();
+    range.selectNodeContents(element.querySelector("p")!);
+    const selection = element.ownerDocument.getSelection()!;
+    selection.removeAllRanges();
+    selection.addRange(range);
+  });
+  await page.getByRole("button", { name: "Add a link", exact: true }).click();
+  const linkDialog = page.getByRole("dialog", {
+    name: "Link text to a page or website",
+  });
+  await linkDialog.getByLabel("Destination type").selectOption("system");
+  await linkDialog.getByRole("button", { name: "Apply link" }).click();
+  await expect(field.getByText("Browse the garden")).toHaveAttribute(
+    "href",
+    "/garden",
+  );
+
+  await selectBlock(page, "Select Button 1");
+  await page.getByRole("button", { name: "Open settings panel" }).click();
+  await page
+    .getByLabel("Destination type", { exact: true })
+    .selectOption("system");
+  await expect(
+    page.getByRole("status", { name: "Auto-save status" }),
+  ).toHaveText("Saved");
+  const visitor = await browser.newPage({ viewport: page.viewportSize()! });
+  try {
+    await visitor.goto(baseURL + "/garden/" + source.slug);
+    for (const name of ["Browse the garden", "See all memories"])
+      await expect(
+        visitor.getByRole("link", { name, exact: true }),
+      ).toHaveAttribute("href", "/garden");
+  } finally {
+    await visitor.close();
+  }
+});
 
 test("dedicated menu forms cancel safely, retain failures and merge only the intended item", async ({
   page,

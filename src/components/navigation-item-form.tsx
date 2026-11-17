@@ -9,6 +9,7 @@ import { useRouter } from "next/navigation";
 import { useRef, useState, type FormEvent } from "react";
 import { DestinationPicker } from "./destination-picker";
 import {
+  navigationDestinationLabel,
   validDestination,
   type Destination,
   type MenuItem,
@@ -195,11 +196,7 @@ export function NavigationItemForm({
                 </p>
                 <p>
                   <strong>Saved destination:</strong>{" "}
-                  {conflict.destination.kind === "page"
-                    ? "Garden page"
-                    : conflict.destination.kind === "category"
-                      ? "Category"
-                      : conflict.destination.url}
+                  {navigationDestinationLabel(conflict.destination)}
                 </p>
                 <Button
                   type="button"

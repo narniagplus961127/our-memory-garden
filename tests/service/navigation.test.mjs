@@ -187,6 +187,19 @@ test("nested navigation preserves order, validates destinations and cycles, filt
     400,
   );
   invalid[0].parentId = null;
+  invalid[0].destination = { kind: "system", page: "admin" };
+  assert.equal(
+    (
+      await call(
+        "/api/navigation",
+        "PUT",
+        { items: invalid, version: saved.version },
+        cookie,
+      )
+    ).status,
+    400,
+  );
+  invalid[0].destination = items[0].destination;
   invalid[1].destination.url = "javascript:alert(1)";
   assert.equal(
     (

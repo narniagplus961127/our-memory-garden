@@ -209,4 +209,6 @@ In a Text block, the calendar action inserts the current page date at the cursor
 
 Page Grid settings include an optional Maximum pages field. Both manual and category grids apply it after visibility filtering and ordering. Leave it blank to show all matching pages. See [ticket 71](issues/71-page-grid-limit.md).
 
+Choose Garden index (/garden) under System pages wherever a link destination is configured, including Navigation, inline rich text, buttons and images. Navigation retains the usual menu item settings. See [ticket 72](issues/72-navigation-system-pages.md).
+
 Browsers can revalidate public display photos. The media endpoint checks current page visibility before returning an empty response when the browser already has the photo. Originals and private photos use no-store. See [ticket 69](issues/69-reduce-repeat-media-transfer.md).

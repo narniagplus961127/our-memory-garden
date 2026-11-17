@@ -10,7 +10,12 @@ import {
   isPageDateFormat,
   pageDateAttribute,
 } from "./page-date";
-import { destinationHref, isWebUrl, type Destination } from "./destinations";
+import {
+  destinationHref,
+  gardenIndexHref,
+  isWebUrl,
+  type Destination,
+} from "./destinations";
 import type { PageData } from "./pages";
 import { validTextStyle } from "./text-appearance";
 
@@ -74,6 +79,7 @@ export const richFields: Record<string, Record<string, string>> = {
   Button: { label: "labelRich" },
 };
 export const isRichLink = (value: string) =>
+  value === gardenIndexHref ||
   isWebUrl(value) ||
   /^\/(?:p|c)\/[\da-f]{8}-[\da-f]{4}-[\da-f]{4}-[\da-f]{4}-[\da-f]{12}$/i.test(
     value,

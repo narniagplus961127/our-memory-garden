@@ -11,7 +11,7 @@ import {
   ListDragFeedback,
 } from "./admin-list-row";
 import { useListReorder } from "./use-list-reorder";
-import type { MenuItem } from "@/lib/destinations";
+import { navigationDestinationLabel, type MenuItem } from "@/lib/destinations";
 import { isMenuDescendant, type NavigationState } from "@/lib/navigation";
 import { fetchNavigation, putNavigation } from "@/lib/navigation-client";
 export function NavigationEditor({ initial }: { initial: NavigationState }) {
@@ -130,13 +130,7 @@ export function NavigationEditor({ initial }: { initial: NavigationState }) {
               href={"/admin/navigation/" + item.id + "/edit"}
               locked={locked}
               grip={<AdminListGrip {...sort.handleProps(item)} />}
-              detail={
-                item.destination.kind === "page"
-                  ? "Garden page"
-                  : item.destination.kind === "category"
-                    ? "Category"
-                    : item.destination.url
-              }
+              detail={navigationDestinationLabel(item.destination)}
               trailing={
                 <Button
                   type="button"

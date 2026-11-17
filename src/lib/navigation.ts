@@ -19,17 +19,25 @@ export function isMenuDescendant(
 
 export function sameMenuItem(a: MenuItem | undefined, b: MenuItem | undefined) {
   if (!a || !b) return a === b;
-  return (
-    a.id === b.id &&
-    a.label === b.label &&
-    a.parentId === b.parentId &&
-    Boolean(a.openInNewTab) === Boolean(b.openInNewTab) &&
-    (a.destination.kind === "page" && b.destination.kind === "page"
-      ? a.destination.pageId === b.destination.pageId
-      : a.destination.kind === "category" && b.destination.kind === "category"
-        ? a.destination.categoryId === b.destination.categoryId
-        : a.destination.kind === "external" &&
-          b.destination.kind === "external" &&
-          a.destination.url === b.destination.url)
-  );
+  if (
+    a.id !== b.id ||
+    a.label !== b.label ||
+    a.parentId !== b.parentId ||
+    Boolean(a.openInNewTab) !== Boolean(b.openInNewTab)
+  )
+    return false;
+  const first = a.destination;
+  const second = b.destination;
+  switch (first.kind) {
+    case "page":
+      return second.kind === "page" && first.pageId === second.pageId;
+    case "category":
+      return (
+        second.kind === "category" && first.categoryId === second.categoryId
+      );
+    case "system":
+      return second.kind === "system" && first.page === second.page;
+    case "external":
+      return second.kind === "external" && first.url === second.url;
+  }
 }
