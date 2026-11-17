@@ -1,11 +1,13 @@
 "use client";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select";
 import { NativeSelectOption } from "@/components/ui/native-select";
 import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
 import {
   categoryLabels,
+  validPageGridLimit,
   type Category,
   type GridSelection,
   type PageCard,
@@ -107,6 +109,21 @@ export function PageGridSettings({
           Pages in a category
         </NativeSelectOption>
       </NativeSelect>
+      <Label htmlFor="grid-limit">Maximum pages</Label>
+      <Input
+        id="grid-limit"
+        type="number"
+        min={1}
+        step={1}
+        placeholder="All pages"
+        value={value.limit ?? ""}
+        onChange={({ currentTarget: input }) => {
+          if (input.validity.badInput) return;
+          if (input.value === "") onChange({ ...value, limit: undefined });
+          else if (validPageGridLimit(input.valueAsNumber))
+            onChange({ ...value, limit: input.valueAsNumber });
+        }}
+      />
       {value.mode === "category" ? (
         <>
           <Label htmlFor="grid-category">Grid category</Label>

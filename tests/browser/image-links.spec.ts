@@ -160,9 +160,14 @@ test("image links autosave, preserve editor controls, use stable page IDs and ca
     await expect(page.getByLabel("Garden page", { exact: true })).toHaveValue(
       target.id,
     );
-    await page
-      .getByLabel("Destination type", { exact: true })
-      .selectOption("none");
+    const destination = page.getByLabel("Destination type", { exact: true });
+    await destination.selectOption("system");
+    await saved(page);
+    await view.goto(baseURL + "/p/" + source.id);
+    await expect(
+      view.getByRole("link", { name: "Adventure photograph", exact: true }),
+    ).toHaveAttribute("href", "/garden");
+    await destination.selectOption("none");
     await saved(page);
     await view.goto(baseURL + "/p/" + source.id);
     await expect(view.locator(".garden-image-link")).toHaveCount(0);

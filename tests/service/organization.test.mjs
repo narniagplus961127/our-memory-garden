@@ -276,8 +276,9 @@ test("manual and category grids filter private pages at the data and nested rend
     pageIds: [pages[2].id, pages[1].id, pages[0].id],
     categoryId: "",
   };
-  const path =
-    "/api/page-grid?selection=" + encodeURIComponent(JSON.stringify(selection));
+  const gridPath = (value) =>
+    "/api/page-grid?selection=" + encodeURIComponent(JSON.stringify(value));
+  const path = gridPath(selection);
   assert.deepEqual(
     (await (await call(path, "GET")).json()).map((p) => p.title),
     [pages[2].title, pages[0].title],
@@ -286,16 +287,38 @@ test("manual and category grids filter private pages at the data and nested rend
     (await (await call(path, "GET", null, cookie)).json()).map((p) => p.title),
     [pages[2].title, pages[1].title, pages[0].title],
   );
-  const cp =
-    "/api/page-grid?selection=" +
-    encodeURIComponent(
-      JSON.stringify({
-        mode: "category",
-        pageIds: [],
-        categoryId: category.id,
-      }),
+  const withLimit = gridPath({ ...selection, limit: 2 });
+  assert.deepEqual(
+    (await (await call(withLimit, "GET")).json()).map((p) => p.title),
+    [pages[2].title, pages[0].title],
+  );
+  assert.deepEqual(
+    (await (await call(withLimit, "GET", null, cookie)).json()).map(
+      (p) => p.title,
+    ),
+    [pages[2].title, pages[1].title],
+  );
+  for (const limit of [0, -1, 1.5, "2", null]) {
+    assert.equal(
+      (await call(gridPath({ ...selection, limit }), "GET")).status,
+      400,
     );
+  }
+  const categorySelection = {
+    mode: "category",
+    pageIds: [],
+    categoryId: category.id,
+  };
+  const cp = gridPath(categorySelection);
   assert.equal((await (await call(cp, "GET")).json()).length, 2);
+  const limitedCategory = await call(
+    gridPath({ ...categorySelection, limit: 1 }),
+    "GET",
+  );
+  assert.deepEqual(
+    (await limitedCategory.json()).map((p) => p.id),
+    [pages[2].id],
+  );
   let source = await (
     await call("/api/pages", "POST", { title: "Grid source " + label }, cookie)
   ).json();

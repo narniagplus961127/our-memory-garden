@@ -126,19 +126,22 @@ export async function gridPages(
   const sql = database();
   if (selection.mode === "manual" && !selection.pageIds.length) return [];
   if (selection.mode === "category" && !selection.categoryId) return [];
-  const rows =
-    selection.mode === "manual"
-      ? await sql<
-          PageCard[]
-        >`select id,title,slug,to_char(page_date,'YYYY-MM-DD') as page_date,cover_photo_id,visibility from pages where id in ${sql(selection.pageIds)} and deleted_at is null and (${Boolean(admin)} or visibility='public')`
-      : await sql<PageCard[]>`with recursive tree as (
-          select id from page_categories where id=${selection.categoryId}
-          union
-          select c.id from page_categories c join tree on c.parent_id=tree.id
-        ) select id,title,slug,to_char(page_date,'YYYY-MM-DD') as page_date,cover_photo_id,visibility from pages
-        where category_ids && array(select id from tree) and deleted_at is null and (${Boolean(admin)} or visibility='public')
-        order by page_date desc nulls last,created_at desc,id`;
-  return selection.mode === "manual"
-    ? selection.pageIds.flatMap((id) => rows.filter((p) => p.id === id))
-    : rows;
+  const limit = selection.limit ?? null;
+  if (selection.mode === "manual") {
+    const pageIds = sql.array(selection.pageIds, 2950);
+    return sql<PageCard[]>`
+      select id,title,slug,to_char(page_date,'YYYY-MM-DD') as page_date,cover_photo_id,visibility
+      from pages where id = any(${pageIds}::uuid[])
+        and deleted_at is null and (${Boolean(admin)} or visibility='public')
+      order by array_position(${pageIds}::uuid[], id)
+      limit ${limit}`;
+  }
+  return sql<PageCard[]>`with recursive tree as (
+      select id from page_categories where id=${selection.categoryId}
+      union
+      select c.id from page_categories c join tree on c.parent_id=tree.id
+    ) select id,title,slug,to_char(page_date,'YYYY-MM-DD') as page_date,cover_photo_id,visibility from pages
+    where category_ids && array(select id from tree) and deleted_at is null and (${Boolean(admin)} or visibility='public')
+    order by page_date desc nulls last,created_at desc,id
+    limit ${limit}`;
 }

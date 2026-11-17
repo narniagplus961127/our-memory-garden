@@ -3,6 +3,7 @@ import { database } from "./db";
 import type { Administrator } from "./pages";
 import { RequestError } from "./http";
 import {
+  destinationHref,
   validDestination,
   type MenuItem,
   type PublicMenuItem,
@@ -27,6 +28,7 @@ export async function publicNavigation(): Promise<PublicMenuItem[]> {
     items.map((i) => [
       i.id,
       i.destination.kind === "external" ||
+        i.destination.kind === "system" ||
         (i.destination.kind === "category"
           ? categoryAddresses.has(i.destination.categoryId)
           : addresses.has(i.destination.pageId)),
@@ -48,7 +50,7 @@ export async function publicNavigation(): Promise<PublicMenuItem[]> {
         ? "/garden/" + addresses.get(i.destination.pageId)
         : i.destination.kind === "category"
           ? "/category/" + categoryAddresses.get(i.destination.categoryId)
-          : i.destination.url,
+          : destinationHref(i.destination)!,
   }));
 }
 export async function saveNavigation(
@@ -85,7 +87,7 @@ export async function saveNavigation(
     )
       throw new RequestError(
         400,
-        "Give each menu item a label and a valid garden page or complete web address.",
+        "Give each menu item a label and a valid destination.",
       );
     ids.add(i.id);
   }

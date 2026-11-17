@@ -207,4 +207,8 @@ The Pages list searches titles and URLs and sorts by name, creation date, page d
 
 In a Text block, the calendar action inserts the current page date at the cursor. The default format is `07 JULY 2024`, with short English and Chinese formats available. The date follows Page settings and is hidden on the website when unset. Templates and page-content JSON keep the field, so it can display another page’s date when reused. The Pages list uses a search icon and keeps accessible names for search and sort. See [ticket 70](issues/70-inline-page-date-and-list-controls.md).
 
+Page Grid settings include an optional Maximum pages field. Both manual and category grids apply it after visibility filtering and ordering. Leave it blank to show all matching pages. See [ticket 71](issues/71-page-grid-limit.md).
+
+Choose Garden index (/garden) under System pages wherever a link destination is configured, including Navigation, inline rich text, buttons and images. Navigation retains the usual menu item settings. See [ticket 72](issues/72-navigation-system-pages.md).
+
 Browsers can revalidate public display photos. The media endpoint checks current page visibility before returning an empty response when the browser already has the photo. Originals and private photos use no-store. See [ticket 69](issues/69-reduce-repeat-media-transfer.md).

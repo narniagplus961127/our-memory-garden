@@ -1,10 +1,18 @@
 "use client";
 import { Label } from "@/components/ui/label";
 import { NativeSelect } from "@/components/ui/native-select";
-import { NativeSelectOption } from "@/components/ui/native-select";
+import {
+  NativeSelectOptGroup,
+  NativeSelectOption,
+} from "@/components/ui/native-select";
 import { Input } from "@/components/ui/input";
 import { useEffect, useId, useState } from "react";
-import { isWebUrl, type Destination } from "@/lib/destinations";
+import {
+  gardenIndexDestination,
+  gardenIndexLabel,
+  isWebUrl,
+  type Destination,
+} from "@/lib/destinations";
 import type { GardenPage } from "@/lib/pages";
 import { categoryLabels, type Category } from "@/lib/organization";
 export function DestinationPicker({
@@ -60,7 +68,7 @@ export function DestinationPicker({
       <NativeSelect
         id={id + "-kind"}
         value={kind}
-        onChange={(e) =>
+        onChange={(e) => {
           onChange(
             e.target.value === "page"
               ? { kind: "page", pageId: "" }
@@ -68,15 +76,22 @@ export function DestinationPicker({
                 ? { kind: "category", categoryId: "" }
                 : e.target.value === "external"
                   ? { kind: "external", url: "" }
-                  : null,
-          )
-        }
+                  : e.target.value === "system"
+                    ? gardenIndexDestination
+                    : null,
+          );
+        }}
       >
         {optional && (
           <NativeSelectOption value="none">No link</NativeSelectOption>
         )}
         <NativeSelectOption value="page">Garden page</NativeSelectOption>
         <NativeSelectOption value="category">Category</NativeSelectOption>
+        <NativeSelectOptGroup label="System pages">
+          <NativeSelectOption value="system">
+            {gardenIndexLabel}
+          </NativeSelectOption>
+        </NativeSelectOptGroup>
         <NativeSelectOption value="external">External URL</NativeSelectOption>
       </NativeSelect>
       {kind === "page" && (
@@ -182,7 +197,7 @@ export function DestinationPicker({
           )}
         </>
       )}
-      {error && (
+      {kind === "page" && error && (
         <p className="error" role="alert">
           {error}
         </p>
