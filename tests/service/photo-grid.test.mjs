@@ -93,7 +93,7 @@ test("Photo grid stores large collections separately and preserves access, revis
     },
   });
   const emptyPage = page;
-  const items = Array.from({ length: 103 }, () => ({
+  const items = Array.from({ length: 1003 }, () => ({
     entryId: crypto.randomUUID(),
     photoId: upload.id,
   }));
@@ -103,14 +103,18 @@ test("Photo grid stores large collections separately and preserves access, revis
     photos,
     requestId: crypto.randomUUID(),
   });
-  const first = addBatch(items.slice(0, 100));
+  assert.equal(
+    (await call(gridPath, "PATCH", addBatch(items.slice(0, 1001)))).status,
+    400,
+  );
+  const first = addBatch(items.slice(0, 1000));
   const firstSaved = await json(await call(gridPath, "PATCH", first));
   page = firstSaved.page;
   assert.equal(
     (await json(await call(gridPath, "PATCH", first))).page.version,
     page.version,
   );
-  const stale = addBatch(items.slice(100));
+  const stale = addBatch(items.slice(1000));
   page = (await json(await call(gridPath, "PATCH", stale))).page;
   assert.equal(
     (
@@ -122,6 +126,7 @@ test("Photo grid stores large collections separately and preserves access, revis
     409,
   );
   const firstBatch = await json(await call(url(page)));
+  assert.equal(firstBatch.total, 1003);
   assert.equal(firstBatch.photos.length, 24);
   assert.equal(firstBatch.next, 24);
   assert.equal(firstBatch.photos[0].height, 100);
@@ -136,7 +141,7 @@ test("Photo grid stores large collections separately and preserves access, revis
     401,
   );
   assert.equal(
-    (await json(await call(url(page, "&offset=96")))).photos.length,
+    (await json(await call(url(page, "&offset=996")))).photos.length,
     7,
   );
   assert.equal((await call(url(page), "GET", undefined, false)).status, 404);

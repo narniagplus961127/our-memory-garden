@@ -189,7 +189,7 @@ Navigation removes the visible Your menu subheading and reordering tutorial. Key
 
 ## Photo grid (ticket 56)
 
-Photo grid is an addable widget within a Section. Administrators select photos in batches from the shared Media Library, reorder them, edit captions and alt text, and remove individual entries. The grid keeps photo proportions in a responsive masonry layout with configurable maximum columns, gap and corner radius. Visitors see the first 24 photos, can load another batch, and can open a photo viewer. Collections use a separately stored photo list so the legacy Gallery's 100-photo cap does not apply. Existing media access and page recovery rules apply. See [ticket 56](issues/56-photo-grid.md) for the FigCraft review flows and acceptance criteria.
+Photo grid is an addable widget within a Section. Administrators can add up to 1,000 photos at a time from the shared Media Library, reorder them, edit captions and alt text, and remove individual entries. The grid keeps photo proportions in a responsive masonry layout with configurable maximum columns, gap and corner radius. Visitors see the first 24 photos, can load another batch, and can open a photo viewer. Collections use a separately stored photo list so the legacy Gallery's 100-photo cap does not apply. Existing media access and page recovery rules apply. See [ticket 56](issues/56-photo-grid.md) for the FigCraft review flows and acceptance criteria.
 
 ## Editor content JSON (ticket 57)
 
