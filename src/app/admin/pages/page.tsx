@@ -1,16 +1,15 @@
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { requireAdministrator } from "@/lib/server/auth";
-import { listPages } from "@/lib/server/pages";
+import { listPageCards } from "@/lib/server/pages";
 import { AdminPageCards } from "@/components/admin-page-cards";
-import { pageCardData } from "@/lib/pages";
 import { readAdminListOrder } from "@/lib/server/admin-list-order";
 export const metadata = { title: "Pages" };
 
 export default async function Pages() {
   const admin = await requireAdministrator();
   const [pages, order] = await Promise.all([
-    listPages(admin),
+    listPageCards(admin),
     readAdminListOrder("pages"),
   ]);
   return (
@@ -34,7 +33,7 @@ export default async function Pages() {
       </div>
       <AdminPageCards
         key={order.version}
-        pages={pages.map(pageCardData)}
+        pages={pages}
         order={order}
         allowTrash
       />

@@ -1,13 +1,12 @@
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { requireAdministrator } from "@/lib/server/auth";
-import { listPages } from "@/lib/server/pages";
+import { listPageCards } from "@/lib/server/pages";
 import { AdminPageCards } from "@/components/admin-page-cards";
-import { pageCardData } from "@/lib/pages";
 export const metadata = { title: "Dashboard" };
 
 export default async function Dashboard() {
-  const pages = await listPages(await requireAdministrator());
+  const pages = await listPageCards(await requireAdministrator(), 5);
   return (
     <>
       <p className="eyebrow">The garden dashboard</p>
@@ -22,7 +21,7 @@ export default async function Dashboard() {
           <Link href="/admin/pages">Manage pages</Link>
         </div>
         {pages.length ? (
-          <AdminPageCards pages={pages.slice(0, 5).map(pageCardData)} />
+          <AdminPageCards pages={pages} />
         ) : (
           <div className="empty-state">
             <h3>Your first page starts here</h3>
