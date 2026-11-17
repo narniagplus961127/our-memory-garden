@@ -448,7 +448,10 @@ function GridPhotoList({
         >
           {failure}
           {selected.size === photoGridAddLimit && (
-            <p>Save this batch to select more photos.</p>
+            <p>
+              You can add up to {photoGridAddLimit.toLocaleString("en-US")}{" "}
+              photos at a time.
+            </p>
           )}
         </PhotoLibraryDialog>
       )}

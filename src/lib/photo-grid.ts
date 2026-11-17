@@ -2,7 +2,7 @@ import { slotContent, slotNames, type PageBlock } from "./blocks";
 import type { PageData } from "./pages";
 
 export const photoGridBatchSize = 24;
-export const photoGridAddLimit = 100;
+export const photoGridAddLimit = 1000;
 export type GridPickerPhoto = Pick<
   GridPhoto,
   "photoId" | "width" | "height"

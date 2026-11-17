@@ -647,3 +647,86 @@ test("add a Photo grid, select photos, reorder and open the website viewer", asy
     await visitor.close();
   }
 });
+
+test("Photo Grid can select more than 100 photos in the library at once", async ({
+  page,
+  isMobile,
+}) => {
+  test.skip(isMobile, "Exercise the keyboard selection shortcut.");
+  const signedIn = await page.request.post("/api/auth/sign-in/email", {
+    headers,
+    data: { email: env.TEST_ADMIN_EMAIL, password: env.TEST_ADMIN_PASSWORD },
+  });
+  expect(signedIn.ok()).toBeTruthy();
+  const created = await page.request.post("/api/pages", {
+    headers,
+    data: { title: "Bulk photo picker " + crypto.randomUUID().slice(0, 8) },
+  });
+  expect(created.status()).toBe(201);
+  const garden = await created.json();
+  const saved = await page.request.patch("/api/pages/" + garden.id, {
+    headers,
+    data: {
+      version: garden.version,
+      content: {
+        root: { props: {} },
+        content: [
+          {
+            type: "Section",
+            props: {
+              id: "section",
+              content: [{ type: "PhotoGrid", props: { id: "grid" } }],
+            },
+          },
+        ],
+      },
+    },
+  });
+  expect(saved.status()).toBe(200);
+
+  const fixtures = Array.from({ length: 105 }, (_, index) => ({
+    photoId: crypto.randomUUID(),
+    name: "Bulk fixture " + (index + 1),
+    width: 100,
+    height: 100,
+  }));
+  await page.route(
+    (url) =>
+      url.pathname === "/api/media" &&
+      url.searchParams.get("view") === "grid-picker",
+    (route) => {
+      const offset = Number(
+        new URL(route.request().url()).searchParams.get("offset"),
+      );
+      const next = offset + 24;
+      return route.fulfill({
+        json: {
+          photos: fixtures.slice(offset, next),
+          more: next < fixtures.length,
+        },
+      });
+    },
+  );
+  await page.route("**/api/media/*/display", (route) =>
+    route.fulfill({ status: 404 }),
+  );
+  await page.goto("/admin/pages/" + garden.id);
+  await selectBlock(page, "Select Photo grid 1");
+  await page.getByRole("button", { name: "+ Add photos", exact: true }).click();
+  const chooser = page.getByRole("dialog", { name: "Choose photos" });
+  const more = chooser.getByRole("button", {
+    name: "Show more library photos",
+  });
+  for (const loaded of [48, 72, 96, 105]) {
+    await more.click();
+    await expect(
+      chooser.getByRole("button", { name: /^Bulk fixture / }),
+    ).toHaveCount(loaded);
+  }
+  await chooser
+    .getByRole("button", { name: "Bulk fixture 1", exact: true })
+    .press("Control+a");
+  await expect(
+    chooser.getByRole("button", { name: "Add 105 photos" }),
+  ).toBeEnabled();
+});
