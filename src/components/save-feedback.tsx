@@ -18,7 +18,7 @@ function FormattedComparison({
 }) {
   const html = inlinePageData({ root: { props: {} }, content: [block] })
     .content[0].props.textRich;
-  if (!validRichText(html)) return null;
+  if (!validRichText(html, undefined, true, true)) return null;
   const links = richLinks(html);
   return (
     <div aria-label={label} className="conflict-formatted">

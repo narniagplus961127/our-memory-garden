@@ -1,9 +1,56 @@
-import { parseFragment, type DefaultTreeAdapterMap } from "parse5";
+import {
+  defaultTreeAdapter,
+  html as htmlSyntax,
+  parseFragment,
+  serialize,
+  type DefaultTreeAdapterMap,
+} from "parse5";
+import {
+  formatPageDate,
+  isPageDateFormat,
+  pageDateAttribute,
+} from "./page-date";
 import { destinationHref, isWebUrl, type Destination } from "./destinations";
 import type { PageData } from "./pages";
 import { validTextStyle } from "./text-appearance";
 
 type Node = DefaultTreeAdapterMap["node"];
+
+function pageDateFormat(node: Node) {
+  if (!("tagName" in node) || node.tagName !== "span") return undefined;
+  const format = node.attrs.find(
+    (attr) => attr.name === pageDateAttribute,
+  )?.value;
+  return isPageDateFormat(format) ? format : undefined;
+}
+
+export function renderPageDates(html: string, date: string | null | undefined) {
+  if (!/data-garden-page-date/i.test(html)) return html;
+  const fragment = parseFragment(html);
+  function replace(node: Node) {
+    if (!("childNodes" in node)) return;
+    for (const child of [...node.childNodes]) {
+      const format = pageDateFormat(child);
+      if (!format) {
+        replace(child);
+        continue;
+      }
+      const label = formatPageDate(date, format);
+      if (date && label) {
+        const time = defaultTreeAdapter.createElement(
+          "time",
+          htmlSyntax.NS.HTML,
+          [{ name: "datetime", value: date }],
+        );
+        defaultTreeAdapter.insertText(time, label);
+        defaultTreeAdapter.insertBefore(node, time, child);
+      }
+      defaultTreeAdapter.detachNode(child);
+    }
+  }
+  replace(fragment);
+  return serialize(fragment);
+}
 const tags = new Set([
   "p",
   "h1",
@@ -35,6 +82,7 @@ export function validRichText(
   value: unknown,
   max = 100000,
   allowLinks = true,
+  allowPageDate = false,
 ): value is string {
   if (typeof value !== "string" || value.length > max * 6 + 1000) return false;
   let count = 0;
@@ -48,6 +96,13 @@ export function validRichText(
     )
       return false;
     if (node.tagName === "a" && !allowLinks) return false;
+    if (node.attrs.some((attribute) => attribute.name === pageDateAttribute))
+      return (
+        allowPageDate &&
+        Boolean(pageDateFormat(node)) &&
+        node.attrs.length === 1 &&
+        node.childNodes.length === 0
+      );
     if (
       !node.attrs.every(({ name, value }) => {
         if (name === "style" && node.tagName === "span")
@@ -80,6 +135,7 @@ export function validRichText(
 export function richPlainText(html: string): string {
   function text(node: Node): string {
     if ("value" in node) return node.value;
+    if (pageDateFormat(node)) return "[Page date]";
     if (!("childNodes" in node)) return "";
     if ("tagName" in node && node.tagName === "br") return "\n";
     const content = node.childNodes.map(text).join("");

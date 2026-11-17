@@ -156,6 +156,7 @@ export default async function History({ params, searchParams }: Props) {
                     data={selected.content}
                     pageId={id}
                     history={version}
+                    pageDate={selected.page_date}
                   />
                 </div>
                 <RestoreVersion key={version} page={page} revision={version} />

@@ -766,7 +766,7 @@ export const gardenConfig: Config<
       fields: {
         ...appearance,
         text: { type: "textarea", label: "Text content", visible: false },
-        textRich: richField("Text content"),
+        textRich: richField("Text content", "editable"),
         style: {
           type: "select",
           label: "Text style",

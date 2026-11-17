@@ -1,6 +1,7 @@
 "use client";
 import { useId, useRef, useState } from "react";
 import { Input } from "./ui/input";
+import { Search } from "lucide-react";
 import { Label } from "./ui/label";
 import { NativeSelect, NativeSelectOption } from "./ui/native-select";
 import type { AdminListOrder } from "@/lib/admin-list-order";
@@ -144,18 +145,26 @@ export function AdminPageCards({
       {notice && <Toast message={notice} onDismiss={() => setNotice("")} />}
       {order && (
         <div className="mb-4 grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(14rem,auto)]">
-          <div className="grid min-w-0 gap-2">
-            <Label htmlFor={controlsId + "-search"}>Search pages</Label>
+          <div className="relative min-w-0">
+            <Label className="sr-only" htmlFor={controlsId + "-search"}>
+              Search pages
+            </Label>
+            <Search
+              className="pointer-events-none absolute inset-s-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+              aria-hidden="true"
+            />
             <Input
+              className="ps-9"
               id={controlsId + "-search"}
               type="search"
-              placeholder="Search by name or URL"
               value={query}
               onChange={(event) => setQuery(event.target.value)}
             />
           </div>
           <div className="grid min-w-0 gap-2">
-            <Label htmlFor={controlsId + "-sort"}>Sort by</Label>
+            <Label className="sr-only" htmlFor={controlsId + "-sort"}>
+              Sort by
+            </Label>
             <NativeSelect
               id={controlsId + "-sort"}
               value={sortKey}

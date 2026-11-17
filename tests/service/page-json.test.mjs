@@ -84,6 +84,8 @@ test("imports older JSON and another page’s content without replacing page set
     ...photo,
     caption: "Photo " + index,
   }));
+  const richText =
+    '<h2>Our <em>garden</em></h2><p><span data-garden-page-date="chinese"></span></p>';
   const document = {
     source: { pageId: source.id, version: 1 },
     format: "our-memory-garden/page",
@@ -105,7 +107,7 @@ test("imports older JSON and another page’s content without replacing page set
               settings: { style: "p" },
               text: "A handwritten line",
             },
-            { type: "Text", id: "rich", html: "<h2>Our <em>garden</em></h2>" },
+            { type: "Text", id: "rich", html: richText },
             {
               type: "PhotoGrid",
               id: "grid",
@@ -166,6 +168,11 @@ test("imports older JSON and another page’s content without replacing page set
   const invalid = structuredClone(document);
   invalid.page.blocks[0].blocks[1].html = "<script>alert(1)</script>";
   await json(await request(filePath, "POST", { file: invalid }), 400);
+  invalid.page.blocks[0].blocks[1].html = richText.replace(
+    "chinese",
+    "invalid",
+  );
+  await json(await request(filePath, "POST", { file: invalid }), 400);
   const review = await json(
     await request(filePath, "POST", { file: document }),
   );
@@ -189,10 +196,7 @@ test("imports older JSON and another page’s content without replacing page set
   assert.deepEqual(Object.keys(exported.page), ["blocks"]);
   assert.doesNotMatch(bytes, /created_by|gridRevision|gridId|visibility/);
   assert.deepEqual(exported.page.blocks[0].blocks[2].photos, photos);
-  assert.equal(
-    exported.page.blocks[0].blocks[1].html,
-    "<h2>Our <em>garden</em></h2>",
-  );
+  assert.equal(exported.page.blocks[0].blocks[1].html, richText);
   const original = await json(await request(sourcePath));
   assert.equal(original.title, source.title);
   assert.equal(original.page_date, settings.page_date);

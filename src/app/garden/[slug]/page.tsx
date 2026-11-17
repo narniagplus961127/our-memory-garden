@@ -36,7 +36,11 @@ export default async function GardenPage({
         >
           <h1>{page.title}</h1>
         </div>
-        <GardenContent data={page.content} pageId={page.id} />
+        <GardenContent
+          data={page.content}
+          pageId={page.id}
+          pageDate={page.page_date}
+        />
       </main>
       <GardenFooter />
     </>
