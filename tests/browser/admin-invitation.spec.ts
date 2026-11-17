@@ -5,7 +5,7 @@ import postgres from "postgres";
 
 const env = parseEnv(await readFile(".env.test", "utf8"));
 
-test("an invited administrator verifies their email before gaining access", async ({
+test("a third administrator verifies their invitation before gaining access", async ({
   page,
   browser,
   baseURL,
@@ -18,7 +18,7 @@ test("an invited administrator verifies their email before gaining access", asyn
     new URL(connection!).pathname.startsWith("/garden_invitation_test");
   test.skip(
     !isolated,
-    "This test needs a separate garden_invitation_test database with one admin slot open.",
+    "This test needs a separate garden_invitation_test database with the two local administrator fixtures.",
   );
   const sql = postgres(connection!, { max: 1 });
   const email = "invite-" + crypto.randomUUID() + "@example.test";
@@ -43,6 +43,10 @@ test("an invited administrator verifies their email before gaining access", asyn
       data: { email: env.TEST_ADMIN_EMAIL, password: env.TEST_ADMIN_PASSWORD },
     });
     expect(owner.ok()).toBeTruthy();
+    const [beforeInvitation] = await sql<{ count: number }[]>`
+      select count(*)::int as count from garden_administrators
+    `;
+    expect(beforeInvitation.count).toBe(2);
     await page.goto("/admin/settings/account");
     await page.getByLabel("Name", { exact: true }).fill("Invited gardener");
     await page.getByLabel("Email address", { exact: true }).fill(email);
@@ -147,14 +151,14 @@ test("an invited administrator verifies their email before gaining access", asyn
     await expect(
       view.getByText("You are signed in as " + email + "."),
     ).toBeVisible();
-    expect(
-      (
-        await page.request.post("/api/admin/invitations", {
-          headers,
-          data: { email: "no-room@example.test", name: "Another gardener" },
-        })
-      ).status(),
-    ).toBe(409);
+    const duplicate = await page.request.post("/api/admin/invitations", {
+      headers,
+      data: { email, name: "Invited gardener" },
+    });
+    expect(duplicate.status()).toBe(409);
+    expect(await duplicate.json()).toMatchObject({
+      error: "This email already has garden access.",
+    });
   } finally {
     await visitor.close();
     await sql`delete from garden_admin_invitations where email=${email}`;

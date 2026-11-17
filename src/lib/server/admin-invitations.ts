@@ -21,8 +21,6 @@ export const invitationMaxAge = 24 * 60 * 60;
 export const invitationCookie = "garden-invite-claim";
 const unavailable = () =>
   new RequestError(404, "This invitation is invalid, expired or already used.");
-const noSpace = () =>
-  new RequestError(409, "The garden already has two administrators.");
 
 function tokenHash(token: unknown) {
   if (typeof token !== "string" || !/^[A-Za-z0-9_-]{43}$/.test(token))
@@ -34,14 +32,13 @@ export async function issueAdminInvitation(email: string, name: string) {
   const token = randomBytes(32).toString("base64url");
   const expiresAt = new Date(Date.now() + invitationMaxAge * 1000);
   await database().begin(async (sql) => {
-    // Synchronize with the standalone administrator provisioning script.
+    // Serialize issuing invitations with granting access, including CLI grants.
     await sql`select pg_advisory_xact_lock(17702601)`;
-    const admins = await sql<
-      { email: string }[]
-    >`select email from garden_administrators`;
-    if (admins.some((admin) => admin.email.toLowerCase() === email))
+    const [admin] = await sql`
+      select 1 from garden_administrators where lower(email)=${email} limit 1
+    `;
+    if (admin)
       throw new RequestError(409, "This email already has garden access.");
-    if (admins.length >= 2) throw noSpace();
     await sql`
       insert into garden_admin_invitations (email, name, token_hash, expires_at)
       values (${email}, ${name}, ${tokenHash(token)}, ${expiresAt})
@@ -142,13 +139,11 @@ export async function grantInvitedAccess(
       for update
     `;
     if (!pending) throw unavailable();
-    const admins = await sql<
-      { user_id: string }[]
-    >`select user_id from garden_administrators`;
-    if (!admins.some((admin) => admin.user_id === user.id)) {
-      if (admins.length >= 2) throw noSpace();
-      await sql`insert into garden_administrators (user_id, email) values (${user.id}, ${invite.email})`;
-    }
+    await sql`
+      insert into garden_administrators (user_id, email)
+      values (${user.id}, ${invite.email})
+      on conflict (user_id) do nothing
+    `;
     await sql`update garden_admin_invitations set used_at=now() where token_hash=${invite.token_hash}`;
   });
 }
