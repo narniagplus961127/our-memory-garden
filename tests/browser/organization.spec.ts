@@ -690,5 +690,29 @@ test("nested page grids select, order and filter pages in actual desktop and mob
   );
   await visitor.reload();
   await expect(visitor.locator(".garden-page-grid h3")).toHaveCount(2);
+  const limit = page.getByLabel("Maximum pages", { exact: true });
+  await expect(limit).toHaveValue("");
+  await limit.fill("1");
+  await expect(canvas.getByRole("heading", { level: 3 })).toHaveText([
+    targets[2].title,
+  ]);
+  await expect(
+    page.getByRole("status", { name: "Auto-save status" }),
+  ).toHaveText("Saved");
+  await visitor.reload();
+  await expect(visitor.locator(".garden-page-grid h3")).toHaveText([
+    targets[2].title,
+  ]);
+  await page.reload();
+  await selectBlock(page, "Select Page grid 1");
+  await page.getByRole("button", { name: "Open settings panel" }).click();
+  await expect(limit).toHaveValue("1");
+  await limit.clear();
+  await expect(canvas.getByRole("heading", { level: 3 })).toHaveCount(3);
+  await expect(
+    page.getByRole("status", { name: "Auto-save status" }),
+  ).toHaveText("Saved");
+  await visitor.reload();
+  await expect(visitor.locator(".garden-page-grid h3")).toHaveCount(2);
   await context.close();
 });

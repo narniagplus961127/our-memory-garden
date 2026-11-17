@@ -61,6 +61,7 @@ export type GridSelection = {
   mode: "manual" | "category";
   pageIds: string[];
   categoryId: string;
+  limit?: number;
 };
 export type PageCard = {
   id: string;
@@ -72,12 +73,16 @@ export type PageCard = {
 };
 export const uuid =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+export function validPageGridLimit(value: unknown): value is number {
+  return typeof value === "number" && Number.isSafeInteger(value) && value > 0;
+}
+
 export function validGrid(value: unknown): value is GridSelection {
   if (!value || typeof value !== "object") return false;
   const v = value as GridSelection;
   if (
     Object.keys(v).some(
-      (key) => !["mode", "pageIds", "categoryId"].includes(key),
+      (key) => !["mode", "pageIds", "categoryId", "limit"].includes(key),
     )
   )
     return false;
@@ -88,6 +93,7 @@ export function validGrid(value: unknown): value is GridSelection {
     v.pageIds.every((id) => typeof id === "string" && uuid.test(id)) &&
     new Set(v.pageIds).size === v.pageIds.length &&
     typeof v.categoryId === "string" &&
-    (v.categoryId === "" || uuid.test(v.categoryId))
+    (v.categoryId === "" || uuid.test(v.categoryId)) &&
+    (v.limit === undefined || validPageGridLimit(v.limit))
   );
 }
