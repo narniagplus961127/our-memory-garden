@@ -788,9 +788,20 @@ button.primary {
 }
 .garden-section {
   padding: 32px 0;
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
+}
+.garden-section:has(> .garden-section-photo) {
+  position: relative;
+  isolation: isolate;
+}
+.garden-section-photo {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: inherit;
+  pointer-events: none;
 }
 .garden-section-content {
   display: flow-root;

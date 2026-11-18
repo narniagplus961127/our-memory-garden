@@ -16,7 +16,7 @@ import {
   categoryPath,
   type Category,
 } from "@/lib/organization";
-import { displayPhotoUrl } from "@/lib/media";
+import { thumbnailPhotoUrl } from "@/lib/media";
 import { PhotoPicker } from "./media-library";
 import { detailsOf, type usePageDetails } from "./use-page-details";
 export function PageDetails({
@@ -307,14 +307,14 @@ export function PageDetails({
                 {value.sharingCoverPhotoId && (
                   <img
                     className="details-cover"
-                    src={displayPhotoUrl(value.sharingCoverPhotoId)}
+                    src={thumbnailPhotoUrl(value.sharingCoverPhotoId)}
                     alt={label + " sharing cover"}
                   />
                 )}
                 {value.coverPhotoId ? (
                   <img
                     className="details-cover"
-                    src={displayPhotoUrl(value.coverPhotoId)}
+                    src={thumbnailPhotoUrl(value.coverPhotoId)}
                     alt={label + " cover"}
                   />
                 ) : (

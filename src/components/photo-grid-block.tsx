@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type CSSProperties } from "react";
-import { displayPhotoUrl } from "@/lib/media";
+import { responsivePhotoSources } from "@/lib/media";
 import type { GridPhoto, GridPhotoBatch } from "@/lib/photo-grid";
 import { PhotoViewer } from "./photo-viewer";
 import { PhotoImage } from "./photo-image";
@@ -130,11 +130,17 @@ export function PhotoGridBlock({
           const alt = photo.alt || photo.caption || "Photo " + (index + 1);
           const image = (
             <PhotoImage
-              src={displayPhotoUrl(photo.photoId)}
+              {...responsivePhotoSources(
+                photo.photoId,
+                width
+                  ? Math.ceil(scale) + "px"
+                  : "(max-width: 300px) 100vw, (max-width: 640px) 50vw, 320px",
+                photo.width,
+              )}
               alt={alt}
               width={photo.width}
               height={photo.height}
-              loading={index < 4 ? "eager" : "lazy"}
+              loading="lazy"
             />
           );
           return (

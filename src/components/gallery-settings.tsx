@@ -4,7 +4,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { useId, useRef, useState } from "react";
 import { PhotoLibraryDialog } from "./media-library";
-import { displayPhotoUrl } from "@/lib/media";
+import { thumbnailPhotoUrl } from "@/lib/media";
 import type { GalleryPhoto } from "./photo-gallery";
 export function GallerySettings({
   value = [],
@@ -28,7 +28,7 @@ export function GallerySettings({
         {value.map((photo, index) => (
           <li key={index}>
             <img
-              src={displayPhotoUrl(photo.photoId)}
+              src={thumbnailPhotoUrl(photo.photoId)}
               alt={`Photo ${index + 1}`}
             />
             <Label htmlFor={`${fieldId}-${index}`}>

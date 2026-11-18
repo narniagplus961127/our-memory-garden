@@ -1,9 +1,11 @@
 import postgres from "postgres";
 import { S3Client, DeleteObjectCommand } from "@aws-sdk/client-s3";
+import { photoVariantWidths } from "../src/lib/media.ts";
+import { photoVariantKey } from "../src/lib/server/photo-variants.ts";
 const args = process.argv.slice(2);
 if (args.some((arg) => arg !== "--apply"))
   throw new Error(
-    "Use no arguments for dry-run, or --apply to remove eligible staging objects.",
+    "Use no arguments for dry-run, or --apply to remove eligible staging objects and incomplete thumbnails.",
   );
 const apply = args.includes("--apply");
 const connection = process.env.DATABASE_URL;
@@ -25,13 +27,23 @@ const stagingPattern =
 try {
   const result = await sql.begin(async (transaction) => {
     const rows =
-      await transaction`select id,staging_key from media_photos where status='pending' and expires_at<now()-interval '1 hour' and staging_cleaned_at is null order by expires_at,id limit 100 for update skip locked`;
+      await transaction`select id,staging_key,display_key from media_photos where status='pending' and expires_at<now()-interval '1 hour' and staging_cleaned_at is null order by expires_at,id limit 100 for update skip locked`;
     // Validate the complete batch before deleting anything. Keys never come from CLI input.
-    if (rows.some((row) => !stagingPattern.test(row.staging_key)))
+    if (
+      rows.some(
+        (row) =>
+          !stagingPattern.test(row.staging_key) ||
+          !row.display_key.startsWith(row.id + "/"),
+      )
+    )
       throw new Error("Unexpected staging key; nothing was removed.");
     if (apply) {
       if (!process.env.AWS_ENDPOINT_URL_S3)
         throw new Error("AWS_ENDPOINT_URL_S3 is required for --apply.");
+      const displayBucket =
+        process.env.MEDIA_DISPLAY_BUCKET ||
+        process.env.GARDEN_DISPLAY_BUCKET ||
+        "garden-display";
       for (const row of rows) {
         await storage.send(
           new DeleteObjectCommand({
@@ -42,6 +54,14 @@ try {
             Key: row.staging_key,
           }),
         );
+        for (const width of photoVariantWidths) {
+          await storage.send(
+            new DeleteObjectCommand({
+              Bucket: displayBucket,
+              Key: photoVariantKey(row.display_key, width),
+            }),
+          );
+        }
         await transaction`update media_photos set staging_cleaned_at=now() where id=${row.id} and status='pending'`;
       }
     }

@@ -502,7 +502,7 @@ test("page details autosave a selected category, date and cover photo", async ({
   ).toContainText(category);
   await expect(
     page.getByRole("img", { name: "Selected photo", exact: true }),
-  ).toHaveAttribute("src", "/api/media/" + upload.id + "/display");
+  ).toHaveAttribute("src", "/api/media/" + upload.id + "/thumb-320");
   await page
     .getByLabel("Page title", { exact: true })
     .fill("Independent title after details");

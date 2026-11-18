@@ -90,8 +90,8 @@ test("add a Photo grid, select photos, reorder and open the website viewer", asy
   );
   const photoIds: string[] = [];
   for (const [index, [width, height]] of [
-    [80, 120],
-    [150, 70],
+    [1600, 2400],
+    [2250, 1050],
     [90, 90],
   ].entries()) {
     const bytes = await sharp({
@@ -198,6 +198,7 @@ test("add a Photo grid, select photos, reorder and open the website viewer", asy
   await expect(rows).toHaveCount(3);
   await expect(rows.first().locator(".photo-grid-grip svg")).toHaveCount(0);
   const tile = rows.first();
+  await expect(tile.locator("img")).toHaveAttribute("src", /\/thumb-320$/);
   const thumbnail = (await tile
     .getByRole("button", { name: "Drag " + names[0] })
     .boundingBox())!;
@@ -271,6 +272,10 @@ test("add a Photo grid, select photos, reorder and open the website viewer", asy
   const insets = isMobile ? [28, 28] : [64, 64];
   await expect.poll(() => sectionInsets(grid)).toEqual(insets);
   const firstTile = grid.locator(".photo-grid-tile").first();
+  await expect(firstTile.locator("img")).toHaveAttribute(
+    "srcset",
+    /\/thumb-320 320w/,
+  );
   const normalWidth = (await grid.boundingBox())!.width;
   await selectBlock(page, "Select Section 1");
   await page
@@ -354,6 +359,15 @@ test("add a Photo grid, select photos, reorder and open the website viewer", asy
       "0px",
     );
     await expect.poll(() => sectionInsets(publicGrid)).toEqual(insets);
+    await expect
+      .poll(() =>
+        open
+          .locator("img")
+          .evaluate((image: HTMLImageElement) =>
+            image.complete && image.naturalWidth > 0 ? image.currentSrc : "",
+          ),
+      )
+      .toMatch(/\/thumb-(320|640|1280)$/);
     const landscape = await open.locator("img").boundingBox();
     const portrait = await website
       .getByRole("button", { name: "Open Photo 2", exact: true })
@@ -364,6 +378,7 @@ test("add a Photo grid, select photos, reorder and open the website viewer", asy
     await open.click();
     const viewer = website.getByRole("dialog", { name: "Photo grid viewer" });
     await expect(viewer.getByText("A long afternoon")).toBeVisible();
+    await expect(viewer.locator("img")).toHaveAttribute("src", /\/display$/);
     const dialogBox = (await viewer.boundingBox())!;
     expect(Math.round(dialogBox.x)).toBe(0);
     expect(Math.round(dialogBox.y)).toBe(0);
@@ -707,7 +722,7 @@ test("Photo Grid can select more than 100 photos in the library at once", async 
       });
     },
   );
-  await page.route("**/api/media/*/display", (route) =>
+  await page.route("**/api/media/*/thumb-*", (route) =>
     route.fulfill({ status: 404 }),
   );
   await page.goto("/admin/pages/" + garden.id);

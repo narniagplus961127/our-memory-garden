@@ -10,7 +10,12 @@ import type { Photo, PhotoUsage } from "../media";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { database } from "./db";
 import { RequestError } from "./http";
-import { MAX_PHOTO_BYTES } from "../media";
+import {
+  MAX_PHOTO_BYTES,
+  photoVariantWidths,
+  type PhotoVariantWidth,
+} from "../media";
+import { photoVariantKey, writePhotoVariants } from "./photo-variants";
 import type { Administrator } from "./pages";
 export const originalsBucket = () =>
   process.env.MEDIA_ORIGINALS_BUCKET ||
@@ -230,7 +235,15 @@ export async function completePhoto(id: string): Promise<Photo> {
         CacheControl: "private, no-store",
       }),
     );
-    await sql`update media_photos set status='ready',original_bytes=${bytes.length},display_bytes=${display.data.length},width=${display.info.width},height=${display.info.height},original_type=${"image/" + format} where id=${id}`;
+    await writePhotoVariants(
+      storage(),
+      displayBucket(),
+      photo.display_key,
+      display.data,
+      display.info.width,
+      photoVariantWidths,
+    );
+    await sql`update media_photos set status='ready',thumbnails_ready=true,original_bytes=${bytes.length},display_bytes=${display.data.length},width=${display.info.width},height=${display.info.height},original_type=${"image/" + format} where id=${id}`;
   });
   // A replay can only change the disposable staging key, never these server-written keys.
   const pending =
@@ -247,7 +260,7 @@ export async function completePhoto(id: string): Promise<Photo> {
 }
 export async function photoResponse(
   id: string,
-  kind: "display" | "original",
+  kind: "display" | "original" | PhotoVariantWidth,
   admin: Administrator | null,
   ifNoneMatch: string | null,
 ): Promise<Response> {
@@ -259,11 +272,13 @@ export async function photoResponse(
       original_key: string;
       display_key: string;
       original_type: string;
+      width: number;
+      thumbnails_ready: boolean;
       publicly_accessible: boolean;
     }[]
   >`
-    select p.id, p.original_key, p.display_key, p.original_type,
-      case when ${kind === "display"} then exists (
+    select p.id, p.original_key, p.display_key, p.original_type, p.width, p.thumbnails_ready,
+      case when ${kind !== "original"} then exists (
         select 1 from garden_media_usages u
         where u.photo_id=p.id and u.visibility='public' and not u.deleted and not u.history
       ) else false end as publicly_accessible
@@ -271,6 +286,10 @@ export async function photoResponse(
   if (!photo || (!admin && !photo.publicly_accessible))
     throw new RequestError(404, "Photo not found.");
 
+  const variantWidth =
+    typeof kind === "number" && photo.thumbnails_ready && photo.width > kind
+      ? kind
+      : null;
   const headers = new Headers({
     "Content-Type": kind === "original" ? photo.original_type : "image/webp",
     "Cache-Control": "private, no-store",
@@ -280,7 +299,7 @@ export async function photoResponse(
   if (photo.publicly_accessible) {
     // Display bytes are immutable for a ready photo. Check live visibility
     // before validating the browser copy so making a page private still works.
-    const etag = `"garden-display-v1-${photo.id}"`;
+    const etag = `"garden-display-v1-${photo.id}${variantWidth ? "-w" + variantWidth : ""}"`;
     headers.set("ETag", etag);
     headers.set("Cache-Control", "private, no-cache");
     if (
@@ -299,10 +318,17 @@ export async function photoResponse(
   const object = await storage().send(
     new GetObjectCommand({
       Bucket: kind === "original" ? originalsBucket() : displayBucket(),
-      Key: kind === "original" ? photo.original_key : photo.display_key,
+      Key:
+        kind === "original"
+          ? photo.original_key
+          : variantWidth
+            ? photoVariantKey(photo.display_key, variantWidth)
+            : photo.display_key,
     }),
   );
   if (!object.Body) throw new RequestError(404, "Photo not found.");
+  if (object.ContentLength !== undefined)
+    headers.set("Content-Length", String(object.ContentLength));
   return new Response(object.Body.transformToWebStream(), { headers });
 }
 import type { PageData } from "../pages";
@@ -344,6 +370,12 @@ export async function deletePhoto(id: string) {
     for (const [Bucket, Key] of [
       [originalsBucket(), photo.original_key],
       [displayBucket(), photo.display_key],
+      ...photoVariantWidths
+        .filter((width) => width < photo.width)
+        .map((width) => [
+          displayBucket(),
+          photoVariantKey(photo.display_key, width),
+        ]),
       [originalsBucket(), photo.staging_key],
     ]) {
       await storage().send(new DeleteObjectCommand({ Bucket, Key }));

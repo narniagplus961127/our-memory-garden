@@ -155,6 +155,29 @@ test("uploaded photos preserve protected originals and publish only stripped opt
   assert.equal(meta.xmp, undefined);
   assert.equal(meta.icc, undefined);
   assert.ok(optimized.length < bytes.length);
+  const photoPath = "/api/media/" + photo.id;
+  assert.equal((await call(photoPath + "/thumb-320")).status, 404);
+  assert.equal(
+    (await call(photoPath + "/thumb-321", "GET", undefined, cookie)).status,
+    404,
+  );
+  for (const width of [320, 640, 1280]) {
+    const response = await call(
+      photoPath + "/thumb-" + width,
+      "GET",
+      undefined,
+      cookie,
+    );
+    assert.equal(response.status, 200);
+    assert.match(response.headers.get("cache-control"), /no-store/);
+    const thumbnail = Buffer.from(await response.arrayBuffer());
+    const dimensions = await sharp(thumbnail).metadata();
+    assert.equal(dimensions.format, "webp");
+    assert.equal(dimensions.width, width);
+    assert.equal(dimensions.height, width / 2);
+    assert.equal(dimensions.exif, undefined);
+    assert.ok(thumbnail.length < optimized.length);
+  }
   assert.equal((await call("/api/media", "GET", undefined, other)).status, 200);
   // A replay of the browser-writable staging URL cannot replace a completed original.
   await fetch(upload.uploadUrl, {
@@ -185,7 +208,7 @@ test("uploaded photos preserve protected originals and publish only stripped opt
 test("nested shared photos lose anonymous access immediately after the final public usage ends", async () => {
   const sharp = (await import("sharp")).default;
   const bytes = await sharp({
-    create: { width: 40, height: 40, channels: 3, background: "#aabbcc" },
+    create: { width: 700, height: 400, channels: 3, background: "#aabbcc" },
   })
     .png()
     .toBuffer();
@@ -267,6 +290,16 @@ test("nested shared photos lose anonymous access immediately after the final pub
   assert.equal(display.headers.get("cache-control"), "private, no-cache");
   const etag = display.headers.get("etag");
   assert.ok(etag);
+  const thumbnail = await call(photoPath + "/thumb-320");
+  assert.equal(thumbnail.status, 200);
+  assert.equal(thumbnail.headers.get("cache-control"), "private, no-cache");
+  const thumbTag = thumbnail.headers.get("etag");
+  assert.ok(thumbTag);
+  assert.notEqual(thumbTag, etag);
+  assert.ok(
+    (await thumbnail.arrayBuffer()).byteLength <
+      (await display.arrayBuffer()).byteLength,
+  );
   const revalidate = (tag, path = "/display") =>
     fetch(base + photoPath + path, { headers: { "If-None-Match": tag } });
   const unchanged = await revalidate('"different", W/' + etag);
@@ -274,6 +307,8 @@ test("nested shared photos lose anonymous access immediately after the final pub
   assert.equal(unchanged.headers.get("etag"), etag);
   assert.equal((await unchanged.arrayBuffer()).byteLength, 0);
   assert.equal((await revalidate('"different"')).status, 200);
+  assert.equal((await revalidate(thumbTag, "/thumb-320")).status, 304);
+  assert.equal((await revalidate(thumbTag, "/thumb-640")).status, 200);
   let details = await (await call(photoPath, "GET", undefined, cookie)).json();
   assert.equal(details.publiclyAccessible, true);
   assert.equal(details.usages.length, 2);
@@ -282,6 +317,8 @@ test("nested shared photos lose anonymous access immediately after the final pub
   assert.equal((await call(photoPath + "/display")).status, 200);
   first = await update(first, "private");
   assert.equal((await revalidate(etag)).status, 404);
+  assert.equal((await revalidate(thumbTag, "/thumb-320")).status, 404);
+  assert.equal((await revalidate("*", "/thumb-1280")).status, 404);
   assert.equal((await revalidate("*")).status, 404);
   assert.equal((await revalidate(etag, "/original")).status, 404);
   assert.equal(
