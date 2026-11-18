@@ -7,7 +7,7 @@ import { Input } from "./ui/input";
 import { PhotoPicker } from "./media-library";
 import { PageGrid, PageGridSettings } from "./page-grid";
 import type { GridSelection, PageCard } from "@/lib/organization";
-import { displayPhotoUrl } from "@/lib/media";
+import { responsivePhotoSources } from "@/lib/media";
 import { DestinationPicker } from "./destination-picker";
 import { ButtonDestination } from "./button-destination";
 import { ButtonRadiusControl } from "./button-radius";
@@ -979,7 +979,8 @@ export const gardenConfig: Config<
             {photoId ? (
               <PhotoImage
                 className={"garden-photo garden-fit-" + (fit ?? "cover")}
-                src={displayPhotoUrl(photoId)}
+                {...responsivePhotoSources(photoId, "100vw")}
+                loading="lazy"
                 alt={alt}
               />
             ) : (
@@ -1299,9 +1300,6 @@ export const gardenConfig: Config<
               ...(width === "full"
                 ? { paddingLeft: 0, paddingRight: 0, "--gutter": "0px" }
                 : {}),
-              backgroundImage: backgroundImage?.photoId
-                ? `url("${displayPhotoUrl(backgroundImage.photoId)}")`
-                : undefined,
               border: borderWidth
                 ? `${borderWidth}px solid ${borderColor || "#304337"}`
                 : undefined,
@@ -1314,6 +1312,14 @@ export const gardenConfig: Config<
             } as CSSProperties
           }
         >
+          {backgroundImage?.photoId && (
+            <img
+              className="garden-section-photo"
+              {...responsivePhotoSources(backgroundImage.photoId, "100vw")}
+              loading="lazy"
+              alt=""
+            />
+          )}
           {/* Slot callbacks change with their content; invoking them keeps child editors mounted. */}
           <div
             className={

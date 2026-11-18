@@ -7,7 +7,12 @@ import { Input } from "@/components/ui/input";
 import { useEffect, useRef, useState, useId, type ComponentProps } from "react";
 import { Tabs } from "radix-ui";
 import Link from "next/link";
-import { displayPhotoUrl, MAX_PHOTO_BYTES, type Photo } from "@/lib/media";
+import {
+  responsivePhotoSources,
+  thumbnailPhotoUrl,
+  MAX_PHOTO_BYTES,
+  type Photo,
+} from "@/lib/media";
 import { photoGridBatchSize, type GridPickerPhoto } from "@/lib/photo-grid";
 type Upload = {
   id: string;
@@ -133,7 +138,7 @@ export function PhotoDetails({
             {!photo.deletionPending && (
               <img
                 className="photo-detail-preview"
-                src={displayPhotoUrl(photo.id)}
+                src={thumbnailPhotoUrl(photo.id, 640)}
                 alt={photo.name}
               />
             )}
@@ -593,7 +598,7 @@ export function MediaLibrary({
                 onClick={(event) => choosePhoto(photo.photoId, event.shiftKey)}
               >
                 <img
-                  src={displayPhotoUrl(photo.photoId)}
+                  src={thumbnailPhotoUrl(photo.photoId)}
                   alt=""
                   loading="lazy"
                 />
@@ -613,7 +618,12 @@ export function MediaLibrary({
                   </div>
                 ) : (
                   <img
-                    src={displayPhotoUrl(photo.id)}
+                    {...responsivePhotoSources(
+                      photo.id,
+                      "(max-width: 600px) 50vw, 260px",
+                      photo.width,
+                      640,
+                    )}
                     alt={photo.name}
                     loading="lazy"
                   />
@@ -728,7 +738,7 @@ export function PhotoPicker({
       {!hideLabel && <span className="field-label">{label}</span>}
       {value && (
         <img
-          src={displayPhotoUrl(value)}
+          src={thumbnailPhotoUrl(value)}
           alt={"Selected " + label.toLowerCase()}
         />
       )}

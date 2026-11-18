@@ -1,6 +1,6 @@
 "use client";
 import { useRef, useState } from "react";
-import { displayPhotoUrl } from "@/lib/media";
+import { displayPhotoUrl, responsivePhotoSources } from "@/lib/media";
 import { Modal } from "./modal";
 import { Button } from "./ui/button";
 import { PhotoImage } from "./photo-image";
@@ -34,7 +34,10 @@ export function PhotoGallery({ photos }: { photos: GalleryPhoto[] }) {
               }}
             >
               <PhotoImage
-                src={displayPhotoUrl(item.photoId)}
+                {...responsivePhotoSources(
+                  item.photoId,
+                  "(max-width: 670px) 100vw, 340px",
+                )}
                 alt={item.caption || `Gallery photo ${i + 1}`}
                 loading="lazy"
               />

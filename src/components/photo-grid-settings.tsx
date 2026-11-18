@@ -21,7 +21,7 @@ import {
   type PhotoGridRef,
 } from "@/lib/photo-grid";
 import type { GardenPage } from "@/lib/pages";
-import { displayPhotoUrl } from "@/lib/media";
+import { thumbnailPhotoUrl } from "@/lib/media";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
@@ -329,7 +329,7 @@ function GridPhotoList({
                 {...sorter.handleProps(item)}
               >
                 <img
-                  src={displayPhotoUrl(photo.photoId)}
+                  src={thumbnailPhotoUrl(photo.photoId)}
                   alt=""
                   loading="lazy"
                   width={96}

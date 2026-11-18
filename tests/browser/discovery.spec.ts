@@ -88,7 +88,7 @@ test("sharing controls autosave, recover offline edits, and disable public disco
       name: "Selected sharing cover photo",
       exact: true,
     }),
-  ).toHaveAttribute("src", "/api/media/" + upload.id + "/display");
+  ).toHaveAttribute("src", "/api/media/" + upload.id + "/thumb-320");
   await page
     .getByLabel("Sharing title", { exact: true })
     .fill("Our quiet evening");

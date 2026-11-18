@@ -1,5 +1,5 @@
 import type { PageCard } from "@/lib/organization";
-import { displayPhotoUrl } from "@/lib/media";
+import { responsivePhotoSources } from "@/lib/media";
 
 export function PageCards({
   cards,
@@ -18,7 +18,10 @@ export function PageCards({
           <a href={"/p/" + p.id}>
             {p.cover_photo_id ? (
               <img
-                src={displayPhotoUrl(p.cover_photo_id)}
+                {...responsivePhotoSources(
+                  p.cover_photo_id,
+                  "(max-width: 670px) 100vw, 340px",
+                )}
                 alt=""
                 loading="lazy"
               />

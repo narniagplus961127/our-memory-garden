@@ -1,3 +1,4 @@
+import { photoThumbnailKind, photoVariantWidths } from "@/lib/media";
 import { currentAdministrator } from "@/lib/server/auth";
 import { errorResponse, RequestError } from "@/lib/server/http";
 import { photoResponse } from "@/lib/server/media";
@@ -8,11 +9,17 @@ export async function GET(
 ) {
   try {
     const { id, kind } = await params;
-    if (kind !== "display" && kind !== "original")
+    const imageKind =
+      kind === "display" || kind === "original"
+        ? kind
+        : photoVariantWidths.find(
+            (width) => kind === photoThumbnailKind(width),
+          );
+    if (imageKind === undefined)
       throw new RequestError(404, "Photo not found.");
     return await photoResponse(
       id,
-      kind,
+      imageKind,
       await currentAdministrator(request.headers),
       request.headers.get("If-None-Match"),
     );

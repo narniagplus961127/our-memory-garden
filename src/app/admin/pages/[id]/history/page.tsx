@@ -13,7 +13,7 @@ import {
 import { GardenContent } from "@/components/garden-content";
 import { RequestError } from "@/lib/server/http";
 import { categories } from "@/lib/server/organization";
-import { displayPhotoUrl } from "@/lib/media";
+import { thumbnailPhotoUrl } from "@/lib/media";
 import { PhotoImage } from "@/components/photo-image";
 import { categoryLabels, pageCategoryIds } from "@/lib/organization";
 type Props = {
@@ -132,7 +132,7 @@ export default async function History({ params, searchParams }: Props) {
                 {selected.sharing_cover_photo_id && (
                   <figure className="history-cover">
                     <PhotoImage
-                      src={displayPhotoUrl(selected.sharing_cover_photo_id)}
+                      src={thumbnailPhotoUrl(selected.sharing_cover_photo_id)}
                       alt="Saved sharing cover"
                     />
                     <figcaption>Saved sharing cover photo</figcaption>
@@ -141,7 +141,7 @@ export default async function History({ params, searchParams }: Props) {
                 {selected.cover_photo_id && (
                   <figure className="history-cover">
                     <PhotoImage
-                      src={displayPhotoUrl(selected.cover_photo_id)}
+                      src={thumbnailPhotoUrl(selected.cover_photo_id)}
                       alt="Saved page cover"
                     />
                     <figcaption>Saved cover photo</figcaption>
