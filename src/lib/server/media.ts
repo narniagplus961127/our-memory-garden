@@ -12,7 +12,10 @@ import { database } from "./db";
 import { RequestError } from "./http";
 import {
   MAX_PHOTO_BYTES,
+  photoLibraryPageSize,
   photoVariantWidths,
+  type PhotoLibraryPage,
+  type PhotoListItem,
   type PhotoVariantWidth,
 } from "../media";
 import { photoVariantKey, writePhotoVariants } from "./photo-variants";
@@ -118,6 +121,71 @@ export async function listPhotos(): Promise<Photo[]> {
       ),
     };
   });
+}
+function readLibraryCursor(cursor: string | null) {
+  if (cursor === null) return null;
+  const [timestamp, id, extra] = cursor.split("/");
+  const date = new Date(timestamp);
+  if (
+    extra !== undefined ||
+    !/^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\.[0-9]{6}Z$/.test(
+      timestamp,
+    ) ||
+    !validId.test(id ?? "") ||
+    !Number.isFinite(date.getTime()) ||
+    date.toISOString().slice(0, 19) !== timestamp.slice(0, 19)
+  )
+    throw new RequestError(400, "Invalid photo page.");
+  return { timestamp, id };
+}
+
+export async function listPhotoLibraryPage(
+  search: string,
+  after: string | null,
+): Promise<PhotoLibraryPage> {
+  const cursor = readLibraryCursor(after);
+  const sql = database();
+  const rows = await sql<(PhotoListItem & { cursorTime: string })[]>`
+    with batch as materialized (
+      select p.id, p.name, p.width, p.status, p.created_at
+      from media_photos p
+      where p.status in ('ready','deleting')
+        ${cursor ? sql`and (p.created_at, p.id) < (${cursor.timestamp}::timestamptz, ${cursor.id}::uuid)` : sql``}
+        ${
+          search
+            ? sql`and (
+          strpos(lower(p.name), lower(${search})) > 0 or p.id in (
+            select photo_id from garden_media_usages
+            where not history and strpos(lower(title), lower(${search})) > 0
+          )
+        )`
+            : sql``
+        }
+      order by p.created_at desc, p.id desc
+      limit ${photoLibraryPageSize + 1}
+    ), usages as (
+      select photo_id, count(distinct page_id)::int as page_count,
+        bool_or(visibility='public' and not deleted) as is_public
+      from garden_media_usages
+      where not history and photo_id in (select id from batch)
+      group by photo_id
+    )
+    select b.id, b.name, b.width, b.status='deleting' as "deletionPending",
+      coalesce(u.page_count, 0) as "usageCount",
+      coalesce(u.is_public, false) as "publiclyAccessible",
+      to_char(b.created_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"') as "cursorTime"
+    from batch b left join usages u on u.photo_id=b.id
+    order by b.created_at desc, b.id desc
+  `;
+  const page = rows.slice(0, photoLibraryPageSize);
+  const last = page.at(-1);
+  return {
+    photos: page.map(({ cursorTime, ...photo }) => photo),
+    nextCursor:
+      rows.length > photoLibraryPageSize && last
+        ? last.cursorTime + "/" + last.id
+        : null,
+  };
 }
 export async function listGridPickerPhotos(
   query: string,

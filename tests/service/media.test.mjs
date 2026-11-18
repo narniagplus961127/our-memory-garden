@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import postgres from "postgres";
 const base = process.env.TEST_BASE_URL ?? "http://127.0.0.1:3005";
 export async function call(path, method = "GET", data, cookie, origin = base) {
   return fetch(base + path, {
@@ -312,6 +313,20 @@ test("nested shared photos lose anonymous access immediately after the final pub
   let details = await (await call(photoPath, "GET", undefined, cookie)).json();
   assert.equal(details.publiclyAccessible, true);
   assert.equal(details.usages.length, 2);
+  const results = await call(
+    "/api/media?view=library&search=SECOND%20SHARED%20PAGE",
+    "GET",
+    undefined,
+    cookie,
+  );
+  assert.equal(results.status, 200);
+  const { photos } = await results.json();
+  const item = photos.find((photo) => photo.id === upload.id);
+  assert.ok(item);
+  assert.equal(item.usageCount, 2);
+  assert.equal(item.publiclyAccessible, true);
+  assert.equal("usages" in item, false);
+  assert.equal("original_bytes" in item, false);
   first = await update(first, "public");
   second = await update(second, "private");
   assert.equal((await call(photoPath + "/display")).status, 200);
@@ -503,5 +518,91 @@ test("page saving rejects missing and still-pending photo references inside nest
       ).version,
       page.version,
     );
+  }
+});
+
+test("the Media Library reads stable pages across uploads and deletions", async (t) => {
+  const connection = process.env.DATABASE_URL;
+  if (
+    process.env.AUTH_MODE !== "local" ||
+    !connection ||
+    !["127.0.0.1", "localhost"].includes(new URL(connection).hostname)
+  ) {
+    t.skip("Needs the loopback Media Library fixture.");
+    return;
+  }
+  const sql = postgres(connection, { max: 1 });
+  const prefix = "library-page-" + crypto.randomUUID();
+  const cookie = await login();
+  const batch = (params) =>
+    call(
+      "/api/media?" + new URLSearchParams({ view: "library", ...params }),
+      "GET",
+      undefined,
+      cookie,
+    );
+
+  try {
+    const [admin] =
+      await sql`select user_id from garden_administrators where lower(email)=${process.env.TEST_ADMIN_EMAIL.toLowerCase()}`;
+    const ready = Array.from({ length: 27 }, (_, index) => {
+      const id = crypto.randomUUID();
+      return {
+        id,
+        name: prefix + "-" + index,
+        status: "ready",
+        expected_bytes: 100,
+        width: 320,
+        height: 240,
+        staging_key: "staging/" + id,
+        display_key: id + "/display.webp",
+        original_key: id + "/original",
+        created_by: admin.user_id,
+        created_at: "2026-01-20T02:03:04.123456Z",
+      };
+    });
+    await sql`insert into media_photos ${sql(ready)}`;
+    const expected = ready
+      .map((photo) => photo.id)
+      .sort()
+      .reverse();
+    const first = await batch({ search: prefix.toUpperCase() });
+    assert.equal(first.status, 200);
+    assert.equal(first.headers.get("cache-control"), "private, no-store");
+    const page = await first.json();
+    assert.deepEqual(
+      page.photos.map((photo) => photo.id),
+      expected.slice(0, 24),
+    );
+    assert.ok(page.nextCursor);
+
+    const anchor = expected[23];
+    await sql`delete from media_photos where id=${anchor}`;
+    const newId = crypto.randomUUID();
+    await sql`insert into media_photos ${sql({
+      ...ready[0],
+      id: newId,
+      name: prefix + "-new",
+      staging_key: "staging/" + newId,
+      display_key: newId + "/display.webp",
+      original_key: newId + "/original",
+      created_at: "2026-01-20T02:03:04.123999Z",
+    })}`;
+    const next = await batch({ search: prefix, after: page.nextCursor });
+    assert.equal(next.status, 200);
+    const last = await next.json();
+    assert.deepEqual(
+      last.photos.map((photo) => photo.id),
+      expected.slice(24),
+    );
+    assert.equal(last.nextCursor, null);
+    assert.equal((await batch({ after: "invalid-cursor" })).status, 400);
+    assert.equal(
+      (await batch({ after: "2026-02-30T02:03:04.123456Z/" + anchor })).status,
+      400,
+    );
+  } finally {
+    await sql`delete from media_photos where starts_with(name,${prefix})`;
+    await sql.end();
   }
 });

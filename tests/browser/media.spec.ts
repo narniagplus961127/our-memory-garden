@@ -369,3 +369,104 @@ test("upload with per-file feedback, inspect protected details and reuse a photo
   });
   expect(errors).toEqual([]);
 });
+
+test("Media Library and single-photo picker load the next page on demand", async ({
+  page,
+}) => {
+  const headers = { Origin: env.NEXT_PUBLIC_APP_URL };
+  expect(
+    (
+      await page.request.post("/api/auth/sign-in/email", {
+        headers,
+        data: {
+          email: env.TEST_ADMIN_EMAIL,
+          password: env.TEST_ADMIN_PASSWORD,
+        },
+      })
+    ).ok(),
+  ).toBeTruthy();
+  const photos = Array.from({ length: 25 }, (_, index) => ({
+    id: crypto.randomUUID(),
+    name: "Library fixture " + (index + 1),
+    width: 320,
+    deletionPending: false,
+    publiclyAccessible: false,
+    usageCount: 0,
+  }));
+  const requests: (string | null)[] = [];
+  const thumbs = new Set(photos.map((photo) => photo.id));
+  const thumbnail = await sharp({
+    create: { width: 24, height: 18, channels: 3, background: "#769270" },
+  })
+    .webp()
+    .toBuffer();
+  await page.route("**/api/media/*/thumb-*", (route) => {
+    const id = new URL(route.request().url()).pathname.split("/")[3];
+    if (!thumbs.has(id)) return route.fallback();
+    return route.fulfill({ contentType: "image/webp", body: thumbnail });
+  });
+  await page.route(
+    (url) => url.pathname === "/api/media",
+    (route) => {
+      const params = new URL(route.request().url()).searchParams;
+      expect(params.get("view")).toBe("library");
+      const after = params.get("after");
+      requests.push(after);
+      const search = params.get("search");
+      return route.fulfill({
+        json: search
+          ? {
+              photos: photos.filter((photo) => photo.name === search),
+              nextCursor: null,
+            }
+          : after
+            ? { photos: photos.slice(24), nextCursor: null }
+            : { photos: photos.slice(0, 24), nextCursor: "next-library-page" },
+      });
+    },
+  );
+  await page.goto("/admin/media");
+  const more = page.getByRole("button", { name: "Show more library photos" });
+  await expect(page.locator(".media-card")).toHaveCount(24);
+  expect(requests).toEqual([null]);
+  await more.click();
+  await expect(page.locator(".media-card")).toHaveCount(25);
+  await expect(more).toHaveCount(0);
+  await page
+    .getByRole("searchbox", { name: "Find a photo" })
+    .fill(photos[24].name);
+  await expect(page.locator(".media-card")).toHaveCount(1);
+  await expect(page.locator(".media-card")).toContainText(photos[24].name);
+  const created = await page.request.post("/api/pages", {
+    headers,
+    data: { title: "Single picker pagination " + Date.now() },
+  });
+  expect(created.ok()).toBeTruthy();
+  await page.goto("/admin/pages/" + (await created.json()).id);
+  await page
+    .getByRole("button", { name: "Page settings", exact: true })
+    .click();
+  await page.getByRole("button", { name: "Choose photo", exact: true }).click();
+  const picker = page.getByRole("dialog", {
+    name: "Choose a photo",
+    exact: true,
+  });
+  await expect(picker.locator(".media-card")).toHaveCount(24);
+  await picker
+    .getByRole("button", { name: "Show more library photos" })
+    .click();
+  await expect(
+    picker.getByRole("button", {
+      name: "Use photo " + photos[24].name,
+      exact: true,
+    }),
+  ).toBeVisible();
+  await expect(picker.locator(".media-card")).toHaveCount(25);
+  expect(requests).toEqual([
+    null,
+    "next-library-page",
+    null,
+    null,
+    "next-library-page",
+  ]);
+});

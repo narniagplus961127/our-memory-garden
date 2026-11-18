@@ -12,6 +12,8 @@ import {
   thumbnailPhotoUrl,
   MAX_PHOTO_BYTES,
   type Photo,
+  type PhotoLibraryPage,
+  type PhotoListItem,
 } from "@/lib/media";
 import { photoGridBatchSize, type GridPickerPhoto } from "@/lib/photo-grid";
 type Upload = {
@@ -256,7 +258,7 @@ export function MediaLibrary({
     add: (ids: string[]) => void;
   };
 }) {
-  const [photos, setPhotos] = useState<Photo[]>([]),
+  const [photos, setPhotos] = useState<PhotoListItem[]>([]),
     [loading, setLoading] = useState(true),
     [error, setError] = useState(""),
     [query, setQuery] = useState(""),
@@ -266,6 +268,10 @@ export function MediaLibrary({
   const detailsTrigger = useRef<HTMLButtonElement | null>(null);
   const choosingMany = Boolean(multiple);
   const rangeAnchor = useRef<string | null>(null);
+  const [libraryRequest, setLibraryRequest] = useState<{
+    after: string | null;
+  }>({ after: null });
+  const [libraryNext, setLibraryNext] = useState<string | null>(null);
   const [pickerPhotos, setPickerPhotos] = useState<GridPickerPhoto[]>([]);
   const [pickerMore, setPickerMore] = useState(false);
   const [pickerPage, setPickerPage] = useState(0);
@@ -293,28 +299,48 @@ export function MediaLibrary({
   }
   useEffect(() => {
     if (choosingMany) return;
+    const { after } = libraryRequest;
     const controller = new AbortController();
-    fetch("/api/media", { cache: "no-store", signal: controller.signal })
-      .then(async (response) => {
-        const data = await response.json();
-        if (!response.ok) throw new Error(data.error);
-        // An upload can finish before this initial library request returns.
-        // Keep those newly available photos rather than replace them with an older snapshot.
-        setPhotos((current) => [
-          ...current.filter(
-            (photo) => !data.some((loaded: Photo) => loaded.id === photo.id),
-          ),
-          ...data,
-        ]);
-      })
-      .catch((error) => {
-        if (error.name !== "AbortError") setError(error.message);
-      })
-      .finally(() => {
-        if (!controller.signal.aborted) setLoading(false);
-      });
-    return () => controller.abort();
-  }, [choosingMany]);
+    setLoading(true);
+    setError("");
+    const params = new URLSearchParams({ view: "library" });
+    if (query.trim()) params.set("search", query.trim());
+    if (after) params.set("after", after);
+    const timer = setTimeout(
+      () => {
+        fetch("/api/media?" + params, {
+          cache: "no-store",
+          signal: controller.signal,
+        })
+          .then(async (response) => {
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.error);
+            if (controller.signal.aborted) return;
+            const { photos: received, nextCursor }: PhotoLibraryPage = data;
+            setPhotos((current) => {
+              if (!after) return received;
+              const loaded = new Set(current.map((photo) => photo.id));
+              return [
+                ...current,
+                ...received.filter((photo) => !loaded.has(photo.id)),
+              ];
+            });
+            setLibraryNext(nextCursor);
+          })
+          .catch((cause: Error) => {
+            if (!controller.signal.aborted) setError(cause.message);
+          })
+          .finally(() => {
+            if (!controller.signal.aborted) setLoading(false);
+          });
+      },
+      query && !after ? 150 : 0,
+    );
+    return () => {
+      clearTimeout(timer);
+      controller.abort();
+    };
+  }, [choosingMany, libraryRequest, query]);
   useEffect(() => {
     if (!choosingMany) return;
     const controller = new AbortController();
@@ -361,21 +387,21 @@ export function MediaLibrary({
       controller.abort();
     };
   }, [choosingMany, pickerPage, pickerRefresh, query]);
-  async function refresh() {
+  function refresh() {
+    setLoading(true);
     if (choosingMany) {
       rangeAnchor.current = null;
       setPickerPage(0);
       setPickerRefresh((current) => current + 1);
       return;
     }
-    setLoading(true);
-    setError("");
-    try {
-      setPhotos(await jsonRequest("/api/media"));
-    } catch (error) {
-      setError((error as Error).message);
-    } finally {
-      setLoading(false);
+    setLibraryRequest({ after: null });
+  }
+  function retryLibrary() {
+    if (choosingMany) refresh();
+    else {
+      setLoading(true);
+      setLibraryRequest((current) => ({ after: current.after }));
     }
   }
   function update(id: string, change: Partial<Upload>) {
@@ -402,26 +428,28 @@ export function MediaLibrary({
         update(item.id, { progress }),
       );
       update(item.id, { state: "Processing", progress: undefined });
-      const photo: Photo = await jsonRequest(
-        "/api/media/" + started.id + "/complete",
-        {},
-      );
-      setPhotos((current) => [
-        photo,
-        ...current.filter((p) => p.id !== photo.id),
-      ]);
+      await jsonRequest("/api/media/" + started.id + "/complete", {});
       if (choosingMany) {
         setPickerPage(0);
         setPickerRefresh((current) => current + 1);
       }
       update(item.id, { state: "Ready" });
+      return true;
     } catch (error) {
       update(item.id, {
         state: "Error",
         error: (error as Error).message,
         progress: undefined,
       });
+      return false;
     }
+  }
+  async function uploadPhotos(items: Upload[]) {
+    let completed = false;
+    for (const item of items) {
+      if (await upload(item)) completed = true;
+    }
+    if (completed && !choosingMany) refresh();
   }
   async function details(id: string, trigger: HTMLButtonElement) {
     detailsTrigger.current = trigger;
@@ -432,11 +460,8 @@ export function MediaLibrary({
       setError((error as Error).message);
     }
   }
-  const filtered = photos.filter((photo) =>
-    (photo.name + " " + photo.usages.map((u) => u.title).join(" "))
-      .toLowerCase()
-      .includes(query.toLowerCase()),
-  );
+  const hasResults = multiple ? pickerPhotos.length > 0 : photos.length > 0;
+  const hasMore = multiple ? pickerMore : Boolean(libraryNext);
   return (
     <div
       className={
@@ -458,9 +483,7 @@ export function MediaLibrary({
             }));
             setUploads((current) => [...current, ...items]);
             event.target.value = "";
-            void (async () => {
-              for (const item of items) await upload(item);
-            })();
+            void uploadPhotos(items);
           }}
         />
         <p className="muted">
@@ -495,7 +518,7 @@ export function MediaLibrary({
                   <Button
                     className="secondary"
                     aria-label={"Retry " + item.file.name}
-                    onClick={() => void upload(item)}
+                    onClick={() => void uploadPhotos([item])}
                   >
                     Retry
                   </Button>
@@ -523,45 +546,50 @@ export function MediaLibrary({
             id={fieldId + "-search"}
             type="search"
             value={query}
-            maxLength={multiple ? 200 : undefined}
+            maxLength={200}
             onChange={(e) => {
               setQuery(e.target.value);
+              setLoading(true);
               if (multiple) {
                 rangeAnchor.current = null;
                 setPickerPage(0);
                 setPickerPhotos([]);
                 setPickerMore(false);
+              } else {
+                setLibraryRequest({ after: null });
+                setLibraryNext(null);
+                setPhotos([]);
               }
             }}
           />
         </div>
-        <Button
-          className="secondary"
-          disabled={loading}
-          onClick={() => void refresh()}
-        >
+        <Button className="secondary" disabled={loading} onClick={refresh}>
           Refresh library
         </Button>
       </div>
       {error && (
         <p role="alert" className="error">
           {error}{" "}
-          <Button className="secondary" onClick={() => void refresh()}>
+          <Button
+            className="secondary"
+            disabled={loading}
+            onClick={retryLibrary}
+          >
             Retry library
           </Button>
         </p>
       )}
       {loading && <p role="status">Loading photos…</p>}
-      {!loading && !(multiple ? pickerPhotos.length : filtered.length) && (
+      {!loading && !error && !hasResults && !hasMore && (
         <div className="empty-state">
           <h3>
-            {query || photos.length
-              ? "No matching photos"
-              : "Let a memory take root"}
+            {query.trim() ? "No matching photos" : "Let a memory take root"}
           </h3>
           <p className="muted">
-            {query || photos.length
-              ? "Try another photo name."
+            {query.trim()
+              ? multiple
+                ? "Try another photo name."
+                : "Try another photo name or page title."
               : "Upload your first photo to share it across your pages."}
           </p>
         </div>
@@ -610,7 +638,7 @@ export function MediaLibrary({
                 )}
               </Button>
             ))
-          : filtered.map((photo) => (
+          : photos.map((photo) => (
               <article className="media-card" key={photo.id}>
                 {photo.deletionPending ? (
                   <div className="media-cleanup-preview">
@@ -636,8 +664,8 @@ export function MediaLibrary({
                       : photo.publiclyAccessible
                         ? "Publicly accessible"
                         : "Private photo"}{" "}
-                    · {photo.usages.length}{" "}
-                    {photo.usages.length === 1 ? "page" : "pages"}
+                    · {photo.usageCount}{" "}
+                    {photo.usageCount === 1 ? "page" : "pages"}
                   </small>
                   <div className="actions">
                     {onSelect && !photo.deletionPending ? (
@@ -663,12 +691,16 @@ export function MediaLibrary({
               </article>
             ))}
       </div>
-      {multiple && pickerMore && (
+      {hasMore && (
         <Button
           type="button"
           variant="outline"
           disabled={loading}
-          onClick={() => setPickerPage((current) => current + 1)}
+          onClick={() => {
+            setLoading(true);
+            if (multiple) setPickerPage((current) => current + 1);
+            else setLibraryRequest({ after: libraryNext });
+          }}
         >
           Show more library photos
         </Button>
@@ -679,6 +711,7 @@ export function MediaLibrary({
           onClose={closeDetails}
           onDeleted={() => {
             setPhotos((current) => current.filter((p) => p.id !== detail.id));
+            if (loading) refresh();
             closeDetails();
           }}
         />
