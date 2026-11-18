@@ -17,6 +17,19 @@ export type Photo = {
   publiclyAccessible: boolean;
   usages: PhotoUsage[];
 };
+export type PhotoListItem = Pick<
+  Photo,
+  "id" | "name" | "width" | "publiclyAccessible"
+> & {
+  deletionPending: boolean;
+  usageCount: number;
+};
+export type PhotoLibraryPage = {
+  photos: PhotoListItem[];
+  nextCursor: string | null;
+};
+export const photoLibraryPageSize = 24;
+
 export const MAX_PHOTO_BYTES = 25 * 1024 * 1024;
 export const displayPhotoUrl = (id: string) =>
   "/api/media/" + encodeURIComponent(id) + "/display";
