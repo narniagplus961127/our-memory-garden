@@ -188,7 +188,7 @@ export function PhotoGridBlock({
         </p>
       )}
       {batch?.next != null && (
-        <div className="photo-grid-feedback">
+        <div className="photo-pagination">
           <Button
             type="button"
             variant="outline"

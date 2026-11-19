@@ -101,7 +101,7 @@ export function AdminPageCards({
   const [removal, setRemoval] = useState<PageCardData | null>(null);
   const returnFocus = useRef<HTMLElement | null>(null);
   const [query, setQuery] = useState("");
-  const [sortKey, setSortKey] = useState("manual");
+  const [sortKey, setSortKey] = useState(order ? "page-date-desc" : "manual");
   const controlsId = useId();
   const search = query.trim().toLowerCase();
   const option =

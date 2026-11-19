@@ -65,6 +65,11 @@ test("search and sort Pages without changing the saved drag order", async ({
   const sort = page.getByRole("combobox", { name: "Sort by" });
   const rows = page.locator(".admin-page-cards li strong");
   const grip = page.getByRole("button", { name: "Drag " + z, exact: true });
+  await expect(sort).toHaveValue("page-date-desc");
+  await search.fill(key);
+  await expect(rows).toHaveText([a, z, b]);
+  await search.clear();
+  await sort.selectOption("manual");
   await expect(grip).toBeVisible();
   const original = (await rows.allTextContents()).filter((title) =>
     title.startsWith(key),

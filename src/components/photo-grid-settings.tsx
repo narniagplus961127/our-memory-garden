@@ -377,14 +377,16 @@ function GridPhotoList({
         })}
       </ol>
       {batch?.next != null && (
-        <Button
-          type="button"
-          variant="outline"
-          disabled={busy || loading}
-          onClick={() => void loadMore()}
-        >
-          Show more photos
-        </Button>
+        <div className="photo-pagination">
+          <Button
+            type="button"
+            variant="outline"
+            disabled={busy || loading}
+            onClick={() => void loadMore()}
+          >
+            Show more photos
+          </Button>
+        </div>
       )}
       {library && (
         <PhotoLibraryDialog

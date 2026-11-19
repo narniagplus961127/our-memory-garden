@@ -2025,6 +2025,11 @@ button.primary {
   color: var(--garden-muted);
   text-align: center;
 }
+.photo-pagination {
+  display: flex;
+  justify-content: center;
+  padding-block: 20px;
+}
 .photo-grid-feedback {
   margin-block: 20px 0;
   text-align: center;
