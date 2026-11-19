@@ -692,18 +692,20 @@ export function MediaLibrary({
             ))}
       </div>
       {hasMore && (
-        <Button
-          type="button"
-          variant="outline"
-          disabled={loading}
-          onClick={() => {
-            setLoading(true);
-            if (multiple) setPickerPage((current) => current + 1);
-            else setLibraryRequest({ after: libraryNext });
-          }}
-        >
-          Show more library photos
-        </Button>
+        <div className="photo-pagination">
+          <Button
+            type="button"
+            variant="outline"
+            disabled={loading}
+            onClick={() => {
+              setLoading(true);
+              if (multiple) setPickerPage((current) => current + 1);
+              else setLibraryRequest({ after: libraryNext });
+            }}
+          >
+            Show more library photos
+          </Button>
+        </div>
       )}
       {detail && (
         <PhotoDetails

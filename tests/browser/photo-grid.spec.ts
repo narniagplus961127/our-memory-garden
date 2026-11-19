@@ -378,7 +378,21 @@ test("add a Photo grid, select photos, reorder and open the website viewer", asy
     await open.click();
     const viewer = website.getByRole("dialog", { name: "Photo grid viewer" });
     await expect(viewer.getByText("A long afternoon")).toBeVisible();
-    await expect(viewer.locator("img")).toHaveAttribute("src", /\/display$/);
+    await expect(viewer.locator("img")).toHaveAttribute("src", /\/thumb-640$/);
+    await expect(viewer.locator("img")).toHaveAttribute(
+      "srcset",
+      /\/thumb-1280 1280w/,
+    );
+    await expect
+      .poll(() =>
+        viewer
+          .locator("img")
+          .evaluate((image: HTMLImageElement) =>
+            image.complete && image.naturalWidth > 0 ? image.currentSrc : "",
+          ),
+      )
+      .toMatch(/\/thumb-(320|640|1280)$/);
+
     const dialogBox = (await viewer.boundingBox())!;
     expect(Math.round(dialogBox.x)).toBe(0);
     expect(Math.round(dialogBox.y)).toBe(0);
@@ -388,10 +402,13 @@ test("add a Photo grid, select photos, reorder and open the website viewer", asy
       path: info.outputPath("photo-grid-fullscreen.png"),
     });
     await viewer.getByRole("button", { name: "Zoom in" }).click();
+    await expect(viewer.locator("img")).toHaveAttribute("src", /\/display$/);
+    await expect(viewer.locator("img")).not.toHaveAttribute("srcset");
     await expect(viewer.getByRole("button", { name: "Reset zoom" })).toHaveText(
       "150%",
     );
     await viewer.getByRole("button", { name: "Reset zoom" }).click();
+    await expect(viewer.locator("img")).toHaveAttribute("src", /\/display$/);
     const next = viewer.getByRole("button", { name: "Next photo" });
     const pan = (await viewer.locator(".photo-lightbox-pan").boundingBox())!;
     const nextBox = (await next.boundingBox())!;
@@ -570,6 +587,10 @@ test("add a Photo grid, select photos, reorder and open the website viewer", asy
       exact: true,
     });
     await photo.click();
+    await expect(standaloneViewer.locator("img")).toHaveAttribute(
+      "src",
+      /\/thumb-640$/,
+    );
     await expect(
       standaloneViewer.getByRole("img", {
         name: "Portrait memory",
@@ -637,6 +658,10 @@ test("add a Photo grid, select photos, reorder and open the website viewer", asy
       standaloneViewer.getByRole("img", { name: "Last Swiper photo" }),
     ).toBeVisible();
     await expect(standaloneViewer.getByText("2 of 2")).toBeVisible();
+    await expect(standaloneViewer.locator("img")).toHaveAttribute(
+      "src",
+      /\/thumb-640$/,
+    );
     await expect(nextPhoto).toBeDisabled();
     await standaloneViewer
       .getByRole("button", { name: "Zoom in", exact: true })

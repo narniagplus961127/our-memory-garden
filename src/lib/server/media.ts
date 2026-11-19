@@ -364,12 +364,13 @@ export async function photoResponse(
     "X-Content-Type-Options": "nosniff",
     "Content-Security-Policy": "default-src 'none'; sandbox",
   });
-  if (photo.publicly_accessible) {
-    // Display bytes are immutable for a ready photo. Check live visibility
-    // before validating the browser copy so making a page private still works.
+  if (photo.publicly_accessible || typeof kind === "number") {
+    // Display bytes are immutable for a ready photo. Check live access
+    // before validating the browser copy, including administrator-only thumbnails.
     const etag = `"garden-display-v1-${photo.id}${variantWidth ? "-w" + variantWidth : ""}"`;
     headers.set("ETag", etag);
     headers.set("Cache-Control", "private, no-cache");
+    if (!photo.publicly_accessible) headers.set("Vary", "Cookie");
     if (
       ifNoneMatch?.split(",").some((entry) => {
         const tag = entry.trim();

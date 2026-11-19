@@ -1,8 +1,14 @@
 "use client";
 
-import { useRef, useState, type PointerEvent, type RefObject } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  type PointerEvent,
+  type RefObject,
+} from "react";
 import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut } from "lucide-react";
-import { displayPhotoUrl } from "@/lib/media";
+import { displayPhotoUrl, responsivePhotoSources } from "@/lib/media";
 import { Modal } from "./modal";
 import { PhotoImage } from "./photo-image";
 import { Button } from "./ui/button";
@@ -33,6 +39,44 @@ function ZoomablePhoto({
   const swipeStart = useRef<Point | null>(null);
   const imageSize = useRef<{ width: number; height: number }>(null);
   const [frame, setFrame] = useState(fitted);
+  const [viewport, setViewport] = useState({ width: 0, height: 0 });
+  const [dimensions, setDimensions] = useState<{
+    width: number;
+    height: number;
+  } | null>(null);
+  const [zoomRequested, setZoomRequested] = useState(false);
+
+  useEffect(() => {
+    const element = stage.current;
+    if (!element) return;
+    const measure = () =>
+      setViewport({
+        width: element.clientWidth,
+        height: element.clientHeight,
+      });
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, []);
+  useEffect(() => {
+    if (frame.zoom > 1) setZoomRequested(true);
+  }, [frame.zoom]);
+
+  const width = photo.width ?? dimensions?.width;
+  const height = photo.height ?? dimensions?.height;
+  const fittedWidth =
+    width && height
+      ? Math.min(viewport.width, (viewport.height * width) / height)
+      : viewport.width;
+  const imageSource =
+    frame.zoom > 1 || zoomRequested
+      ? { src: displayPhotoUrl(photo.photoId) }
+      : responsivePhotoSources(
+          photo.photoId,
+          Math.ceil(fittedWidth) + "px",
+          photo.width,
+        );
 
   function constrain(zoom: number, x: number, y: number) {
     zoom = Math.max(1, Math.min(maxZoom, zoom));
@@ -123,20 +167,28 @@ function ZoomablePhoto({
           )
         }
       >
-        <PhotoImage
-          src={displayPhotoUrl(photo.photoId)}
-          alt={alt}
-          draggable={false}
-          onLoad={(event) => {
-            imageSize.current = {
-              width: event.currentTarget.naturalWidth,
-              height: event.currentTarget.naturalHeight,
-            };
-          }}
-          style={{
-            transform: `translate(${frame.x}px, ${frame.y}px) scale(${frame.zoom})`,
-          }}
-        />
+        {viewport.width > 0 && (
+          <PhotoImage
+            {...imageSource}
+            alt={alt}
+            draggable={false}
+            onLoad={(event) => {
+              const size = {
+                width: event.currentTarget.naturalWidth,
+                height: event.currentTarget.naturalHeight,
+              };
+              imageSize.current = size;
+              setDimensions((current) =>
+                current?.width === size.width && current?.height === size.height
+                  ? current
+                  : size,
+              );
+            }}
+            style={{
+              transform: `translate(${frame.x}px, ${frame.y}px) scale(${frame.zoom})`,
+            }}
+          />
+        )}
       </div>
       <div className="photo-lightbox-zoom" role="group" aria-label="Photo zoom">
         <Button

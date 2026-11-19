@@ -170,7 +170,19 @@ test("uploaded photos preserve protected originals and publish only stripped opt
       cookie,
     );
     assert.equal(response.status, 200);
-    assert.match(response.headers.get("cache-control"), /no-store/);
+    assert.equal(response.headers.get("cache-control"), "private, no-cache");
+    assert.match(response.headers.get("vary"), /(?:^|,\s*)Cookie(?:,|$)/i);
+    const tag = response.headers.get("etag");
+    assert.ok(tag);
+    const revalidated = await fetch(base + photoPath + "/thumb-" + width, {
+      headers: { Cookie: cookie, "If-None-Match": tag },
+    });
+    assert.equal(revalidated.status, 304);
+    assert.equal((await revalidated.arrayBuffer()).byteLength, 0);
+    const anonymous = await fetch(base + photoPath + "/thumb-" + width, {
+      headers: { "If-None-Match": tag },
+    });
+    assert.equal(anonymous.status, 404);
     const thumbnail = Buffer.from(await response.arrayBuffer());
     const dimensions = await sharp(thumbnail).metadata();
     assert.equal(dimensions.format, "webp");

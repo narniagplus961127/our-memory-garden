@@ -429,6 +429,11 @@ test("Media Library and single-photo picker load the next page on demand", async
   const more = page.getByRole("button", { name: "Show more library photos" });
   await expect(page.locator(".media-card")).toHaveCount(24);
   expect(requests).toEqual([null]);
+  const listBounds = (await page.locator(".media-grid").boundingBox())!;
+  const moreBounds = (await more.boundingBox())!;
+  expect(
+    moreBounds.y - listBounds.y - listBounds.height,
+  ).toBeGreaterThanOrEqual(16);
   await more.click();
   await expect(page.locator(".media-card")).toHaveCount(25);
   await expect(more).toHaveCount(0);
@@ -452,6 +457,13 @@ test("Media Library and single-photo picker load the next page on demand", async
     exact: true,
   });
   await expect(picker.locator(".media-card")).toHaveCount(24);
+  const pickerBounds = (await picker.locator(".media-grid").boundingBox())!;
+  const pickerMoreBounds = (await picker
+    .getByRole("button", { name: "Show more library photos" })
+    .boundingBox())!;
+  expect(
+    pickerMoreBounds.y - pickerBounds.y - pickerBounds.height,
+  ).toBeGreaterThanOrEqual(16);
   await picker
     .getByRole("button", { name: "Show more library photos" })
     .click();
