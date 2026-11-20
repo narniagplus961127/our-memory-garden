@@ -1,17 +1,21 @@
 "use client";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { Trash2 } from "lucide-react";
 import { useRef, useState } from "react";
 import { ConfirmationDialog } from "./confirmation-dialog";
 import { Toast } from "./toast";
 import {
+  AdminListActions,
   AdminListGrip,
   AdminListRow,
   ListDragFeedback,
 } from "./admin-list-row";
 import { useListReorder } from "./use-list-reorder";
-import { navigationDestinationLabel, type MenuItem } from "@/lib/destinations";
+import {
+  destinationHref,
+  navigationDestinationLabel,
+  type MenuItem,
+} from "@/lib/destinations";
 import { isMenuDescendant, type NavigationState } from "@/lib/navigation";
 import { fetchNavigation, putNavigation } from "@/lib/navigation-client";
 export function NavigationEditor({ initial }: { initial: NavigationState }) {
@@ -129,24 +133,23 @@ export function NavigationEditor({ initial }: { initial: NavigationState }) {
               title={item.label}
               href={"/admin/navigation/" + item.id + "/edit"}
               locked={locked}
+              showEdit={false}
               grip={<AdminListGrip {...sort.handleProps(item)} />}
               detail={navigationDestinationLabel(item.destination)}
               trailing={
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon"
-                  aria-label={"Remove " + item.label}
-                  title={"Remove " + item.label}
+                <AdminListActions
+                  list="navigation"
+                  viewHref={destinationHref(item.destination)}
+                  id={item.id}
+                  title={item.label}
+                  href={"/admin/navigation/" + item.id + "/edit"}
                   disabled={locked}
-                  onClick={(event) => {
-                    removalTrigger.current = event.currentTarget;
+                  onRemove={(trigger) => {
+                    removalTrigger.current = trigger.current;
                     setRemovalError("");
                     setRemoval({ item, items, version });
                   }}
-                >
-                  <Trash2 aria-hidden="true" />
-                </Button>
+                />
               }
             />
             {items.some((child) => child.parentId === item.id) && list(item.id)}

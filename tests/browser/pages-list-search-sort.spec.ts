@@ -61,6 +61,16 @@ test("search and sort Pages without changing the saved drag order", async ({
   ).toBeTruthy();
 
   await page.goto("/admin/pages");
+  await page
+    .getByRole("button", { name: "Actions for " + b, exact: true })
+    .click();
+  const view = page.getByRole("menuitem", { name: "View", exact: true });
+  await expect(view).toHaveAttribute("href", "/p/" + first.id);
+  const opened = page.waitForEvent("popup");
+  await view.click();
+  const website = await opened;
+  await expect(website).toHaveURL(new RegExp("/garden/find-"));
+  await website.close();
   const search = page.getByRole("searchbox", { name: "Search pages" });
   const sort = page.getByRole("combobox", { name: "Sort by" });
   const rows = page.locator(".admin-page-cards li strong");
