@@ -50,6 +50,16 @@ test("create a subcategory in Categories and autosave multiple page tags", async
   await expect(
     page.getByRole("link", { name: `Edit ${child}`, exact: true }),
   ).toContainText(parent.name);
+  await page
+    .getByRole("button", { name: "Actions for " + parent.name, exact: true })
+    .click();
+  const view = page.getByRole("menuitem", { name: "View", exact: true });
+  await expect(view).toHaveAttribute("href", "/category/" + parent.slug);
+  const opened = page.waitForEvent("popup");
+  await view.click();
+  const website = await opened;
+  await expect(website).toHaveURL(new RegExp("/category/" + parent.slug + "$"));
+  await website.close();
   const created = await page.request.post("/api/pages", {
     headers,
     data: { title: child },

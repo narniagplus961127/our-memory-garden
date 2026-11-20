@@ -1,7 +1,14 @@
 "use client";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Copy, Ellipsis, GripVertical, Pencil, Trash2 } from "lucide-react";
+import {
+  Copy,
+  Ellipsis,
+  ExternalLink,
+  GripVertical,
+  Pencil,
+  Trash2,
+} from "lucide-react";
 import {
   useRef,
   useState,
@@ -93,14 +100,16 @@ export function AdminListActions({
   id,
   title,
   href,
+  viewHref,
   onRemove,
   disabled = false,
   removalDisabled = false,
 }: {
-  list: AdminList;
+  list: AdminList | "navigation";
   id: string;
   title: string;
   href: string;
+  viewHref?: string;
   onRemove: (trigger: RefObject<HTMLButtonElement | null>) => void;
   disabled?: boolean;
   removalDisabled?: boolean;
@@ -113,10 +122,10 @@ export function AdminListActions({
   const [cloneOpen, setCloneOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  const { label, description } = cloneDetails[list];
+  const details = list === "navigation" ? null : cloneDetails[list];
 
   async function clone() {
-    if (!requestId.current || pending.current) return;
+    if (!details || !requestId.current || pending.current) return;
     pending.current = true;
     setBusy(true);
     setError("");
@@ -128,7 +137,9 @@ export function AdminListActions({
       });
       const result = await response.json();
       if (!response.ok)
-        throw new Error(result.error ?? `Could not clone this ${label}.`);
+        throw new Error(
+          result.error ?? `Could not clone this ${details.label}.`,
+        );
       setCloneOpen(false);
       router.push(
         `/admin/${list}/${result.id}${list === "categories" ? "/edit" : ""}`,
@@ -177,18 +188,33 @@ export function AdminListActions({
               Edit
             </Link>
           </DropdownMenuItem>
-          <DropdownMenuItem
-            className="min-h-11"
-            onSelect={() => {
-              openingDialog.current = true;
-              requestId.current = crypto.randomUUID();
-              setError("");
-              setCloneOpen(true);
-            }}
-          >
-            <Copy aria-hidden="true" />
-            Clone
-          </DropdownMenuItem>
+          {viewHref && (
+            <DropdownMenuItem asChild className="min-h-11">
+              <Link
+                href={viewHref}
+                target="_blank"
+                rel="noopener noreferrer"
+                prefetch={false}
+              >
+                <ExternalLink aria-hidden="true" />
+                View
+              </Link>
+            </DropdownMenuItem>
+          )}
+          {details && (
+            <DropdownMenuItem
+              className="min-h-11"
+              onSelect={() => {
+                openingDialog.current = true;
+                requestId.current = crypto.randomUUID();
+                setError("");
+                setCloneOpen(true);
+              }}
+            >
+              <Copy aria-hidden="true" />
+              Clone
+            </DropdownMenuItem>
+          )}
           <DropdownMenuSeparator />
           <DropdownMenuItem
             className="min-h-11"
@@ -209,11 +235,11 @@ export function AdminListActions({
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
-      {cloneOpen && (
+      {cloneOpen && details && (
         <ConfirmationDialog
           title={`Clone ${title}?`}
-          description={description}
-          confirmLabel={`Clone ${label}`}
+          description={details.description}
+          confirmLabel={`Clone ${details.label}`}
           retryLabel="Retry clone"
           busy={busy}
           error={error}

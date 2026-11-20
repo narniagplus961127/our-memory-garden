@@ -11,7 +11,6 @@ export default async function Account() {
       <p className="eyebrow">Settings</p>
       <h1>Your account</h1>
       <p>You are signed in as {admin.email}.</p>
-      <p className="muted">Both garden administrators have equal access.</p>
       <Button asChild className="button">
         <Link href="/forgot-password">Reset password by email</Link>
       </Button>

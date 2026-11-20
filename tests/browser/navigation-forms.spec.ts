@@ -403,13 +403,23 @@ test("menu removal confirms descendants, keeps pages and rows on failure, and re
     await saveMenu(page, [parent, child, grandchild, keep]);
     await page.goto("/admin/navigation");
     const remove = page.getByRole("button", {
-      name: "Remove Remove this menu",
+      name: "Actions for Remove this menu",
       exact: true,
     });
     const dialog = page.getByRole("dialog", {
       name: "Remove menu item?",
       exact: true,
     });
+    async function openRemoval() {
+      await remove.click();
+      await expect(
+        page.getByRole("menuitem", { name: "Edit", exact: true }),
+      ).toHaveAttribute("href", "/admin/navigation/" + parent.id + "/edit");
+      await expect(
+        page.getByRole("menuitem", { name: "View", exact: true }),
+      ).toHaveAttribute("href", "/p/" + linked.id);
+      await page.getByRole("menuitem", { name: "Delete", exact: true }).click();
+    }
     let writes = 0;
     page.on("request", (request) => {
       if (
@@ -418,7 +428,7 @@ test("menu removal confirms descendants, keeps pages and rows on failure, and re
       )
         writes++;
     });
-    await remove.click();
+    await openRemoval();
     await expect(dialog).toContainText(
       "2 nested menu items will also be removed.",
     );
@@ -443,12 +453,12 @@ test("menu removal confirms descendants, keeps pages and rows on failure, and re
     await dialog.getByRole("button", { name: "Cancel", exact: true }).click();
     await expect(dialog).toHaveCount(0);
     await expect(remove).toBeFocused();
-    await remove.click();
+    await openRemoval();
     await page.keyboard.press("Escape");
     await expect(dialog).toHaveCount(0);
     expect(writes).toBe(0);
 
-    await remove.click();
+    await openRemoval();
     await page.route("**/api/navigation", async (route) => {
       if (route.request().method() !== "PUT") return route.continue();
       await route.fulfill({
@@ -479,7 +489,7 @@ test("menu removal confirms descendants, keeps pages and rows on failure, and re
     ).toBeVisible();
     expect((await readMenu(page)).items).toHaveLength(5);
 
-    await remove.click();
+    await openRemoval();
     await expect(dialog).toContainText(
       "3 nested menu items will also be removed.",
     );

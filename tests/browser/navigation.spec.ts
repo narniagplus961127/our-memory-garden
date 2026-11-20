@@ -281,8 +281,9 @@ test("manage nested navigation and change addresses through desktop and mobile c
     ).openInNewTab,
   ).toBeUndefined();
   await page
-    .getByRole("button", { name: "Remove Garden elsewhere", exact: true })
+    .getByRole("button", { name: "Actions for Garden elsewhere", exact: true })
     .click();
+  await page.getByRole("menuitem", { name: "Delete", exact: true }).click();
   await page
     .getByRole("dialog")
     .getByRole("button", { name: "Remove menu item", exact: true })

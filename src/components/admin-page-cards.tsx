@@ -208,6 +208,7 @@ export function AdminPageCards({
                       id={page.id}
                       title={page.title}
                       href={"/admin/pages/" + page.id}
+                      viewHref={page.is_homepage ? "/" : "/p/" + page.id}
                       disabled={sort.busy}
                       removalDisabled={page.is_homepage}
                       onRemove={(trigger) => {

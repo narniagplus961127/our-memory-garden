@@ -234,6 +234,7 @@ export function CategoryManager({
                     id={id}
                     title={category.name}
                     href={href}
+                    viewHref={"/category/" + encodeURIComponent(category.slug)}
                     disabled={Boolean(moving)}
                     onRemove={(trigger) => {
                       returnFocus.current = trigger;
