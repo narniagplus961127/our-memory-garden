@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useRef, useState } from "react";
 import { Brand } from "./brand";
 import { signOutEditors } from "@/lib/editor-recovery";
+import { UsageWarning } from "./usage-settings";
 const navigation = [
   ["Overview", "/admin"],
   ["Pages", "/admin/pages"],
@@ -113,7 +114,10 @@ export function AdminShell({
           </nav>
         </details>
       </header>
-      <main className="admin-main">{children}</main>
+      <main className="admin-main">
+        <UsageWarning />
+        {children}
+      </main>
     </div>
   );
 }

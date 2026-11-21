@@ -13,6 +13,11 @@ export default function SettingsPage() {
         <Link href="/admin/settings/homepage">Manage homepage →</Link>
       </div>
       <div className="settings-card">
+        <h2>Usage & alerts</h2>
+        <p>Follow photo traffic estimates and set your warning levels.</p>
+        <Link href="/admin/settings/usage">View usage & alerts →</Link>
+      </div>
+      <div className="settings-card">
         <h2>Storage</h2>
         <p>See measured storage use and when it was last checked.</p>
         <Link href="/admin/settings/storage">View storage usage →</Link>

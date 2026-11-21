@@ -2,11 +2,13 @@ import { photoThumbnailKind, photoVariantWidths } from "@/lib/media";
 import { currentAdministrator } from "@/lib/server/auth";
 import { errorResponse, RequestError } from "@/lib/server/http";
 import { photoResponse } from "@/lib/server/media";
+import { observeOriginResponse } from "@/lib/server/usage";
 export const dynamic = "force-dynamic";
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string; kind: string }> },
 ) {
+  let metricKind: "thumbnail" | "display" | "original" | "other" = "other";
   try {
     const { id, kind } = await params;
     const imageKind =
@@ -17,13 +19,17 @@ export async function GET(
           );
     if (imageKind === undefined)
       throw new RequestError(404, "Photo not found.");
-    return await photoResponse(
-      id,
-      imageKind,
-      await currentAdministrator(request.headers),
-      request.headers.get("If-None-Match"),
+    metricKind = typeof imageKind === "number" ? "thumbnail" : imageKind;
+    return observeOriginResponse(
+      await photoResponse(
+        id,
+        imageKind,
+        await currentAdministrator(request.headers),
+        request.headers.get("If-None-Match"),
+      ),
+      metricKind,
     );
   } catch (error) {
-    return errorResponse(error);
+    return observeOriginResponse(errorResponse(error), metricKind);
   }
 }
