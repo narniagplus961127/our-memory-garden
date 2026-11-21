@@ -111,10 +111,18 @@ export function AdminPageCards({
   );
   const router = useRouter();
   const [pending, startTransition] = useTransition();
+  const previousQuery = useRef(paged?.query);
   useEffect(() => {
     if (paged) {
-      setQuery(paged.query.search);
-      setSortKey(paged.query.sort);
+      const previous = previousQuery.current;
+      // Preserve characters typed while a server search is still returning.
+      setQuery((current) =>
+        current.trim() === previous?.search ? paged.query.search : current,
+      );
+      setSortKey((current) =>
+        current === previous?.sort ? paged.query.sort : current,
+      );
+      previousQuery.current = paged.query;
     }
   }, [paged?.query.search, paged?.query.sort]);
   useEffect(() => {
@@ -157,6 +165,7 @@ export function AdminPageCards({
     pageLabel,
     order,
     !canReorder || Boolean(removal),
+    Boolean(paged),
   );
   const matches = search
     ? sort.ordered.filter(
@@ -274,6 +283,10 @@ export function AdminPageCards({
             </li>
           ))}
         </ul>
+      ) : paged && paged.query.page > 1 ? (
+        <div className="empty-state" role="status">
+          No more pages. Use Previous to return to the earlier pages.
+        </div>
       ) : search ? (
         <div className="empty-state" role="status">
           No pages match your search.

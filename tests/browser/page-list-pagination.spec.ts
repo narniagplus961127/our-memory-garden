@@ -55,6 +55,27 @@ test("page batches retain search and sort and public listings hide private pages
       ).ok(),
     ).toBeTruthy();
   }
+  const categoryResponse = await page.request.post("/api/categories", {
+    headers,
+    data: { name: prefix },
+  });
+  expect(categoryResponse.status()).toBe(201);
+  const category = await categoryResponse.json();
+  for (const record of records) {
+    expect(
+      (
+        await page.request.patch("/api/pages/" + record.id + "/details", {
+          headers,
+          data: {
+            date: null,
+            categoryIds: [category.id],
+            coverPhotoId: null,
+            metadataVersion: record.metadata_version,
+          },
+        })
+      ).ok(),
+    ).toBeTruthy();
+  }
   const visitor = await browser.newContext();
   const garden = await visitor.newPage();
   await garden.goto("/garden");
@@ -66,6 +87,13 @@ test("page batches retain search and sort and public listings hide private pages
   expect(await garden.locator(".garden-page-card").count()).toBeLessThanOrEqual(
     24,
   );
+  await expect(
+    garden.getByRole("link", { name: records[25].title, exact: true }),
+  ).toHaveCount(0);
+  await garden.goto("/category/" + category.slug);
+  await expect(garden.locator(".garden-page-card")).toHaveCount(24);
+  await garden.getByRole("link", { name: "Next", exact: true }).click();
+  await expect(garden.locator(".garden-page-card")).toHaveCount(1);
   await expect(
     garden.getByRole("link", { name: records[25].title, exact: true }),
   ).toHaveCount(0);
