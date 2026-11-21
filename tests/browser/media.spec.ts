@@ -1,5 +1,5 @@
 import { selectBlock, setVisibility } from "./editor-controls";
-import { test, expect } from "@playwright/test";
+import { test, expect, type Locator } from "@playwright/test";
 import { readFile } from "node:fs/promises";
 import sharp from "sharp";
 const env = Object.fromEntries(
@@ -256,6 +256,23 @@ test("upload with per-file feedback, inspect protected details and reuse a photo
   );
   expect(original.status()).toBe(200);
   expect(await original.body()).toEqual(buffer);
+  const photoId = new URL(original.url()).pathname.split("/")[3];
+  async function expectResponsivePhoto(image: Locator) {
+    await expect
+      .poll(() =>
+        image.evaluate(
+          (el: HTMLImageElement) => el.complete && el.naturalWidth > 0,
+        ),
+      )
+      .toBe(true);
+    const src = await image.evaluate((el: HTMLImageElement) => el.currentSrc);
+    expect(new URL(src).pathname).toContain("/api/media/" + photoId + "/");
+    const served = await image.page().request.get(src);
+    expect(served.ok()).toBeTruthy();
+    const metadata = await sharp(await served.body()).metadata();
+    expect([320, 640]).toContain(metadata.width);
+    expect(metadata.height).toBe((metadata.width! * 3) / 4);
+  }
   await page.keyboard.press("Escape");
   await expect(page.getByRole("dialog")).toHaveCount(0);
   await expect(
@@ -303,9 +320,7 @@ test("upload with per-file feedback, inspect protected details and reuse a photo
     .frameLocator("iframe")
     .getByRole("img", { name: "Rosemary in the sun", exact: true });
   await expect(image).toBeVisible();
-  await expect
-    .poll(() => image.evaluate((el: HTMLImageElement) => el.naturalWidth))
-    .toBe(640);
+  await expectResponsivePhoto(image);
   await page.reload();
   await expect(
     page
@@ -322,13 +337,9 @@ test("upload with per-file feedback, inspect protected details and reuse a photo
   await expect(
     publicPage.getByRole("img", { name: "Rosemary in the sun", exact: true }),
   ).toBeVisible();
-  await expect
-    .poll(() =>
-      publicPage
-        .getByRole("img", { name: "Rosemary in the sun", exact: true })
-        .evaluate((el: HTMLImageElement) => el.naturalWidth),
-    )
-    .toBe(640);
+  await expectResponsivePhoto(
+    publicPage.getByRole("img", { name: "Rosemary in the sun", exact: true }),
+  );
   await visitor.close();
   await page.goto("/admin/media");
   await page
