@@ -93,4 +93,15 @@ test("filter photos by usage and event and group uploads on desktop and mobile",
     .getByRole("button", { name: "Clear filters", exact: true })
     .click();
   await expect(page.locator(".media-card")).toHaveCount(2);
+  await page.goto("/admin/pages/" + event.id);
+  await page.getByRole("button", { name: "Page settings", exact: true }).click();
+  await page.getByRole("button", { name: "Choose photo", exact: true }).click();
+  const picker = page.getByRole("dialog", { name: "Choose a photo", exact: true });
+  await picker.getByRole("button", { name: "Filters", exact: true }).click();
+  await picker.getByRole("button", { name: "Filter photos by page or event" }).click();
+  await page.getByRole("searchbox", { name: "Find page or event" }).fill(key);
+  await page.getByRole("button", { name: key, exact: true }).click();
+  await expect(picker.locator(".media-card strong")).toHaveText([photos[0].name]);
+  await picker.getByRole("button", { name: "Use photo " + photos[0].name, exact: true }).click();
+  await expect(picker).toHaveCount(0);
 });

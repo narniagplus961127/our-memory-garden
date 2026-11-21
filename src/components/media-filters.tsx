@@ -71,6 +71,7 @@ function EventFilter({
           </Button>
         </PopoverTrigger>
         <PopoverContent
+        style={{ zIndex: 150 }}
           align="start"
           className="w-[min(22rem,calc(100vw-2rem))]"
         >
