@@ -15,6 +15,7 @@ export function useAdminListOrder<T extends { id: string }>(
   label: (item: T) => string,
   initial?: AdminListOrder,
   locked = false,
+  partial = false,
 ) {
   const [saved, setSaved] = useState(initial ?? emptyOrder);
   const [pending, setPending] = useState<string[] | null>(null);
@@ -40,7 +41,12 @@ export function useAdminListOrder<T extends { id: string }>(
       const response = await fetch("/api/admin-list-order", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ list, ids: next, version: saved.version }),
+        body: JSON.stringify({
+          list,
+          ids: next,
+          version: saved.version,
+          partial,
+        }),
       });
       const result = await response.json();
       if (!response.ok) {

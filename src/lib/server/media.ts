@@ -20,6 +20,7 @@ import {
 } from "../media";
 import { photoVariantKey, writePhotoVariants } from "./photo-variants";
 import type { Administrator } from "./pages";
+import { emptyMediaFilters, type MediaFilters } from "../media-filters";
 export const originalsBucket = () =>
   process.env.MEDIA_ORIGINALS_BUCKET ||
   process.env.GARDEN_ORIGINALS_BUCKET ||
@@ -142,6 +143,7 @@ function readLibraryCursor(cursor: string | null) {
 export async function listPhotoLibraryPage(
   search: string,
   after: string | null,
+  filters: MediaFilters = emptyMediaFilters,
 ): Promise<PhotoLibraryPage> {
   const cursor = readLibraryCursor(after);
   const sql = database();
@@ -150,6 +152,7 @@ export async function listPhotoLibraryPage(
       select p.id, p.name, p.width, p.status, p.created_at
       from media_photos p
       where p.status in ('ready','deleting')
+        ${photoFilterSql(filters)}
         ${cursor ? sql`and (p.created_at, p.id) < (${cursor.timestamp}::timestamptz, ${cursor.id}::uuid)` : sql``}
         ${
           search
@@ -171,6 +174,7 @@ export async function listPhotoLibraryPage(
       group by photo_id
     )
     select b.id, b.name, b.width, b.status='deleting' as "deletionPending",
+      b.created_at as "uploadedAt",
       coalesce(u.page_count, 0) as "usageCount",
       coalesce(u.is_public, false) as "publiclyAccessible",
       to_char(b.created_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"') as "cursorTime"
@@ -191,12 +195,31 @@ export async function listGridPickerPhotos(
   query: string,
   offset: number,
   limit: number,
+  filters: MediaFilters = emptyMediaFilters,
 ) {
+  const sql = database();
   return database()<
     import("../photo-grid").GridPickerPhoto[]
-  >`select id as "photoId",name,width,height from media_photos where status='ready'
+  >`select p.id as "photoId",p.name,p.width,p.height from media_photos p where p.status='ready'
+    ${photoFilterSql(filters)}
     and strpos(lower(name),lower(${query}))>0
     order by created_at desc,id limit ${limit} offset ${offset}`;
+}
+function photoFilterSql(filters: MediaFilters) {
+  const sql = database();
+  const used = sql`exists(select 1 from garden_media_usages m where m.photo_id=p.id and not m.history)`;
+  const isPublic = sql`exists(select 1 from garden_media_usages m where m.photo_id=p.id and not m.history and not m.deleted and m.visibility='public')`;
+  return sql`
+    ${filters.from ? sql`and p.created_at >= ${filters.from}::date::timestamp at time zone 'UTC'` : sql``}
+    ${filters.to ? sql`and p.created_at < (${filters.to}::date + 1)::timestamp at time zone 'UTC'` : sql``}
+    ${filters.pageId ? sql`and exists(select 1 from garden_media_usages m where m.photo_id=p.id and m.page_id=${filters.pageId}::uuid and not m.history)` : sql``}
+    ${filters.usage === "unused" ? sql`and not ${used}` : filters.usage === "used" ? sql`and ${used}` : filters.usage === "public" ? sql`and ${isPublic}` : filters.usage === "private" ? sql`and not ${isPublic}` : sql``}`;
+}
+export async function mediaPageOptions(search: string) {
+  return database()`select p.id,p.title from pages p where p.deleted_at is null
+    and strpos(lower(p.title),lower(${search}))>0
+    and exists(select 1 from garden_media_usages u where u.page_id=p.id and not u.history)
+    order by lower(p.title),p.id limit 25`;
 }
 async function boundedOriginal(key: string, expected: number) {
   const object = await storage().send(

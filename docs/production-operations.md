@@ -26,6 +26,8 @@ Neon shared SMTP is available initially. The hosted reset email and its return U
 
 ## Monitoring and storage
 
+**Settings → Usage & alerts** provides sampled application-origin photo/backup traffic estimates and configurable in-app warnings. These are separate from provider billing and do not replace provider notifications. See [usage monitoring](usage-monitoring.md) for coverage, sampling, warning windows and retention.
+
 In the garden, open **Settings → Storage** and use **Refresh usage**. The application paginates both private bucket inventories and shows originals, optimized displays, exports and staging bytes with a measurement timestamp. Database bytes come separately from `pg_database_size(current_database())`. A failed refresh marks the last confirmed value stale; unknown plan/quota values stay unavailable.
 
 For current billed usage, allowance and plan, follow **View provider dashboard**, select **Our Memory Garden** in the Neon console and inspect project/organization usage and billing. Do not interpret physical database bytes or bucket listings as the provider's billed total. On 2026-11-01 the existing organization's returned subscription was `free_v3`; recheck the console before deciding to upgrade. [Neon monitoring](https://neon.com/docs/introduction/monitoring), [Neon plans](https://neon.com/pricing).

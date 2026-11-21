@@ -23,6 +23,7 @@ export type PhotoListItem = Pick<
 > & {
   deletionPending: boolean;
   usageCount: number;
+  uploadedAt: string;
 };
 export type PhotoLibraryPage = {
   photos: PhotoListItem[];

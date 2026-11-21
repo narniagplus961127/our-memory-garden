@@ -1,15 +1,21 @@
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { requireAdministrator } from "@/lib/server/auth";
-import { listPageCards } from "@/lib/server/pages";
+import { adminPageBatch } from "@/lib/server/page-list";
+import { readPageListQuery, type PageSearchParams } from "@/lib/page-list";
 import { AdminPageCards } from "@/components/admin-page-cards";
 import { readAdminListOrder } from "@/lib/server/admin-list-order";
 export const metadata = { title: "Pages" };
 
-export default async function Pages() {
-  const admin = await requireAdministrator();
-  const [pages, order] = await Promise.all([
-    listPageCards(admin),
+export default async function Pages({
+  searchParams,
+}: {
+  searchParams: Promise<PageSearchParams>;
+}) {
+  await requireAdministrator();
+  const query = readPageListQuery(await searchParams);
+  const [batch, order] = await Promise.all([
+    adminPageBatch(query),
     readAdminListOrder("pages"),
   ]);
   return (
@@ -33,7 +39,8 @@ export default async function Pages() {
       </div>
       <AdminPageCards
         key={order.version}
-        pages={pages}
+        pages={batch.pages}
+        paged={{ query, more: batch.more }}
         order={order}
         allowTrash
       />

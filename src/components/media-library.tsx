@@ -4,7 +4,22 @@ import { ConfirmationDialog } from "./confirmation-dialog";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { useEffect, useRef, useState, useId, type ComponentProps } from "react";
+import { SlidersHorizontal } from "lucide-react";
+import {
+  Fragment,
+  useEffect,
+  useRef,
+  useState,
+  useId,
+  type ComponentProps,
+} from "react";
+import { MediaFilterControls } from "./media-filters";
+import {
+  emptyMediaFilters,
+  mediaFilterParams,
+  validMediaFilters,
+  type MediaFilters,
+} from "@/lib/media-filters";
 import { Tabs } from "radix-ui";
 import Link from "next/link";
 import {
@@ -265,6 +280,22 @@ export function MediaLibrary({
     [uploads, setUploads] = useState<Upload[]>([]),
     [detail, setDetail] = useState<Photo | null>(null);
   const fieldId = useId();
+  const [filters, setFilters] = useState<MediaFilters>(emptyMediaFilters);
+  const [grouped, setGrouped] = useState(false);
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const filterCount = Object.entries(filters).filter(
+    ([key, value]) => value !== emptyMediaFilters[key as keyof MediaFilters],
+  ).length;
+  function changeFilters(next: MediaFilters) {
+    setFilters(next);
+    setLibraryRequest({ after: null });
+    setLibraryNext(null);
+    setPhotos([]);
+    setPickerPage(0);
+    setPickerPhotos([]);
+    setPickerMore(false);
+    rangeAnchor.current = null;
+  }
   const detailsTrigger = useRef<HTMLButtonElement | null>(null);
   const choosingMany = Boolean(multiple);
   const rangeAnchor = useRef<string | null>(null);
@@ -299,11 +330,19 @@ export function MediaLibrary({
   }
   useEffect(() => {
     if (choosingMany) return;
+    if (!validMediaFilters(filters)) {
+      setError("Choose a valid upload date range.");
+      setLoading(false);
+      return;
+    }
     const { after } = libraryRequest;
     const controller = new AbortController();
     setLoading(true);
     setError("");
-    const params = new URLSearchParams({ view: "library" });
+    const params = new URLSearchParams({
+      view: "library",
+      ...mediaFilterParams(filters),
+    });
     if (query.trim()) params.set("search", query.trim());
     if (after) params.set("after", after);
     const timer = setTimeout(
@@ -340,9 +379,14 @@ export function MediaLibrary({
       clearTimeout(timer);
       controller.abort();
     };
-  }, [choosingMany, libraryRequest, query]);
+  }, [choosingMany, libraryRequest, query, filters]);
   useEffect(() => {
     if (!choosingMany) return;
+    if (!validMediaFilters(filters)) {
+      setError("Choose a valid upload date range.");
+      setLoading(false);
+      return;
+    }
     const controller = new AbortController();
     setLoading(true);
     setError("");
@@ -351,6 +395,7 @@ export function MediaLibrary({
       view: "grid-picker",
       search: query,
       offset: String(offset),
+      ...mediaFilterParams(filters),
     });
     const timer = setTimeout(
       () => {
@@ -386,7 +431,7 @@ export function MediaLibrary({
       clearTimeout(timer);
       controller.abort();
     };
-  }, [choosingMany, pickerPage, pickerRefresh, query]);
+  }, [choosingMany, pickerPage, pickerRefresh, query, filters]);
   function refresh() {
     setLoading(true);
     if (choosingMany) {
@@ -567,6 +612,24 @@ export function MediaLibrary({
           Refresh library
         </Button>
       </div>
+      <Button
+        variant="outline"
+        className="mb-4"
+        aria-expanded={filtersOpen}
+        aria-controls={fieldId + "-filters"}
+        onClick={() => setFiltersOpen((open) => !open)}
+      >
+        <SlidersHorizontal />
+        Filters{filterCount ? ` (${filterCount})` : ""}
+      </Button>
+      <div id={fieldId + "-filters"} hidden={!filtersOpen}>
+        <MediaFilterControls
+          value={filters}
+          onChange={changeFilters}
+          grouped={grouped}
+          onGroupChange={multiple ? undefined : setGrouped}
+        />
+      </div>
       {error && (
         <p role="alert" className="error">
           {error}{" "}
@@ -583,14 +646,18 @@ export function MediaLibrary({
       {!loading && !error && !hasResults && !hasMore && (
         <div className="empty-state">
           <h3>
-            {query.trim() ? "No matching photos" : "Let a memory take root"}
+            {query.trim() || filterCount
+              ? "No matching photos"
+              : "Let a memory take root"}
           </h3>
           <p className="muted">
-            {query.trim()
-              ? multiple
-                ? "Try another photo name."
-                : "Try another photo name or page title."
-              : "Upload your first photo to share it across your pages."}
+            {filterCount
+              ? "Adjust or clear your filters to see more photos."
+              : query.trim()
+                ? multiple
+                  ? "Try another photo name."
+                  : "Try another photo name or page title."
+                : "Upload your first photo to share it across your pages."}
           </p>
         </div>
       )}
@@ -638,57 +705,71 @@ export function MediaLibrary({
                 )}
               </Button>
             ))
-          : photos.map((photo) => (
-              <article className="media-card" key={photo.id}>
-                {photo.deletionPending ? (
-                  <div className="media-cleanup-preview">
-                    Deletion unfinished
-                  </div>
-                ) : (
-                  <img
-                    {...responsivePhotoSources(
-                      photo.id,
-                      "(max-width: 600px) 50vw, 260px",
-                      photo.width,
-                      640,
-                    )}
-                    alt={photo.name}
-                    loading="lazy"
-                  />
-                )}
-                <div>
-                  <strong>{photo.name}</strong>
-                  <small>
-                    {photo.deletionPending
-                      ? "Deletion unfinished · retry in Details"
-                      : photo.publiclyAccessible
-                        ? "Publicly accessible"
-                        : "Private photo"}{" "}
-                    · {photo.usageCount}{" "}
-                    {photo.usageCount === 1 ? "page" : "pages"}
-                  </small>
-                  <div className="actions">
-                    {onSelect && !photo.deletionPending ? (
+          : photos.map((photo, index) => (
+              <Fragment key={photo.id}>
+                {grouped &&
+                  photo.uploadedAt &&
+                  photo.uploadedAt.slice(0, 7) !==
+                    photos[index - 1]?.uploadedAt?.slice(0, 7) && (
+                    <h3 className="col-span-full mt-2 text-xl">
+                      {new Date(photo.uploadedAt).toLocaleDateString("en-GB", {
+                        month: "long",
+                        year: "numeric",
+                        timeZone: "UTC",
+                      })}
+                    </h3>
+                  )}
+                <article className="media-card" key={photo.id}>
+                  {photo.deletionPending ? (
+                    <div className="media-cleanup-preview">
+                      Deletion unfinished
+                    </div>
+                  ) : (
+                    <img
+                      {...responsivePhotoSources(
+                        photo.id,
+                        "(max-width: 600px) 50vw, 260px",
+                        photo.width,
+                        640,
+                      )}
+                      alt={photo.name}
+                      loading="lazy"
+                    />
+                  )}
+                  <div>
+                    <strong>{photo.name}</strong>
+                    <small>
+                      {photo.deletionPending
+                        ? "Deletion unfinished · retry in Details"
+                        : photo.publiclyAccessible
+                          ? "Publicly accessible"
+                          : "Private photo"}{" "}
+                      · {photo.usageCount}{" "}
+                      {photo.usageCount === 1 ? "page" : "pages"}
+                    </small>
+                    <div className="actions">
+                      {onSelect && !photo.deletionPending ? (
+                        <Button
+                          className="secondary"
+                          aria-label={"Use photo " + photo.name}
+                          onClick={() => onSelect(photo.id)}
+                        >
+                          Use photo
+                        </Button>
+                      ) : null}
                       <Button
                         className="secondary"
-                        aria-label={"Use photo " + photo.name}
-                        onClick={() => onSelect(photo.id)}
+                        aria-label={"Photo details " + photo.name}
+                        onClick={(event) =>
+                          void details(photo.id, event.currentTarget)
+                        }
                       >
-                        Use photo
+                        Details
                       </Button>
-                    ) : null}
-                    <Button
-                      className="secondary"
-                      aria-label={"Photo details " + photo.name}
-                      onClick={(event) =>
-                        void details(photo.id, event.currentTarget)
-                      }
-                    >
-                      Details
-                    </Button>
+                    </div>
                   </div>
-                </div>
-              </article>
+                </article>
+              </Fragment>
             ))}
       </div>
       {hasMore && (
