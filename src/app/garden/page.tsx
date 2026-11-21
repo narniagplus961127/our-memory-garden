@@ -3,7 +3,9 @@ import { GardenHeader } from "@/components/garden-header";
 import { GardenFooter } from "@/components/garden-footer";
 import { PageCards } from "@/components/page-cards";
 import { isConfigured, siteUrl } from "@/lib/config";
-import { publicGardenPages } from "@/lib/server/organization";
+import { publicPageBatch } from "@/lib/server/page-list";
+import { readPageListQuery, type PageSearchParams } from "@/lib/page-list";
+import { ListPagination } from "@/components/list-pagination";
 
 export const dynamic = "force-dynamic";
 
@@ -13,8 +15,15 @@ export const metadata: Metadata = {
   robots: { index: false, follow: true },
 };
 
-export default async function GardenIndex() {
-  const cards = isConfigured() ? await publicGardenPages() : [];
+export default async function GardenIndex({
+  searchParams,
+}: {
+  searchParams: Promise<PageSearchParams>;
+}) {
+  const { page } = readPageListQuery(await searchParams);
+  const { cards, more } = isConfigured()
+    ? await publicPageBatch(page)
+    : { cards: [], more: false };
 
   return (
     <>
@@ -22,9 +31,14 @@ export default async function GardenIndex() {
       <main className="public-page">
         <div className="page-content public-page-heading">
           <h1>Garden</h1>
-          {cards.length === 0 && <p className="muted">No public pages yet.</p>}
+          {cards.length === 0 && (
+            <p className="muted">
+              {page > 1 ? "No more pages." : "No public pages yet."}
+            </p>
+          )}
         </div>
         {cards.length > 0 && <PageCards cards={cards} />}
+        <ListPagination path="/garden" page={page} more={more} />
       </main>
       <GardenFooter />
     </>

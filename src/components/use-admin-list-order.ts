@@ -2,6 +2,7 @@
 import { useMemo, useState } from "react";
 import {
   applyAdminListOrder,
+  mergeVisibleOrder,
   type AdminList,
   type AdminListOrder,
 } from "@/lib/admin-list-order";
@@ -34,13 +35,19 @@ export function useAdminListOrder<T extends { id: string }>(
   );
 
   async function save(next: string[]) {
+    // A paginated list only replaces its visible slots in the saved order.
+    const merged = mergeVisibleOrder(
+      saved.ids,
+      items.map(({ id }) => id),
+      next,
+    );
     setPending(next);
     setError("");
     try {
       const response = await fetch("/api/admin-list-order", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ list, ids: next, version: saved.version }),
+        body: JSON.stringify({ list, ids: merged, version: saved.version }),
       });
       const result = await response.json();
       if (!response.ok) {

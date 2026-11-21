@@ -1,6 +1,8 @@
 import { notFound } from "next/navigation";
 import { categories, categoryBySlug } from "@/lib/server/categories";
-import { gridPages } from "@/lib/server/organization";
+import { publicPageBatch } from "@/lib/server/page-list";
+import { ListPagination } from "@/components/list-pagination";
+import { readPageListQuery, type PageSearchParams } from "@/lib/page-list";
 import { GardenHeader } from "@/components/garden-header";
 import { GardenFooter } from "@/components/garden-footer";
 import { PageCards } from "@/components/page-cards";
@@ -24,19 +26,17 @@ export async function generateMetadata({
 }
 export default async function CategoryPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ slug: string }>;
+  searchParams: Promise<PageSearchParams>;
 }) {
   const category = await categoryBySlug((await params).slug);
   if (!category) notFound();
-  const selection = {
-    mode: "category" as const,
-    categoryId: category.id,
-    pageIds: [],
-  };
+  const { page } = readPageListQuery(await searchParams);
   // Category listings are public even when an administrator is signed in.
-  const [cards, list] = await Promise.all([
-    gridPages(selection, null),
+  const [{ cards, more }, list] = await Promise.all([
+    publicPageBatch(page, category.id),
     categories(),
   ]);
   const ancestors = categoryPath(category, list).slice(0, -1);
@@ -68,10 +68,19 @@ export default async function CategoryPage({
           )}
           <h1>{category.name}</h1>
           {!cards.length && (
-            <p className="muted">No public pages in this category yet.</p>
+            <p className="muted">
+              {page > 1
+                ? "No more pages."
+                : "No public pages in this category yet."}
+            </p>
           )}
         </div>
         {cards.length > 0 && <PageCards cards={cards} />}
+        <ListPagination
+          path={"/category/" + category.slug}
+          page={page}
+          more={more}
+        />
       </main>
       <GardenFooter />
     </>

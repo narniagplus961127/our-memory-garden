@@ -1,5 +1,8 @@
 "use client";
-import { useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
+import { pageListHref, type PageListQuery } from "@/lib/page-list";
+import { ListPagination } from "./list-pagination";
 import { Input } from "./ui/input";
 import { Search } from "lucide-react";
 import { Label } from "./ui/label";
@@ -92,23 +95,62 @@ export function AdminPageCards({
   pages,
   order,
   allowTrash = false,
+  paged,
 }: {
   pages: PageCardData[];
   order?: AdminListOrder;
   allowTrash?: boolean;
+  paged?: { query: PageListQuery; more: boolean };
 }) {
   const [notice, setNotice] = useState("");
   const [removal, setRemoval] = useState<PageCardData | null>(null);
   const returnFocus = useRef<HTMLElement | null>(null);
-  const [query, setQuery] = useState("");
-  const [sortKey, setSortKey] = useState(order ? "page-date-desc" : "manual");
+  const [query, setQuery] = useState(paged?.query.search ?? "");
+  const [sortKey, setSortKey] = useState<string>(
+    paged?.query.sort ?? (order ? "page-date-desc" : "manual"),
+  );
+  const router = useRouter();
+  const [pending, startTransition] = useTransition();
+  useEffect(() => {
+    if (paged) {
+      setQuery(paged.query.search);
+      setSortKey(paged.query.sort);
+    }
+  }, [paged?.query.search, paged?.query.sort]);
+  useEffect(() => {
+    if (
+      !paged ||
+      (query.trim() === paged.query.search && sortKey === paged.query.sort)
+    )
+      return;
+    const timer = setTimeout(
+      () =>
+        startTransition(() =>
+          router.replace(
+            pageListHref("/admin/pages", 1, {
+              page: 1,
+              search: query.trim(),
+              sort: sortKey as PageListQuery["sort"],
+            }),
+            { scroll: false },
+          ),
+        ),
+      250,
+    );
+    return () => clearTimeout(timer);
+  }, [query, sortKey, paged?.query.search, paged?.query.sort, router]);
   const controlsId = useId();
   const search = query.trim().toLowerCase();
   const option =
     pageSortOptions.find(({ value }) => value === sortKey) ??
     pageSortOptions[0];
   const { field, direction } = option;
-  const canReorder = Boolean(order) && !search && field === null;
+  const canReorder =
+    Boolean(order) &&
+    !search &&
+    field === null &&
+    !pending &&
+    (!paged || paged.query.sort === sortKey);
   const sort = useAdminListOrder(
     "pages",
     pages,
@@ -123,20 +165,24 @@ export function AdminPageCards({
           ("/garden/" + slug).includes(search),
       )
     : sort.ordered;
-  const visible = field
-    ? matches.toSorted((a, b) => {
-        const left = a[field];
-        const right = b[field];
-        // Undated pages follow dated pages in both directions.
-        if (!left || !right) return Number(!left) - Number(!right);
-        return (
-          direction *
-          (field === "title"
-            ? names.compare(left, right)
-            : left.localeCompare(right))
-        );
-      })
-    : matches;
+  const visible = paged
+    ? canReorder
+      ? sort.ordered
+      : pages
+    : field
+      ? matches.toSorted((a, b) => {
+          const left = a[field];
+          const right = b[field];
+          // Undated pages follow dated pages in both directions.
+          if (!left || !right) return Number(!left) - Number(!right);
+          return (
+            direction *
+            (field === "title"
+              ? names.compare(left, right)
+              : left.localeCompare(right))
+          );
+        })
+      : matches;
   const dateField =
     field === "created_at" || field === "page_date" ? field : "updated_at";
 
@@ -157,6 +203,7 @@ export function AdminPageCards({
               className="ps-9"
               id={controlsId + "-search"}
               type="search"
+              maxLength={200}
               value={query}
               onChange={(event) => setQuery(event.target.value)}
             />
@@ -178,6 +225,11 @@ export function AdminPageCards({
             </NativeSelect>
           </div>
         </div>
+      )}
+      {pending && (
+        <p role="status" className="my-3 text-sm text-muted-foreground">
+          Updating pages…
+        </p>
       )}
       {visible.length ? (
         <ul className="admin-list admin-page-cards">
@@ -239,6 +291,14 @@ export function AdminPageCards({
           {canReorder && <ListDragFeedback {...sort} />}
           <AdminListOrderStatus {...sort} />
         </>
+      )}
+      {paged && (
+        <ListPagination
+          path="/admin/pages"
+          page={paged.query.page}
+          more={paged.more}
+          query={paged.query}
+        />
       )}
       {removal && (
         <TrashAction
