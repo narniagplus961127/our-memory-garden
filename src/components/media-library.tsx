@@ -25,19 +25,17 @@ import Link from "next/link";
 import {
   responsivePhotoSources,
   thumbnailPhotoUrl,
-  MAX_PHOTO_BYTES,
   type Photo,
   type PhotoLibraryPage,
   type PhotoListItem,
 } from "@/lib/media";
 import { photoGridBatchSize, type GridPickerPhoto } from "@/lib/photo-grid";
-type Upload = {
-  id: string;
-  file: File;
-  state: "Queued" | "Uploading" | "Processing" | "Ready" | "Error";
-  progress?: number;
-  error?: string;
-};
+import {
+  usePhotoUploadActions,
+  useReadyPhotoRevision,
+  useHasPhotoUploads,
+} from "./photo-uploads";
+import { useMediaSelection } from "./media-selection";
 async function jsonRequest(path: string, body?: unknown) {
   const response = await fetch(path, {
     method: body === undefined ? "GET" : "POST",
@@ -52,32 +50,6 @@ async function jsonRequest(path: string, body?: unknown) {
       data.error || "Could not complete the request. Please try again.",
     );
   return data;
-}
-function transfer(
-  url: string,
-  file: File,
-  onProgress: (value?: number) => void,
-) {
-  return new Promise<void>((resolve, reject) => {
-    const xhr = new XMLHttpRequest();
-    xhr.open("PUT", url);
-    xhr.setRequestHeader("Content-Type", file.type);
-    xhr.upload.onprogress = (event) =>
-      onProgress(
-        event.lengthComputable
-          ? Math.round((event.loaded / event.total) * 100)
-          : undefined,
-      );
-    xhr.onload = () =>
-      xhr.status >= 200 && xhr.status < 300
-        ? resolve()
-        : reject(new Error("Upload failed. Check your connection and retry."));
-    xhr.onerror = () =>
-      reject(new Error("Upload failed. Check your connection and retry."));
-    xhr.timeout = 180000;
-    xhr.ontimeout = () => reject(new Error("Upload timed out. Please retry."));
-    xhr.send(file);
-  });
 }
 export function PhotoDetails({
   photo: initialPhoto,
@@ -277,9 +249,13 @@ export function MediaLibrary({
     [loading, setLoading] = useState(true),
     [error, setError] = useState(""),
     [query, setQuery] = useState(""),
-    [uploads, setUploads] = useState<Upload[]>([]),
     [detail, setDetail] = useState<Photo | null>(null);
   const fieldId = useId();
+  const uploads = usePhotoUploadActions();
+  const hasUploads = useHasPhotoUploads();
+  const readyRevision = useReadyPhotoRevision();
+  const seenReady = useRef(readyRevision),
+    lastRefresh = useRef(0);
   const [filters, setFilters] = useState<MediaFilters>(emptyMediaFilters);
   const [grouped, setGrouped] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -442,6 +418,15 @@ export function MediaLibrary({
     }
     setLibraryRequest({ after: null });
   }
+  const selection = useMediaSelection(
+    photos,
+    (ids) => {
+      const removed = new Set(ids);
+      setPhotos((current) => current.filter((photo) => !removed.has(photo.id)));
+      refresh();
+    },
+    !onSelect && !multiple,
+  );
   function retryLibrary() {
     if (choosingMany) refresh();
     else {
@@ -449,53 +434,32 @@ export function MediaLibrary({
       setLibraryRequest((current) => ({ after: current.after }));
     }
   }
-  function update(id: string, change: Partial<Upload>) {
-    setUploads((current) =>
-      current.map((item) => (item.id === id ? { ...item, ...change } : item)),
+  useEffect(() => {
+    if (
+      readyRevision === seenReady.current ||
+      (choosingMany && multiple!.selected.size > 0) ||
+      (selection.enabled && selection.count > 0)
+    )
+      return;
+    const timer = setTimeout(
+      () => {
+        seenReady.current = readyRevision;
+        lastRefresh.current = Date.now();
+        if (choosingMany) {
+          setPickerPage(0);
+          setPickerRefresh((value) => value + 1);
+        } else setLibraryRequest({ after: null });
+      },
+      Math.max(0, 2000 - (Date.now() - lastRefresh.current)),
     );
-  }
-  async function upload(item: Upload) {
-    try {
-      update(item.id, {
-        state: "Queued",
-        error: undefined,
-        progress: undefined,
-      });
-      if (item.file.size > MAX_PHOTO_BYTES)
-        throw new Error("Photos must be 25 MB or smaller.");
-      const started = await jsonRequest("/api/media/uploads", {
-        name: item.file.name,
-        size: item.file.size,
-        type: item.file.type,
-      });
-      update(item.id, { state: "Uploading", progress: 0 });
-      await transfer(started.uploadUrl, item.file, (progress) =>
-        update(item.id, { progress }),
-      );
-      update(item.id, { state: "Processing", progress: undefined });
-      await jsonRequest("/api/media/" + started.id + "/complete", {});
-      if (choosingMany) {
-        setPickerPage(0);
-        setPickerRefresh((current) => current + 1);
-      }
-      update(item.id, { state: "Ready" });
-      return true;
-    } catch (error) {
-      update(item.id, {
-        state: "Error",
-        error: (error as Error).message,
-        progress: undefined,
-      });
-      return false;
-    }
-  }
-  async function uploadPhotos(items: Upload[]) {
-    let completed = false;
-    for (const item of items) {
-      if (await upload(item)) completed = true;
-    }
-    if (completed && !choosingMany) refresh();
-  }
+    return () => clearTimeout(timer);
+  }, [
+    readyRevision,
+    choosingMany,
+    multiple?.selected.size,
+    selection.enabled,
+    selection.count,
+  ]);
   async function details(id: string, trigger: HTMLButtonElement) {
     detailsTrigger.current = trigger;
     setError("");
@@ -521,14 +485,8 @@ export function MediaLibrary({
           accept="image/jpeg,image/png,image/webp"
           multiple
           onChange={(event) => {
-            const items = Array.from(event.target.files ?? []).map((file) => ({
-              id: crypto.randomUUID(),
-              file,
-              state: "Queued" as const,
-            }));
-            setUploads((current) => [...current, ...items]);
+            uploads.enqueue(Array.from(event.target.files ?? []));
             event.target.value = "";
-            void uploadPhotos(items);
           }}
         />
         <p className="muted">
@@ -538,51 +496,10 @@ export function MediaLibrary({
           </small>
         </p>
       </div>
-      {uploads.length > 0 && (
-        <ul className="upload-progress" aria-label="Upload progress">
-          {uploads.map((item) => (
-            <li key={item.id}>
-              <div>
-                <strong>{item.file.name}</strong>
-                <span role="status">{item.state}</span>
-              </div>
-              {item.state === "Uploading" && (
-                <progress
-                  value={item.progress}
-                  max={100}
-                  aria-label={"Uploading " + item.file.name}
-                />
-              )}{" "}
-              {item.error && (
-                <p role="alert" className="error">
-                  {item.error}
-                </p>
-              )}
-              {item.state === "Error" && (
-                <div className="actions">
-                  <Button
-                    className="secondary"
-                    aria-label={"Retry " + item.file.name}
-                    onClick={() => void uploadPhotos([item])}
-                  >
-                    Retry
-                  </Button>
-                  <Button
-                    className="secondary"
-                    aria-label={"Remove failed " + item.file.name}
-                    onClick={() =>
-                      setUploads((current) =>
-                        current.filter((u) => u.id !== item.id),
-                      )
-                    }
-                  >
-                    Remove failed
-                  </Button>
-                </div>
-              )}
-            </li>
-          ))}
-        </ul>
+      {hasUploads && (
+        <Button variant="outline" onClick={uploads.show}>
+          View upload progress
+        </Button>
       )}
       <div className="media-search">
         <div>
@@ -643,6 +560,7 @@ export function MediaLibrary({
         </p>
       )}
       {loading && <p role="status">Loading photos…</p>}
+      {selection.toolbar}
       {!loading && !error && !hasResults && !hasMore && (
         <div className="empty-state">
           <h3>
@@ -719,7 +637,12 @@ export function MediaLibrary({
                       })}
                     </h3>
                   )}
-                <article className="media-card" key={photo.id}>
+                <article
+                  className="media-card"
+                  style={{ position: "relative" }}
+                  key={photo.id}
+                >
+                  {selection.checkbox(photo)}
                   {photo.deletionPending ? (
                     <div className="media-cleanup-preview">
                       Deletion unfinished
@@ -793,12 +716,14 @@ export function MediaLibrary({
           photo={detail}
           onClose={closeDetails}
           onDeleted={() => {
+            selection.forget(detail.id);
             setPhotos((current) => current.filter((p) => p.id !== detail.id));
             if (loading) refresh();
             closeDetails();
           }}
         />
       )}
+      {selection.dialog}
     </div>
   );
 }

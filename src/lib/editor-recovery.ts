@@ -1,9 +1,10 @@
 import { validPageData } from "./blocks";
 import type { GardenPage } from "./pages";
 import type { PageSnapshot } from "./page-merge";
+import { logoutSignal } from "./session-events";
 export const recoveryPrefix = (accountId: string) =>
   "garden-recovery:" + encodeURIComponent(accountId) + ":";
-export const logoutSignal = "garden-signout";
+export { logoutSignal } from "./session-events";
 export type RecoveryRecord = {
   schemaVersion: 1;
   accountId: string;

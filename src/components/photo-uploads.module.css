@@ -1,0 +1,121 @@
+.panel {
+  position: fixed;
+  z-index: 90;
+  right: max(16px, env(safe-area-inset-right));
+  bottom: max(16px, env(safe-area-inset-bottom));
+  width: min(360px, calc(100vw - 32px));
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--background);
+  color: var(--foreground);
+  box-shadow: 0 8px 30px #30433726;
+  overflow: hidden;
+}
+.publicPanel {
+  right: auto;
+  left: max(16px, env(safe-area-inset-left));
+}
+.heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+}
+.heading h2 {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  font:
+    600 14px/1.4 Arial,
+    Helvetica,
+    sans-serif;
+}
+.heading button {
+  flex-shrink: 0;
+}
+.help {
+  margin: 0;
+  padding: 0 16px 12px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--muted-foreground);
+}
+.items {
+  display: grid;
+  gap: 0;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  max-height: min(44dvh, 360px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.items li {
+  min-width: 0;
+  padding: 12px 16px;
+  border-top: 1px solid var(--border);
+}
+.fileHeading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 13px;
+}
+.fileHeading strong {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  flex: 1;
+  min-width: 0;
+}
+.fileHeading span {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+  color: var(--muted-foreground);
+  font-size: 12px;
+}
+.items progress {
+  width: 100%;
+  height: 6px;
+  display: block;
+  margin-top: 10px;
+  accent-color: #526c54;
+}
+.error {
+  color: var(--destructive);
+  font-size: 13px;
+  line-height: 1.5;
+  margin: 8px 0 0;
+}
+.actions,
+.rowActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.actions {
+  padding: 12px;
+  border-top: 1px solid var(--border);
+}
+.rowActions {
+  margin-top: 8px;
+}
+.view {
+  margin: 0 12px 8px;
+}
+.activity p {
+  margin: 0 0 16px;
+}
+.activity .items {
+  max-height: min(50dvh, 500px);
+}
+@media (max-width: 600px) {
+  .panel {
+    width: min(320px, calc(100vw - 32px));
+  }
+  .items {
+    max-height: 32dvh;
+  }
+}
