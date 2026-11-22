@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 import { isConfigured, siteUrl } from "@/lib/config";
+import { limitRequest } from "@/lib/server/request-rate-limit";
 import {
   bindInvitationLogin,
   grantInvitedAccess,
@@ -28,6 +29,8 @@ const reply = (data: object) => Response.json(data, { headers: noStore });
 export async function POST(request: Request) {
   try {
     assertSameOrigin(request);
+    const limited = limitRequest(request, "invitations", 30);
+    if (limited) return limited;
     if (!isConfigured())
       throw new RequestError(503, "The garden is unavailable.");
     const { action, token, password, code } = await bodyJson(request, 2048);

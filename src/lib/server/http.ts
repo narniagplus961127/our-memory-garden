@@ -1,5 +1,6 @@
 import "server-only";
 import { siteUrl } from "../config";
+import { readBoundedText, RequestSizeError } from "./request-body";
 export class RequestError extends Error {
   constructor(
     public status: number,
@@ -16,19 +17,19 @@ export async function bodyJson(
   request: Request,
   maxSize?: number,
 ): Promise<Record<string, unknown>> {
-  const body = await request.text();
-  if (
-    maxSize === undefined
-      ? body.length > 1_000_000
-      : Buffer.byteLength(body) > maxSize
-  )
-    throw new RequestError(413, "Content is too large.");
   try {
+    // Preserve the legacy million-character editor allowance, including Chinese
+    // text, with a finite UTF-8 byte ceiling while the body is being read.
+    const body = await readBoundedText(request, maxSize ?? 3_000_000);
+    if (maxSize === undefined && body.length > 1_000_000)
+      throw new RequestSizeError();
     const data = JSON.parse(body);
     if (!data || typeof data !== "object" || Array.isArray(data))
       throw new Error();
     return data;
-  } catch {
+  } catch (error) {
+    if (error instanceof RequestSizeError)
+      throw new RequestError(413, error.message);
     throw new RequestError(400, "Invalid request.");
   }
 }

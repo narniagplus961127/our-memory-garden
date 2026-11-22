@@ -6,6 +6,8 @@ import { database } from "./db";
 import { localAuth } from "./local-auth";
 import { authMode, isConfigured, siteUrl } from "../config";
 import type { Administrator } from "./pages";
+import { bodyJson, RequestError } from "./http";
+import { limitRequest } from "./request-rate-limit";
 let neon: ReturnType<typeof createNeonAuth> | undefined;
 export function neonAuth() {
   return (neon ??= createNeonAuth({
@@ -61,23 +63,42 @@ export async function handleAuth(request: Request): Promise<Response> {
     !(request.method === "GET" && path.startsWith("reset-password/"))
   )
     return Response.json({ message: "Not found" }, { status: 404 });
+  if (
+    request.method === "POST" &&
+    request.headers.get("origin") !== new URL(siteUrl()).origin
+  )
+    return Response.json(
+      { message: "Request not permitted." },
+      { status: 403, headers: { "Cache-Control": "private, no-store" } },
+    );
+  const limited = limitRequest(
+    request,
+    "auth:" +
+      (path.startsWith("reset-password/") ? "reset-password-link" : path),
+    path === "request-password-reset" ? 10 : path === "get-session" ? 300 : 30,
+  );
+  if (limited) return limited;
   if (request.method === "POST") {
-    const origin = request.headers.get("origin");
-    if (origin !== new URL(siteUrl()).origin)
+    let body: Record<string, unknown>;
+    try {
+      body = await bodyJson(request, 8192);
+    } catch (error) {
       return Response.json(
-        { message: "Request not permitted." },
-        { status: 403 },
+        {
+          message:
+            error instanceof RequestError ? error.message : "Invalid request.",
+        },
+        {
+          status: error instanceof RequestError ? error.status : 400,
+          headers: { "Cache-Control": "private, no-store" },
+        },
       );
+    }
     if (path === "sign-in/email" || path === "request-password-reset") {
-      let body: Record<string, unknown>;
-      try {
-        body = await request.clone().json();
-      } catch {
-        return Response.json({ message: "Invalid request." }, { status: 400 });
-      }
       const email =
         typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
       const exists =
+        email.length > 0 &&
         email.length < 255 &&
         (
           await database()`select user_id from garden_administrators where lower(email)=${email} limit 1`
@@ -91,13 +112,16 @@ export async function handleAuth(request: Request): Promise<Response> {
             );
       if (path === "request-password-reset") {
         body.redirectTo = siteUrl() + "/reset-password";
-        request = new Request(request.url, {
-          method: "POST",
-          headers: request.headers,
-          body: JSON.stringify(body),
-        });
       }
     }
+    const requestHeaders = new Headers(request.headers);
+    requestHeaders.delete("Content-Length");
+    requestHeaders.set("Content-Type", "application/json");
+    request = new Request(request.url, {
+      method: "POST",
+      headers: requestHeaders,
+      body: JSON.stringify(body),
+    });
   }
   const response =
     authMode() === "local"
