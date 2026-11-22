@@ -24,7 +24,7 @@
   --text-xs: 12px;
   --text-sm: 14px;
   --text-sm--line-height: 20px;
-  --text-base: 14px;
+  --text-base: 16px;
   --text-lg: 18px;
   --text-xl: 20px;
   --text-2xl: 24px;
@@ -48,8 +48,8 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
-  --font-sans: Arial, Helvetica, sans-serif;
-  --font-serif: Georgia, "Times New Roman", serif;
+  --font-sans: var(--font-pixel), sans-serif;
+  --font-serif: var(--font-pixel), sans-serif;
   --radius-sm: calc(var(--radius) - 2px);
   --radius-md: var(--radius);
   --radius-lg: calc(var(--radius) + 4px);
@@ -57,25 +57,25 @@
 }
 
 :root {
-  --background: #fffcf5;
-  --foreground: #304337;
-  --card: #fffcf5;
-  --card-foreground: #304337;
-  --popover: #fffcf5;
-  --popover-foreground: #304337;
-  --primary: #d6e0d1;
-  --primary-foreground: #304337;
-  --secondary: #f6f1e7;
-  --secondary-foreground: #304337;
-  --muted: #e8eee3;
-  --muted-foreground: #59694f;
-  --accent: #e8eee3;
-  --accent-foreground: #304337;
+  --background: #fff8e7;
+  --foreground: #2e4630;
+  --card: #fff8e7;
+  --card-foreground: #2e4630;
+  --popover: #fff8e7;
+  --popover-foreground: #2e4630;
+  --primary: #d1e4aa;
+  --primary-foreground: #2e4630;
+  --secondary: #f5edcf;
+  --secondary-foreground: #2e4630;
+  --muted: #e9efd8;
+  --muted-foreground: #506344;
+  --accent: #e2edc7;
+  --accent-foreground: #2e4630;
   --destructive: #a74435;
-  --border: #ced8c7;
-  --input: #ced8c7;
-  --ring: #82947f;
-  --radius: 6px;
+  --border: #b4c394;
+  --input: #9db17e;
+  --ring: #5a7d41;
+  --radius: 2px;
 }
 
 [data-slot="dialog-overlay"] {
@@ -246,18 +246,18 @@
   }
 }
 :root {
-  --paper: #f6f1e7;
-  --cream: #fffcf5;
-  --sage: #e8ede3;
-  --leaf: #d6e0d1;
-  --ink: #304337;
-  --garden-muted: #59694f;
-  --line: #d0dacb;
+  --paper: #fbf3dc;
+  --cream: #fff8e7;
+  --sage: #edf2dc;
+  --leaf: #dbe8b6;
+  --ink: #2e4630;
+  --garden-muted: #506344;
+  --line: #b4c394;
   --clay: #a76b50;
   --gutter: 64px;
   --control-height: 44px;
-  --control-radius: 6px;
-  --body-font-size: 14px;
+  --control-radius: 2px;
+  --body-font-size: 16px;
   --control-font-size: var(--body-font-size);
   font-size: var(--body-font-size);
   color-scheme: light;
@@ -269,7 +269,7 @@ body {
   margin: 0;
   background: var(--paper);
   color: var(--ink);
-  font-family: Arial, sans-serif;
+  font-family: var(--font-pixel), sans-serif;
   font-size: 1rem;
   line-height: 1.5;
 }
@@ -277,7 +277,7 @@ h1,
 h2,
 h3,
 h4 {
-  font-family: Georgia, serif;
+  font-family: var(--font-pixel), sans-serif;
   font-weight: 400;
   line-height: 1.15;
   margin: 0 0 24px;
@@ -300,7 +300,7 @@ p {
 small {
   font-size: 13px;
 }
-a {
+a:not([data-slot="button"]) {
   color: inherit;
 }
 textarea {
@@ -336,8 +336,8 @@ input[type="radio"] {
 }
 .brand {
   font:
-    22px Georgia,
-    serif;
+    22px var(--font-pixel),
+    sans-serif;
   text-decoration: none;
   display: flex;
   align-items: center;
@@ -998,7 +998,7 @@ button.primary {
 .editor-page-identity input {
   border-color: transparent;
   background: transparent;
-  font-family: Arial, sans-serif;
+  font-family: var(--font-pixel), sans-serif;
   font-size: var(--control-font-size);
 }
 .garden-workspace-bar select {
@@ -1059,7 +1059,7 @@ button.primary {
   margin-top: 16px;
 }
 .garden-editor-panel h3 {
-  font-family: Arial, sans-serif;
+  font-family: var(--font-pixel), sans-serif;
   font-size: 14px;
   margin: 28px 0 12px;
 }
@@ -1082,7 +1082,7 @@ button.primary {
 }
 .garden-palette-row span {
   font:
-    14px Arial,
+    14px var(--font-pixel),
     sans-serif;
 }
 .garden-block-list {
@@ -1118,7 +1118,7 @@ button.primary {
 .garden-editor-panel textarea,
 .garden-editor-panel select {
   font:
-    14px Arial,
+    14px var(--font-pixel),
     sans-serif;
   min-height: 44px;
 }
@@ -1533,7 +1533,7 @@ button.primary {
   border: 1px solid var(--line);
 }
 .editor-conflicts legend {
-  font-family: Georgia, serif;
+  font-family: var(--font-pixel), sans-serif;
   padding: 0 8px;
 }
 .conflict-comparison {
@@ -1685,8 +1685,8 @@ button.primary {
 .website-menu-header h2 {
   margin: 0;
   font:
-    400 26px/1.2 Georgia,
-    serif;
+    400 26px/1.2 var(--font-pixel),
+    sans-serif;
 }
 .website-menu-close {
   width: 44px;
@@ -2567,8 +2567,8 @@ button.primary {
 }
 .admin-list-copy strong {
   font:
-    18px Georgia,
-    serif;
+    18px var(--font-pixel),
+    sans-serif;
 }
 .admin-list-copy small {
   font-size: 12px;
@@ -2626,8 +2626,8 @@ button.primary {
 }
 .template-blank-mark {
   font:
-    44px Georgia,
-    serif;
+    44px var(--font-pixel),
+    sans-serif;
   color: var(--garden-muted);
   text-align: center;
 }
@@ -2672,8 +2672,8 @@ button.primary {
   display: block;
   margin: 18px 12px 8px;
   font:
-    21px Georgia,
-    serif;
+    21px var(--font-pixel),
+    sans-serif;
 }
 .template-description {
   display: block;

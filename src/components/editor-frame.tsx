@@ -25,6 +25,14 @@ export function EditorFrame({
     const frame = frameDocument?.defaultView
       ?.frameElement as HTMLIFrameElement | null;
     if (!frameDocument || !frame) return;
+    // Puck copies stylesheets, but root font variables live on the outer html.
+    frameDocument.documentElement.dataset.theme = "pixel-garden";
+    frameDocument.documentElement.style.setProperty(
+      "--font-pixel",
+      getComputedStyle(document.documentElement).getPropertyValue(
+        "--font-pixel",
+      ),
+    );
     const resize = new ResizeObserver(update),
       mutations = new MutationObserver(observe);
     let content: Element | null = null;

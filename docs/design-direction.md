@@ -1,4 +1,8 @@
-# Sunlit Garden design direction
+# Garden design direction
+
+The owner requested a **pixel garden game theme across the website and admin dashboard on 2026-11-22**. [Pixel theme guidance](pixel-theme.md) now governs typography, colours, shared components, original artwork and branding. The Sunlit Garden notes below describe the earlier design and remain historical layout context. Existing authored content and explicit text styling are preserved.
+
+## Previous Sunlit Garden direction
 
 The latest design exploration uses a full-width page canvas and section backgrounds, warmer parchment surfaces, forest typography, restrained clay accents, and photographs without enclosing rounded cards. The homepage is a simple editable page built from the same blocks as other pages; its sample image may extend edge to edge. The admin workspace uses a distinct sage tint and dedicated navigation.
 

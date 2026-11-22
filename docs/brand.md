@@ -1,5 +1,7 @@
 # Our Memory Garden brand
 
+On 2026-11-22 the owner requested a pixel garden theme including administration. The same twin-seedling concept now uses stepped pixel geometry and the locally hosted Fusion Pixel wordmark. See [pixel theme guidance](pixel-theme.md) for the active colours, typography and asset regeneration. The earlier rounded-mark specification below is historical and has been superseded.
+
 The owner approved the twin-seedling direction on 2026-11-04 (ticket 33). Two seedlings of slightly different heights grow from one curved soil line: two people growing together. Four rounded, outlined leaves keep the mark simple.
 
 Use forest green `#304337` with warm paper `#FFFCF5` or the existing sage administration surface. Pair the mark with the existing Georgia serif wordmark, “Our Memory Garden”. The website displays a 36 px square mark with a 12 px wordmark gap; mobile uses 32 px and 10 px. The shared Brand component covers public headers, the administration sidebar and mobile administration header. Its visible name labels the homepage link; the adjacent mark is decorative for screen readers.
