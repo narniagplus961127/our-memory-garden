@@ -505,6 +505,8 @@ function Workspace({
   const settingsLabel = page ? "Page settings" : "Template settings";
   const detailsStatus = pageSettings?.details.status ?? "Saved";
   const [addressStatus, setAddressStatus] = useState("Saved");
+  const [errorDismissed, setErrorDismissed] = useState(false);
+  useEffect(() => setErrorDismissed(false), [error]);
   const headerStatus =
     (status === "Saved" || status === "Saving…") && detailsStatus !== "Saved"
       ? detailsStatus
@@ -841,6 +843,11 @@ function Workspace({
           >
             {headerStatus}
           </span>
+          {error && errorDismissed && retry && (
+            <Button type="button" variant="outline" onClick={retry}>
+              Retry save
+            </Button>
+          )}
         </div>
         {pageSettings && (
           <EditorPageActions
@@ -852,12 +859,13 @@ function Workspace({
           />
         )}
       </header>
-      {error && (
+      {error && !errorDismissed && (
         <Toast
           message={error + " Your edits remain in this editor."}
           tone="error"
           actionLabel={retry ? "Retry save" : undefined}
           onAction={retry}
+          onDismiss={() => setErrorDismissed(true)}
         />
       )}
       <div className="editor-feedback">{feedback}</div>

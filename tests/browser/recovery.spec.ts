@@ -51,17 +51,28 @@ test("unsaved edits recover after reload and clear only after acknowledgement", 
   await fixture(page);
   await page.route("**/api/pages/*", (route) =>
     route.request().method() === "PATCH"
-      ? route.abort("internetdisconnected")
+      ? route.fulfill({
+          status: 503,
+          contentType: "text/html",
+          body: "<h1>Private upstream exception must not appear</h1>",
+        })
       : route.continue(),
   );
   await editText(page, "Rosemary after an offline refresh");
   await expect(
     page.getByRole("status", { name: "Auto-save status" }),
   ).toHaveText("Not saved");
+  await expect(
+    page.getByText(/The garden is temporarily unavailable/),
+  ).toBeVisible();
+  await expect(
+    page.getByText("Private upstream exception must not appear"),
+  ).toHaveCount(0);
   await page.reload();
   await expect(
     page.getByText("Recovered work is unsaved until it reaches the garden."),
   ).toBeVisible();
+  await page.getByRole("button", { name: "Dismiss notification" }).click();
   await selectBlock(page, "Select Text 1");
   await page.getByRole("button", { name: "Open settings panel" }).click();
   await expect(canvasField(page, "Text content")).toHaveText(

@@ -32,8 +32,8 @@ test("failed and unfinished page details recover after refresh and clear after r
   await page.route("**/api/pages/" + p.id + "/details", (route) =>
     route.fulfill({
       status: 503,
-      contentType: "application/json",
-      body: JSON.stringify({ error: "The connection is unavailable." }),
+      contentType: "text/html",
+      body: "<h1>Private upstream exception must not appear</h1>",
     }),
   );
   await page

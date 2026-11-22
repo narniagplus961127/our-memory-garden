@@ -231,7 +231,15 @@ export function usePageDetails(
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ...submitted, metadataVersion: s.version }),
       });
-      const result = await r.json();
+      if (r.status >= 500)
+        throw Error(
+          "The garden is temporarily unavailable. Your page settings are still in this editor. Please try saving again.",
+        );
+      const result = await r.json().catch(() => {
+        throw Error(
+          "Could not confirm the save. Keep this editor open and try again.",
+        );
+      });
       if (!s.active || epoch !== s.epoch) return;
       if (r.status === 401 || r.status === 403) {
         stop();
@@ -307,9 +315,11 @@ export function usePageDetails(
       if (!s.active || epoch !== s.epoch) return;
       setStatus("Unsaved · Retry");
       setError(
-        e instanceof Error
-          ? e.message
-          : "Could not save page details. Your changes are still here.",
+        e instanceof TypeError
+          ? "Could not connect. Your page settings are still in this editor. Please try saving again."
+          : e instanceof Error
+            ? e.message
+            : "Could not save page details. Your changes are still here.",
       );
       writeRecovery();
     } finally {
