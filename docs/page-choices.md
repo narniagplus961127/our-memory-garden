@@ -1,0 +1,11 @@
+# Lightweight administrator page choices
+
+Destination selectors and manual page-grid settings use GET /api/page-choices rather than downloading every page document. The endpoint revalidates administrator access and returns private/no-store. It returns only id, title, slug and visibility for current, non-trashed pages; content, media, author details and sharing metadata never enter this response. Private pages remain available to administrators and are labelled in the selector.
+
+Search is a literal, case-insensitive substring of title or slug, up to 200 characters, including Chinese. Batches contain at most 30 choices, ordered by lower(title) and ID. The opaque continuation cursor carries that title/ID pair, so equal titles and removal of the anchor do not require an offset scan or loading editor content. The list is live rather than a snapshot; concurrent renames can move a result, and the client deduplicates IDs when appending.
+
+An optional ids query retrieves up to 100 selected-page summaries separately. This keeps saved destination and manual-grid labels visible outside the current search or first batch. Missing/deleted pages stay labelled unavailable; loading/failure does not erase the saved ID. Grid labels already loaded are retained while new names load. Selection and save validation still run against current server data.
+
+The reusable selector provides debounced search, Show more, visible loading/empty feedback and Retry. Request results and in-flight work are shared in the current browser's memory for 30 seconds, with at most 20 cached queries and a 15-second fetch timeout. Errors are evicted, authorization failures clear cached results, and retry bypasses the affected cached request. Nothing is persisted to localStorage, shared across browsers or used as an authorization decision. Page names changed elsewhere may remain in a browser snapshot for up to 30 seconds; new search terms fetch fresh results. Categories load only for category selection and share the same bounded request helper.
+
+Homepage settings also use page summaries for their choices. The legacy GET /api/pages full-document response remains available for older clients; page creation still posts there. New editor selectors do not call it. No database migration, public-page change or new paid service is required.

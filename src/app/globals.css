@@ -3084,3 +3084,13 @@ button.primary {
     --swiper-count: var(--swiper-mobile, 1);
   }
 }
+
+.page-choice-control {
+  display: grid;
+  gap: 0.5rem;
+  min-width: 0;
+}
+.page-choice-control > * {
+  min-width: 0;
+  max-width: 100%;
+}

@@ -1,0 +1,17 @@
+# 89 — Load lightweight page choices in the editor
+
+Status: resolved
+
+The owner approved the next overall-review improvement on 2026-11-22. Replace full-document downloads in destination selectors and manual page-grid settings with an administrator-only searchable, paginated summary endpoint. Return only page ID, title, slug and visibility; never editor content, metadata or photo inventories. Keep existing saved selections labelled even outside the current search/batch. Share recent browser requests/results with bounded memory and short expiry. Load categories only when required. Preserve private-page choices for administrators and all existing destination validation.
+
+Verify unauthorized/outsider denial, pagination with tied titles, literal case-insensitive title/URL search including Chinese, selected-ID lookup, deleted pages, bounded response size and cursor validation. Check desktop/mobile selector search, show-more, errors/retry and saved selections. Keep legacy /api/pages compatibility for older clients. This branch builds on PR 46 and should merge after it.
+
+## Resolution — 2026-11-22
+
+Added authenticated GET /api/page-choices with fixed 30-row keyset batches and ID/title/slug/visibility only. Search matches literal case-insensitive title/URL text; IDs lookup returns up to 100 selected summaries. Deleted pages are excluded and malformed cursors, oversized search/ID lists and NUL input are rejected. No migration or public data cache is involved.
+
+DestinationPicker and manual PageGridSettings now use one reusable search/select control with debounce, show-more, loading/empty feedback and retry. Existing selections load separately and retain their names as search and selected IDs change. Category requests are lazy. Small choice responses/in-flight requests share a browser-memory cache: at most 20 entries, 30-second expiry, 15-second timeout, explicit retry and authorization-failure clearing. Homepage choices also use summaries instead of full page documents. The legacy /api/pages response remains for older clients.
+
+Two browser-cache tests and three local service/privacy tests passed. The service fixture verifies batches 30/30/7 across case-equivalent titles and deletion of the cursor's anchor, private and trashed-page handling, genuine outsider denial, Chinese/URL/literal wildcard search, selected summaries, malformed input and bodies below 20 KB despite 68 large editor documents. Desktop 1440 px and mobile 390 px browser checks verified 31 options becoming 61 after show-more, search, selected labels retained across a no-result search, retry after injected 503, and saving a searched page into the grid. The inspected editor flow made zero GET /api/pages requests. No horizontal overflow appeared; chosen controls measured 298 px in the mobile form and 348 px in the mobile editor panel. Existing seedling preload warnings remain; no editor JavaScript errors were observed. Screenshots are local, outside the watched repository.
+
+Type checking, targeted formatting and diff checks passed. The final production webpack build passed after the last input-validation checks. Code/React review confirmed lazy requests, request deduplication, stale-response guards, stable native labels, bounded memory and no cross-user server cache. Known limits: names changed elsewhere can remain in a browser snapshot for up to 30 seconds, and the legacy endpoint remains unbounded for older clients. No production content, credentials or infrastructure changes. See docs/page-choices.md.
