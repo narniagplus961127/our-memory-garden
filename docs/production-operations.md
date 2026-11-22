@@ -36,7 +36,7 @@ For current billed usage, allowance and plan, follow **View provider dashboard**
 
 After each release, inspect Vercel deployment/build events and runtime logs for errors, including login, media and export routes; record timestamps and request IDs without passwords, cookies, reset links or credentials. Check canonical public access and an administrator session. Check Neon project Monitoring if database latency/errors rise. Review storage and provider usage weekly and after large imports/exports. Exports and abandoned uploads also occupy storage until maintained. [Vercel runtime logs](https://vercel.com/docs/logs/runtime).
 
-This release uses manual owner/operator checks. No unattended alert service, external log drain or maintenance scheduler is implied. If the canonical site fails, inspect the failing deployment and runtime logs before retrying. Roll back to a known-good production deployment if available; rollback does not reverse database migrations. Preserve data and reconcile schema compatibility before rolling code back. No earlier production deployment has been verified healthy for rollback; the initial deployment exposed the corrected SDK configuration error.
+This release uses manual owner/operator checks and daily temporary-data cleanup. The owner declined automatic backups and unattended alerts on 2026-11-22; no external log drain or alert delivery is configured. If the canonical site fails, inspect the failing deployment and runtime logs before retrying. Public and admin error screens offer **Try again** without exposing internal exceptions. Failed editor saves retain existing device recovery and keep the editor retryable; keep the editor open until saved. Template edits remain in memory and should not be reloaded while unsaved. Rollback does not reverse database migrations; reconcile schema compatibility before rolling code back. PR 47 deployment `dpl_5tvpX6nup4Qo5HGK1Au5kWF2KoSr` was READY and authenticated admin navigation was verified on 2026-11-22.
 
 ## Independent backup routine
 
@@ -46,6 +46,10 @@ The v2 archive includes private/public pages, trash, retained versions, navigati
 
 ## Expiry and staging maintenance
 
+`vercel.json` schedules `GET /api/maintenance` daily at 19:00 UTC (03:00 Kuala Lumpur). A production-only sensitive `CRON_SECRET` of at least 32 characters is required; Vercel sends it as a bearer header. Missing/wrong authorization fails closed, and HEAD never runs cleanup. A production deployment must capture the secret before the job can run. Verify with `?dryRun=1` and the bearer header, never a secret in the URL. The endpoint logs counts only; inspect runtime logs manually. No backup creation or alert delivery runs here.
+
+The shared cleanup implementation takes a PostgreSQL transaction advisory lock, bounds execution to approximately 200 seconds, and skips an overlapping run. Each batch selects at most 10 expired exports (50 parts each) and 100 pending uploads expired for over an hour. Large exports retire successfully deleted part rows and continue in later batches. Storage failures retain retryable state. A `deferred` result means another batch is needed; repeated failures require operator investigation. Scheduling does not guarantee delivery or impose a billing cap.
+
 Run these from a reviewed checkout on a trusted operator machine with Node.js 24 and installed dependencies. The ignored `.env.neon.local` must point at the dedicated hosted garden and its private buckets. Inspect the target metadata without printing credentials first. Never use the local test env for hosted maintenance or publish the private env file.
 
 ```powershell
@@ -53,11 +57,11 @@ node --env-file=.env.neon.local scripts/cleanup-exports.mjs
 node --env-file=.env.neon.local scripts/cleanup-media-staging.mjs
 ```
 
-These are dry runs. Review the candidate IDs; export cleanup selects at most 10 expired jobs, and staging cleanup selects at most 100 pending uploads expired for over an hour. Run maintenance daily while actively uploading/exporting and after a large backup session once its temporary copies expire. Empty output from export cleanup means no eligible jobs. After review, use:
+These are dry runs for operator inspection or backlog handling in addition to the daily job. Review the candidate IDs. Empty output from export cleanup means no eligible jobs. After review, use:
 
 ```powershell
 node --env-file=.env.neon.local scripts/cleanup-exports.mjs --apply
 node --env-file=.env.neon.local scripts/cleanup-media-staging.mjs --apply
 ```
 
-Export maintenance deletes only validated recorded export keys and expired private snapshot/pin records, keeping retryable state if object deletion fails. `--export-id=<uuid>` can narrow it to one expired export. Staging maintenance deletes only recorded staging keys, retains audit records and does not delete ready originals/displays. Repeat dry-run/apply in bounded batches until the backlog is clear. Inspect nonzero exit/error output and retry after correcting connectivity; do not manually delete whole buckets or page/history rows. Deleting expired temporary copies never deletes already downloaded independent backups.
+Export maintenance deletes only validated recorded export keys and expired private snapshot/pin records, keeping retryable state if object deletion fails. `--export-id=<uuid>` can narrow it to one expired export. Staging maintenance removes recorded staging keys and partial originals/display variants belonging only to expired pending uploads. It retains audit records and never deletes ready photo bytes. Repeat dry-run/apply in bounded batches until the backlog is clear. Inspect nonzero exit/error output and retry after correcting connectivity; do not manually delete whole buckets or page/history rows. Deleting expired temporary copies never deletes already downloaded independent backups.

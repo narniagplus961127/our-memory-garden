@@ -22,7 +22,7 @@ Unprepared originals are pinned against deletion. Each successful original part 
 
 ## Explicit expiry maintenance
 
-Run `node --env-file=<private-environment-file> scripts/cleanup-exports.mjs` to dry-run at most ten expired jobs. `--export-id=<uuid>` narrows the selection. After inspecting the candidate IDs/keys, `--apply` releases expired reservations, removes private snapshot records and deletes only recorded, validated `exports/<job-id>/...` keys (including recorded legacy local archive keys). Successful cleanup records `cleaned_at`; partial object deletion remains retryable. Other garden originals, display copies, pages and history are untouched. Production scheduling/operation belongs to ticket 13; no hosted cleanup was run for this ticket.
+Run `node --env-file=<private-environment-file> scripts/cleanup-exports.mjs` to dry-run at most ten expired jobs. `--export-id=<uuid>` narrows the selection. After inspecting the candidate IDs/keys, `--apply` releases expired reservations, removes private snapshot records and deletes only recorded, validated `exports/<job-id>/...` keys (including recorded legacy local archive keys). Each job processes at most 50 parts per run and retires successful part rows, so larger exports progress across runs. Successful final cleanup records `cleaned_at`; partial deletion remains retryable. Other garden originals, ready display copies, pages and history are untouched. The daily secret-protected job and CLI share overlap protection and cleanup rules; see [production operations](production-operations.md#expiry-and-staging-maintenance). Automatic backup creation and unattended alerts are excluded at the owner's request.
 
 ## Measurements and verification
 

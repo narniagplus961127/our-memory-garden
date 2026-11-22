@@ -51,7 +51,15 @@ export function TemplateEditor({ template }: { template: PageTemplate }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ...submitted, version: saved.version }),
       });
-      const result = await response.json();
+      if (response.status >= 500)
+        throw Error(
+          "The garden is temporarily unavailable. Your template changes are still in this editor. Please try saving again.",
+        );
+      const result = await response.json().catch(() => {
+        throw Error(
+          "Could not confirm the save. Keep this editor open and try again.",
+        );
+      });
       if (!response.ok) {
         conflict = response.status === 409;
         throw new Error(result.error ?? "Could not save the template.");

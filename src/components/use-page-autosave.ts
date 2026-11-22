@@ -203,7 +203,15 @@ export function usePageAutosave(page: GardenPage, accountId: string) {
           reason: s.reason,
         }),
       });
-      const result = await response.json();
+      if (response.status >= 500)
+        throw Error(
+          "The garden is temporarily unavailable. Please try saving again.",
+        );
+      const result = await response.json().catch(() => {
+        throw Error(
+          "Could not confirm the save. Keep this editor open and try again.",
+        );
+      });
       if (!s.active) return;
       if (response.status === 401 || response.status === 403) {
         stop();
@@ -241,9 +249,11 @@ export function usePageAutosave(page: GardenPage, accountId: string) {
       if (!s.active) return;
       setStatus("Not saved");
       setError(
-        cause instanceof Error
-          ? cause.message
-          : "Could not connect. Your changes are still here.",
+        cause instanceof TypeError
+          ? "Could not connect. Your changes are still in this editor. Please try saving again."
+          : cause instanceof Error
+            ? cause.message
+            : "Could not connect. Your changes are still here.",
       );
       writeRecovery();
     } finally {
