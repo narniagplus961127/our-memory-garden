@@ -3,6 +3,19 @@ const config: NextConfig = {
   poweredByHeader: false,
   async headers() {
     return [
+      ...[
+        "/brand/garden-panorama-v2.webp",
+        "/brand/garden-panorama-small-v2.webp",
+        "/brand/garden-menu-v2.webp",
+      ].map((source) => ({
+        source,
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=31536000, immutable",
+          },
+        ],
+      })),
       {
         source: "/(.*)",
         headers: [

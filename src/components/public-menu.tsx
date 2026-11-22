@@ -64,6 +64,7 @@ export function PublicMenu({ children }: { children: ReactNode }) {
         >
           {children}
         </nav>
+        <div className="website-menu-art" aria-hidden="true" />
       </SheetContent>
     </Sheet>
   );

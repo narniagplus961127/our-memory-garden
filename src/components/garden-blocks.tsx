@@ -689,7 +689,7 @@ export const gardenConfig: Config<
                 type="number"
                 min={0}
                 max={40}
-                value={value ?? 10}
+                value={value ?? 2}
                 onChange={(event) => {
                   const next = event.target.valueAsNumber;
                   if (Number.isInteger(next) && next >= 0 && next <= 40)
@@ -713,7 +713,7 @@ export const gardenConfig: Config<
       defaultProps: {
         maxColumns: 4,
         photoGap: 12,
-        photoRadius: 10,
+        photoRadius: 2,
         photoAnimation: "fade-in",
       },
       render: ({ puck, ...props }) => (
