@@ -1,5 +1,7 @@
 # Detailed pixel garden artwork
 
+**Archived:** the owner removed these illustrations from the website on 2026-11-22 (ticket 86). The WebP exports, original SVG and generator are no longer shipped. The descriptions below record the earlier design, with files available in Git history; they are not current website assets.
+
 Created with the built-in image generator on 2026-11-22. These original illustrations replace the simple SVG map on the dashboard, footer and menu. The owner's screenshots were visual references; the maps and compositions are new. No user photograph was modified.
 
 ## Panorama
@@ -20,4 +22,4 @@ Prompt:
 
 ## Delivery and caching
 
-Only the selected optimised WebP exports are shipped. Versioned filenames have one-year immutable browser/CDN caching; replace them with new filenames for future artwork updates. Assets are static files and do not pass through Neon or media APIs. The smaller panorama is about 180 KB, the larger one 588 KB, and the menu illustration 364 KB. The previous SVG and generator remain historical sources; active theme surfaces use these replacements.
+The earlier release shipped optimised WebP exports with immutable caching. They have now been removed, along with their cache configuration. This prompt record is retained only for history.
