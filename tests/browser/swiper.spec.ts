@@ -81,7 +81,7 @@ test("create a Swiper, round-trip its slides, and browse with responsive paginat
   ).toHaveText("Saved");
   await expect(canvas.locator(".garden-section")).toHaveCSS(
     "background-color",
-    "rgb(48, 67, 55)",
+    "rgb(46, 70, 48)",
   );
   const exported = await (
     await page.request.get("/api/pages/" + source.id + "/json")
@@ -167,11 +167,11 @@ test("create a Swiper, round-trip its slides, and browse with responsive paginat
       "rgb(255, 255, 255)",
     );
     const header = view.locator(".public-header");
-    await expect(header).toHaveCSS("background-color", "rgb(246, 241, 231)");
+    await expect(header).toHaveCSS("background-color", "rgb(255, 248, 231)");
     await expect(header).not.toHaveCSS("box-shadow", "none");
     await expect(header.locator(".brand")).toHaveCSS(
       "color",
-      "rgb(48, 67, 55)",
+      "rgb(46, 70, 48)",
     );
     await expect(header.locator(".brand img")).toHaveCSS("filter", "none");
 

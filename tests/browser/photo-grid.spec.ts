@@ -378,6 +378,31 @@ test("add a Photo grid, select photos, reorder and open the website viewer", asy
     await open.click();
     const viewer = website.getByRole("dialog", { name: "Photo grid viewer" });
     await expect(viewer.getByText("A long afternoon")).toBeVisible();
+    const titleContrast = await viewer
+      .locator(".garden-modal-header")
+      .evaluate((header) => {
+        const title = header.querySelector('[data-slot="dialog-title"]')!;
+        const luminance = (colour: string) => {
+          const [r, g, b] = colour
+            .match(/[\d.]+/g)!
+            .slice(0, 3)
+            .map(Number)
+            .map((channel) => {
+              const value = channel / 255;
+              return value <= 0.04045
+                ? value / 12.92
+                : ((value + 0.055) / 1.055) ** 2.4;
+            });
+          return r * 0.2126 + g * 0.7152 + b * 0.0722;
+        };
+        const foreground = luminance(getComputedStyle(title).color);
+        const background = luminance(getComputedStyle(header).backgroundColor);
+        return (
+          (Math.max(foreground, background) + 0.05) /
+          (Math.min(foreground, background) + 0.05)
+        );
+      });
+    expect(titleContrast).toBeGreaterThanOrEqual(4.5);
     await expect(viewer.locator("img")).toHaveAttribute("src", /\/thumb-640$/);
     await expect(viewer.locator("img")).toHaveAttribute(
       "srcset",

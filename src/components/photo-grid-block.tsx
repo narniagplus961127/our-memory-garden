@@ -25,7 +25,7 @@ export function PhotoGridBlock({
   url,
   maxColumns = 4,
   gap = 12,
-  radius = 10,
+  radius = 2,
   photoAnimation = "fade-in",
   editing = false,
 }: {
