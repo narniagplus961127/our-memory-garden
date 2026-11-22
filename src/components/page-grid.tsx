@@ -13,6 +13,8 @@ import {
   type PageCard,
 } from "@/lib/organization";
 import { PageCards } from "./page-cards";
+import { PageChoiceSelect, usePageChoiceLabels } from "./page-choice-select";
+import { loadChoiceData } from "@/lib/choice-request-cache";
 export function PageGrid({
   selection,
   showDate = true,
@@ -56,20 +58,19 @@ export function PageGridSettings({
   value: GridSelection;
   onChange: (value: GridSelection) => void;
 }) {
-  const [pages, setPages] = useState<PageCard[]>([]),
-    [categories, setCategories] = useState<Category[]>([]),
+  const [categories, setCategories] = useState<Category[]>([]),
     [pick, setPick] = useState(""),
     [error, setError] = useState("");
+  const selected = usePageChoiceLabels(
+    value.mode === "manual" ? value.pageIds : [],
+  );
   useEffect(() => {
+    if (value.mode !== "category") return;
     let cancelled = false;
-    Promise.all([fetch("/api/pages"), fetch("/api/categories")])
-      .then(async (responses) => {
-        if (responses.some((r) => !r.ok)) throw Error();
-        const [pages, categories] = await Promise.all(
-          responses.map((r) => r.json()),
-        );
+    setError("");
+    loadChoiceData<Category[]>("/api/categories")
+      .then((categories) => {
         if (!cancelled) {
-          setPages(pages);
           setCategories(categories);
         }
       })
@@ -80,7 +81,7 @@ export function PageGridSettings({
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [value.mode]);
   function move(index: number, offset: number) {
     const pageIds = [...value.pageIds];
     [pageIds[index], pageIds[index + offset]] = [
@@ -151,24 +152,19 @@ export function PageGridSettings({
       ) : (
         <>
           <Label htmlFor="grid-page">Add page to grid</Label>
-          <NativeSelect
+          <PageChoiceSelect
             id="grid-page"
             value={pick}
-            onChange={(e) => setPick(e.target.value)}
-          >
-            <NativeSelectOption value="">Choose a page</NativeSelectOption>
-            {pages
-              .filter((p) => !value.pageIds.includes(p.id))
-              .map((p) => (
-                <NativeSelectOption key={p.id} value={p.id}>
-                  {p.title}
-                  {p.visibility === "private" ? " · Private" : ""}
-                </NativeSelectOption>
-              ))}
-          </NativeSelect>
+            onChange={setPick}
+            excludeIds={value.pageIds}
+          />
           <Button
             className="secondary"
-            disabled={!pick || value.pageIds.length >= 100}
+            disabled={
+              !pick ||
+              value.pageIds.includes(pick) ||
+              value.pageIds.length >= 100
+            }
             onClick={() => {
               onChange({ ...value, pageIds: [...value.pageIds, pick] });
               setPick("");
@@ -178,11 +174,16 @@ export function PageGridSettings({
           </Button>
           <ol className="grid-selected-pages">
             {value.pageIds.map((id, i) => {
-              const p = pages.find((p) => p.id === id);
+              const p = selected.pages.find((p) => p.id === id);
               return (
                 <li key={id}>
                   <span>
-                    {p?.title ?? "Unavailable page"}
+                    {p?.title ??
+                      (selected.loading
+                        ? "Loading page…"
+                        : selected.error
+                          ? "Selected page"
+                          : "Unavailable page")}
                     {p?.visibility === "private" && <small> · Private</small>}
                   </span>
                   <div className="actions">
@@ -224,13 +225,21 @@ export function PageGridSettings({
       <p className="muted">
         <small>
           Private pages appear only for administrators. Create and rename
-          categories in Page details.
+          categories on the Categories page.
         </small>
       </p>
-      {error && (
+      {value.mode === "category" && error && (
         <p role="alert" className="error">
           {error}
         </p>
+      )}
+      {selected.error && (
+        <div role="alert">
+          <p className="error">{selected.error}</p>
+          <Button type="button" className="secondary" onClick={selected.retry}>
+            Retry selected pages
+          </Button>
+        </div>
       )}
     </div>
   );

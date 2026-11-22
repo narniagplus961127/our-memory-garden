@@ -13,7 +13,8 @@ import {
   isWebUrl,
   type Destination,
 } from "@/lib/destinations";
-import type { GardenPage } from "@/lib/pages";
+import { PageChoiceSelect } from "./page-choice-select";
+import { loadChoiceData } from "@/lib/choice-request-cache";
 import { categoryLabels, type Category } from "@/lib/organization";
 export function DestinationPicker({
   value,
@@ -25,16 +26,15 @@ export function DestinationPicker({
   optional?: boolean;
 }) {
   const id = useId();
-  const [pages, setPages] = useState<GardenPage[]>([]),
-    [error, setError] = useState(""),
-    [categories, setCategories] = useState<Category[]>([]),
+  const [categories, setCategories] = useState<Category[]>([]),
     [categoryError, setCategoryError] = useState("");
+  const kind = value?.kind ?? (optional ? "none" : "external");
   useEffect(() => {
+    if (kind !== "category") return;
     let active = true;
-    fetch("/api/categories")
-      .then(async (r) => {
-        if (!r.ok) throw Error();
-        const list = await r.json();
+    setCategoryError("");
+    loadChoiceData<Category[]>("/api/categories")
+      .then((list) => {
         if (active) setCategories(list);
       })
       .catch(() => {
@@ -43,25 +43,10 @@ export function DestinationPicker({
             "Could not load categories. Reopen these settings to retry.",
           );
       });
-    fetch("/api/pages")
-      .then(async (r) => {
-        if (!r.ok) throw Error();
-        return r.json();
-      })
-      .then((p) => {
-        if (active) setPages(p);
-      })
-      .catch(() => {
-        if (active)
-          setError(
-            "Could not load garden pages. Reopen these settings to retry.",
-          );
-      });
     return () => {
       active = false;
     };
-  }, []);
-  const kind = value?.kind ?? (optional ? "none" : "external");
+  }, [kind]);
   return (
     <div className="destination-picker">
       <Label htmlFor={id + "-kind"}>Destination type</Label>
@@ -97,26 +82,11 @@ export function DestinationPicker({
       {kind === "page" && (
         <>
           <Label htmlFor={id + "-page"}>Garden page</Label>
-          <NativeSelect
+          <PageChoiceSelect
             id={id + "-page"}
             value={value?.kind === "page" ? value.pageId : ""}
-            onChange={(e) => onChange({ kind: "page", pageId: e.target.value })}
-          >
-            <NativeSelectOption value="">Choose a page</NativeSelectOption>
-            {value?.kind === "page" &&
-              value.pageId &&
-              !pages.some((p) => p.id === value.pageId) && (
-                <NativeSelectOption value={value.pageId}>
-                  Unavailable page
-                </NativeSelectOption>
-              )}
-            {pages.map((p) => (
-              <NativeSelectOption key={p.id} value={p.id}>
-                {p.title}
-                {p.visibility === "private" ? " · Private" : ""}
-              </NativeSelectOption>
-            ))}
-          </NativeSelect>
+            onChange={(pageId) => onChange({ kind: "page", pageId })}
+          />
           {!value || value.kind !== "page" || !value.pageId ? (
             <p
               className={optional ? "muted" : "error"}
@@ -196,11 +166,6 @@ export function DestinationPicker({
             </p>
           )}
         </>
-      )}
-      {kind === "page" && error && (
-        <p className="error" role="alert">
-          {error}
-        </p>
       )}
     </div>
   );

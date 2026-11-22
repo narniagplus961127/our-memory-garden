@@ -6,12 +6,13 @@ import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import Link from "next/link";
 import type { GardenPage } from "@/lib/pages";
+import type { PageChoice } from "@/lib/page-choices";
 export function HomepageSettings({
   homepage,
   pages,
 }: {
   homepage: GardenPage;
-  pages: GardenPage[];
+  pages: PageChoice[];
 }) {
   const [current, setCurrent] = useState(homepage);
   const [selected, setSelected] = useState(homepage.id);
