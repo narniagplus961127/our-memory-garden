@@ -26,6 +26,8 @@ Neon shared SMTP is available initially. The hosted reset email and its return U
 
 ## Monitoring and storage
 
+Application request-size limits, per-instance throttling and the staged WAF enforcement process are documented in [request protection](request-protection.md). Optimized-image caching and its privacy/cost limits are documented in [photo delivery](photo-delivery.md). Neither process-local counters nor logging-only firewall rules are billing caps.
+
 **Settings → Usage & alerts** provides sampled application-origin photo/backup traffic estimates and configurable in-app warnings. These are separate from provider billing and do not replace provider notifications. See [usage monitoring](usage-monitoring.md) for coverage, sampling, warning windows and retention.
 
 In the garden, open **Settings → Storage** and use **Refresh usage**. The application paginates both private bucket inventories and shows originals, optimized displays, exports and staging bytes with a measurement timestamp. Database bytes come separately from `pg_database_size(current_database())`. A failed refresh marks the last confirmed value stale; unknown plan/quota values stay unavailable.

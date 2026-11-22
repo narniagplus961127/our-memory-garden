@@ -20,10 +20,11 @@ test(
     const sql = postgres(process.env.DATABASE_URL, { max: 1 });
     const [admin] =
       await sql`select user_id, email from garden_administrators order by email limit 1`;
-    await sql.end();
+    t.after(() => sql.end());
     assert.ok(admin, "prepare local fixture administrators first");
     let active = true;
     const sessions = [];
+    const resetTargets = [];
     const session = {
       user: {
         id: admin.user_id,
@@ -51,6 +52,15 @@ test(
           "__Secure-neon-auth.session_token=local-fixture-token; Path=/; HttpOnly; Secure; SameSite=Lax",
         );
         response.end(JSON.stringify(session));
+      } else if (url.pathname === "/request-password-reset") {
+        let body = "";
+        request.on("data", (chunk) => {
+          body += chunk;
+        });
+        request.on("end", () => {
+          resetTargets.push(JSON.parse(body).redirectTo);
+          response.end(JSON.stringify({ status: true }));
+        });
       } else if (url.pathname === "/get-session") {
         sessions.push(url.searchParams.get("disableCookieCache"));
         response.end(
@@ -130,6 +140,26 @@ test(
       307,
     );
     assert.equal((await fetch(base + "/api/pages")).status, 401);
+    const oversized = await fetch(base + "/api/auth/sign-in/email", {
+      method: "POST",
+      headers: { Origin: base, "Content-Type": "application/json" },
+      body: JSON.stringify({ email: admin.email, password: "x".repeat(9000) }),
+    });
+    assert.equal(
+      oversized.status,
+      413,
+      "reject oversized auth requests before provider calls",
+    );
+    const reset = await fetch(base + "/api/auth/request-password-reset", {
+      method: "POST",
+      headers: { Origin: base, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email: admin.email,
+        redirectTo: "https://outside.test/reset",
+      }),
+    });
+    assert.equal(reset.status, 200);
+    assert.deepEqual(resetTargets, [base + "/reset-password"]);
     const signedIn = await fetch(base + "/api/auth/sign-in/email", {
       method: "POST",
       headers: { Origin: base, "Content-Type": "application/json" },
@@ -167,6 +197,74 @@ test(
     assert.equal(loginPage.headers.get("location"), "/admin");
     assert.deepEqual(sessions, ["true"]);
     active = false;
+    // A public optimized copy must not turn the visitor's revoked admin cookie
+    // into a managed-session request. Private copies still recheck that session.
+    const photoId = crypto.randomUUID();
+    const pageId = crypto.randomUUID();
+    const photo = {
+      id: photoId,
+      name: "Runtime permission fixture",
+      status: "ready",
+      expected_bytes: 1,
+      width: 700,
+      height: 400,
+      original_type: "image/jpeg",
+      staging_key: "staging/" + photoId,
+      original_key: photoId + "/original",
+      display_key: photoId + "/display.webp",
+      created_by: admin.user_id,
+    };
+    await sql`insert into media_photos ${sql(photo)}`;
+    const content = {
+      root: { props: {} },
+      content: [
+        {
+          type: "Section",
+          props: {
+            id: "runtime-section",
+            content: [
+              { type: "Image", props: { id: "runtime-image", photoId } },
+            ],
+          },
+        },
+      ],
+    };
+    await sql`insert into pages(id,title,slug,visibility,content,created_by,updated_by) values(${pageId},'Runtime media fixture',${"runtime-" + pageId},'public',${sql.json(content)},${admin.user_id},${admin.user_id})`;
+    sessions.length = 0;
+    const mediaPath = base + "/api/media/" + photoId + "/display";
+    const publicMedia = await fetch(mediaPath, {
+      headers: { Cookie: cookie, "If-None-Match": "*" },
+    });
+    assert.equal(publicMedia.status, 304);
+    assert.deepEqual(
+      sessions,
+      [],
+      "public media skips managed auth even with a revoked cookie",
+    );
+    await sql`update pages set visibility='private' where id=${pageId}`;
+    const privateMedia = await fetch(mediaPath, {
+      headers: { Cookie: cookie, "If-None-Match": "*" },
+    });
+    assert.equal(privateMedia.status, 404);
+    assert.deepEqual(
+      sessions,
+      ["true"],
+      "private media revalidates the revoked session before any 304",
+    );
+    await sql`delete from pages where id=${pageId}`;
+    await sql`delete from media_photos where id=${photoId}`;
+    for (let attempt = 0; attempt < 31; attempt++) {
+      const limited = await fetch(base + "/api/auth/reset-password", {
+        method: "POST",
+        headers: { Origin: base, "Content-Type": "application/json" },
+        body: JSON.stringify({ token: "x".repeat(9000) }),
+      });
+      assert.equal(limited.status, attempt < 30 ? 413 : 429);
+      if (attempt === 30) {
+        assert.ok(Number(limited.headers.get("Retry-After")) > 0);
+        assert.equal(limited.headers.get("Cache-Control"), "private, no-store");
+      }
+    }
     sessions.length = 0;
     assert.equal(
       (await fetch(base + "/api/pages", { headers: { Cookie: cookie } }))
