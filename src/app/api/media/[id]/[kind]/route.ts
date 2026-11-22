@@ -24,7 +24,7 @@ export async function GET(
       await photoResponse(
         id,
         imageKind,
-        await currentAdministrator(request.headers),
+        () => currentAdministrator(request.headers),
         request.headers.get("If-None-Match"),
       ),
       metricKind,

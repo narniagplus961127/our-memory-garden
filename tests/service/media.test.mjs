@@ -147,7 +147,25 @@ test("uploaded photos preserve protected originals and publish only stripped opt
     cookie,
   );
   assert.equal(display.status, 200);
-  assert.match(display.headers.get("cache-control"), /no-store/);
+  assert.equal(display.headers.get("cache-control"), "private, no-cache");
+  const displayTag = display.headers.get("etag");
+  assert.ok(displayTag);
+  const privateRevalidation = await fetch(
+    base + "/api/media/" + photo.id + "/display",
+    {
+      headers: { Cookie: other, "If-None-Match": displayTag },
+    },
+  );
+  assert.equal(privateRevalidation.status, 304);
+  assert.equal((await privateRevalidation.arrayBuffer()).byteLength, 0);
+  assert.equal(
+    (
+      await fetch(base + "/api/media/" + photo.id + "/display", {
+        headers: { "If-None-Match": displayTag },
+      })
+    ).status,
+    404,
+  );
   const optimized = Buffer.from(await display.arrayBuffer()),
     meta = await sharp(optimized).metadata();
   assert.equal(meta.format, "webp");

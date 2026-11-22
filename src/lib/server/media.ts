@@ -20,6 +20,7 @@ import {
 } from "../media";
 import { photoVariantKey, writePhotoVariants } from "./photo-variants";
 import type { Administrator } from "./pages";
+import { PhotoByteCache } from "./photo-byte-cache";
 import { emptyMediaFilters, type MediaFilters } from "../media-filters";
 export const originalsBucket = () =>
   process.env.MEDIA_ORIGINALS_BUCKET ||
@@ -349,13 +350,18 @@ export async function completePhoto(id: string): Promise<Photo> {
     .catch(() => {});
   return (await getPhoto(id))!;
 }
+const optimizedPhotoBytes = new PhotoByteCache();
 export async function photoResponse(
   id: string,
   kind: "display" | "original" | PhotoVariantWidth,
-  admin: Administrator | null,
+  administrator: () => Promise<Administrator | null>,
   ifNoneMatch: string | null,
 ): Promise<Response> {
-  if (!validId.test(id) || (kind === "original" && !admin))
+  if (!validId.test(id)) throw new RequestError(404, "Photo not found.");
+  // Public display requests never need a managed-session round trip. Originals
+  // and private copies still validate the administrator on every request.
+  const originalAdmin = kind === "original" ? await administrator() : null;
+  if (kind === "original" && !originalAdmin)
     throw new RequestError(404, "Photo not found.");
   const [photo] = await database()<
     {
@@ -374,7 +380,8 @@ export async function photoResponse(
         where u.photo_id=p.id and u.visibility='public' and not u.deleted and not u.history
       ) else false end as publicly_accessible
     from media_photos p where p.id=${id} and p.status='ready'`;
-  if (!photo || (!admin && !photo.publicly_accessible))
+  if (!photo) throw new RequestError(404, "Photo not found.");
+  if (!photo.publicly_accessible && !originalAdmin && !(await administrator()))
     throw new RequestError(404, "Photo not found.");
 
   const variantWidth =
@@ -387,7 +394,7 @@ export async function photoResponse(
     "X-Content-Type-Options": "nosniff",
     "Content-Security-Policy": "default-src 'none'; sandbox",
   });
-  if (photo.publicly_accessible || typeof kind === "number") {
+  if (kind !== "original") {
     // Display bytes are immutable for a ready photo. Check live access
     // before validating the browser copy, including administrator-only thumbnails.
     const etag = `"garden-display-v1-${photo.id}${variantWidth ? "-w" + variantWidth : ""}"`;
@@ -407,20 +414,39 @@ export async function photoResponse(
       "Content-Disposition",
       `attachment; filename="original-${photo.id}.${photo.original_type.split("/")[1]}"`,
     );
+  const bucket = kind === "original" ? originalsBucket() : displayBucket();
+  const key =
+    kind === "original"
+      ? photo.original_key
+      : variantWidth
+        ? photoVariantKey(photo.display_key, variantWidth)
+        : photo.display_key;
+  const cacheKey = bucket + "/" + key;
+  const cached =
+    kind !== "original" ? optimizedPhotoBytes.get(cacheKey) : undefined;
+  if (cached) {
+    headers.set("Content-Length", String(cached.byteLength));
+    return new Response(new Uint8Array(cached), { headers });
+  }
   const object = await storage().send(
     new GetObjectCommand({
-      Bucket: kind === "original" ? originalsBucket() : displayBucket(),
-      Key:
-        kind === "original"
-          ? photo.original_key
-          : variantWidth
-            ? photoVariantKey(photo.display_key, variantWidth)
-            : photo.display_key,
+      Bucket: bucket,
+      Key: key,
     }),
   );
   if (!object.Body) throw new RequestError(404, "Photo not found.");
   if (object.ContentLength !== undefined)
     headers.set("Content-Length", String(object.ContentLength));
+  if (
+    kind !== "original" &&
+    object.ContentLength !== undefined &&
+    object.ContentLength > 0 &&
+    object.ContentLength <= optimizedPhotoBytes.maxEntryBytes
+  ) {
+    const bytes = await object.Body.transformToByteArray();
+    optimizedPhotoBytes.put(cacheKey, bytes);
+    return new Response(new Uint8Array(bytes), { headers });
+  }
   return new Response(object.Body.transformToWebStream(), { headers });
 }
 import type { PageData } from "../pages";
