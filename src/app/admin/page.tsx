@@ -21,15 +21,6 @@ export default async function Dashboard() {
             <Link href="/admin/pages/new">Create a page</Link>
           </Button>
         </div>
-        <img
-          className="garden-welcome-art"
-          src="/brand/garden-panorama-small-v2.webp"
-          srcSet="/brand/garden-panorama-small-v2.webp 960w, /brand/garden-panorama-v2.webp 1920w"
-          sizes="(max-width: 760px) 100vw, 44vw"
-          alt=""
-          width={1920}
-          height={640}
-        />
       </section>
       <section className="overview-pages" aria-labelledby="your-pages">
         <div className="section-heading">

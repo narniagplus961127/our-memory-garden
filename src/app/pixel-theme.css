@@ -67,20 +67,11 @@ body {
 }
 .garden-footer {
   position: relative;
-  padding: 0;
-  padding-bottom: max(24px, env(safe-area-inset-bottom));
+  padding: 20px var(--gutter) max(20px, env(safe-area-inset-bottom));
   border-top: 6px solid #86aa58;
   box-shadow: 0 -4px 0 #c6dba0;
   background: #304f39;
   color: #fff8e7;
-}
-.garden-footer-art {
-  height: clamp(144px, 14vw, 240px);
-  margin-bottom: 24px;
-  border-bottom: 4px solid #86aa58;
-  background: #dbe8b6 url("/brand/garden-panorama-v2.webp") center 55% / cover
-    no-repeat;
-  pointer-events: none;
 }
 .website-menu {
   background: var(--cream);
@@ -89,19 +80,12 @@ body {
 .website-menu nav {
   padding-bottom: 24px;
 }
-.website-menu-art {
-  flex: none;
-  height: min(42dvh, 360px);
-  border-top: 2px solid var(--pixel-edge);
-  background: var(--leaf) url("/brand/garden-menu-v2.webp") center / cover
-    no-repeat;
-  pointer-events: none;
-}
 .website-menu-header h2 {
   font-family: var(--font-pixel), sans-serif;
 }
 .website-menu .public-menu-items > li > a {
   font-size: 18px;
+  padding-inline: 12px;
 }
 .garden-page-card {
   background: var(--cream);
@@ -114,8 +98,7 @@ body {
   border-radius: 0;
 }
 .garden-card-cover {
-  background: var(--leaf) url("/brand/garden-panorama-small-v2.webp") center /
-    cover no-repeat;
+  background: var(--leaf);
 }
 .garden-page-card h3 {
   font-size: 24px;
@@ -169,7 +152,7 @@ body {
   text-decoration: none;
 }
 .sidebar-bottom {
-  padding: 24px 32px 28px;
+  padding: 24px 20px 28px;
   gap: 8px;
   border-top: 2px solid #9db782;
   background: var(--leaf);
@@ -179,6 +162,7 @@ body {
   font-size: var(--body-font-size);
   line-height: 1.5;
   min-height: 44px;
+  padding: 8px 12px;
   display: flex;
   align-items: center;
 }
@@ -186,24 +170,18 @@ body {
   border-radius: 0;
   box-shadow: none;
   min-height: 44px;
+  width: 100%;
+  padding: 8px 12px;
 }
 .admin-main {
   padding: 48px clamp(28px, 4vw, 64px);
 }
 .garden-welcome {
-  position: relative;
-  isolation: isolate;
-  min-height: 264px;
   margin-bottom: 48px;
   padding: 32px;
   border: 2px solid var(--pixel-edge);
   background: var(--cream);
   box-shadow: 5px 5px 0 var(--pixel-shadow);
-}
-.garden-welcome-copy {
-  position: relative;
-  z-index: 1;
-  max-width: 52%;
 }
 .garden-welcome-copy .eyebrow {
   margin-bottom: 16px;
@@ -211,16 +189,6 @@ body {
 .garden-welcome h1 {
   font-size: clamp(30px, 3vw, 40px);
   margin-bottom: 16px;
-}
-.garden-welcome-art {
-  position: absolute;
-  right: 0;
-  bottom: 0;
-  width: 44%;
-  height: 100%;
-  object-fit: cover;
-  object-position: 66% center;
-  pointer-events: none;
 }
 .garden-welcome + .overview-pages {
   margin-top: 0;
@@ -360,7 +328,7 @@ body {
       box-shadow 150ms ease-out,
       border-color 150ms ease-out;
   }
-  :is(.admin-list-row, .media-card, .website-menu nav a, .sidebar-bottom a) {
+  :is(.admin-list-row, .media-card) {
     transition:
       background-color 150ms ease-out,
       border-color 150ms ease-out,
@@ -379,12 +347,6 @@ body {
   :is(.admin-list .admin-list-row, .media-card):hover {
     border-color: var(--pixel-edge);
     box-shadow: 3px 3px 0 var(--pixel-shadow);
-  }
-  :is(.website-menu nav a, .sidebar-bottom a):hover {
-    background: var(--leaf);
-    color: var(--ink);
-    text-decoration: underline;
-    text-underline-offset: 4px;
   }
   .garden-swiper-rail > button:hover:not(:disabled) {
     background: var(--leaf);
@@ -407,24 +369,7 @@ body {
   }
 }
 
-@media (hover: hover) {
-  .admin-sidebar nav a:hover:not([aria-current="page"]) {
-    background: #e9f0d2;
-    border-color: #b1c492;
-  }
-}
-@media (max-width: 1000px) {
-  .garden-welcome-copy {
-    max-width: 60%;
-  }
-  .garden-welcome-art {
-    width: 36%;
-  }
-}
 @media (max-width: 760px) {
-  .garden-footer-art {
-    background-image: url("/brand/garden-panorama-small-v2.webp");
-  }
   .public-header {
     padding-block: 12px;
   }
@@ -460,21 +405,57 @@ body {
     padding: 32px 20px;
   }
   .garden-welcome {
-    padding: 24px 20px 132px;
+    padding: 24px 20px;
     margin-bottom: 36px;
-  }
-  .garden-welcome-copy {
-    max-width: none;
-  }
-  .garden-welcome-art {
-    width: 100%;
-    height: 108px;
-    object-position: center;
   }
   .garden-welcome h1 {
     font-size: 32px;
   }
   .garden-page-card {
     padding: 8px;
+  }
+}
+
+/* One shared highlight for public menus and administration navigation. */
+:is(
+  .website-menu nav a,
+  .website-menu .submenu-toggle,
+  .admin-sidebar nav a,
+  .admin-mobile-bar nav > a,
+  .sidebar-bottom a,
+  .sidebar-bottom button
+):focus-visible {
+  background: var(--accent);
+  color: var(--ink);
+  box-shadow: inset 0 0 0 2px var(--pixel-edge);
+  text-decoration: none;
+}
+@media (prefers-reduced-motion: no-preference) {
+  :is(
+    .website-menu nav a,
+    .website-menu .submenu-toggle,
+    .admin-sidebar nav a,
+    .admin-mobile-bar nav > a,
+    .sidebar-bottom a,
+    .sidebar-bottom button
+  ) {
+    transition:
+      background-color 150ms ease-out,
+      box-shadow 150ms ease-out;
+  }
+}
+@media (hover: hover) and (pointer: fine) {
+  :is(
+      .website-menu nav a,
+      .website-menu .submenu-toggle,
+      .admin-sidebar nav a,
+      .admin-mobile-bar nav > a,
+      .sidebar-bottom a,
+      .sidebar-bottom button
+    ):hover:not([aria-current="page"]):not(:disabled) {
+    background: var(--accent);
+    color: var(--ink);
+    box-shadow: inset 0 0 0 2px var(--pixel-edge);
+    text-decoration: none;
   }
 }
