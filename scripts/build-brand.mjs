@@ -9,7 +9,7 @@ const mark = await readFile(
 );
 const icon = mark.replace(
   /<svg\b[^>]*>/,
-  '$&<rect width="64" height="64" rx="14" fill="#fffcf5"/>',
+  '$&<rect width="64" height="64" fill="#fff8e7"/>',
 );
 await writeFile(new URL("../src/app/icon.svg", import.meta.url), icon);
 await sharp(Buffer.from(mark))
@@ -20,7 +20,7 @@ await sharp(Buffer.from(mark))
   );
 await sharp(Buffer.from(icon))
   .resize(180, 180)
-  .flatten({ background: "#fffcf5" })
+  .flatten({ background: "#fff8e7" })
   .png()
   .toFile(fileURLToPath(new URL("../src/app/apple-icon.png", import.meta.url)));
 

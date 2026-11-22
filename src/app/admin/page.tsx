@@ -9,12 +9,26 @@ export default async function Dashboard() {
   const pages = await listPageCards(await requireAdministrator(), 5);
   return (
     <>
-      <p className="eyebrow">The garden dashboard</p>
-      <h1>Hello, gardeners</h1>
-      <p className="muted">Your little corner is growing beautifully.</p>
-      <Button asChild className="button">
-        <Link href="/admin/pages/new">Create a page</Link>
-      </Button>
+      <section
+        className="garden-welcome"
+        aria-labelledby="garden-welcome-title"
+      >
+        <div className="garden-welcome-copy">
+          <p className="eyebrow">The garden dashboard</p>
+          <h1 id="garden-welcome-title">Hello, gardeners</h1>
+          <p className="muted">Your little corner is growing beautifully.</p>
+          <Button asChild className="button primary">
+            <Link href="/admin/pages/new">Create a page</Link>
+          </Button>
+        </div>
+        <img
+          className="garden-welcome-art"
+          src="/brand/pixel-garden.svg"
+          alt=""
+          width={640}
+          height={192}
+        />
+      </section>
       <section className="overview-pages" aria-labelledby="your-pages">
         <div className="section-heading">
           <h2 id="your-pages">Your pages</h2>

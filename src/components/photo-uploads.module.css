@@ -5,7 +5,7 @@
   bottom: max(16px, env(safe-area-inset-bottom));
   width: min(360px, calc(100vw - 32px));
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: 2px;
   background: var(--background);
   color: var(--foreground);
   box-shadow: 0 8px 30px #30433726;
@@ -26,8 +26,7 @@
   min-width: 0;
   margin: 0;
   font:
-    600 14px/1.4 Arial,
-    Helvetica,
+    600 14px/1.4 var(--font-pixel),
     sans-serif;
 }
 .heading button {

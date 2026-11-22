@@ -4,11 +4,11 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  background: #f7f9f8;
-  --cream: #fff;
-  --leaf: #edf3ee;
-  --line: #dce3df;
-  --garden-muted: #65716a;
+  background: #edf2dc;
+  --cream: #fff8e7;
+  --leaf: #e2edc7;
+  --line: #b4c394;
+  --garden-muted: #506344;
   --editor-panel-width: 352px;
   --puck-color-azure-04: #304337;
   --puck-color-azure-06: #50725a;
@@ -28,7 +28,7 @@
 .editor-inline .editor-back {
   padding: 8px 12px;
   border: 1px solid var(--line);
-  border-radius: 5px;
+  border-radius: 2px;
 }
 .editor-inline .editor-page-identity input {
   padding: 8px;
@@ -125,8 +125,8 @@
   gap: 0;
   padding: 3px;
   border: 1px solid var(--line);
-  border-radius: 8px;
-  background: #eef1ef;
+  border-radius: 2px;
+  background: #e4edcc;
 }
 .button-width-control button {
   font-size: 13px;
@@ -135,7 +135,7 @@
   background: transparent;
 }
 .editor-inline .button-width-control button[aria-pressed="true"] {
-  background: #fff;
+  background: var(--cream);
   color: var(--ink);
   box-shadow: 0 1px 4px #30433720;
 }
@@ -146,7 +146,7 @@
   height: auto;
   min-height: 0;
   border: 1px solid var(--line);
-  border-radius: 16px;
+  border-radius: 2px;
   background: var(--cream);
   overflow: auto;
   scroll-padding-top: 90px;
@@ -163,7 +163,7 @@
 }
 .editor-inline .garden-editor-panel > .panel-heading h2 {
   font:
-    600 16px Arial,
+    600 16px var(--font-pixel),
     sans-serif;
   flex: 1;
 }
@@ -202,8 +202,8 @@
   min-width: 0;
   height: 56px;
   border: 1px solid var(--line);
-  border-radius: 6px;
-  background: #fff;
+  border-radius: 2px;
+  background: var(--cream);
   overflow: hidden;
   user-select: none;
   -webkit-user-select: none;
@@ -246,7 +246,7 @@
   align-items: center;
   padding: 10px 44px 10px 10px;
   font:
-    13px Arial,
+    13px var(--font-pixel),
     sans-serif;
   background: transparent;
   border: 0;
@@ -258,7 +258,7 @@
   border: 0;
   background: transparent;
   font:
-    13px Arial,
+    13px var(--font-pixel),
     sans-serif;
   text-align: left;
   padding: 10px 42px 10px 10px;
@@ -301,7 +301,7 @@
 .section-segments {
   display: flex;
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: 2px;
   background: #f2f4f1;
   padding: 3px;
   gap: 3px;
@@ -310,13 +310,13 @@
   flex: 1;
   min-width: 0;
   border: 0;
-  border-radius: 5px;
+  border-radius: 2px;
   background: transparent;
   padding: 8px;
   font-size: 14px;
 }
 .section-segments button[aria-pressed="true"] {
-  background: white;
+  background: var(--cream);
   color: var(--ink);
   box-shadow: 0 1px 4px #30433725;
 }
@@ -331,10 +331,10 @@
   min-height: 0;
   display: flex;
   flex-direction: column;
-  background: #e3ece7;
+  background: #e9efd8;
   margin: 0 12px 12px 0;
   border: 1px solid var(--line);
-  border-radius: 16px;
+  border-radius: 2px;
   overflow: hidden;
 }
 .editor-canvas-top {
@@ -358,9 +358,9 @@
   margin-left: auto;
   padding: 4px;
   gap: 4px;
-  background: #fff;
+  background: var(--cream);
   border: 1px solid var(--line);
-  border-radius: 10px;
+  border-radius: 2px;
   box-shadow: 0 2px 6px #30433710;
 }
 .editor-canvas-top .device-controls button {
@@ -396,7 +396,7 @@
 }
 #garden-inline-format .inline-format-bar {
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: 2px;
   box-shadow: 0 4px 14px #30433718;
 }
 .editor-inline .garden-canvas-frame {
@@ -461,7 +461,7 @@
   background: var(--cream);
   color: var(--ink);
   border: 1px solid var(--line);
-  border-radius: 10px;
+  border-radius: 2px;
   padding: 16px;
   box-shadow: 0 10px 32px #30433725;
 }
@@ -543,7 +543,7 @@
   flex: 0 0 100px;
   height: 44px;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 2px;
   background: var(--cream);
   gap: 0;
   overflow: hidden;
@@ -625,7 +625,7 @@
 .inspector-section > summary:focus-visible {
   outline: 2px solid var(--garden-muted);
   outline-offset: -4px;
-  border-radius: 6px;
+  border-radius: 2px;
 }
 .inspector-section-body {
   display: grid;
@@ -794,7 +794,7 @@
   border-top: 1px solid var(--line);
   margin: 0;
   font:
-    600 16px/24px Arial,
+    600 16px/24px var(--font-pixel),
     sans-serif;
 }
 .editor-page-settings .recovery-action button {
@@ -832,7 +832,7 @@
     textarea
   ) {
   font:
-    400 var(--control-font-size)/20px Arial,
+    400 var(--control-font-size)/20px var(--font-pixel),
     sans-serif;
   border-radius: var(--control-radius);
   min-height: var(--control-height);
@@ -873,7 +873,7 @@
   display: flex;
   gap: 0;
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: 2px;
   background: var(--cream);
   overflow: hidden;
 }
@@ -1010,10 +1010,10 @@
   overflow-wrap: anywhere;
 }
 .garden-canvas-actions > div {
-  background: #fff;
+  background: var(--cream);
   color: #304337;
   border: 1px solid #dce3df;
-  border-radius: 8px;
+  border-radius: 2px;
   padding: 4px;
   box-shadow: 0 3px 12px #30433720;
 }
