@@ -1,10 +1,7 @@
 "use client";
 import { Label } from "@/components/ui/label";
 import { NativeSelect } from "@/components/ui/native-select";
-import {
-  NativeSelectOptGroup,
-  NativeSelectOption,
-} from "@/components/ui/native-select";
+import { NativeSelectOption } from "@/components/ui/native-select";
 import { Input } from "@/components/ui/input";
 import { useEffect, useId, useState } from "react";
 import {
@@ -72,13 +69,23 @@ export function DestinationPicker({
         )}
         <NativeSelectOption value="page">Garden page</NativeSelectOption>
         <NativeSelectOption value="category">Category</NativeSelectOption>
-        <NativeSelectOptGroup label="System pages">
-          <NativeSelectOption value="system">
-            {gardenIndexLabel}
-          </NativeSelectOption>
-        </NativeSelectOptGroup>
+        <NativeSelectOption value="system">System page</NativeSelectOption>
         <NativeSelectOption value="external">External URL</NativeSelectOption>
       </NativeSelect>
+      {kind === "system" && (
+        <>
+          <Label htmlFor={id + "-system"}>System page</Label>
+          <NativeSelect
+            id={id + "-system"}
+            value={value?.kind === "system" ? value.page : "garden"}
+            onChange={() => onChange(gardenIndexDestination)}
+          >
+            <NativeSelectOption value="garden">
+              {gardenIndexLabel}
+            </NativeSelectOption>
+          </NativeSelect>
+        </>
+      )}
       {kind === "page" && (
         <>
           <Label htmlFor={id + "-page"}>Garden page</Label>
