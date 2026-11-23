@@ -257,6 +257,10 @@ export function AdminPageCards({
             <li key={page.id} {...(canReorder && sort.rowProps(page.id))}>
               <AdminListRow
                 title={page.title}
+                locked={sort.busy || listPending}
+                onNavigate={() => {
+                  if (searchTimer.current) clearTimeout(searchTimer.current);
+                }}
                 href={"/admin/pages/" + page.id}
                 showEdit={false}
                 grip={

@@ -148,7 +148,7 @@ test("bulk deletion preserves used photos and keeps failures selected for retry"
     .fill(photos[1].name);
   await expect(page.locator(".media-card")).toHaveCount(1);
   await expect(
-    page.getByText("3 selected · 1 in use", { exact: true }),
+    page.getByText("3 selected · 1 in use · 2 not shown", { exact: true }),
   ).toBeVisible();
   await page
     .getByRole("searchbox", { name: "Find a photo", exact: true })

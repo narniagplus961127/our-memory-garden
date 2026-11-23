@@ -39,6 +39,7 @@ export function AdminListRow({
   className = "",
   showEdit = true,
   locked = false,
+  onNavigate,
 }: {
   title: string;
   detail?: ReactNode;
@@ -48,6 +49,7 @@ export function AdminListRow({
   className?: string;
   showEdit?: boolean;
   locked?: boolean;
+  onNavigate?: () => void;
 }) {
   return (
     <Card className={`admin-list-row ${className}`}>
@@ -59,6 +61,7 @@ export function AdminListRow({
         aria-disabled={locked || undefined}
         tabIndex={locked ? -1 : undefined}
         onClick={locked ? (event) => event.preventDefault() : undefined}
+        onNavigate={onNavigate}
       >
         <span className="admin-list-copy">
           <strong>{title}</strong>

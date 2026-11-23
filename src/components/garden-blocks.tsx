@@ -978,6 +978,7 @@ export const gardenConfig: Config<
           >
             {photoId ? (
               <PhotoImage
+                embedded
                 className={"garden-photo garden-fit-" + (fit ?? "cover")}
                 {...responsivePhotoSources(photoId, "100vw")}
                 loading="lazy"

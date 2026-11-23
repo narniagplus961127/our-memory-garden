@@ -34,6 +34,7 @@ export function PhotoGallery({ photos }: { photos: GalleryPhoto[] }) {
               }}
             >
               <PhotoImage
+                embedded
                 {...responsivePhotoSources(
                   item.photoId,
                   "(max-width: 670px) 100vw, 340px",

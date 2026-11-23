@@ -3,6 +3,7 @@ import {
   S3Client,
   PutObjectCommand,
   GetObjectCommand,
+  HeadObjectCommand,
   DeleteObjectCommand,
 } from "@aws-sdk/client-s3";
 import sharp, { type OutputInfo } from "sharp";
@@ -356,6 +357,7 @@ export async function photoResponse(
   kind: "display" | "original" | PhotoVariantWidth,
   administrator: () => Promise<Administrator | null>,
   ifNoneMatch: string | null,
+  headOnly = false,
 ): Promise<Response> {
   if (!validId.test(id)) throw new RequestError(404, "Photo not found.");
   // Public display requests never need a managed-session round trip. Originals
@@ -426,7 +428,26 @@ export async function photoResponse(
     kind !== "original" ? optimizedPhotoBytes.get(cacheKey) : undefined;
   if (cached) {
     headers.set("Content-Length", String(cached.byteLength));
-    return new Response(new Uint8Array(cached), { headers });
+    return new Response(headOnly ? null : new Uint8Array(cached), { headers });
+  }
+  if (headOnly) {
+    try {
+      const object = await storage().send(
+        new HeadObjectCommand({ Bucket: bucket, Key: key }),
+      );
+      if (object.ContentLength !== undefined)
+        headers.set("Content-Length", String(object.ContentLength));
+      return new Response(null, { headers });
+    } catch (error) {
+      if (
+        error &&
+        typeof error === "object" &&
+        "$metadata" in error &&
+        (error.$metadata as { httpStatusCode?: number })?.httpStatusCode === 404
+      )
+        throw new RequestError(404, "Photo not found.");
+      throw error;
+    }
   }
   const object = await storage().send(
     new GetObjectCommand({

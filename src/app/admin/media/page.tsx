@@ -3,7 +3,7 @@ import { requireAdministrator } from "@/lib/server/auth";
 export const metadata = { title: "Media library" };
 
 export default async function MediaPage() {
-  await requireAdministrator();
+  const administrator = await requireAdministrator();
   return (
     <>
       <div className="admin-heading">
@@ -15,7 +15,7 @@ export default async function MediaPage() {
           </p>
         </div>
       </div>
-      <MediaLibrary />
+      <MediaLibrary key={administrator.id} rememberFor={administrator.id} />
     </>
   );
 }

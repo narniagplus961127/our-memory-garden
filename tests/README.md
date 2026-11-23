@@ -2,6 +2,8 @@
 
 # Service tests exercise real local authentication and data-API authorization.
 
+`tests/browser/media-reliability.spec.ts` covers transient/missing image retries and private metadata-only HEAD access; malformed/expired browsing records; account-scoped tab preferences and progressive restoration through small batches of real authorized library records; storage-denied fallback and sign-out invalidation; hidden-selection review without deletion; and page-title navigation during a deliberately delayed search. Run desktop/mobile against isolated local services. The browser tests exercise real auth, database, storage and route handling; only failures and delayed/smaller display batches are injected at HTTP boundaries.
+
 `tests/service/template-content-import.test.mjs` verifies authenticated template summaries, content-only replacement, unchanged page details/root, History, fresh block IDs, photo placeholders, ambiguous source rejection and deletion between review/confirmation against isolated local services. `tests/browser/page-json.spec.ts` covers all three import tabs, sidebar links/sign-out ordering and the page-list History shortcut at desktop/mobile sizes.
 
 `tests/browser/media-bulk-delete.spec.ts` also checks immediate thumbnail/checkbox selection, Shift ranges, Ctrl/Command toggles, keyboard Space and select-loaded shortcuts, and floating action-bar bounds while scrolling. Selection persists across filters; only loaded photos participate in ranges and select-loaded actions. Single-photo and Photo Grid pickers retain their separate selection behaviour.
