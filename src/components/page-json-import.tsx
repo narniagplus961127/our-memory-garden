@@ -15,7 +15,9 @@ type Review = {
   visibility: "public" | "private";
 };
 type SourcePage = { id: string; title: string; slug: string };
-type ImportSource = { file: unknown } | { sourcePageId: string };
+type SourceTemplate = { id: string; name: string };
+type ImportSource =
+  { file: unknown } | { sourcePageId: string } | { sourceTemplateId: string };
 
 export function PageJsonImport({
   pageId,
@@ -32,11 +34,15 @@ export function PageJsonImport({
   const [name, setName] = useState("");
   const [pages, setPages] = useState<SourcePage[] | null>(null);
   const [sourcePageId, setSourcePageId] = useState("");
+  const [templates, setTemplates] = useState<SourceTemplate[] | null>(null);
+  const [sourceTemplateId, setSourceTemplateId] = useState("");
   const [ready, setReady] = useState<{
     source: ImportSource;
     review: Review;
   } | null>(null);
-  const [busy, setBusy] = useState<"pages" | "review" | "import" | null>(null);
+  const [busy, setBusy] = useState<
+    "pages" | "templates" | "review" | "import" | null
+  >(null);
   const [error, setError] = useState("");
   const active = useRef(false);
   const input = useRef<HTMLInputElement>(null);
@@ -90,9 +96,34 @@ export function PageJsonImport({
     setMode(next);
     setName("");
     setSourcePageId("");
+    setSourceTemplateId("");
     setReady(null);
     setError("");
     if (next === "page" && !pages) void loadPages();
+    if (next === "template" && !templates) void loadTemplates();
+  }
+
+  function loadTemplates() {
+    return run("templates", async () => {
+      const response = await fetch(url + "?sources=templates", {
+        cache: "no-store",
+      });
+      if (!response.ok) throw Error("Could not load templates.");
+      setTemplates(await response.json());
+    });
+  }
+
+  function reviewTemplate(id: string) {
+    setSourceTemplateId(id);
+    setReady(null);
+    if (!id) {
+      setError("");
+      return;
+    }
+    return run("review", async () => {
+      const source = { sourceTemplateId: id };
+      setReady({ source, review: await send(source) });
+    });
   }
 
   function reviewFile(selected: File) {
@@ -175,6 +206,9 @@ export function PageJsonImport({
             <Tabs.Trigger value="page" disabled={!!busy}>
               Use another page
             </Tabs.Trigger>
+            <Tabs.Trigger value="template" disabled={!!busy}>
+              Use template content
+            </Tabs.Trigger>
           </Tabs.List>
           <Tabs.Content value="json" className="grid gap-2">
             <Label htmlFor="page-json-file">Page JSON file</Label>
@@ -255,10 +289,68 @@ export function PageJsonImport({
               </div>
             )}
           </Tabs.Content>
+          <Tabs.Content value="template" className="grid gap-2">
+            {templates && templates.length > 0 && (
+              <>
+                <Label htmlFor="page-template-source">Source template</Label>
+                <NativeSelect
+                  id="page-template-source"
+                  value={sourceTemplateId}
+                  disabled={!!busy}
+                  onChange={(event) => void reviewTemplate(event.target.value)}
+                >
+                  <NativeSelectOption value="">
+                    Choose a template
+                  </NativeSelectOption>
+                  {templates.map((template) => (
+                    <NativeSelectOption key={template.id} value={template.id}>
+                      {template.name}
+                    </NativeSelectOption>
+                  ))}
+                </NativeSelect>
+                <p className="m-0 muted">
+                  Use a saved layout with photo placeholders. Your page stays
+                  independent of the template.
+                </p>
+                {error && sourceTemplateId && !review && (
+                  <div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      disabled={!!busy}
+                      onClick={() => void reviewTemplate(sourceTemplateId)}
+                    >
+                      Review again
+                    </Button>
+                  </div>
+                )}
+              </>
+            )}
+            {templates?.length === 0 && (
+              <p className="m-0 muted">There are no templates to use yet.</p>
+            )}
+            {!templates && error && (
+              <div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={!!busy}
+                  onClick={() => void loadTemplates()}
+                >
+                  Retry loading templates
+                </Button>
+              </div>
+            )}
+          </Tabs.Content>
         </Tabs.Root>
         {busy === "pages" && (
           <p role="status" className="m-0 muted">
             Loading pages…
+          </p>
+        )}
+        {busy === "templates" && (
+          <p role="status" className="m-0 muted">
+            Loading templates…
           </p>
         )}
         {busy === "review" && (

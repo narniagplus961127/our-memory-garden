@@ -14,10 +14,12 @@ import { RequestError } from "./http";
 import { validatePageReferences } from "./page-references";
 import type { Administrator } from "./pages";
 import { cloneName, cloneSlug } from "./clone-name";
+import { copyTemplateForPage, templatePlaceholders } from "../page-templates";
 
 type Sql = postgres.TransactionSql;
 type PageContent = ReturnType<typeof parsePageJson>;
-type ImportSource = { file: unknown } | { sourcePageId: string };
+type ImportSource =
+  { file: unknown } | { sourcePageId: string } | { sourceTemplateId: string };
 
 async function getPage(sql: Sql, id: string, lock = false) {
   if (!uuid.test(id)) throw new RequestError(404, "Page not found.");
@@ -84,6 +86,20 @@ async function readImportSource(
   destinationId: string,
   input: ImportSource,
 ): Promise<PageContent> {
+  if ("sourceTemplateId" in input) {
+    if (!uuid.test(input.sourceTemplateId))
+      throw new RequestError(404, "Template not found.");
+    const [template] = await sql<{ content: PageData }[]>`
+      select content from page_templates where id=${input.sourceTemplateId} for share
+    `;
+    if (!template) throw new RequestError(404, "Template not found.");
+    return parsePageJson(
+      makePageJson(
+        copyTemplateForPage(templatePlaceholders(template.content)),
+        new Map(),
+      ),
+    );
+  }
   if ("sourcePageId" in input) {
     if (input.sourcePageId.toLowerCase() === destinationId.toLowerCase())
       throw new RequestError(400, "Choose a different source page.");

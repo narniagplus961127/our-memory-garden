@@ -6,6 +6,8 @@ You can import an older export or a file from another page. A file from an earli
 
 To reuse an existing layout without downloading a file, choose **Import page content → Use another page**. Select the source, review the block and photo counts, and confirm **Replace page content**. The editor uses the source’s latest saved blocks when you confirm. The source page keeps its own blocks and Photo grid entries.
 
+For a saved template, choose **Import page content → Use template content**. Select a template, review its blocks, and confirm replacement. Photos become placeholders and the new blocks stay independent of the template. The destination's page settings stay unchanged. Switching import tabs clears the previous selection/review, and a deleted template cannot replace content. You can also open **View history** directly from a page's three-dot menu in the Pages list.
+
 ## What to edit
 
 Start with [this example](examples/page.json) or export a page that already has the layout you want. Keep the file’s format and version. Each block needs a unique ID within that file.

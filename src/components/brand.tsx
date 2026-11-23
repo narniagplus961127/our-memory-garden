@@ -2,9 +2,16 @@ import Link from "next/link";
 import { PublicMenu } from "./public-menu";
 import { AdminShortcuts } from "./admin-shortcuts";
 import { WebsiteNavigation } from "./website-navigation";
-export function Brand() {
+export function Brand({ newTab = false }: { newTab?: boolean }) {
   return (
-    <Link className="brand" href="/">
+    <Link
+      className="brand"
+      href="/"
+      target={newTab ? "_blank" : undefined}
+      rel={newTab ? "noopener noreferrer" : undefined}
+      prefetch={newTab ? false : undefined}
+      aria-label={newTab ? "Our Memory Garden (opens in a new tab)" : undefined}
+    >
       <img src="/brand/seedlings.svg" alt="" width={36} height={36} />
       <span>Our Memory Garden</span>
     </Link>
