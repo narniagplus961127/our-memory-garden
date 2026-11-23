@@ -2,7 +2,7 @@ import { test, expect, type Page } from "@playwright/test";
 import { readFile } from "node:fs/promises";
 import type { MenuItem } from "../../src/lib/destinations";
 import type { NavigationState } from "../../src/lib/navigation";
-import { selectBlock } from "./editor-controls";
+import { canvasField, selectBlock } from "./editor-controls";
 
 const env = Object.fromEntries(
   (await readFile(".env.test", "utf8"))
@@ -77,7 +77,13 @@ test("add a Garden index link as a system page", async ({
     await page.goto("/admin/navigation/new");
     await page.getByLabel("Menu label", { exact: true }).fill(label);
     const destination = page.getByLabel("Destination type", { exact: true });
-    await destination.selectOption({ label: "Garden index (/garden)" });
+    await expect(page.getByLabel("System page", { exact: true })).toHaveCount(
+      0,
+    );
+    await destination.selectOption({ label: "System page" });
+    const systemPage = page.getByLabel("System page", { exact: true });
+    await expect(systemPage).toBeVisible();
+    await systemPage.selectOption({ label: "Garden index (/garden)" });
     await page
       .getByRole("button", { name: "Add menu item", exact: true })
       .click();
@@ -90,6 +96,7 @@ test("add a Garden index link as a system page", async ({
       .getByRole("link", { name: "Edit " + label, exact: true })
       .click();
     await expect(destination).toHaveValue("system");
+    await expect(systemPage).toHaveValue("garden");
     await page
       .getByLabel("Menu label", { exact: true })
       .fill("All memories " + label);
@@ -126,6 +133,7 @@ test("link text and buttons to the Garden index from the editor", async ({
   page,
   browser,
   baseURL,
+  isMobile,
 }) => {
   await signIn(page);
   const created = await page.request.post("/api/pages", {
@@ -167,10 +175,15 @@ test("link text and buttons to the Garden index from the editor", async ({
     },
   });
   expect(seeded.ok()).toBeTruthy();
-  await page.goto("/admin/pages/" + source.id);
-  const field = page
-    .frameLocator("iframe")
-    .locator('.garden-text [contenteditable="true"]');
+  await page.goto("/admin/pages/" + source.id, {
+    waitUntil: "domcontentloaded",
+  });
+  await selectBlock(page, "Select Text 1");
+  if (isMobile)
+    await page
+      .getByRole("button", { name: "Close panel", exact: true })
+      .click();
+  const field = canvasField(page, "Text content");
   await field.click();
   await field.evaluate((element) => {
     const range = element.ownerDocument.createRange();
@@ -184,6 +197,9 @@ test("link text and buttons to the Garden index from the editor", async ({
     name: "Link text to a page or website",
   });
   await linkDialog.getByLabel("Destination type").selectOption("system");
+  await linkDialog
+    .getByLabel("System page", { exact: true })
+    .selectOption({ label: "Garden index (/garden)" });
   await linkDialog.getByRole("button", { name: "Apply link" }).click();
   await expect(field.getByText("Browse the garden")).toHaveAttribute(
     "href",
@@ -195,6 +211,7 @@ test("link text and buttons to the Garden index from the editor", async ({
   await page
     .getByLabel("Destination type", { exact: true })
     .selectOption("system");
+  await page.getByLabel("System page", { exact: true }).selectOption("garden");
   await expect(
     page.getByRole("status", { name: "Auto-save status" }),
   ).toHaveText("Saved");

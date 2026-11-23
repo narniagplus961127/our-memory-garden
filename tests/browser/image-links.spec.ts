@@ -84,9 +84,50 @@ async function sample(page: Page) {
       })
     ).ok(),
   ).toBeTruthy();
-  await page.goto("/admin/pages/" + source.id);
+  await page.goto("/admin/pages/" + source.id, {
+    waitUntil: "domcontentloaded",
+  });
   return { source, target };
 }
+
+test("image system links use a separate page dropdown and retain saved choices", async ({
+  page,
+  request,
+  baseURL,
+}) => {
+  const { source } = await sample(page);
+  async function imageSettings() {
+    await selectBlock(page, "Select Image 1");
+    await page
+      .getByRole("button", { name: "Open settings panel", exact: true })
+      .click();
+  }
+  await imageSettings();
+  const kind = page.getByLabel("Destination type", { exact: true });
+  const system = page.getByLabel("System page", { exact: true });
+  await expect(system).toHaveCount(0);
+  await kind.selectOption({ label: "System page" });
+  await system.selectOption({ label: "Garden index (/garden)" });
+  const destination = async () => {
+    const current = await (
+      await page.request.get("/api/pages/" + source.id)
+    ).json();
+    return current.content.content[0].props.content[0].props.destination;
+  };
+  await expect.poll(destination).toEqual({ kind: "system", page: "garden" });
+  const publicPage = await request.get(baseURL + "/p/" + source.id);
+  expect(publicPage.ok()).toBeTruthy();
+  expect(await publicPage.text()).toContain(
+    'class="garden-image-link" href="/garden"',
+  );
+  await page.reload({ waitUntil: "domcontentloaded" });
+  await imageSettings();
+  await expect(kind).toHaveValue("system");
+  await expect(system).toHaveValue("garden");
+  await kind.selectOption("none");
+  await expect(system).toHaveCount(0);
+  await expect.poll(destination).toBeNull();
+});
 
 test("image links autosave, preserve editor controls, use stable page IDs and can be removed", async ({
   page,
