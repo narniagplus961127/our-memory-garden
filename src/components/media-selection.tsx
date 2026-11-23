@@ -6,13 +6,22 @@ import { Button } from "./ui/button";
 import { ConfirmationDialog } from "./confirmation-dialog";
 import { Toast } from "./toast";
 import styles from "./media-selection.module.css";
+import { Modal } from "./modal";
+import { Input } from "./ui/input";
+import { Label } from "./ui/label";
 
 export function useMediaSelection(
   photos: PhotoListItem[],
   onDeleted: (ids: string[]) => void,
   available: boolean,
   scope = "",
+  loading = false,
 ) {
+  const [review, setReview] = useState(false),
+    [reviewSearch, setReviewSearch] = useState(""),
+    [hiddenOnly, setHiddenOnly] = useState(false),
+    [reviewLimit, setReviewLimit] = useState(100);
+  const reviewTrigger = useRef<HTMLButtonElement>(null);
   const rangeAnchor = useRef<string | null>(null);
   useEffect(() => {
     rangeAnchor.current = null;
@@ -32,6 +41,29 @@ export function useMediaSelection(
     (photo) => photo.usageCount > 0,
   ).length;
   const eligible = selected.size - protectedCount;
+  const shownIds = new Set(photos.map((photo) => photo.id));
+  const hiddenCount = [...selected.keys()].filter(
+    (id) => !shownIds.has(id),
+  ).length;
+  const reviewed = [...selected.values()].filter(
+    (photo) =>
+      (!hiddenOnly || !shownIds.has(photo.id)) &&
+      photo.name
+        .toLocaleLowerCase()
+        .includes(reviewSearch.trim().toLocaleLowerCase()),
+  );
+  function clearHidden() {
+    setSelected(
+      (current) => new Map([...current].filter(([id]) => shownIds.has(id))),
+    );
+  }
+  function confirmDeletion() {
+    setReview(false);
+    setError("");
+    setFailures([]);
+    setRemoved(0);
+    setConfirm(true);
+  }
   useEffect(() => {
     setSelected((current) => {
       let changed = false;
@@ -214,7 +246,25 @@ export function useMediaSelection(
                 <span role="status">
                   {selected.size} selected
                   {protectedCount ? ` · ${protectedCount} in use` : ""}
+                  {loading
+                    ? " · Updating results…"
+                    : hiddenCount
+                      ? ` · ${hiddenCount} not shown`
+                      : ""}
                 </span>
+                <Button
+                  ref={reviewTrigger}
+                  variant="outline"
+                  disabled={busy}
+                  onClick={() => {
+                    setReviewSearch("");
+                    setHiddenOnly(false);
+                    setReviewLimit(100);
+                    setReview(true);
+                  }}
+                >
+                  Review selection
+                </Button>
                 <Button
                   variant="outline"
                   aria-label="Select loaded photos"
@@ -248,12 +298,7 @@ export function useMediaSelection(
                     "Delete selected" + (eligible ? ` (${eligible})` : "")
                   }
                   disabled={!eligible || busy}
-                  onClick={() => {
-                    setError("");
-                    setFailures([]);
-                    setRemoved(0);
-                    setConfirm(true);
-                  }}
+                  onClick={confirmDeletion}
                 >
                   <Trash2 />
                   Delete{eligible ? ` (${eligible})` : ""}
@@ -276,52 +321,165 @@ export function useMediaSelection(
         )}
       </>
     ) : null,
-    dialog: confirm ? (
-      <ConfirmationDialog
-        title={`Delete ${eligible} ${eligible === 1 ? "photo" : "photos"} permanently?`}
-        description="This removes the selected photos and their original and display copies from the shared library, including access from saved page versions. This cannot be undone. Photos used by current pages or covers will be kept."
-        busy={busy}
-        error={error}
-        confirmLabel="Delete selected photos"
-        retryLabel="Retry remaining photos"
-        onConfirm={() => void removeSelected()}
-        onCancel={() => setConfirm(false)}
-        confirmDisabled={!eligible}
-      >
-        <p>
-          {eligible} selected {eligible === 1 ? "photo will" : "photos will"} be
-          permanently deleted.
-        </p>
-        {!busy && !failures.length && (
-          <ul className={styles.failures}>
-            {[...selected.values()]
-              .filter((photo) => !photo.usageCount)
-              .slice(0, 8)
-              .map((photo) => (
-                <li key={photo.id}>{photo.name}</li>
-              ))}
-            {eligible > 8 && <li>And {eligible - 8} more selected photos.</li>}
-          </ul>
+    dialog: (
+      <>
+        {review && (
+          <Modal
+            title="Review selected photos"
+            description="Not shown photos are selected outside the currently loaded results. Removing a selection does not delete the photo."
+            onClose={() => setReview(false)}
+            returnFocus={reviewTrigger}
+            footer={
+              <>
+                <Button variant="outline" onClick={() => setReview(false)}>
+                  Close review
+                </Button>
+                <Button disabled={!eligible || busy} onClick={confirmDeletion}>
+                  Continue to delete ({eligible})
+                </Button>
+              </>
+            }
+          >
+            <div className="grid gap-4">
+              <Label htmlFor="selected-photo-search">
+                Find a selected photo
+              </Label>
+              <Input
+                id="selected-photo-search"
+                type="search"
+                maxLength={200}
+                value={reviewSearch}
+                onChange={(event) => {
+                  setReviewSearch(event.target.value);
+                  setReviewLimit(100);
+                }}
+              />
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  variant="outline"
+                  aria-pressed={hiddenOnly}
+                  disabled={loading}
+                  onClick={() => {
+                    setHiddenOnly((value) => !value);
+                    setReviewLimit(100);
+                  }}
+                >
+                  Not shown only
+                </Button>
+                <Button
+                  variant="outline"
+                  disabled={!hiddenCount || loading}
+                  onClick={clearHidden}
+                >
+                  Remove hidden selections
+                </Button>
+              </div>
+              <p role="status" className="m-0 muted">
+                {selected.size} selected · {hiddenCount} not shown ·{" "}
+                {protectedCount} in use
+              </p>
+              <ul className={styles.reviewList}>
+                {reviewed.slice(0, reviewLimit).map((photo) => (
+                  <li key={photo.id}>
+                    <span>
+                      <strong>{photo.name}</strong>
+                      <small>
+                        {shownIds.has(photo.id)
+                          ? "Shown in current results"
+                          : "Not shown in current results"}
+                        {photo.usageCount ? " · In use — protected" : ""}
+                      </small>
+                    </span>
+                    <Button
+                      variant="outline"
+                      aria-label={"Remove selection for " + photo.name}
+                      onClick={() =>
+                        setSelected((current) => {
+                          const next = new Map(current);
+                          next.delete(photo.id);
+                          return next;
+                        })
+                      }
+                    >
+                      Remove
+                    </Button>
+                  </li>
+                ))}
+              </ul>
+              {!reviewed.length && (
+                <p className="m-0 muted">No selected photos match this view.</p>
+              )}
+              {reviewed.length > reviewLimit && (
+                <div className="photo-pagination">
+                  <Button
+                    variant="outline"
+                    onClick={() => setReviewLimit((value) => value + 100)}
+                  >
+                    Show more selected photos
+                  </Button>
+                </div>
+              )}
+            </div>
+          </Modal>
         )}
-        {protectedCount > 0 && (
-          <p>
-            {protectedCount} selected{" "}
-            {protectedCount === 1 ? "photo is" : "photos are"} currently in use
-            and will be kept.
-          </p>
-        )}
-        {busy && <p role="status">Deleting photos… {progress} finished</p>}
-        {failures.length > 0 && (
-          <ul className={styles.failures}>
-            {failures.map((photo) => (
-              <li key={photo.id}>
-                <strong>{photo.name}</strong>
-                <span>{photo.error}</span>
-              </li>
-            ))}
-          </ul>
-        )}
-      </ConfirmationDialog>
-    ) : null,
+        {confirm ? (
+          <ConfirmationDialog
+            title={`Delete ${eligible} ${eligible === 1 ? "photo" : "photos"} permanently?`}
+            description="This removes the selected photos and their original and display copies from the shared library, including access from saved page versions. This cannot be undone. Photos used by current pages or covers will be kept."
+            busy={busy}
+            error={error}
+            confirmLabel="Delete selected photos"
+            retryLabel="Retry remaining photos"
+            onConfirm={() => void removeSelected()}
+            onCancel={() => setConfirm(false)}
+            confirmDisabled={!eligible}
+          >
+            <p>
+              {eligible} selected{" "}
+              {eligible === 1 ? "photo will" : "photos will"} be permanently
+              deleted.
+            </p>
+            {hiddenCount > 0 && (
+              <p>
+                {hiddenCount} selected{" "}
+                {hiddenCount === 1 ? "photo is" : "photos are"} not shown in the
+                current results. They are included in this selection.
+              </p>
+            )}
+            {!busy && !failures.length && (
+              <ul className={styles.failures}>
+                {[...selected.values()]
+                  .filter((photo) => !photo.usageCount)
+                  .slice(0, 8)
+                  .map((photo) => (
+                    <li key={photo.id}>{photo.name}</li>
+                  ))}
+                {eligible > 8 && (
+                  <li>And {eligible - 8} more selected photos.</li>
+                )}
+              </ul>
+            )}
+            {protectedCount > 0 && (
+              <p>
+                {protectedCount} selected{" "}
+                {protectedCount === 1 ? "photo is" : "photos are"} currently in
+                use and will be kept.
+              </p>
+            )}
+            {busy && <p role="status">Deleting photos… {progress} finished</p>}
+            {failures.length > 0 && (
+              <ul className={styles.failures}>
+                {failures.map((photo) => (
+                  <li key={photo.id}>
+                    <strong>{photo.name}</strong>
+                    <span>{photo.error}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </ConfirmationDialog>
+        ) : null}
+      </>
+    ),
   };
 }

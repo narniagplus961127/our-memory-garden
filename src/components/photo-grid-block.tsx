@@ -130,6 +130,7 @@ export function PhotoGridBlock({
           const alt = photo.alt || photo.caption || "Photo " + (index + 1);
           const image = (
             <PhotoImage
+              embedded
               {...responsivePhotoSources(
                 photo.photoId,
                 width

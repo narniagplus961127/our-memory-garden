@@ -32,6 +32,31 @@
 .toolbar span {
   font-size: 14px;
 }
+.reviewList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.reviewList li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+}
+.reviewList li > span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.reviewList strong,
+.reviewList small {
+  display: block;
+}
+.reviewList small {
+  color: var(--muted-foreground);
+  margin-top: 4px;
+}
 .toolbar button {
   padding-inline: 8px;
   gap: 6px;

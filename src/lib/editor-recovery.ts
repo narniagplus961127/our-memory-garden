@@ -2,6 +2,7 @@ import { validPageData } from "./blocks";
 import type { GardenPage } from "./pages";
 import type { PageSnapshot } from "./page-merge";
 import { logoutSignal } from "./session-events";
+import { clearMediaBrowse } from "./media-browse";
 export const recoveryPrefix = (accountId: string) =>
   "garden-recovery:" + encodeURIComponent(accountId) + ":";
 export { logoutSignal } from "./session-events";
@@ -76,6 +77,7 @@ export function clearAccountRecovery(accountId: string) {
   }
 }
 export function signOutEditors(accountId: string) {
+  clearMediaBrowse(accountId);
   clearAccountRecovery(accountId);
   window.dispatchEvent(new CustomEvent(logoutSignal, { detail: accountId }));
   try {

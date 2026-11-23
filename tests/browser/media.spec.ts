@@ -179,12 +179,12 @@ test("a removed editor image becomes deletable while its page and history remain
   await page.goto("/admin/pages/" + garden.id + "/history?version=2");
   await expect(
     page.getByRole("img", {
-      name: "Local test flower — no longer available",
+      name: "Local test flower — unavailable",
       exact: true,
     }),
   ).toBeVisible();
   await expect(
-    page.getByText("Photo no longer available", { exact: true }),
+    page.getByText("Photo unavailable", { exact: true }),
   ).toBeVisible();
   await page.screenshot({
     path: testInfo.outputPath("deleted-historical-photo.png"),

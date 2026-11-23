@@ -5,7 +5,7 @@ import { photoResponse } from "@/lib/server/media";
 import { observeOriginResponse } from "@/lib/server/usage";
 import { limitRequest } from "@/lib/server/request-rate-limit";
 export const dynamic = "force-dynamic";
-export async function GET(
+async function serve(
   request: Request,
   { params }: { params: Promise<{ id: string; kind: string }> },
 ) {
@@ -23,16 +23,25 @@ export async function GET(
     if (imageKind === undefined)
       throw new RequestError(404, "Photo not found.");
     metricKind = typeof imageKind === "number" ? "thumbnail" : imageKind;
-    return observeOriginResponse(
-      await photoResponse(
-        id,
-        imageKind,
-        () => currentAdministrator(request.headers),
-        request.headers.get("If-None-Match"),
-      ),
-      metricKind,
+    const response = await photoResponse(
+      id,
+      imageKind,
+      () => currentAdministrator(request.headers),
+      request.headers.get("If-None-Match"),
+      request.method === "HEAD",
     );
+    return request.method === "HEAD"
+      ? response
+      : observeOriginResponse(response, metricKind);
   } catch (error) {
-    return observeOriginResponse(errorResponse(error), metricKind);
+    const response = errorResponse(error);
+    return request.method === "HEAD"
+      ? new Response(null, {
+          status: response.status,
+          headers: response.headers,
+        })
+      : observeOriginResponse(response, metricKind);
   }
 }
+export const GET = serve;
+export const HEAD = serve;

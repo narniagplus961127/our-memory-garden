@@ -36,6 +36,8 @@ import {
   useHasPhotoUploads,
 } from "./photo-uploads";
 import { useMediaSelection } from "./media-selection";
+import { PhotoImage } from "./photo-image";
+import { useMediaBrowse } from "./use-media-browse";
 async function jsonRequest(path: string, body?: unknown) {
   const response = await fetch(path, {
     method: body === undefined ? "GET" : "POST",
@@ -125,7 +127,7 @@ export function PhotoDetails({
         <Tabs.Content value="overview">
           <div className="photo-overview">
             {!photo.deletionPending && (
-              <img
+              <PhotoImage
                 className="photo-detail-preview"
                 src={thumbnailPhotoUrl(photo.id, 640)}
                 alt={photo.name}
@@ -237,8 +239,10 @@ export function PhotoDetails({
 export function MediaLibrary({
   onSelect,
   multiple,
+  rememberFor,
 }: {
   onSelect?: (photoId: string) => void;
+  rememberFor?: string;
   multiple?: {
     selected: Set<string>;
     toggle: (id: string) => void;
@@ -248,17 +252,24 @@ export function MediaLibrary({
   const [photos, setPhotos] = useState<PhotoListItem[]>([]),
     [loading, setLoading] = useState(true),
     [error, setError] = useState(""),
-    [query, setQuery] = useState(""),
     [detail, setDetail] = useState<Photo | null>(null);
   const fieldId = useId();
+  const browse = useMediaBrowse(rememberFor);
+  const {
+    query,
+    setQuery,
+    filters,
+    setFilters,
+    grouped,
+    setGrouped,
+    filtersOpen,
+    setFiltersOpen,
+  } = browse;
   const uploads = usePhotoUploadActions();
   const hasUploads = useHasPhotoUploads();
   const readyRevision = useReadyPhotoRevision();
   const seenReady = useRef(readyRevision),
     lastRefresh = useRef(0);
-  const [filters, setFilters] = useState<MediaFilters>(emptyMediaFilters);
-  const [grouped, setGrouped] = useState(false);
-  const [filtersOpen, setFiltersOpen] = useState(false);
   const filterCount = Object.entries(filters).filter(
     ([key, value]) => value !== emptyMediaFilters[key as keyof MediaFilters],
   ).length;
@@ -305,7 +316,7 @@ export function MediaLibrary({
     requestAnimationFrame(() => detailsTrigger.current?.focus());
   }
   useEffect(() => {
-    if (choosingMany) return;
+    if (choosingMany || !browse.ready) return;
     if (!validMediaFilters(filters)) {
       setError("Choose a valid upload date range.");
       setLoading(false);
@@ -341,6 +352,8 @@ export function MediaLibrary({
               ];
             });
             setLibraryNext(nextCursor);
+            browse.batches.current = after ? browse.batches.current + 1 : 1;
+            browse.save();
           })
           .catch((cause: Error) => {
             if (!controller.signal.aborted) setError(cause.message);
@@ -355,7 +368,18 @@ export function MediaLibrary({
       clearTimeout(timer);
       controller.abort();
     };
-  }, [choosingMany, libraryRequest, query, filters]);
+  }, [choosingMany, libraryRequest, query, filters, browse.ready]);
+  useEffect(() => {
+    if (!browse.ready || loading || !browse.restoring.current) return;
+    if (
+      !error &&
+      libraryNext &&
+      browse.batches.current < browse.restoring.current.batches
+    ) {
+      setLoading(true);
+      setLibraryRequest({ after: libraryNext });
+    } else browse.finishRestore();
+  }, [loading, photos, error, libraryNext, browse.ready]);
   useEffect(() => {
     if (!choosingMany) return;
     if (!validMediaFilters(filters)) {
@@ -409,6 +433,8 @@ export function MediaLibrary({
     };
   }, [choosingMany, pickerPage, pickerRefresh, query, filters]);
   function refresh() {
+    browse.restoring.current = null;
+    browse.batches.current = 1;
     setLoading(true);
     if (choosingMany) {
       rangeAnchor.current = null;
@@ -427,6 +453,7 @@ export function MediaLibrary({
     },
     !onSelect && !multiple,
     JSON.stringify([query, filters]),
+    loading,
   );
   function retryLibrary() {
     if (choosingMany) refresh();
@@ -613,7 +640,9 @@ export function MediaLibrary({
                 aria-pressed={multiple.selected.has(photo.photoId)}
                 onClick={(event) => choosePhoto(photo.photoId, event.shiftKey)}
               >
-                <img
+                <PhotoImage
+                  embedded
+                  errorHint="Try selecting the photo again."
                   src={thumbnailPhotoUrl(photo.photoId)}
                   alt=""
                   loading="lazy"
@@ -665,7 +694,9 @@ export function MediaLibrary({
                         selection.toggle(photo, event.shiftKey)
                       }
                     >
-                      <img
+                      <PhotoImage
+                        embedded
+                        errorHint="Open Details to retry."
                         {...responsivePhotoSources(
                           photo.id,
                           "(max-width: 600px) 50vw, 260px",
@@ -677,7 +708,7 @@ export function MediaLibrary({
                       />
                     </button>
                   ) : (
-                    <img
+                    <PhotoImage
                       {...responsivePhotoSources(
                         photo.id,
                         "(max-width: 600px) 50vw, 260px",
