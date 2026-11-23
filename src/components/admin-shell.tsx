@@ -66,10 +66,8 @@ export function AdminShell({
       {label}
     </Link>
   ));
-  const bottom = (
+  const signOutAction = (
     <>
-      <Link href="/">View website ↗</Link>
-      <Link href="/admin/settings/account">Account</Link>
       <form
         action="/api/auth/logout"
         method="post"
@@ -79,7 +77,12 @@ export function AdminShell({
           else void signOut();
         }}
       >
-        <Button type="submit" disabled={!ready || signingOut}>
+        <Button
+          type="submit"
+          variant="ghost"
+          className="admin-sign-out"
+          disabled={!ready || signingOut}
+        >
           {signingOut ? "Signing out…" : "Sign out"}
         </Button>
         {signOutError && <p role="alert">{signOutError}</p>}
@@ -107,16 +110,18 @@ export function AdminShell({
           aria-label="Sidebar navigation"
           tabIndex={0}
         >
-          <Brand />
+          <Brand newTab />
           <div>
             <p className="eyebrow">Your garden</p>
-            <nav aria-label="Administration">{links}</nav>
+            <nav aria-label="Administration">
+              {links}
+              {signOutAction}
+            </nav>
           </div>
         </div>
-        <div className="sidebar-bottom">{bottom}</div>
       </aside>
       <header className="admin-mobile-bar">
-        <Brand />
+        <Brand newTab />
         <details ref={mobileMenu}>
           <summary aria-label="Open administration menu">☰</summary>
           <nav
@@ -131,7 +136,7 @@ export function AdminShell({
             }}
           >
             {links}
-            {bottom}
+            {signOutAction}
           </nav>
         </details>
       </header>

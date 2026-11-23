@@ -81,9 +81,65 @@ test("bulk deletion preserves used photos and keeps failures selected for retry"
     .getByRole("searchbox", { name: "Find a photo", exact: true })
     .fill(prefix);
   await expect(page.locator(".media-card")).toHaveCount(3);
+  await expect(
+    page.getByRole("button", { name: "Select photos", exact: true }),
+  ).toHaveCount(0);
+  const choices = page.getByRole("button", {
+    name: /^Toggle selection for Bulk delete/,
+  });
+  await expect(choices).toHaveCount(3);
+  await choices.first().click();
+  await expect
+    .poll(() =>
+      choices
+        .first()
+        .locator("img")
+        .evaluate(
+          (img: HTMLImageElement) => img.complete && img.naturalWidth > 0,
+        ),
+    )
+    .toBeTruthy();
+  await expect(
+    page.getByRole("region", { name: "Selected photos", exact: true }),
+  ).toBeVisible();
+  await choices.last().click({ modifiers: ["Shift"] });
+  await expect(
+    page.getByText("3 selected · 1 in use", { exact: true }),
+  ).toBeVisible();
+  await choices.nth(1).click({ modifiers: ["Control"] });
+  await expect(page.getByRole("checkbox", { checked: true })).toHaveCount(2);
+  await choices.nth(1).click({ modifiers: ["Meta"] });
+  await expect(page.getByRole("checkbox", { checked: true })).toHaveCount(3);
+  await page.locator(".media-card").last().scrollIntoViewIfNeeded();
+  const floating = page.getByRole("region", {
+    name: "Selected photos",
+    exact: true,
+  });
+  const bounds = await floating.boundingBox();
+  expect(bounds!.y).toBeGreaterThanOrEqual(0);
+  expect(bounds!.y + bounds!.height).toBeLessThanOrEqual(
+    page.viewportSize()!.height,
+  );
+  await page.screenshot({
+    path: testInfo.outputPath("media-floating-selection.png"),
+    fullPage: false,
+  });
   await page
-    .getByRole("button", { name: "Select photos", exact: true })
+    .getByRole("button", { name: "Clear selection", exact: true })
     .click();
+  await expect(
+    page.getByRole("region", { name: "Selected photos", exact: true }),
+  ).toHaveCount(0);
+  await choices.first().focus();
+  await page.keyboard.press("Control+a");
+  await expect(page.getByRole("checkbox", { checked: true })).toHaveCount(3);
+  await page
+    .getByRole("button", { name: "Clear selection", exact: true })
+    .click();
+  const checks = page.getByRole("checkbox", { name: /^Select Bulk delete/ });
+  await checks.first().press("Space");
+  await checks.last().click({ modifiers: ["Shift"] });
+  await expect(page.getByRole("checkbox", { checked: true })).toHaveCount(3);
   await page
     .getByRole("button", { name: "Select loaded photos", exact: true })
     .click();

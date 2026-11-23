@@ -110,6 +110,7 @@ export function AdminPageCards({
     paged?.query.sort ?? (order ? "page-date-desc" : "manual"),
   );
   const router = useRouter();
+  const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [pending, startTransition] = useTransition();
   const previousQuery = useRef(paged?.query);
   useEffect(() => {
@@ -145,7 +146,11 @@ export function AdminPageCards({
         ),
       250,
     );
-    return () => clearTimeout(timer);
+    searchTimer.current = timer;
+    return () => {
+      clearTimeout(timer);
+      if (searchTimer.current === timer) searchTimer.current = null;
+    };
   }, [query, sortKey, paged?.query.search, paged?.query.sort, router]);
   const controlsId = useId();
   const search = query.trim().toLowerCase();
@@ -194,6 +199,12 @@ export function AdminPageCards({
       : matches;
   const dateField =
     field === "created_at" || field === "page_date" ? field : "updated_at";
+  const listPending = Boolean(
+    paged &&
+    (pending ||
+      query.trim() !== paged.query.search ||
+      sortKey !== paged.query.sort),
+  );
 
   return (
     <>
@@ -270,7 +281,12 @@ export function AdminPageCards({
                       title={page.title}
                       href={"/admin/pages/" + page.id}
                       viewHref={page.is_homepage ? "/" : "/p/" + page.id}
-                      disabled={sort.busy}
+                      disabled={sort.busy || listPending}
+                      onNavigate={() => {
+                        // A queued list search must not replace a chosen destination.
+                        if (searchTimer.current)
+                          clearTimeout(searchTimer.current);
+                      }}
                       removalDisabled={page.is_homepage}
                       onRemove={(trigger) => {
                         returnFocus.current = trigger.current;

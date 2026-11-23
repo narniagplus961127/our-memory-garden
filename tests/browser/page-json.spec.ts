@@ -10,7 +10,7 @@ const headers = {
 test("review and replace editor content from JSON and another page", async ({
   page,
   isMobile,
-}) => {
+}, testInfo) => {
   test.setTimeout(120000);
   const signedIn = await page.request.post("/api/auth/sign-in/email", {
     headers,
@@ -117,6 +117,17 @@ test("review and replace editor content from JSON and another page", async ({
     data: { version: otherPage.version, text: "A different saved memory" },
   });
   expect(original.ok()).toBeTruthy();
+  const savedOther = await original.json();
+  const templateResponse = await page.request.post("/api/templates", {
+    headers,
+    data: {
+      name: "Import template " + suffix,
+      pageId: otherPage.id,
+      pageVersion: savedOther.version,
+    },
+  });
+  expect(templateResponse.status()).toBe(201);
+  const template = await templateResponse.json();
 
   // Navigate to the destination afresh after verifying the file download.
   await page.goto("/admin/pages/" + source.id);
@@ -141,7 +152,76 @@ test("review and replace editor content from JSON and another page", async ({
   expect(destination.slug).toBe(slug);
   expect(destination.visibility).toBe("private");
 
+  dialog = await openImport();
+  await dialog.getByRole("tab", { name: "Use template content" }).click();
+  await dialog.getByLabel("Source template").selectOption(template.id);
+  await expect(dialog).toContainText("1 block");
+  await dialog.getByRole("tab", { name: "Upload JSON" }).click();
+  await expect(
+    dialog.getByRole("button", { name: "Replace page content" }),
+  ).toBeDisabled();
+  await dialog.getByRole("tab", { name: "Use template content" }).click();
+  await dialog.getByLabel("Source template").selectOption(template.id);
+  await expect(dialog).toContainText("1 block");
+  if (isMobile) {
+    const fit = await dialog.boundingBox();
+    expect(fit!.x + fit!.width).toBeLessThanOrEqual(390);
+  }
+  await page.screenshot({
+    path: testInfo.outputPath("template-content-import.png"),
+    fullPage: true,
+  });
+  await dialog.getByRole("button", { name: "Replace page content" }).click();
+  await expect(
+    page.getByRole("textbox", { name: "Page title", exact: true }),
+  ).toHaveValue(title);
+  await expect(
+    page
+      .frameLocator("#preview-frame")
+      .getByText("A different saved memory", { exact: true }),
+  ).toBeVisible();
+
   await page.goto("/admin/pages");
+  const nav = page.getByRole("navigation", {
+    name: isMobile ? "Mobile administration" : "Administration",
+    exact: true,
+  });
+  if (isMobile) await page.getByLabel("Open administration menu").click();
+  await expect(nav.getByRole("link", { name: "View website" })).toHaveCount(0);
+  await expect(
+    nav.getByRole("link", { name: "Account", exact: true }),
+  ).toHaveCount(0);
+  await expect(
+    nav.getByRole("button", { name: "Sign out", exact: true }),
+  ).toBeVisible();
+  expect(await nav.locator(":scope > *").allTextContents()).toEqual([
+    "Overview",
+    "Pages",
+    "Templates",
+    "Categories",
+    "Media library",
+    "Navigation",
+    "Settings",
+    "Sign out",
+  ]);
+  const logo = page.locator(
+    isMobile ? ".admin-mobile-bar .brand" : ".admin-sidebar .brand",
+  );
+  await expect(logo).toHaveAttribute("target", "_blank");
+  if (isMobile) await page.getByLabel("Open administration menu").click();
+  await page.getByRole("searchbox", { name: "Search pages" }).fill(title);
+  await page
+    .getByRole("button", { name: "Actions for " + title, exact: true })
+    .click();
+  await expect(
+    page.getByRole("menuitem", { name: "View history", exact: true }),
+  ).toHaveAttribute("href", "/admin/pages/" + source.id + "/history");
+  await page
+    .getByRole("menuitem", { name: "View history", exact: true })
+    .click();
+  await expect(page).toHaveURL(
+    new RegExp("/admin/pages/" + source.id + "/history$"),
+  );
   await expect(page.getByRole("link", { name: "Copy from page" })).toHaveCount(
     0,
   );

@@ -2,6 +2,10 @@
 
 # Service tests exercise real local authentication and data-API authorization.
 
+`tests/service/template-content-import.test.mjs` verifies authenticated template summaries, content-only replacement, unchanged page details/root, History, fresh block IDs, photo placeholders, ambiguous source rejection and deletion between review/confirmation against isolated local services. `tests/browser/page-json.spec.ts` covers all three import tabs, sidebar links/sign-out ordering and the page-list History shortcut at desktop/mobile sizes.
+
+`tests/browser/media-bulk-delete.spec.ts` also checks immediate thumbnail/checkbox selection, Shift ranges, Ctrl/Command toggles, keyboard Space and select-loaded shortcuts, and floating action-bar bounds while scrolling. Selection persists across filters; only loaded photos participate in ranges and select-loaded actions. Single-photo and Photo Grid pickers retain their separate selection behaviour.
+
 ## Media boundary tests
 
 Use the dedicated local database and real local Better Auth accounts as described in `docs/backend-setup.md`. Set the AWS variables in `.env.local` and `.env.test` to the same S3-compatible fixture (endpoint `http://127.0.0.1:59005`, region `ap-southeast-1`, access/secret key `S3RVER`, private bucket names `garden-originals` and `garden-display`). Start `node --env-file=.env.test scripts/local-s3.mjs` in another terminal before the app. This development fixture only binds loopback and stores disposable bytes under ignored `work/local-s3/`.

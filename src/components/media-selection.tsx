@@ -1,6 +1,6 @@
 "use client";
-import { useEffect, useState } from "react";
-import { CheckSquare, Trash2 } from "lucide-react";
+import { useEffect, useRef, useState, type KeyboardEvent } from "react";
+import { Trash2 } from "lucide-react";
 import type { PhotoListItem } from "@/lib/media";
 import { Button } from "./ui/button";
 import { ConfirmationDialog } from "./confirmation-dialog";
@@ -11,9 +11,14 @@ export function useMediaSelection(
   photos: PhotoListItem[],
   onDeleted: (ids: string[]) => void,
   available: boolean,
+  scope = "",
 ) {
-  const [enabled, setEnabled] = useState(false),
-    [selected, setSelected] = useState(new Map<string, PhotoListItem>()),
+  const rangeAnchor = useRef<string | null>(null);
+  useEffect(() => {
+    rangeAnchor.current = null;
+  }, [scope]);
+  const enabled = available;
+  const [selected, setSelected] = useState(new Map<string, PhotoListItem>()),
     [confirm, setConfirm] = useState(false),
     [busy, setBusy] = useState(false),
     [error, setError] = useState(""),
@@ -55,7 +60,25 @@ export function useMediaSelection(
     window.addEventListener("beforeunload", warn);
     return () => window.removeEventListener("beforeunload", warn);
   }, [busy]);
-  function toggle(photo: PhotoListItem) {
+  function toggle(photo: PhotoListItem, extend = false) {
+    if (busy || !available || !enabled) return;
+    const anchor = photos.findIndex((item) => item.id === rangeAnchor.current);
+    const end = photos.findIndex((item) => item.id === photo.id);
+    if (extend && anchor >= 0 && end >= 0) {
+      const range = photos.slice(
+        Math.min(anchor, end),
+        Math.max(anchor, end) + 1,
+      );
+      setSelected(
+        (current) =>
+          new Map([
+            ...current,
+            ...range.map((item) => [item.id, item] as const),
+          ]),
+      );
+      return;
+    }
+    rangeAnchor.current = photo.id;
     setSelected((current) => {
       const next = new Map(current);
       if (next.has(photo.id)) next.delete(photo.id);
@@ -139,6 +162,22 @@ export function useMediaSelection(
     }
   }
   return {
+    toggle,
+    isSelected: (id: string) => selected.has(id),
+    busy,
+    onKeyDown: (event: KeyboardEvent<HTMLElement>) => {
+      if (!available || !enabled || busy || event.defaultPrevented) return;
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "a") {
+        event.preventDefault();
+        setSelected(
+          (current) =>
+            new Map([
+              ...current,
+              ...photos.map((photo) => [photo.id, photo] as const),
+            ]),
+        );
+      }
+    },
     forget: (id: string) =>
       setSelected((current) => {
         if (!current.has(id)) return current;
@@ -156,74 +195,83 @@ export function useMediaSelection(
             aria-label={"Select " + photo.name}
             checked={selected.has(photo.id)}
             disabled={busy}
-            onChange={() => toggle(photo)}
+            onClick={(event) => toggle(photo, event.shiftKey)}
+            onChange={() => {}}
           />
         </label>
       ) : null,
     toolbar: available ? (
       <>
         {notice && <Toast message={notice} onDismiss={() => setNotice("")} />}
-        <div className={styles.toolbar}>
-          <Button
-            variant="outline"
-            aria-pressed={enabled}
-            onClick={() => {
-              setEnabled(!enabled);
-              setSelected(new Map());
-            }}
-            disabled={busy}
+        {selected.size > 0 && (
+          <div
+            className={styles.toolbar}
+            role="region"
+            aria-label="Selected photos"
           >
-            <CheckSquare />
-            {enabled ? "Done selecting" : "Select photos"}
-          </Button>
-          {enabled && (
-            <>
-              <span role="status">
-                {selected.size} selected
-                {protectedCount ? ` · ${protectedCount} in use` : ""}
-              </span>
-              <Button
-                variant="outline"
-                disabled={!photos.length || busy}
-                onClick={() =>
-                  setSelected(
-                    (current) =>
-                      new Map([
-                        ...current,
-                        ...photos.map((photo) => [photo.id, photo] as const),
-                      ]),
-                  )
-                }
-              >
-                Select loaded photos
-              </Button>
-              <Button
-                variant="ghost"
-                disabled={!selected.size || busy}
-                onClick={() => setSelected(new Map())}
-              >
-                Clear selection
-              </Button>
-              <Button
-                variant="outline"
-                disabled={!eligible || busy}
-                onClick={() => {
-                  setError("");
-                  setFailures([]);
-                  setRemoved(0);
-                  setConfirm(true);
-                }}
-              >
-                <Trash2 />
-                Delete selected{eligible ? ` (${eligible})` : ""}
-              </Button>
-            </>
-          )}
-        </div>
-        {enabled && protectedCount > 0 && (
+            {enabled && (
+              <>
+                <span role="status">
+                  {selected.size} selected
+                  {protectedCount ? ` · ${protectedCount} in use` : ""}
+                </span>
+                <Button
+                  variant="outline"
+                  aria-label="Select loaded photos"
+                  disabled={!photos.length || busy}
+                  onClick={() =>
+                    setSelected(
+                      (current) =>
+                        new Map([
+                          ...current,
+                          ...photos.map((photo) => [photo.id, photo] as const),
+                        ]),
+                    )
+                  }
+                >
+                  Select loaded
+                </Button>
+                <Button
+                  variant="ghost"
+                  aria-label="Clear selection"
+                  disabled={!selected.size || busy}
+                  onClick={() => {
+                    setSelected(new Map());
+                    rangeAnchor.current = null;
+                  }}
+                >
+                  Clear
+                </Button>
+                <Button
+                  variant="outline"
+                  aria-label={
+                    "Delete selected" + (eligible ? ` (${eligible})` : "")
+                  }
+                  disabled={!eligible || busy}
+                  onClick={() => {
+                    setError("");
+                    setFailures([]);
+                    setRemoved(0);
+                    setConfirm(true);
+                  }}
+                >
+                  <Trash2 />
+                  Delete{eligible ? ` (${eligible})` : ""}
+                </Button>
+              </>
+            )}
+            {protectedCount > 0 && (
+              <p className={styles.help}>
+                Photos in use are protected and kept.
+              </p>
+            )}
+          </div>
+        )}
+        {enabled && (
           <p className={styles.help}>
-            Photos used by pages or covers are protected. Remove those
-            references before deleting them.
+            Click photos to select. Shift-click selects a range. Ctrl/⌘-click
+            toggles a photo. Ctrl/⌘+A selects loaded photos while the photo grid
+            is focused.
           </p>
         )}
       </>

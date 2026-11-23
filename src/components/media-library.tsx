@@ -426,6 +426,7 @@ export function MediaLibrary({
       refresh();
     },
     !onSelect && !multiple,
+    JSON.stringify([query, filters]),
   );
   function retryLibrary() {
     if (choosingMany) refresh();
@@ -474,7 +475,9 @@ export function MediaLibrary({
   return (
     <div
       className={
-        onSelect || multiple ? "media-library media-picker" : "media-library"
+        onSelect || multiple
+          ? "media-library media-picker"
+          : "media-library" + (selection.count ? " media-selection-active" : "")
       }
     >
       <div className="media-upload">
@@ -598,7 +601,7 @@ export function MediaLibrary({
                   multiple.add(pickerPhotos.map((photo) => photo.photoId));
                 }
               }
-            : undefined
+            : selection.onKeyDown
         }
       >
         {multiple
@@ -641,12 +644,38 @@ export function MediaLibrary({
                   className="media-card"
                   style={{ position: "relative" }}
                   key={photo.id}
+                  data-selected={
+                    (selection.enabled && selection.isSelected(photo.id)) ||
+                    undefined
+                  }
                 >
                   {selection.checkbox(photo)}
                   {photo.deletionPending ? (
                     <div className="media-cleanup-preview">
                       Deletion unfinished
                     </div>
+                  ) : selection.enabled ? (
+                    <button
+                      type="button"
+                      className="media-selection-image"
+                      aria-label={"Toggle selection for " + photo.name}
+                      aria-pressed={selection.isSelected(photo.id)}
+                      disabled={selection.busy}
+                      onClick={(event) =>
+                        selection.toggle(photo, event.shiftKey)
+                      }
+                    >
+                      <img
+                        {...responsivePhotoSources(
+                          photo.id,
+                          "(max-width: 600px) 50vw, 260px",
+                          photo.width,
+                          640,
+                        )}
+                        alt={photo.name}
+                        loading="lazy"
+                      />
+                    </button>
                   ) : (
                     <img
                       {...responsivePhotoSources(

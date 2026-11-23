@@ -6,6 +6,7 @@ import {
   Ellipsis,
   ExternalLink,
   GripVertical,
+  History,
   Pencil,
   Trash2,
 } from "lucide-react";
@@ -104,6 +105,7 @@ export function AdminListActions({
   onRemove,
   disabled = false,
   removalDisabled = false,
+  onNavigate,
 }: {
   list: AdminList | "navigation";
   id: string;
@@ -113,6 +115,7 @@ export function AdminListActions({
   onRemove: (trigger: RefObject<HTMLButtonElement | null>) => void;
   disabled?: boolean;
   removalDisabled?: boolean;
+  onNavigate?: () => void;
 }) {
   const router = useRouter();
   const trigger = useRef<HTMLButtonElement>(null);
@@ -183,7 +186,7 @@ export function AdminListActions({
           }}
         >
           <DropdownMenuItem asChild className="min-h-11">
-            <Link href={href}>
+            <Link href={href} onNavigate={onNavigate}>
               <Pencil aria-hidden="true" />
               Edit
             </Link>
@@ -198,6 +201,14 @@ export function AdminListActions({
               >
                 <ExternalLink aria-hidden="true" />
                 View
+              </Link>
+            </DropdownMenuItem>
+          )}
+          {list === "pages" && (
+            <DropdownMenuItem asChild className="min-h-11">
+              <Link href={`/admin/pages/${id}/history`} onNavigate={onNavigate}>
+                <History aria-hidden="true" />
+                View history
               </Link>
             </DropdownMenuItem>
           )}

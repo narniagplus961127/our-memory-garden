@@ -421,6 +421,7 @@ body {
   .website-menu nav a,
   .website-menu .submenu-toggle,
   .admin-sidebar nav a,
+  .admin-sign-out,
   .admin-mobile-bar nav > a,
   .sidebar-bottom a,
   .sidebar-bottom button
@@ -435,6 +436,7 @@ body {
     .website-menu nav a,
     .website-menu .submenu-toggle,
     .admin-sidebar nav a,
+    .admin-sign-out,
     .admin-mobile-bar nav > a,
     .sidebar-bottom a,
     .sidebar-bottom button
@@ -449,6 +451,7 @@ body {
       .website-menu nav a,
       .website-menu .submenu-toggle,
       .admin-sidebar nav a,
+      .admin-sign-out,
       .admin-mobile-bar nav > a,
       .sidebar-bottom a,
       .sidebar-bottom button
@@ -458,4 +461,16 @@ body {
     box-shadow: inset 0 0 0 2px var(--pixel-edge);
     text-decoration: none;
   }
+}
+
+.admin-sidebar nav .admin-sign-out,
+.admin-mobile-bar .admin-sign-out {
+  width: 100%;
+  justify-content: flex-start;
+  min-height: 44px;
+  padding: 8px 12px;
+  font-size: var(--body-font-size);
+  border: 2px solid transparent;
+  background: transparent;
+  box-shadow: none;
 }
