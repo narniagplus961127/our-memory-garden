@@ -1,7 +1,16 @@
 import { MAX_PHOTO_BYTES } from "./media";
 
 export type PhotoUploadState =
-  "Queued" | "Uploading" | "Processing" | "Ready" | "Error" | "Cancelled";
+  | "Queued"
+  | "Checking"
+  | "Waiting"
+  | "Duplicate"
+  | "Reusing"
+  | "Uploading"
+  | "Processing"
+  | "Ready"
+  | "Error"
+  | "Cancelled";
 export type PhotoUploadItem = {
   id: string;
   name: string;
@@ -10,6 +19,8 @@ export type PhotoUploadItem = {
   error?: string;
   retryable: boolean;
   photoId?: string;
+  duplicateName?: string;
+  reused?: boolean;
 };
 export type PhotoUploadSnapshot = {
   items: PhotoUploadItem[];
@@ -17,6 +28,7 @@ export type PhotoUploadSnapshot = {
   ready: number;
   failed: number;
   queued: number;
+  duplicates: number;
   unfinished: boolean;
   readyRevision: number;
   settledRevision: number;
@@ -24,7 +36,17 @@ export type PhotoUploadSnapshot = {
 };
 type RemoteUpload = { id: string; uploadUrl: string };
 export type PhotoUploadTransport = {
-  initiate: (file: File, signal: AbortSignal) => Promise<RemoteUpload>;
+  fingerprint?: (file: File, signal: AbortSignal) => Promise<string>;
+  initiate: (
+    file: File,
+    signal: AbortSignal,
+    forceDuplicate?: boolean,
+  ) => Promise<RemoteUpload | { duplicate: { id: string; name: string } }>;
+  reuse?: (
+    id: string,
+    file: File,
+    signal: AbortSignal,
+  ) => Promise<{ id: string }>;
   transfer: (
     url: string,
     file: File,
@@ -46,6 +68,10 @@ type RecordItem = {
   file?: File;
   remote?: RemoteUpload;
   transferred: boolean;
+  fingerprint?: string;
+  duplicate?: { id: string; name: string };
+  forceDuplicate?: boolean;
+  reuse?: boolean;
 };
 const emptySnapshot: PhotoUploadSnapshot = {
   items: [],
@@ -53,6 +79,7 @@ const emptySnapshot: PhotoUploadSnapshot = {
   ready: 0,
   failed: 0,
   queued: 0,
+  duplicates: 0,
   unfinished: false,
   readyRevision: 0,
   settledRevision: 0,
@@ -121,6 +148,8 @@ export class PhotoUploadQueue {
     )
       return;
     if (!record.transferred) record.remote = undefined;
+    record.reuse = false;
+    record.duplicate = undefined;
     record.item = {
       ...record.item,
       state: "Queued",
@@ -134,9 +163,22 @@ export class PhotoUploadQueue {
     for (const [id, record] of this.records)
       if (record.item.state === "Error") this.retry(id);
   }
+  resolveDuplicate(id: string, reuse: boolean) {
+    const record = this.records.get(id);
+    if (!record?.file || record.item.state !== "Duplicate") return;
+    record.reuse = reuse;
+    record.forceDuplicate = !reuse;
+    record.item = { ...record.item, state: "Queued", error: undefined };
+    this.cycle = true;
+    this.pump();
+  }
+  reuseDuplicates() {
+    for (const [id, record] of this.records)
+      if (record.item.state === "Duplicate") this.resolveDuplicate(id, true);
+  }
   cancelQueued() {
     for (const record of this.records.values())
-      if (record.item.state === "Queued") {
+      if (["Queued", "Waiting", "Duplicate"].includes(record.item.state)) {
         record.item = { ...record.item, state: "Cancelled" };
         record.file = undefined;
       }
@@ -144,7 +186,7 @@ export class PhotoUploadQueue {
   }
   remove(id: string) {
     const record = this.records.get(id);
-    if (record && !["Uploading", "Processing"].includes(record.item.state)) {
+    if (record && !this.active.has(id)) {
       this.records.delete(id);
       this.pump();
     }
@@ -169,7 +211,14 @@ export class PhotoUploadQueue {
   private emit() {
     const items = [...this.records.values()].map((record) => record.item);
     const pending = items.filter((item) =>
-      ["Queued", "Uploading", "Processing"].includes(item.state),
+      [
+        "Queued",
+        "Checking",
+        "Waiting",
+        "Reusing",
+        "Uploading",
+        "Processing",
+      ].includes(item.state),
     ).length;
     this.snapshot = {
       items,
@@ -177,10 +226,13 @@ export class PhotoUploadQueue {
       ready: items.filter((item) => item.state === "Ready").length,
       failed: items.filter((item) => item.state === "Error").length,
       queued: items.filter((item) => item.state === "Queued").length,
+      duplicates: items.filter((item) => item.state === "Duplicate").length,
       unfinished:
         pending > 0 ||
         [...this.records.values()].some(
-          (record) => record.item.state === "Error" && Boolean(record.file),
+          (record) =>
+            ["Error", "Duplicate"].includes(record.item.state) &&
+            Boolean(record.file),
         ),
       readyRevision: this.readyRevision,
       settledRevision: this.settledRevision,
@@ -189,12 +241,25 @@ export class PhotoUploadQueue {
     for (const listener of this.listeners) listener();
   }
   private pump() {
+    for (const record of this.records.values()) {
+      if (
+        record.item.state === "Waiting" &&
+        ![...this.active.keys()].some(
+          (id) => this.records.get(id)?.fingerprint === record.fingerprint,
+        )
+      )
+        record.item = { ...record.item, state: "Queued" };
+    }
     for (const [id, record] of this.records) {
       if (this.active.size >= 2) break;
       if (record.item.state !== "Queued" || !record.file) continue;
       const controller = new AbortController();
       this.active.set(id, controller);
-      record.item = { ...record.item, state: "Uploading", progress: undefined };
+      record.item = {
+        ...record.item,
+        state: this.transport.fingerprint ? "Checking" : "Uploading",
+        progress: undefined,
+      };
       void this.run(id, record, controller);
     }
     if (
@@ -217,13 +282,69 @@ export class PhotoUploadQueue {
     const current = () =>
       this.active.get(id) === controller && !controller.signal.aborted;
     try {
-      if (!record.remote)
-        record.remote = await this.transport.initiate(
+      if (!record.fingerprint && this.transport.fingerprint) {
+        record.fingerprint = await this.transport.fingerprint(
           record.file!,
           controller.signal,
         );
+        if (!current()) return;
+      }
+      if (record.reuse && record.duplicate && this.transport.reuse) {
+        record.item = { ...record.item, state: "Reusing" };
+        this.emit();
+        const reused = await this.transport.reuse(
+          record.duplicate.id,
+          record.file!,
+          controller.signal,
+        );
+        if (!current()) return;
+        record.item = {
+          ...record.item,
+          state: "Ready",
+          photoId: reused.id,
+          reused: true,
+          retryable: false,
+        };
+        record.file = undefined;
+        this.readyRevision++;
+        return;
+      }
+      if (
+        !record.forceDuplicate &&
+        record.fingerprint &&
+        [...this.active.keys()].some(
+          (otherId) =>
+            otherId !== id &&
+            this.records.get(otherId)?.fingerprint === record.fingerprint &&
+            this.records.get(otherId)?.item.state !== "Waiting",
+        )
+      ) {
+        record.item = { ...record.item, state: "Waiting" };
+        return;
+      }
+      if (!record.remote) {
+        const result = await this.transport.initiate(
+          record.file!,
+          controller.signal,
+          record.forceDuplicate,
+        );
+        if (!current()) return;
+        if ("duplicate" in result) {
+          record.duplicate = result.duplicate;
+          record.item = {
+            ...record.item,
+            state: "Duplicate",
+            duplicateName: result.duplicate.name,
+            progress: undefined,
+          };
+          return;
+        }
+        record.remote = result;
+      }
       if (!current()) return;
       if (!record.transferred) {
+        record.item = { ...record.item, state: "Uploading" };
+        this.emit();
         await this.transport.transfer(
           record.remote.uploadUrl,
           record.file!,

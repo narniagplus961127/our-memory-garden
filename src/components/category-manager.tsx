@@ -22,6 +22,8 @@ import {
   ListDragFeedback,
 } from "./admin-list-row";
 import { useListReorder } from "./use-list-reorder";
+import { Input } from "./ui/input";
+import { Button } from "./ui/button";
 
 type CategoryRow = {
   id: string;
@@ -38,6 +40,8 @@ export function CategoryManager({
   order: AdminListOrder;
 }) {
   const router = useRouter();
+  const [search, setSearch] = useState("");
+  const query = search.trim().toLocaleLowerCase();
   const [list, setList] = useState(initialCategories),
     [savedOrder, setSavedOrder] = useState(order),
     [moving, setMoving] = useState<CategoryRow[] | null>(null),
@@ -79,10 +83,21 @@ export function CategoryManager({
   }, [visible]);
   const sort = useListReorder(
     visible,
-    Boolean(moving || selected || orderConflict) || visible.length < 2,
+    Boolean(moving || selected || orderConflict || query) || visible.length < 2,
     (next) => void reorder(next),
     (item, parentId) => ({ ...item, parentId }),
   );
+  const matchingIds = new Set<string>();
+  const byId = new Map(visible.map((row) => [row.id, row]));
+  for (const row of visible) {
+    if (!(labels.get(row.id) ?? row.label).toLocaleLowerCase().includes(query))
+      continue;
+    let current: CategoryRow | undefined = row;
+    while (current && !matchingIds.has(current.id)) {
+      matchingIds.add(current.id);
+      current = current.parentId ? byId.get(current.parentId) : undefined;
+    }
+  }
 
   async function reorder(next: CategoryRow[]) {
     if (pending.current) return;
@@ -216,43 +231,69 @@ export function CategoryManager({
   function tree(parent: string | null): ReactNode {
     return (
       <ul className="admin-list admin-list-tree">
-        {children.get(parent)?.map((row) => {
-          const { category, id, parentId } = row;
-          const href = "/admin/categories/" + id + "/edit";
-          return (
-            <li key={id} {...sort.rowProps(id)}>
-              <AdminListRow
-                title={category.name}
-                detail={parentId ? labels.get(parentId) : undefined}
-                href={href}
-                locked={Boolean(moving)}
-                showEdit={false}
-                grip={<AdminListGrip {...sort.handleProps(row)} />}
-                trailing={
-                  <AdminListActions
-                    list="categories"
-                    id={id}
-                    title={category.name}
-                    href={href}
-                    viewHref={"/category/" + encodeURIComponent(category.slug)}
-                    disabled={Boolean(moving)}
-                    onRemove={(trigger) => {
-                      returnFocus.current = trigger;
-                      setSelected(category);
-                      setError("");
-                    }}
-                  />
-                }
-              />
-              {children.has(id) && tree(id)}
-            </li>
-          );
-        })}
+        {children
+          .get(parent)
+          ?.filter(({ id }) => matchingIds.has(id))
+          .map((row) => {
+            const { category, id, parentId } = row;
+            const href = "/admin/categories/" + id + "/edit";
+            return (
+              <li key={id} {...sort.rowProps(id)}>
+                <AdminListRow
+                  title={category.name}
+                  detail={parentId ? labels.get(parentId) : undefined}
+                  href={href}
+                  locked={Boolean(moving)}
+                  showEdit={false}
+                  grip={<AdminListGrip {...sort.handleProps(row)} />}
+                  trailing={
+                    <AdminListActions
+                      list="categories"
+                      id={id}
+                      title={category.name}
+                      href={href}
+                      viewHref={
+                        "/category/" + encodeURIComponent(category.slug)
+                      }
+                      disabled={Boolean(moving)}
+                      onRemove={(trigger) => {
+                        returnFocus.current = trigger;
+                        setSelected(category);
+                        setError("");
+                      }}
+                    />
+                  }
+                />
+                {children.has(id) && tree(id)}
+              </li>
+            );
+          })}
       </ul>
     );
   }
   return (
     <div className="category-manager">
+      <div className="mb-4 flex items-center gap-2">
+        <Input
+          type="search"
+          aria-label="Search categories"
+          placeholder="Find a category…"
+          maxLength={200}
+          value={search}
+          onChange={(event) => setSearch(event.target.value)}
+        />
+        {search && (
+          <Button variant="outline" onClick={() => setSearch("")}>
+            Clear search
+          </Button>
+        )}
+      </div>
+      {query && <p className="muted">Clear search to rearrange categories.</p>}
+      {list.length > 0 && matchingIds.size === 0 && (
+        <p role="status" className="muted">
+          No categories match this search.
+        </p>
+      )}
       {notice && <Toast message={notice} onDismiss={() => setNotice("")} />}
       <section aria-label="Categories" className="category-list">
         {list.length ? (

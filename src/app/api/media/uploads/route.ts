@@ -12,8 +12,9 @@ export async function POST(request: Request) {
     assertSameOrigin(request);
     const admin = await currentAdministrator(request.headers);
     if (!admin) throw new RequestError(401, "Sign in to upload photos.");
-    return Response.json(await initiatePhoto(admin, await bodyJson(request)), {
-      status: 201,
+    const result = await initiatePhoto(admin, await bodyJson(request, 4096));
+    return Response.json(result, {
+      status: "uploadUrl" in result ? 201 : 200,
       headers: { "Cache-Control": "private, no-store" },
     });
   } catch (error) {

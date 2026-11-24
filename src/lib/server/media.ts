@@ -1,4 +1,5 @@
 import "server-only";
+import { createHash } from "node:crypto";
 import {
   S3Client,
   PutObjectCommand,
@@ -44,6 +45,33 @@ export async function initiatePhoto(
   body: Record<string, unknown>,
 ) {
   if (
+    body.sha256 !== undefined &&
+    (typeof body.sha256 !== "string" || !/^[0-9a-f]{64}$/.test(body.sha256))
+  )
+    throw new RequestError(400, "Invalid photo fingerprint.");
+  if (
+    body.forceDuplicate !== undefined &&
+    typeof body.forceDuplicate !== "boolean"
+  )
+    throw new RequestError(400, "Invalid duplicate choice.");
+  if (body.reuseId !== undefined) {
+    if (
+      typeof body.reuseId !== "string" ||
+      !validId.test(body.reuseId) ||
+      !body.sha256 ||
+      !Number.isSafeInteger(body.size)
+    )
+      throw new RequestError(400, "Choose an identical existing photo.");
+    const [photo] =
+      await database()`select id from media_photos where id=${body.reuseId} and status='ready' and original_sha256=${body.sha256 as string} and original_bytes=${Number(body.size)}`;
+    if (!photo)
+      throw new RequestError(
+        409,
+        "The existing photo is no longer available. Retry to check or upload the file.",
+      );
+    return { id: String(photo.id), reused: true as const };
+  }
+  if (
     typeof body.name !== "string" ||
     !body.name.trim() ||
     body.name.length > 200 ||
@@ -55,6 +83,14 @@ export async function initiatePhoto(
     throw new RequestError(413, "Photos must be 25 MB or smaller.");
   if (!["image/jpeg", "image/png", "image/webp"].includes(String(body.type)))
     throw new RequestError(400, "Choose a JPEG, PNG or WebP photo.");
+  if (body.sha256 && !body.forceDuplicate) {
+    const [duplicate] =
+      await database()`select id,name from media_photos where status='ready' and original_sha256=${body.sha256 as string} and original_bytes=${Number(body.size)} order by created_at,id limit 1`;
+    if (duplicate)
+      return {
+        duplicate: { id: String(duplicate.id), name: String(duplicate.name) },
+      };
+  }
   const id = crypto.randomUUID(),
     staging = "staging/" + crypto.randomUUID();
   const uploadUrl = await getSignedUrl(
@@ -336,7 +372,8 @@ export async function completePhoto(id: string): Promise<Photo> {
       display.info.width,
       photoVariantWidths,
     );
-    await sql`update media_photos set status='ready',thumbnails_ready=true,original_bytes=${bytes.length},display_bytes=${display.data.length},width=${display.info.width},height=${display.info.height},original_type=${"image/" + format} where id=${id}`;
+    const fingerprint = createHash("sha256").update(bytes).digest("hex");
+    await sql`update media_photos set status='ready',thumbnails_ready=true,original_sha256=${fingerprint},original_bytes=${bytes.length},display_bytes=${display.data.length},width=${display.info.width},height=${display.info.height},original_type=${"image/" + format} where id=${id}`;
   });
   // A replay can only change the disposable staging key, never these server-written keys.
   const pending =

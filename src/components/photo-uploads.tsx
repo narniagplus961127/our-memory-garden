@@ -38,7 +38,10 @@ export function usePhotoUploadActions() {
   const queue = usePhotoUploadQueue(),
     accountId = useContext(AccountContext),
     controls = useContext(ControlsContext)!;
+  const [hydrated, setHydrated] = useState(false);
+  useEffect(() => setHydrated(true), []);
   return {
+    ready: hydrated && Boolean(accountId),
     enqueue: (files: File[]) => {
       if (!accountId) return;
       queue.enqueue(accountId, files);
@@ -165,9 +168,13 @@ function UploadItems({
 }) {
   const [limit, setLimit] = useState(50);
   const ranked = [
+    "Checking",
+    "Reusing",
     "Uploading",
     "Processing",
+    "Duplicate",
     "Error",
+    "Waiting",
     "Queued",
     "Ready",
     "Cancelled",
@@ -183,13 +190,53 @@ function UploadItems({
                 {item.state === "Ready" ? (
                   <>
                     <Check className="size-4" aria-hidden="true" />
-                    Ready
+                    {item.reused ? "Reused" : "Ready"}
                   </>
+                ) : item.state === "Duplicate" ? (
+                  "Already in library"
+                ) : item.state === "Checking" ? (
+                  "Checking for duplicates"
+                ) : item.state === "Waiting" ? (
+                  "Waiting for identical photo"
                 ) : (
                   item.state
                 )}
               </span>
             </div>
+            {item.state === "Duplicate" && (
+              <>
+                <p className={styles.help}>
+                  Identical to {item.duplicateName}. Reuse it to avoid uploading
+                  another copy.
+                </p>
+                <div className={styles.rowActions}>
+                  <Button
+                    size="sm"
+                    variant="primary"
+                    aria-label={"Use existing photo for " + item.name}
+                    onClick={() => queue.resolveDuplicate(item.id, true)}
+                  >
+                    Use existing photo
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    aria-label={"Upload another copy of " + item.name}
+                    onClick={() => queue.resolveDuplicate(item.id, false)}
+                  >
+                    Upload another copy
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    aria-label={"Skip duplicate " + item.name}
+                    onClick={() => queue.remove(item.id)}
+                  >
+                    Skip
+                  </Button>
+                </div>
+              </>
+            )}
             {item.state === "Uploading" && (
               <progress
                 value={item.progress}
@@ -297,30 +344,52 @@ function UploadInterface({
   useEffect(() => {
     if (snapshot.settledRevision === notified.current) return;
     notified.current = snapshot.settledRevision;
-    if (!snapshot.failed) setMinimized(true);
+    if (snapshot.duplicates) setMinimized(false);
+    else if (!snapshot.failed) setMinimized(true);
     const count = snapshot.ready;
+    const reused = snapshot.items.some((item) => item.reused);
     setNotice(
-      snapshot.failed
-        ? `${count} ${count === 1 ? "photo uploaded" : "photos uploaded"}. ${snapshot.failed} ${snapshot.failed === 1 ? "file needs" : "files need"} attention.`
-        : count
-          ? `${count} ${count === 1 ? "photo uploaded" : "photos uploaded"}.`
-          : "Queued uploads cancelled.",
+      snapshot.duplicates
+        ? `${snapshot.duplicates} identical ${snapshot.duplicates === 1 ? "photo is" : "photos are"} already in the library. Choose whether to reuse or upload another copy.`
+        : snapshot.failed
+          ? `${count} ${count === 1 ? "photo" : "photos"} ${reused ? "ready" : "uploaded"}. ${snapshot.failed} ${snapshot.failed === 1 ? "file needs" : "files need"} attention.`
+          : count
+            ? `${count} ${count === 1 ? "photo" : "photos"} ${reused ? "ready" : "uploaded"}.`
+            : "Queued uploads cancelled.",
     );
-  }, [snapshot.settledRevision, snapshot.ready, snapshot.failed]);
+  }, [
+    snapshot.settledRevision,
+    snapshot.ready,
+    snapshot.failed,
+    snapshot.duplicates,
+  ]);
   useEffect(() => {
     if (snapshot.sessionMessage) setNotice(snapshot.sessionMessage);
   }, [snapshot.sessionMessage]);
   if (/^\/(login|invite|forgot-password|reset-password)(\/|$)/.test(path))
     return null;
-  const label = snapshot.pending
-    ? `${snapshot.ready} of ${snapshot.items.length} uploaded`
-    : snapshot.failed
-      ? `${snapshot.ready} uploaded · ${snapshot.failed} failed`
-      : snapshot.ready
-        ? `${snapshot.ready} ${snapshot.ready === 1 ? "photo uploaded" : "photos uploaded"}`
-        : "Uploads cancelled";
+  const reused = snapshot.items.some((item) => item.reused);
+  const label =
+    snapshot.duplicates && !snapshot.pending
+      ? `${snapshot.duplicates} identical ${snapshot.duplicates === 1 ? "photo" : "photos"} found`
+      : snapshot.pending
+        ? `${snapshot.ready} of ${snapshot.items.length} ${reused ? "ready" : "uploaded"}`
+        : snapshot.failed
+          ? `${snapshot.ready} uploaded · ${snapshot.failed} failed`
+          : snapshot.ready
+            ? `${snapshot.ready} ${snapshot.ready === 1 ? "photo" : "photos"} ${reused ? "ready" : "uploaded"}`
+            : "Uploads cancelled";
   const actions = (
     <div className={styles.actions}>
+      {snapshot.duplicates > 0 && (
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => queue.reuseDuplicates()}
+        >
+          Reuse all identical photos
+        </Button>
+      )}
       {snapshot.queued > 0 && (
         <Button
           size="sm"
