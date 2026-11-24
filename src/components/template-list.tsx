@@ -13,6 +13,8 @@ import {
 import { ConfirmationDialog } from "./confirmation-dialog";
 import { Toast } from "./toast";
 import { useAdminListOrder } from "./use-admin-list-order";
+import { Input } from "./ui/input";
+import { Button } from "./ui/button";
 
 const templateLabel = (template: TemplateSummary) => template.name;
 
@@ -24,6 +26,8 @@ export function TemplateList({
   order: AdminListOrder;
 }) {
   const router = useRouter();
+  const [search, setSearch] = useState("");
+  const query = search.trim().toLocaleLowerCase();
   const [removed, setRemoved] = useState<string[]>([]);
   const [selected, setSelected] = useState<TemplateSummary | null>(null);
   const [busy, setBusy] = useState(false);
@@ -42,7 +46,7 @@ export function TemplateList({
     available,
     templateLabel,
     order,
-    Boolean(selected),
+    Boolean(selected) || Boolean(query),
   );
 
   async function remove() {
@@ -81,45 +85,73 @@ export function TemplateList({
 
   return (
     <>
+      <div className="mb-4 flex items-center gap-2">
+        <Input
+          type="search"
+          aria-label="Search templates"
+          placeholder="Find a template…"
+          maxLength={200}
+          value={search}
+          onChange={(event) => setSearch(event.target.value)}
+        />
+        {search && (
+          <Button variant="outline" onClick={() => setSearch("")}>
+            Clear search
+          </Button>
+        )}
+      </div>
+      {query && <p className="muted">Clear search to rearrange templates.</p>}
+      {available.length > 0 &&
+        !available.some((template) =>
+          template.name.toLocaleLowerCase().includes(query),
+        ) && (
+          <p role="status" className="muted">
+            No templates match this search.
+          </p>
+        )}
       {available.length ? (
         <ul className="admin-list">
-          {sort.ordered.map((template) => (
-            <li key={template.id} {...sort.rowProps(template.id)}>
-              <AdminListRow
-                title={template.name}
-                detail={
-                  starterTemplates.some(({ id }) => id === template.id)
-                    ? "Starter template"
-                    : undefined
-                }
-                href={"/admin/templates/" + template.id}
-                showEdit={false}
-                grip={
-                  <AdminListGrip
-                    {...sort.handleProps({
-                      id: template.id,
-                      label: template.name,
-                    })}
-                  />
-                }
-                trailing={
-                  <AdminListActions
-                    list="templates"
-                    id={template.id}
-                    title={template.name}
-                    href={"/admin/templates/" + template.id}
-                    disabled={sort.busy}
-                    onRemove={(trigger) => {
-                      returnFocus.current = trigger;
-                      setError("");
-                      setNotice("");
-                      setSelected(template);
-                    }}
-                  />
-                }
-              />
-            </li>
-          ))}
+          {sort.ordered
+            .filter((template) =>
+              template.name.toLocaleLowerCase().includes(query),
+            )
+            .map((template) => (
+              <li key={template.id} {...sort.rowProps(template.id)}>
+                <AdminListRow
+                  title={template.name}
+                  detail={
+                    starterTemplates.some(({ id }) => id === template.id)
+                      ? "Starter template"
+                      : undefined
+                  }
+                  href={"/admin/templates/" + template.id}
+                  showEdit={false}
+                  grip={
+                    <AdminListGrip
+                      {...sort.handleProps({
+                        id: template.id,
+                        label: template.name,
+                      })}
+                    />
+                  }
+                  trailing={
+                    <AdminListActions
+                      list="templates"
+                      id={template.id}
+                      title={template.name}
+                      href={"/admin/templates/" + template.id}
+                      disabled={sort.busy}
+                      onRemove={(trigger) => {
+                        returnFocus.current = trigger;
+                        setError("");
+                        setNotice("");
+                        setSelected(template);
+                      }}
+                    />
+                  }
+                />
+              </li>
+            ))}
         </ul>
       ) : (
         <div className="empty-state">

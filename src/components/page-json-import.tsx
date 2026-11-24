@@ -36,6 +36,18 @@ export function PageJsonImport({
   const [sourcePageId, setSourcePageId] = useState("");
   const [templates, setTemplates] = useState<SourceTemplate[] | null>(null);
   const [sourceTemplateId, setSourceTemplateId] = useState("");
+  const [templateSearch, setTemplateSearch] = useState("");
+  const templateQuery = templateSearch.trim().toLocaleLowerCase();
+  const matchingTemplates =
+    templates?.filter((template) =>
+      template.name.toLocaleLowerCase().includes(templateQuery),
+    ) ?? [];
+  const templateChoices =
+    templates?.filter(
+      (template) =>
+        template.id === sourceTemplateId ||
+        template.name.toLocaleLowerCase().includes(templateQuery),
+    ) ?? [];
   const [ready, setReady] = useState<{
     source: ImportSource;
     review: Review;
@@ -292,6 +304,34 @@ export function PageJsonImport({
           <Tabs.Content value="template" className="grid gap-2">
             {templates && templates.length > 0 && (
               <>
+                <Input
+                  type="search"
+                  aria-label="Search source templates"
+                  placeholder="Find a template…"
+                  maxLength={200}
+                  value={templateSearch}
+                  disabled={!!busy}
+                  onChange={(event) => setTemplateSearch(event.target.value)}
+                />
+                {templateSearch && (
+                  <div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      disabled={!!busy}
+                      onClick={() => setTemplateSearch("")}
+                    >
+                      Clear search
+                    </Button>
+                  </div>
+                )}
+                {matchingTemplates.length === 0 && (
+                  <p role="status" className="m-0 muted">
+                    {sourceTemplateId
+                      ? "No matches. Your selected template is kept."
+                      : "No templates match this search."}
+                  </p>
+                )}
                 <Label htmlFor="page-template-source">Source template</Label>
                 <NativeSelect
                   id="page-template-source"
@@ -302,7 +342,7 @@ export function PageJsonImport({
                   <NativeSelectOption value="">
                     Choose a template
                   </NativeSelectOption>
-                  {templates.map((template) => (
+                  {templateChoices.map((template) => (
                     <NativeSelectOption key={template.id} value={template.id}>
                       {template.name}
                     </NativeSelectOption>
