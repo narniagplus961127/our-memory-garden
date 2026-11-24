@@ -512,6 +512,7 @@ export function MediaLibrary({
         <Input
           id={fieldId + "-upload"}
           type="file"
+          disabled={!uploads.ready}
           accept="image/jpeg,image/png,image/webp"
           multiple
           onChange={(event) => {

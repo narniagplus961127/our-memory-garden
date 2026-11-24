@@ -31,6 +31,8 @@ async function navigate(page: Page, name: string, mobile: boolean) {
       .getByRole("navigation", { name: "Administration", exact: true })
       .getByRole("link", { name, exact: true })
       .click();
+  const path = name === "Pages" ? "/admin/pages" : "/admin/media";
+  await expect(page).toHaveURL(new URL(path, headers.Origin).href);
 }
 
 test("uploads keep two shared slots across navigation and editor pickers and warn before leaving", async ({
@@ -66,11 +68,14 @@ test("uploads keep two shared slots across navigation and editor pickers and war
     await route.continue().catch(() => {});
   });
   await page.goto("/admin/media");
+  await expect(page.getByLabel("Upload photos", { exact: true })).toBeEnabled();
   await page.getByLabel("Upload photos", { exact: true }).setInputFiles(
     [1, 2, 3].map((i) => ({
       name: prefix + i + ".jpg",
       mimeType: "image/jpeg",
-      buffer,
+      // These represent distinct files; identical originals now intentionally wait
+      // for the first upload and offer reuse instead of consuming both slots.
+      buffer: Buffer.concat([buffer, Buffer.from(prefix + i)]),
     })),
   );
   await expect.poll(() => initializations.length).toBe(2);
@@ -112,12 +117,18 @@ test("uploads keep two shared slots across navigation and editor pickers and war
   await expect(signOut).toBeVisible();
   await signOut.getByRole("button", { name: "Cancel", exact: true }).click();
   await expect(panel).toContainText("0 of 3 uploaded");
-  if (
-    isMobile &&
-    (await page.locator(".admin-mobile-bar details[open]").count()) === 0
-  )
-    await page.getByLabel("Open administration menu").click();
-  await page.getByRole("link", { name: "View website ↗", exact: true }).click();
+  // The sidebar logo now opens a new tab. Exercise same-tab plain-link
+  // navigation directly to keep testing the queue's navigation boundary.
+  await page.evaluate(() => {
+    const link = document.createElement("a");
+    link.href = "/";
+    link.id = "upload-plain-website";
+    link.textContent = "Visit website";
+    link.style.cssText = "position:fixed;top:0;left:0;z-index:9999";
+    document.body.appendChild(link);
+  });
+  await page.locator("#upload-plain-website").click();
+  await expect(page).toHaveURL(new URL("/", headers.Origin).href);
   await expect(panel).toContainText("0 of 3 uploaded");
   await page.evaluate(() => {
     const link = document.createElement("a");
@@ -148,9 +159,11 @@ test("uploads keep two shared slots across navigation and editor pickers and war
     name: "Choose a photo",
     exact: true,
   });
-  await picker
-    .getByLabel("Upload photos", { exact: true })
-    .setInputFiles({ name: prefix + "4.jpg", mimeType: "image/jpeg", buffer });
+  await picker.getByLabel("Upload photos", { exact: true }).setInputFiles({
+    name: prefix + "4.jpg",
+    mimeType: "image/jpeg",
+    buffer: Buffer.concat([buffer, Buffer.from(prefix + "4")]),
+  });
   await picker
     .getByRole("button", { name: "View upload progress", exact: true })
     .click();
@@ -203,11 +216,12 @@ test("confirming sign out stops queued uploads without a second unload prompt", 
     await route.abort().catch(() => {});
   });
   await page.goto("/admin/media");
+  await expect(page.getByLabel("Upload photos", { exact: true })).toBeEnabled();
   await page.getByLabel("Upload photos", { exact: true }).setInputFiles(
     [1, 2, 3].map((i) => ({
       name: "Sign out " + i + ".jpg",
       mimeType: "image/jpeg",
-      buffer: Buffer.from("pending upload"),
+      buffer: Buffer.from("pending upload " + i),
     })),
   );
   await expect.poll(() => started).toBe(2);

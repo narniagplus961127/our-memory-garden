@@ -42,11 +42,45 @@ async function post(
     signal.removeEventListener("abort", abort);
   }
 }
+const fingerprints = new WeakMap<File, Promise<string>>();
+async function fingerprint(file: File, signal: AbortSignal) {
+  signal.throwIfAborted();
+  let pending = fingerprints.get(file);
+  if (!pending) {
+    pending = file
+      .arrayBuffer()
+      .then((bytes) => crypto.subtle.digest("SHA-256", bytes))
+      .then((hash) =>
+        [...new Uint8Array(hash)]
+          .map((byte) => byte.toString(16).padStart(2, "0"))
+          .join(""),
+      );
+    fingerprints.set(file, pending);
+    void pending.catch(() => fingerprints.delete(file));
+  }
+  const hash = await pending;
+  signal.throwIfAborted();
+  return hash;
+}
 export const photoUploadTransport: PhotoUploadTransport = {
-  initiate: (file, signal) =>
+  fingerprint,
+  initiate: async (file, signal, forceDuplicate = false) =>
     post(
       "/api/media/uploads",
-      { name: file.name, size: file.size, type: file.type },
+      {
+        name: file.name,
+        size: file.size,
+        type: file.type,
+        sha256: await fingerprint(file, signal),
+        forceDuplicate,
+      },
+      signal,
+      30000,
+    ),
+  reuse: async (id, file, signal) =>
+    post(
+      "/api/media/uploads",
+      { reuseId: id, size: file.size, sha256: await fingerprint(file, signal) },
       signal,
       30000,
     ),
