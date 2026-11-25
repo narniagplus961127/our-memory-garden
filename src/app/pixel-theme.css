@@ -9,6 +9,34 @@ body {
   background-image: radial-gradient(#78914916 1px, transparent 1px);
   background-size: 12px 12px;
 }
+.public-page {
+  position: relative;
+  isolation: isolate;
+}
+.public-page::before {
+  content: "";
+  position: absolute;
+  inset: 24px 0;
+  background-image:
+    url("/brand/garden-pots-v1.webp"),
+    url("/brand/garden-pots-upright-v1.webp"),
+    url("/brand/garden-pots-trailing-v1.webp");
+  background-position:
+    right 48px,
+    left 50%,
+    right bottom;
+  background-size: clamp(72px, 8vw, 112px) auto;
+  background-repeat: no-repeat;
+  opacity: 0.3;
+  pointer-events: none;
+  z-index: -1;
+}
+@media (max-width: 767px) {
+  .public-page::before {
+    background-size: 72px auto;
+    opacity: 0.22;
+  }
+}
 
 ::selection {
   background: #d5e8af;
@@ -494,15 +522,17 @@ body {
   image-rendering: pixelated;
 }
 .count-up-unit {
-  padding: 0.25em 0.4em;
-  border: 1px solid color-mix(in srgb, currentColor 40%, transparent);
-  background: color-mix(in srgb, currentColor 6%, transparent);
-  box-shadow: 3px 3px 0 var(--pixel-shadow);
+  padding: 0.35em 0.5em;
+  border: 12px solid transparent;
+  border-image: url("/brand/menu-sign-v1.svg") 16 fill / 12px / 0 stretch;
+  color: var(--count-up-colour, #fff3d8);
+  text-shadow: 1px 2px 0 #49331f;
+  filter: drop-shadow(2px 3px 0 #49331f40);
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  .photo-grid-tile img {
-    transition: transform 180ms ease-out;
+  .photo-grid-tile:has(> button) {
+    transition: scale 180ms ease-out;
   }
   :is(.garden-page-card, .template-card) {
     transition:
@@ -518,8 +548,9 @@ body {
   }
 }
 @media (hover: hover) and (pointer: fine) {
-  .photo-grid-tile:has(> button):hover img {
-    transform: scale(1.025);
+  .photo-grid-tile:has(> button):hover {
+    scale: 1.025;
+    z-index: 2;
   }
   :is(.garden-page-card, .template-card):hover {
     transform: translateY(-2px);
@@ -545,6 +576,9 @@ body {
   outline-offset: 2px;
 }
 @media (prefers-reduced-motion: reduce) {
+  .photo-grid-tile:has(> button):hover {
+    scale: none;
+  }
   .photo-grid-tile:has(> button):hover img,
   :is(.garden-page-card, .template-card):hover {
     transform: none;

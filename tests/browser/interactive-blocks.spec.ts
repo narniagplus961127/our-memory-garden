@@ -208,6 +208,14 @@ test("author, round-trip and view a live counter and an isolated scripted embed"
       .last()
       .locator(".count-up-digits");
     await expect(seconds).toHaveText(/^\d{2}$/);
+    await expect(view.locator(".count-up-unit").first()).toHaveCSS(
+      "border-image-source",
+      /menu-sign-v1\.svg/,
+    );
+    await view.locator(".count-up").screenshot({
+      path: `work/page-card-evidence/wooden-counter-${isMobile ? "mobile" : "desktop"}.png`,
+      animations: "disabled",
+    });
     const first = await seconds.textContent();
     await expect(seconds).not.toHaveText(first!);
     await expect(seconds.locator(".count-up-digit-enter").first()).toHaveCSS(

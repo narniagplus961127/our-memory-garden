@@ -132,7 +132,9 @@ test("Garden search and filters paginate public descendants without leaking hidd
     await form.getByLabel("Find a memory").fill(prefix.toUpperCase());
     await form.getByLabel("Year", { exact: true }).selectOption("2024");
     await form.getByLabel("Category", { exact: true }).selectOption(parent);
-    await form.getByRole("button", { name: "Apply filters" }).click();
+    await expect(
+      form.getByRole("button", { name: "Apply filters" }),
+    ).toHaveCount(0);
     await expect(page).toHaveURL(
       (url) =>
         url.searchParams.get("q") === prefix.toUpperCase() &&
@@ -162,7 +164,6 @@ test("Garden search and filters paginate public descendants without leaking hidd
     await page.goBack();
     await expect(page.locator(".garden-page-card")).toHaveCount(1);
     await page.getByLabel("Find a memory").fill("no-match-" + suffix);
-    await page.getByRole("button", { name: "Apply filters" }).click();
     await expect(
       page.getByText(
         "No memories match these filters. Try another year, category or search.",
@@ -218,6 +219,75 @@ test("Garden search and filters paginate public descendants without leaking hidd
     await sql`delete from pages where id in ${sql(ids)}`;
     await sql`delete from page_categories where id in ${sql([child, parent, hidden])}`;
     await sql.end();
+  }
+});
+
+test("automatic Garden search keeps newer text and focus during slow results and waits for Chinese composition", async ({
+  page,
+}) => {
+  test.setTimeout(90000);
+  page.setDefaultTimeout(15000);
+  page.setDefaultNavigationTimeout(45000);
+  await page.goto("/garden");
+  const search = page.getByLabel("Find a memory");
+  const prefix = "auto-" + crypto.randomUUID().slice(0, 8);
+  let release!: () => void;
+  let captured = false;
+  const gate = new Promise<void>((resolve) => (release = resolve));
+  await page.route(
+    (url) =>
+      url.pathname === "/garden" && url.searchParams.get("q") === prefix + " A",
+    async (route) => {
+      if (route.request().headers().rsc !== "1") return route.continue();
+      const response = await route.fetch();
+      captured = true;
+      await gate;
+      await route.fulfill({ response }).catch(() => {});
+    },
+  );
+  try {
+    await search.fill(prefix + " A");
+    await expect.poll(() => captured).toBe(true);
+    await search.fill(prefix + " AB");
+    release();
+    await expect(page).toHaveURL(
+      (url) => url.searchParams.get("q") === prefix + " AB",
+    );
+    await expect(search).toHaveValue(prefix + " AB");
+    await expect(search).toBeFocused();
+    await page.goBack();
+    await expect(search).toHaveValue(
+      new URL(page.url()).searchParams.get("q") ?? "",
+    );
+    let composingRequests = 0;
+    const chinese = "槟城-" + prefix;
+    page.on("request", (request) => {
+      const url = new URL(request.url());
+      if (url.pathname === "/garden" && url.searchParams.get("q") === chinese)
+        composingRequests++;
+    });
+    await search.dispatchEvent("compositionstart");
+    await search.fill(chinese);
+    await page.waitForTimeout(600);
+    expect(composingRequests).toBe(0);
+    await search.dispatchEvent("compositionend");
+    await expect(page).toHaveURL(
+      (url) => url.searchParams.get("q") === chinese,
+    );
+    await expect(search).toHaveValue(chinese);
+    await page
+      .getByRole("link", { name: "Clear filters", exact: true })
+      .click();
+    await expect(page).toHaveURL(/\/garden$/);
+    await expect(search).toHaveValue("");
+    await search.fill("cancel-" + prefix);
+    await page.goBack();
+    await expect(search).toHaveValue(
+      new URL(page.url()).searchParams.get("q") ?? "",
+    );
+  } finally {
+    release();
+    await page.unrouteAll({ behavior: "wait" });
   }
 });
 
