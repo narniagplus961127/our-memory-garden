@@ -25,7 +25,7 @@ test("varied pixel plant backgrounds stay decorative, compact and within the pub
   const backgrounds = await main.evaluate(
     (el) => getComputedStyle(el, "::before").backgroundImage,
   );
-  expect(backgrounds).toContain("garden-plants-pattern-v1.svg");
+  expect(backgrounds).toContain("garden-plants-pattern-v2.svg");
   expect(
     await main.evaluate(
       (el) => getComputedStyle(el, "::before").backgroundRepeat,
@@ -34,25 +34,30 @@ test("varied pixel plant backgrounds stay decorative, compact and within the pub
   expect(
     await main.evaluate((el) => Math.round(el.getBoundingClientRect().width)),
   ).toBe(await page.evaluate(() => innerWidth));
-  const pattern = await page.request.get("/brand/garden-plants-pattern-v1.svg");
+  const pattern = await page.request.get("/brand/garden-plants-pattern-v2.svg");
   expect(pattern.status()).toBe(200);
   const tile = await pattern.text();
   expect(Buffer.byteLength(tile)).toBeLessThan(160000);
+  expect(tile.match(/width="112" height="112"/g)).toHaveLength(6);
   let bytes = 0;
   for (const name of [
-    "garden-pots-v1.webp",
-    "garden-pots-upright-v1.webp",
-    "garden-pots-trailing-v1.webp",
+    "garden-plant-fern-v1.webp",
+    "garden-plant-snake-v1.webp",
+    "garden-plant-monstera-v1.webp",
+    "garden-plant-succulent-v1.webp",
+    "garden-plant-cactus-v1.webp",
+    "garden-plant-orchid-v1.webp",
   ]) {
     expect(tile).toContain(name);
     const response = await page.request.get("/brand/" + name);
     expect(response.status()).toBe(200);
     const body = await response.body();
     bytes += body.length;
-    expect(body.length).toBeLessThan(50000);
+    expect(body.length).toBeLessThan(25000);
     const image = await sharp(body).metadata();
     expect(image.hasAlpha).toBe(true);
-    expect(image.width).toBe(384);
+    expect(image.width).toBe(224);
+    expect(image.height).toBe(224);
   }
   expect(bytes).toBeLessThan(120000);
   expect(

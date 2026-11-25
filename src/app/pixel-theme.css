@@ -20,8 +20,8 @@ body {
   content: "";
   position: fixed;
   inset: 0;
-  background-image: url("/brand/garden-plants-pattern-v1.svg");
-  background-size: 640px 560px;
+  background-image: url("/brand/garden-plants-pattern-v2.svg");
+  background-size: 720px 640px;
   background-repeat: repeat;
   opacity: 0.14;
   pointer-events: none;
@@ -30,7 +30,7 @@ body {
 @media (max-width: 1023px) {
   .public-page::before,
   .garden-document-editing::before {
-    background-size: 480px 420px;
+    background-size: min(540px, 100vw) auto;
     opacity: 0.1;
   }
 }
