@@ -25,13 +25,26 @@ test("varied pixel plant backgrounds stay decorative, compact and within the pub
   const backgrounds = await main.evaluate(
     (el) => getComputedStyle(el, "::before").backgroundImage,
   );
+  expect(backgrounds).toContain("garden-plants-pattern-v1.svg");
+  expect(
+    await main.evaluate(
+      (el) => getComputedStyle(el, "::before").backgroundRepeat,
+    ),
+  ).toBe("repeat");
+  expect(
+    await main.evaluate((el) => Math.round(el.getBoundingClientRect().width)),
+  ).toBe(await page.evaluate(() => innerWidth));
+  const pattern = await page.request.get("/brand/garden-plants-pattern-v1.svg");
+  expect(pattern.status()).toBe(200);
+  const tile = await pattern.text();
+  expect(Buffer.byteLength(tile)).toBeLessThan(160000);
   let bytes = 0;
   for (const name of [
     "garden-pots-v1.webp",
     "garden-pots-upright-v1.webp",
     "garden-pots-trailing-v1.webp",
   ]) {
-    expect(backgrounds).toContain(name);
+    expect(tile).toContain(name);
     const response = await page.request.get("/brand/" + name);
     expect(response.status()).toBe(200);
     const body = await response.body();

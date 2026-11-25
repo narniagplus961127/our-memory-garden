@@ -14,41 +14,24 @@ body {
   position: relative;
   isolation: isolate;
   width: 100%;
-  max-width: 1440px;
-  margin-inline: auto;
-}
-@media (min-width: 1024px) {
-  .public-page,
-  .garden-document-editing {
-    /* Keep the fixed plants outside the reading area, including on laptops. */
-    width: calc(100% - 2 * clamp(100px, 12vw, 180px));
-  }
 }
 .public-page::before,
 .garden-document-editing::before {
   content: "";
   position: fixed;
-  inset: max(80px, env(safe-area-inset-top)) 0
-    max(112px, env(safe-area-inset-bottom));
-  background-image:
-    url("/brand/garden-pots-v1.webp"),
-    url("/brand/garden-pots-upright-v1.webp"),
-    url("/brand/garden-pots-trailing-v1.webp");
-  background-position:
-    left bottom,
-    right 52%,
-    left 25%;
-  background-size: clamp(80px, 12vw, 180px) auto;
-  background-repeat: no-repeat;
-  opacity: 0.5;
+  inset: 0;
+  background-image: url("/brand/garden-plants-pattern-v1.svg");
+  background-size: 640px 560px;
+  background-repeat: repeat;
+  opacity: 0.14;
   pointer-events: none;
   z-index: -1;
 }
 @media (max-width: 1023px) {
   .public-page::before,
   .garden-document-editing::before {
-    background-size: 64px auto;
-    opacity: 0.25;
+    background-size: 480px 420px;
+    opacity: 0.1;
   }
 }
 
