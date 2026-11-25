@@ -751,7 +751,7 @@ button.primary {
 }
 .garden-document {
   display: flow-root;
-  background: var(--paper);
+  background: transparent;
   color: var(--ink);
 }
 .garden-document-editing {
@@ -797,6 +797,9 @@ button.primary {
 .garden-banner[style*="center"] p {
   margin-left: auto;
   margin-right: auto;
+}
+.garden-tone-transparent {
+  background: transparent;
 }
 .garden-tone-paper {
   background: var(--paper);

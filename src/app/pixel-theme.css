@@ -9,32 +9,46 @@ body {
   background-image: radial-gradient(#78914916 1px, transparent 1px);
   background-size: 12px 12px;
 }
-.public-page {
+.public-page,
+.garden-document-editing {
   position: relative;
   isolation: isolate;
+  width: 100%;
+  max-width: 1440px;
+  margin-inline: auto;
 }
-.public-page::before {
+@media (min-width: 1024px) {
+  .public-page,
+  .garden-document-editing {
+    /* Keep the fixed plants outside the reading area, including on laptops. */
+    width: calc(100% - 2 * clamp(100px, 12vw, 180px));
+  }
+}
+.public-page::before,
+.garden-document-editing::before {
   content: "";
-  position: absolute;
-  inset: 24px 0;
+  position: fixed;
+  inset: max(80px, env(safe-area-inset-top)) 0
+    max(112px, env(safe-area-inset-bottom));
   background-image:
     url("/brand/garden-pots-v1.webp"),
     url("/brand/garden-pots-upright-v1.webp"),
     url("/brand/garden-pots-trailing-v1.webp");
   background-position:
-    right 48px,
-    left 50%,
-    right bottom;
-  background-size: clamp(72px, 8vw, 112px) auto;
+    left bottom,
+    right 52%,
+    left 25%;
+  background-size: clamp(80px, 12vw, 180px) auto;
   background-repeat: no-repeat;
-  opacity: 0.3;
+  opacity: 0.5;
   pointer-events: none;
   z-index: -1;
 }
-@media (max-width: 767px) {
-  .public-page::before {
-    background-size: 72px auto;
-    opacity: 0.22;
+@media (max-width: 1023px) {
+  .public-page::before,
+  .garden-document-editing::before {
+    background-size: 64px auto;
+    opacity: 0.25;
   }
 }
 

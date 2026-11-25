@@ -376,7 +376,7 @@ export function validPageData(
             return (
               str("heading", 1000, true) &&
               str("description", 10000, true) &&
-              opt("background", ["paper", "sage", "clay"])
+              opt("background", ["transparent", "paper", "sage", "clay"])
             );
           case "Image":
             return (
@@ -472,7 +472,13 @@ export function validPageData(
                   /^#(?:[\da-f]{3}|[\da-f]{6})$/i.test(props.borderColor))) &&
               opt("columnAlignment", ["top", "center", "bottom"]) &&
               opt("width", ["container", "full"]) &&
-              opt("background", ["paper", "sage", "clay", "dark-green"]) &&
+              opt("background", [
+                "transparent",
+                "paper",
+                "sage",
+                "clay",
+                "dark-green",
+              ]) &&
               opt("spacing", ["compact", "comfortable", "spacious"]) &&
               list(props.content, depth + 1)
             );
