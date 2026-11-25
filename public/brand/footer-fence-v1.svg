@@ -1,0 +1,77 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2048 72" fill="none" shape-rendering="crispEdges">
+  <defs>
+    <g id="picket">
+      <path d="M4 18h4v-6h4V8h8v4h4v6h4v48H4z" fill="#6e5336"/>
+      <path d="M8 20h4v-6h8v6h4v42H8z" fill="#d3b079"/>
+      <path d="M8 22h4v38H8zM12 14h4v6h-4z" fill="#ecd6a5"/>
+      <path d="M20 22h4v40h-4z" fill="#b48b58"/>
+      <path d="M10 32h4v4h-4zM18 50h4v4h-4z" fill="#84623e"/>
+    </g>
+  </defs>
+  <path d="M0 28h2048v12H0zM0 48h2048v12H0z" fill="#82633e"/>
+  <path d="M0 28h2048v4H0zM0 48h2048v4H0z" fill="#e1c38d"/>
+  <use href="#picket" x="0"/>
+  <use href="#picket" x="32"/>
+  <use href="#picket" x="64"/>
+  <use href="#picket" x="96"/>
+  <use href="#picket" x="128"/>
+  <use href="#picket" x="160"/>
+  <use href="#picket" x="192"/>
+  <use href="#picket" x="224"/>
+  <use href="#picket" x="256"/>
+  <use href="#picket" x="288"/>
+  <use href="#picket" x="320"/>
+  <use href="#picket" x="352"/>
+  <use href="#picket" x="384"/>
+  <use href="#picket" x="416"/>
+  <use href="#picket" x="448"/>
+  <use href="#picket" x="480"/>
+  <use href="#picket" x="512"/>
+  <use href="#picket" x="544"/>
+  <use href="#picket" x="576"/>
+  <use href="#picket" x="608"/>
+  <use href="#picket" x="640"/>
+  <use href="#picket" x="672"/>
+  <use href="#picket" x="704"/>
+  <use href="#picket" x="736"/>
+  <use href="#picket" x="768"/>
+  <use href="#picket" x="800"/>
+  <use href="#picket" x="832"/>
+  <use href="#picket" x="864"/>
+  <use href="#picket" x="896"/>
+  <use href="#picket" x="928"/>
+  <use href="#picket" x="960"/>
+  <use href="#picket" x="992"/>
+  <use href="#picket" x="1024"/>
+  <use href="#picket" x="1056"/>
+  <use href="#picket" x="1088"/>
+  <use href="#picket" x="1120"/>
+  <use href="#picket" x="1152"/>
+  <use href="#picket" x="1184"/>
+  <use href="#picket" x="1216"/>
+  <use href="#picket" x="1248"/>
+  <use href="#picket" x="1280"/>
+  <use href="#picket" x="1312"/>
+  <use href="#picket" x="1344"/>
+  <use href="#picket" x="1376"/>
+  <use href="#picket" x="1408"/>
+  <use href="#picket" x="1440"/>
+  <use href="#picket" x="1472"/>
+  <use href="#picket" x="1504"/>
+  <use href="#picket" x="1536"/>
+  <use href="#picket" x="1568"/>
+  <use href="#picket" x="1600"/>
+  <use href="#picket" x="1632"/>
+  <use href="#picket" x="1664"/>
+  <use href="#picket" x="1696"/>
+  <use href="#picket" x="1728"/>
+  <use href="#picket" x="1760"/>
+  <use href="#picket" x="1792"/>
+  <use href="#picket" x="1824"/>
+  <use href="#picket" x="1856"/>
+  <use href="#picket" x="1888"/>
+  <use href="#picket" x="1920"/>
+  <use href="#picket" x="1952"/>
+  <use href="#picket" x="1984"/>
+  <use href="#picket" x="2016"/>
+</svg>

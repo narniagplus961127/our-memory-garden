@@ -369,6 +369,37 @@ test("add a Photo grid, select photos, reorder and open the website viewer", asy
       )
       .toMatch(/\/thumb-(320|640|1280)$/);
     const landscape = await open.locator("img").boundingBox();
+    await expect(publicGrid).toHaveCSS("border-top-width", "6px");
+    expect(
+      await photos
+        .first()
+        .evaluate((el) => getComputedStyle(el, "::before").clipPath),
+    ).toContain("polygon");
+    const mounted = await photos.evaluateAll((elements) =>
+      elements.map((el) => {
+        const box = el.getBoundingClientRect();
+        return {
+          left: box.left,
+          right: box.right,
+          top: box.top,
+          bottom: box.bottom,
+        };
+      }),
+    );
+    for (let i = 0; i < mounted.length; i++)
+      for (let j = i + 1; j < mounted.length; j++) {
+        const a = mounted[i],
+          b = mounted[j];
+        expect(
+          a.right <= b.left + 1 ||
+            b.right <= a.left + 1 ||
+            a.bottom <= b.top + 1 ||
+            b.bottom <= a.top + 1,
+        ).toBe(true);
+      }
+    await publicGrid.screenshot({
+      path: `work/garden-browse-evidence/quest-board-${info.project.name}.png`,
+    });
     const portrait = await website
       .getByRole("button", { name: "Open Photo 2", exact: true })
       .locator("img")

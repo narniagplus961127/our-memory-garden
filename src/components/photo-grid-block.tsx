@@ -96,13 +96,23 @@ export function PhotoGridBlock({
   );
   const heights = Array<number>(columns).fill(0);
   const columnWidth = (width - gap * (columns - 1)) / columns;
-  const scale = Math.max(1, columnWidth);
+  const mountSide = 12,
+    mountTop = 22,
+    mountBottom = 20;
+  const scale = Math.max(1, columnWidth - mountSide * 2);
   const placements = photos.map((photo) => {
     const column = heights.indexOf(Math.min(...heights));
     const top = heights[column];
     // Captions stay in the photo viewer so text wrapping does not move tiles.
-    heights[column] += (scale * photo.height) / photo.width + gap;
-    return { top, left: column * (columnWidth + gap), width: columnWidth };
+    const height =
+      (scale * photo.height) / photo.width + mountTop + mountBottom;
+    heights[column] += height + gap;
+    return {
+      top,
+      left: column * (columnWidth + gap),
+      width: columnWidth,
+      height,
+    };
   });
   const selected = active === null ? undefined : photos[active];
   function move(direction: number) {
@@ -123,6 +133,9 @@ export function PhotoGridBlock({
               width && photos.length ? Math.max(...heights) - gap : undefined,
             gap,
             "--tile-radius": radius + "px",
+            "--mount-side": mountSide + "px",
+            "--mount-top": mountTop + "px",
+            "--mount-bottom": mountBottom + "px",
           } as CSSProperties
         }
       >
@@ -152,7 +165,6 @@ export function PhotoGridBlock({
               className="photo-grid-tile"
               style={{
                 ...(width ? placements[index] : undefined),
-                aspectRatio: photo.width + " / " + photo.height,
               }}
             >
               {editing ? (

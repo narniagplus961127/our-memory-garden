@@ -66,8 +66,9 @@ body {
   flex-shrink: 0;
 }
 .garden-footer {
+  --fence-edge: 6px;
   position: relative;
-  padding: 20px var(--gutter) max(20px, env(safe-area-inset-bottom));
+  padding: 0;
   border-top: 6px solid #86aa58;
   box-shadow: 0 -4px 0 #c6dba0;
   background: #304f39;
@@ -277,9 +278,88 @@ body {
 }
 
 /* Content blocks share the theme in both the canvas and public renderer. */
+.garden-photo-grid {
+  padding: clamp(14px, 2.5vw, 28px);
+  border: 6px solid #65442c;
+  background:
+    repeating-linear-gradient(
+      0deg,
+      transparent 0 76px,
+      #68462e 76px 80px,
+      #ae7c4a 80px 83px,
+      transparent 83px 160px
+    ),
+    repeating-linear-gradient(
+      3deg,
+      #8c623e 0 3px,
+      #926943 3px 7px,
+      #8c623e 7px 45px
+    );
+  box-shadow:
+    inset 0 0 0 3px #bb8b52,
+    4px 4px 0 #49331f40;
+  color: #fff8e7;
+}
 .photo-grid-tile {
-  outline: 1px solid var(--pixel-edge);
-  box-shadow: 3px 3px 0 var(--pixel-shadow);
+  isolation: isolate;
+  position: relative;
+  padding: var(--mount-top) var(--mount-side) var(--mount-bottom);
+  overflow: visible;
+  border-radius: 0;
+  outline: 0;
+  box-shadow: none;
+  filter: drop-shadow(2px 3px 0 #49331f70);
+}
+.photo-grid-tile::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: #fff3d8;
+  clip-path: polygon(
+    0 0,
+    100% 0,
+    100% 94%,
+    98% 94%,
+    98% 100%,
+    84% 100%,
+    84% 97%,
+    81% 97%,
+    81% 100%,
+    56% 100%,
+    56% 98%,
+    53% 98%,
+    53% 100%,
+    23% 100%,
+    23% 96%,
+    20% 96%,
+    20% 100%,
+    2% 100%,
+    2% 97%,
+    0 97%
+  );
+  pointer-events: none;
+}
+.photo-grid-tile::after {
+  content: "";
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  top: 6px;
+  left: calc(50% - 5px);
+  background: #a9533d;
+  border: 2px solid #633b2b;
+  box-shadow:
+    inset 2px 2px 0 #e2a075,
+    1px 2px 0 #49331f50;
+  pointer-events: none;
+}
+.photo-grid-tile img {
+  border-radius: var(--tile-radius);
+}
+.garden-photo-grid .photo-grid-placeholder {
+  color: var(--ink);
+  background: #fff3d8;
 }
 .photo-grid-editor-item,
 .photo-grid-editor-item > img,
@@ -416,10 +496,8 @@ body {
   }
 }
 
-/* One shared highlight for public menus and administration navigation. */
+/* Shared highlights for administration navigation; wooden signs use their own. */
 :is(
-  .website-menu nav a,
-  .website-menu .submenu-toggle,
   .admin-sidebar nav a,
   .admin-sign-out,
   .admin-mobile-bar nav > a,
@@ -433,8 +511,6 @@ body {
 }
 @media (prefers-reduced-motion: no-preference) {
   :is(
-    .website-menu nav a,
-    .website-menu .submenu-toggle,
     .admin-sidebar nav a,
     .admin-sign-out,
     .admin-mobile-bar nav > a,
@@ -448,8 +524,6 @@ body {
 }
 @media (hover: hover) and (pointer: fine) {
   :is(
-      .website-menu nav a,
-      .website-menu .submenu-toggle,
       .admin-sidebar nav a,
       .admin-sign-out,
       .admin-mobile-bar nav > a,
@@ -473,4 +547,145 @@ body {
   border: 2px solid transparent;
   background: transparent;
   box-shadow: none;
+}
+
+/* The sign spans the label and its separate disclosure arrow. */
+.website-menu[data-slot="sheet-content"] {
+  inset: 0;
+  width: 100%;
+  max-width: none;
+  height: 100dvh;
+  border: 0;
+  background: var(--sage);
+  box-shadow: none;
+  overflow: hidden;
+}
+.website-menu .website-menu-header {
+  position: relative;
+  justify-content: center;
+  padding: max(24px, env(safe-area-inset-top)) 72px 20px;
+  border-bottom: 0;
+}
+.website-menu-header h2 {
+  font-size: 36px;
+  text-align: center;
+}
+.website-menu .website-menu-close {
+  position: absolute;
+  top: max(20px, env(safe-area-inset-top));
+  right: max(20px, env(safe-area-inset-right));
+}
+.website-menu nav {
+  display: flex;
+  flex-direction: column;
+  padding: 12px max(20px, env(safe-area-inset-right))
+    max(32px, env(safe-area-inset-bottom)) max(20px, env(safe-area-inset-left));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable both-edges;
+}
+.website-menu nav > .public-menu-items {
+  flex: 0 0 auto;
+  width: min(100%, 560px);
+  margin: auto;
+  gap: 18px;
+}
+.website-menu .public-menu-items > li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  isolation: isolate;
+}
+.website-menu .public-menu-items > li::before {
+  content: "";
+  grid-area: 1 / 1 / 2 / -1;
+  align-self: stretch;
+  border: 16px solid transparent;
+  border-image: url("/brand/menu-sign-v1.svg") 16 fill / 16px / 0 stretch;
+  pointer-events: none;
+}
+.website-menu nav > ul > li + li {
+  border-top: 0;
+}
+.website-menu nav > ul > li + li::after {
+  content: "";
+  position: absolute;
+  inset: -18px 36px auto;
+  height: 18px;
+  border-inline: 6px solid #79654d;
+  z-index: -1;
+  pointer-events: none;
+}
+.website-menu .public-menu-items > .has-submenu {
+  grid-template-columns: minmax(0, 1fr) 48px;
+  column-gap: 0;
+}
+.website-menu .public-menu-items > li > a {
+  grid-area: 1 / 1;
+  position: relative;
+  justify-content: center;
+  min-height: 80px;
+  padding: 18px 26px;
+  color: #fff8e7;
+  font-size: 24px;
+  line-height: 1.4;
+  text-align: center;
+  text-shadow: 1px 2px 0 #49331f;
+}
+.website-menu .has-submenu > a {
+  padding-right: 4px;
+}
+.website-menu .has-submenu > .submenu-toggle {
+  grid-area: 1 / 2;
+  position: relative;
+  align-self: stretch;
+  color: #fff8e7;
+  margin-right: 8px;
+  width: 40px;
+  box-shadow: none;
+  background: transparent;
+}
+.website-menu .public-submenu {
+  grid-row: 2;
+}
+.website-menu .public-submenu > .public-submenu-inner > ul {
+  padding: 12px 4px 4px 18px;
+  gap: 10px;
+}
+.website-menu .public-submenu .public-menu-items > li > a {
+  min-height: 58px;
+  padding-block: 14px;
+  font-size: 18px;
+}
+.website-menu nav :is(a, .submenu-toggle):is(:hover, :focus-visible) {
+  background: transparent;
+  color: #fff8e7;
+  box-shadow: none;
+  text-decoration: none;
+}
+.website-menu nav :is(a, .submenu-toggle):focus-visible {
+  outline: 2px solid #fff8e7;
+  outline-offset: -8px;
+}
+@media (hover: hover) and (pointer: fine) {
+  .website-menu li:has(> a:hover, > .submenu-toggle:hover)::before {
+    filter: brightness(1.12);
+  }
+}
+@keyframes garden-menu-appear {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .website-menu[data-state="open"] {
+    animation: garden-menu-appear 180ms ease-out both;
+  }
+  .website-menu[data-state="closed"] {
+    animation: website-menu-shade-out 140ms ease-in both;
+  }
 }

@@ -3,6 +3,7 @@ import { database } from "./db";
 import type { PageCardData } from "../pages";
 import type { PageCard } from "../organization";
 import { pageListSize, type PageListQuery } from "../page-list";
+import type { Category } from "../organization";
 
 export async function adminPageBatch(query: PageListQuery) {
   const sql = database();
@@ -32,7 +33,11 @@ export async function adminPageBatch(query: PageListQuery) {
   };
 }
 
-export async function publicPageBatch(page: number, categoryId?: string) {
+export async function publicPageBatch(
+  page: number,
+  categoryId?: string,
+  filters?: { search: string; year: string; excludeHomepage: boolean },
+) {
   const sql = database();
   const rows = await sql<PageCard[]>`
     with recursive tree as (
@@ -41,11 +46,33 @@ export async function publicPageBatch(page: number, categoryId?: string) {
     )
     select p.id,p.title,p.slug,to_char(p.page_date,'YYYY-MM-DD') as page_date,p.cover_photo_id,p.visibility
     from pages p where p.visibility='public' and p.deleted_at is null
-      ${categoryId ? sql`and p.category_ids && array(select id from tree)` : sql`and not exists(select 1 from garden_settings where homepage_id=p.id)`}
+      ${categoryId ? sql`and p.category_ids && array(select id from tree)` : sql``}
+      ${!categoryId || filters?.excludeHomepage ? sql`and not exists(select 1 from garden_settings where homepage_id=p.id)` : sql``}
+      ${filters?.search ? sql`and (strpos(lower(p.title),lower(${filters.search}))>0 or strpos(lower(p.slug),lower(${filters.search}))>0)` : sql``}
+      ${filters?.year ? sql`and p.page_date >= ${filters.year + "-01-01"}::date and p.page_date < (${filters.year + "-01-01"}::date + interval '1 year')` : sql``}
     order by p.page_date desc nulls last,p.created_at desc,p.id
     limit ${pageListSize + 1} offset ${(page - 1) * pageListSize}`;
   return {
     cards: rows.slice(0, pageListSize),
     more: rows.length > pageListSize,
   };
+}
+
+export async function publicGardenFacets() {
+  const sql = database();
+  const [years, categories] = await Promise.all([
+    sql<
+      { year: string }[]
+    >`select distinct to_char(p.page_date,'YYYY') as year from pages p
+      where p.visibility='public' and p.deleted_at is null and p.page_date is not null
+      and not exists(select 1 from garden_settings where homepage_id=p.id) order by year desc`,
+    sql<Category[]>`with recursive visible as (
+      select c.id,c.name,c.slug,c.parent_id from page_categories c where exists(
+        select 1 from pages p where p.visibility='public' and p.deleted_at is null and c.id=any(p.category_ids)
+        and not exists(select 1 from garden_settings where homepage_id=p.id))
+      union
+      select c.id,c.name,c.slug,c.parent_id from page_categories c join visible child on child.parent_id=c.id
+    ) select * from visible order by lower(name),id`,
+  ]);
+  return { years: years.map(({ year }) => year), categories };
 }
