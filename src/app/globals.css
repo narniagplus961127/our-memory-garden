@@ -187,6 +187,31 @@
 .garden-page-card > small {
   display: block;
 }
+.garden-filters {
+  display: grid;
+  gap: 12px;
+  align-items: end;
+}
+.garden-filter-field {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+.garden-filter-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+@media (min-width: 768px) {
+  .garden-filters {
+    grid-template-columns:
+      minmax(0, 1.5fr) minmax(0, 0.8fr) minmax(0, 1fr)
+      max-content;
+  }
+  .garden-filter-actions {
+    flex-wrap: nowrap;
+  }
+}
 .page-details {
   margin-top: 28px;
 }

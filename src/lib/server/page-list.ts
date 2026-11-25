@@ -44,7 +44,7 @@ export async function publicPageBatch(
       select id from page_categories where id=${categoryId ?? null}::uuid
       union select c.id from page_categories c join tree on c.parent_id=tree.id
     )
-    select p.id,p.title,p.slug,to_char(p.page_date,'YYYY-MM-DD') as page_date,p.cover_photo_id,p.visibility
+    select p.id,p.title,p.slug,to_char(p.page_date,'YYYY-MM-DD') as page_date,p.cover_photo_id,p.visibility,left(p.sharing_description,240) as description
     from pages p where p.visibility='public' and p.deleted_at is null
       ${categoryId ? sql`and p.category_ids && array(select id from tree)` : sql``}
       ${!categoryId || filters?.excludeHomepage ? sql`and not exists(select 1 from garden_settings where homepage_id=p.id)` : sql``}

@@ -1,0 +1,11 @@
+# Wooden page cards and inline filters
+
+The shared `PageCards` renderer styles the Page Grid widget, category-page listings and Garden listings consistently. Each card has a wood frame and decorative pinned paper, a responsive cover image or placeholder, the page title, optional date and optional description. Descriptions reuse Page settings → Search and sharing → Sharing description. Blank descriptions do not render; descriptions are plain escaped text, bounded to 240 characters in card queries and visually limited to three lines. Titles are limited to two visible lines while the stable `/p/<id>` link retains the full accessible title.
+
+No schema changes, editor-content reads or image-original downloads are needed. Public listing queries still exclude private/trashed pages; administrator widget previews retain their existing private-page access and label. Current responsive thumbnail sources, manual order, category descendants and configured grid limits remain in use.
+
+Manual Page Grid selections use one parameterized JSON array expanded with ordinality. This preserves the requested order while avoiding the PostgreSQL driver's cold-start scalar-UUID/UUID-array type-discovery mismatch observed during verification. Other database interfaces are unchanged.
+
+At viewport widths of 768 px and above, Garden search, year, category and apply/clear actions share one bottom-aligned row. Narrower screens stack the fields and wrap actions. Field labels are visually hidden at the owner's request while remaining available to assistive technology. Card layouts use two columns on tablet and the existing single-column mobile layout. Dates, descriptions and private-page labels share one text layout; artwork remains decorative and keyboard focus stays visible.
+
+Verification uses isolated local auth/PostgreSQL/storage: desktop/tablet widths 768/1024/1280 and mobile 390, cover/no-cover and blank/long/literal-markup descriptions, all three listing locations, hidden-page exclusion, thumbnail sources and keyboard focus. Existing service checks verify manual order, limits, category matching and nested/public/private rendering; Garden browser checks verify apply/clear/pagination behavior. Local screenshots are ignored working artifacts under `work/page-card-evidence`.

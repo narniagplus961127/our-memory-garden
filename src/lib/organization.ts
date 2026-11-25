@@ -69,6 +69,7 @@ export type PageCard = {
   slug: string;
   page_date: string | null;
   cover_photo_id: string | null;
+  description?: string | null;
   visibility: "private" | "public";
 };
 export const uuid =
