@@ -828,11 +828,11 @@ test("Photo Grid can select more than 100 photos in the library at once", async 
   for (const loaded of [48, 72, 96, 105]) {
     await more.click();
     await expect(
-      chooser.getByRole("button", { name: /^Bulk fixture / }),
+      chooser.getByRole("button", { name: /Bulk fixture \d+$/ }),
     ).toHaveCount(loaded);
   }
   await chooser
-    .getByRole("button", { name: "Bulk fixture 1", exact: true })
+    .getByRole("button", { name: /Bulk fixture 1$/ })
     .press("Control+a");
   await expect(
     chooser.getByRole("button", { name: "Add 105 photos" }),

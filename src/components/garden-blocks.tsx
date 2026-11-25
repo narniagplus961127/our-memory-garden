@@ -81,7 +81,7 @@ type GardenBlockProps = {
     headingRich?: RichText;
     descriptionRich?: RichText;
     description: string;
-    background?: "paper" | "sage" | "clay";
+    background?: "transparent" | "paper" | "sage" | "clay";
     align?: "left" | "center" | "right";
   };
   Image: {
@@ -121,7 +121,7 @@ type GardenBlockProps = {
   };
   Section: {
     width?: "container" | "full";
-    background?: "paper" | "sage" | "clay" | "dark-green";
+    background?: "transparent" | "paper" | "sage" | "clay" | "dark-green";
     spacing?: "compact" | "comfortable" | "spacious";
     content: Slot;
     backgroundImage?: {
@@ -302,6 +302,7 @@ const backgrounds = {
   type: "select" as const,
   label: "Background",
   options: [
+    { label: "Transparent", value: "transparent" },
     { label: "Paper", value: "paper" },
     { label: "Sage", value: "sage" },
     { label: "Clay", value: "clay" },
@@ -866,7 +867,7 @@ export const gardenConfig: Config<
         headingRich: "<h1>A little moment, remembered</h1>",
         descriptionRich: "<p>Tell the story behind it.</p>",
         description: "Tell the story behind it.",
-        background: "sage",
+        background: "transparent",
         align: "left",
       },
       render: ({
@@ -884,7 +885,9 @@ export const gardenConfig: Config<
           as="header"
           animation={surface.animation}
           editing={puck.isEditing}
-          className={"garden-banner garden-tone-" + (background ?? "sage")}
+          className={
+            "garden-banner garden-tone-" + (background ?? "transparent")
+          }
           style={{ textAlign: align, ...blockStyle(surface) }}
         >
           <p className="eyebrow">Our memory garden</p>
@@ -1266,7 +1269,7 @@ export const gardenConfig: Config<
       },
       defaultProps: {
         width: "container",
-        background: "paper",
+        background: "transparent",
         spacing: "comfortable",
         content: [],
         columnAlignment: "top",
@@ -1290,7 +1293,7 @@ export const gardenConfig: Config<
           editing={puck.isEditing}
           className={
             "garden-section garden-tone-" +
-            (background ?? "paper") +
+            (background ?? "transparent") +
             " garden-space-" +
             (space ?? "comfortable") +
             (width === "full" ? " garden-section-full" : "")
