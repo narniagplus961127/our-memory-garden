@@ -202,12 +202,19 @@ export function PageDetails({
           <Textarea
             id="sharing-description"
             aria-label="Sharing description"
+            aria-describedby="sharing-description-help"
             maxLength={2000}
             value={details.sharingDescription ?? ""}
             onChange={(e) =>
               change({ sharingDescription: e.target.value || null })
             }
           />
+          <p id="sharing-description-help" className="muted">
+            <small>
+              Also shown on page cards. Leave blank to hide the card
+              description.
+            </small>
+          </p>
         </div>
         <div
           className="settings-field"

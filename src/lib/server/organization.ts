@@ -111,7 +111,7 @@ export async function updateDetails(
 export async function publicGardenPages(): Promise<PageCard[]> {
   return database()<PageCard[]>`
     select p.id, p.title, p.slug, to_char(p.page_date, 'YYYY-MM-DD') as page_date,
-      p.cover_photo_id, p.visibility
+      p.cover_photo_id, p.visibility, left(p.sharing_description,240) as description
     from pages p
     where p.visibility = 'public' and p.deleted_at is null
       and not exists (select 1 from garden_settings where homepage_id = p.id)
@@ -128,19 +128,22 @@ export async function gridPages(
   if (selection.mode === "category" && !selection.categoryId) return [];
   const limit = selection.limit ?? null;
   if (selection.mode === "manual") {
-    const pageIds = sql.array(selection.pageIds, 2950);
     return sql<PageCard[]>`
-      select id,title,slug,to_char(page_date,'YYYY-MM-DD') as page_date,cover_photo_id,visibility
-      from pages where id = any(${pageIds}::uuid[])
-        and deleted_at is null and (${Boolean(admin)} or visibility='public')
-      order by array_position(${pageIds}::uuid[], id)
+      with selected as (
+        select value::uuid as id,ordinality as position
+        from jsonb_array_elements_text(${sql.json(selection.pageIds)}) with ordinality
+      )
+      select p.id,p.title,p.slug,to_char(p.page_date,'YYYY-MM-DD') as page_date,p.cover_photo_id,p.visibility,left(p.sharing_description,240) as description
+      from selected s join pages p on p.id=s.id
+      where p.deleted_at is null and (${Boolean(admin)} or p.visibility='public')
+      order by s.position
       limit ${limit}`;
   }
   return sql<PageCard[]>`with recursive tree as (
       select id from page_categories where id=${selection.categoryId}
       union
       select c.id from page_categories c join tree on c.parent_id=tree.id
-    ) select id,title,slug,to_char(page_date,'YYYY-MM-DD') as page_date,cover_photo_id,visibility from pages
+    ) select id,title,slug,to_char(page_date,'YYYY-MM-DD') as page_date,cover_photo_id,visibility,left(sharing_description,240) as description from pages
     where category_ids && array(select id from tree) and deleted_at is null and (${Boolean(admin)} or visibility='public')
     order by page_date desc nulls last,created_at desc,id
     limit ${limit}`;
