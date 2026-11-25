@@ -14,6 +14,45 @@ if (
   throw Error("Card fixtures require isolated loopback services.");
 mkdirSync("work/page-card-evidence", { recursive: true });
 
+test("varied pixel plant backgrounds stay decorative, compact and within the public page", async ({
+  page,
+}, info) => {
+  await page.goto("/garden?q=pixel-plant-preview-no-match");
+  const main = page.locator("main.public-page");
+  expect(
+    await main.evaluate((el) => getComputedStyle(el, "::before").pointerEvents),
+  ).toBe("none");
+  const backgrounds = await main.evaluate(
+    (el) => getComputedStyle(el, "::before").backgroundImage,
+  );
+  let bytes = 0;
+  for (const name of [
+    "garden-pots-v1.webp",
+    "garden-pots-upright-v1.webp",
+    "garden-pots-trailing-v1.webp",
+  ]) {
+    expect(backgrounds).toContain(name);
+    const response = await page.request.get("/brand/" + name);
+    expect(response.status()).toBe(200);
+    const body = await response.body();
+    bytes += body.length;
+    expect(body.length).toBeLessThan(50000);
+    const image = await sharp(body).metadata();
+    expect(image.hasAlpha).toBe(true);
+    expect(image.width).toBe(384);
+  }
+  expect(bytes).toBeLessThan(120000);
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true);
+  await page.screenshot({
+    path: `work/page-card-evidence/plants-${info.project.name}.png`,
+    animations: "disabled",
+  });
+});
+
 test("wooden cards share descriptions across Garden, category and widget while desktop/tablet filters stay inline", async ({
   page,
   playwright,
@@ -167,9 +206,11 @@ test("wooden cards share descriptions across Garden, category and widget while d
         form.getByLabel("Find a memory"),
         form.getByLabel("Year", { exact: true }),
         form.getByLabel("Category", { exact: true }),
-        form.getByRole("button", { name: "Apply filters", exact: true }),
         form.getByRole("link", { name: "Clear filters", exact: true }),
       ];
+      await expect(
+        form.getByRole("button", { name: "Apply filters", exact: true }),
+      ).toHaveCount(0);
       const boxes = await Promise.all(
         controls.map((control) => control.boundingBox()),
       );

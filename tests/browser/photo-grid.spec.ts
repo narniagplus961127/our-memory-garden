@@ -397,6 +397,18 @@ test("add a Photo grid, select photos, reorder and open the website viewer", asy
             b.bottom <= a.top + 1,
         ).toBe(true);
       }
+    if (!isMobile) {
+      await photos.first().hover();
+      await expect(photos.first()).toHaveCSS("scale", "1.025");
+      await expect(photos.first().locator("img")).toHaveCSS(
+        "transform",
+        "none",
+      );
+      await website.emulateMedia({ reducedMotion: "reduce" });
+      await expect(photos.first()).toHaveCSS("scale", "none");
+      await website.mouse.move(0, 0);
+      await website.emulateMedia({ reducedMotion: "no-preference" });
+    }
     await publicGrid.screenshot({
       path: `work/garden-browse-evidence/quest-board-${info.project.name}.png`,
     });
