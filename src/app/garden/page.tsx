@@ -3,9 +3,11 @@ import { GardenHeader } from "@/components/garden-header";
 import { GardenFooter } from "@/components/garden-footer";
 import { PageCards } from "@/components/page-cards";
 import { isConfigured, siteUrl } from "@/lib/config";
-import { publicPageBatch } from "@/lib/server/page-list";
-import { readPageListQuery, type PageSearchParams } from "@/lib/page-list";
+import { publicGardenFacets, publicPageBatch } from "@/lib/server/page-list";
+import { type PageSearchParams } from "@/lib/page-list";
 import { ListPagination } from "@/components/list-pagination";
+import { readGardenQuery, gardenFilterParams } from "@/lib/garden-browse";
+import { GardenFilters } from "@/components/garden-filters";
 
 export const dynamic = "force-dynamic";
 
@@ -20,10 +22,20 @@ export default async function GardenIndex({
 }: {
   searchParams: Promise<PageSearchParams>;
 }) {
-  const { page } = readPageListQuery(await searchParams);
-  const { cards, more } = isConfigured()
-    ? await publicPageBatch(page)
-    : { cards: [], more: false };
+  const query = readGardenQuery(await searchParams);
+  const { page } = query;
+  const [{ cards, more }, facets] = isConfigured()
+    ? await Promise.all([
+        publicPageBatch(page, query.categoryId || undefined, {
+          ...query,
+          excludeHomepage: true,
+        }),
+        publicGardenFacets(),
+      ])
+    : [
+        { cards: [], more: false },
+        { years: [], categories: [] },
+      ];
 
   return (
     <>
@@ -31,14 +43,24 @@ export default async function GardenIndex({
       <main className="public-page">
         <div className="page-content public-page-heading">
           <h1>Garden</h1>
+          <GardenFilters query={query} {...facets} />
           {cards.length === 0 && (
             <p className="muted">
-              {page > 1 ? "No more pages." : "No public pages yet."}
+              {query.search || query.year || query.categoryId
+                ? "No memories match these filters. Try another year, category or search."
+                : page > 1
+                  ? "No more pages."
+                  : "No public pages yet."}
             </p>
           )}
         </div>
         {cards.length > 0 && <PageCards cards={cards} />}
-        <ListPagination path="/garden" page={page} more={more} />
+        <ListPagination
+          path="/garden"
+          page={page}
+          more={more}
+          extra={gardenFilterParams(query)}
+        />
       </main>
       <GardenFooter />
     </>

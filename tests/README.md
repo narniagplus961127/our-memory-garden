@@ -1,5 +1,7 @@
 # Browser journey boundary is the pre-agreed seam from the specification.
 
+`tests/browser/garden-browse-photo-metadata.spec.ts` covers public Garden search/year/category filters, descendant pagination, hidden-choice exclusion, desktop/mobile photo name/label editing and conflict recovery, the footer-edge fence and wooden menu signs. `tests/service/photo-metadata.test.mjs` covers validation, permissions, preserved image identity/bytes, label search/privacy and manual-backup metadata snapshots. Apply migration 0026 to the isolated database first; these fixtures require loopback services. See [behavior and boundaries](../docs/garden-browsing-photo-labels.md).
+
 # Service tests exercise real local authentication and data-API authorization.
 
 `tests/browser/admin-search.spec.ts` verifies category ancestor context, case-insensitive template search, disabled filtered reordering, unchanged manual sequence and a pinned template import choice. `tests/browser/photo-dedup.spec.ts` verifies exact-byte duplicate choices, one transfer for identical files in a batch, reuse without another transfer and explicit copies. `photo-upload-queue.spec.ts` additionally covers identical-file waiting, unrelated upload slots, unavailable-reuse retry and account changes during hashing. `tests/service/photo-dedup.test.mjs` uses guarded local services to verify server-derived fingerprints, permission/origin checks, private originals, deliberate copies, deletion-before-reuse and the deliberate legacy-unindexed boundary. Apply migration 0025 to the isolated database first.

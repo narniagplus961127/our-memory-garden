@@ -137,6 +137,7 @@ export async function createExport(admin: Administrator) {
           const record = {
             id: photo.id,
             name: photo.name,
+            labels: photo.labels ?? [],
             width: photo.width,
             height: photo.height,
             originalType: photo.original_type,

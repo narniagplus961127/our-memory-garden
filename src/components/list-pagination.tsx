@@ -7,11 +7,13 @@ export function ListPagination({
   page,
   more,
   query,
+  extra,
 }: {
   path: string;
   page: number;
   more: boolean;
   query?: PageListQuery;
+  extra?: Record<string, string>;
 }) {
   if (page === 1 && !more) return null;
   return (
@@ -23,7 +25,7 @@ export function ListPagination({
         <Link
           prefetch={false}
           className={buttonVariants({ variant: "outline" })}
-          href={pageListHref(path, page - 1, query)}
+          href={pageListHref(path, page - 1, query, extra)}
         >
           Previous
         </Link>
@@ -35,7 +37,7 @@ export function ListPagination({
         <Link
           prefetch={false}
           className={buttonVariants({ variant: "outline" })}
-          href={pageListHref(path, page + 1, query)}
+          href={pageListHref(path, page + 1, query, extra)}
         >
           Next
         </Link>

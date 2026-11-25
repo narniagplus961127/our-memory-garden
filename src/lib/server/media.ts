@@ -24,6 +24,7 @@ import { photoVariantKey, writePhotoVariants } from "./photo-variants";
 import type { Administrator } from "./pages";
 import { PhotoByteCache } from "./photo-byte-cache";
 import { emptyMediaFilters, type MediaFilters } from "../media-filters";
+import { photoMetadata } from "../photo-metadata";
 export const originalsBucket = () =>
   process.env.MEDIA_ORIGINALS_BUCKET ||
   process.env.GARDEN_ORIGINALS_BUCKET ||
@@ -124,7 +125,7 @@ export async function photoUsages(id: string): Promise<PhotoUsage[]> {
 export async function getPhoto(id: string): Promise<Photo | null> {
   if (!validId.test(id)) return null;
   const rows =
-    await database()`select id,name,width,height,original_bytes,display_bytes,(status='deleting') as "deletionPending",deletion_error as "deletionError" from media_photos where id=${id} and status in ('ready','deleting')`;
+    await database()`select id,name,labels,metadata_version as "metadataVersion",width,height,original_bytes,display_bytes,(status='deleting') as "deletionPending",deletion_error as "deletionError" from media_photos where id=${id} and status in ('ready','deleting')`;
   if (!rows[0]) return null;
   const usages = await photoUsages(id);
   return {
@@ -135,11 +136,55 @@ export async function getPhoto(id: string): Promise<Photo | null> {
     ),
   } as Photo;
 }
+export async function updatePhotoMetadata(
+  id: string,
+  body: Record<string, unknown>,
+) {
+  if (!validId.test(id)) throw new RequestError(404, "Photo not found.");
+  const next = photoMetadata(body.name, body.labels);
+  if (
+    !next ||
+    !Number.isSafeInteger(body.metadataVersion) ||
+    Number(body.metadataVersion) < 0 ||
+    Object.keys(body).some(
+      (key) => !["name", "labels", "metadataVersion"].includes(key),
+    )
+  )
+    throw new RequestError(
+      400,
+      "Enter a photo name up to 200 characters and up to 20 labels of 40 characters each.",
+    );
+  await database().begin(async (sql) => {
+    const [current] =
+      await sql`select name,labels,metadata_version,status from media_photos where id=${id} for update`;
+    if (!current) throw new RequestError(404, "Photo not found.");
+    if (current.status !== "ready")
+      throw new RequestError(
+        409,
+        "This photo is not ready for editing. Finish or review its deletion first.",
+      );
+    // A retry after a lost response must not repeat a write or create a conflict.
+    if (
+      current.name === next.name &&
+      JSON.stringify(current.labels) === JSON.stringify(next.labels)
+    )
+      return;
+    if (current.metadata_version !== body.metadataVersion)
+      throw new RequestError(
+        409,
+        "Photo details changed elsewhere. Your entries are kept. Reload the saved details before editing again.",
+      );
+    await sql`update media_photos set name=${next.name},labels=${sql.array(next.labels)},metadata_version=metadata_version+1 where id=${id}`;
+  });
+  const saved = await getPhoto(id);
+  if (!saved) throw new RequestError(404, "Photo no longer available.");
+  return saved;
+}
 export async function listPhotos(): Promise<Photo[]> {
   const [photos, usages] = await Promise.all([
     database()<
       Omit<Photo, "usages" | "publiclyAccessible">[]
-    >`select id,name,width,height,original_bytes,display_bytes,(status='deleting') as "deletionPending",deletion_error as "deletionError" from media_photos where status in ('ready','deleting') order by created_at desc`,
+    >`select id,name,labels,metadata_version as "metadataVersion",width,height,original_bytes,display_bytes,(status='deleting') as "deletionPending",deletion_error as "deletionError" from media_photos where status in ('ready','deleting') order by created_at desc`,
     database()<
       (PhotoUsage & { photo_id: string })[]
     >`select page_id as id,title,visibility,deleted,history,photo_id from garden_media_usages where not history order by title`,
@@ -187,7 +232,7 @@ export async function listPhotoLibraryPage(
   const sql = database();
   const rows = await sql<(PhotoListItem & { cursorTime: string })[]>`
     with batch as materialized (
-      select p.id, p.name, p.width, p.status, p.created_at
+      select p.id, p.name, p.labels, p.width, p.status, p.created_at
       from media_photos p
       where p.status in ('ready','deleting')
         ${photoFilterSql(filters)}
@@ -195,7 +240,7 @@ export async function listPhotoLibraryPage(
         ${
           search
             ? sql`and (
-          strpos(lower(p.name), lower(${search})) > 0 or p.id in (
+          ${photoSearchSql(search)} or p.id in (
             select photo_id from garden_media_usages
             where not history and strpos(lower(title), lower(${search})) > 0
           )
@@ -211,7 +256,7 @@ export async function listPhotoLibraryPage(
       where not history and photo_id in (select id from batch)
       group by photo_id
     )
-    select b.id, b.name, b.width, b.status='deleting' as "deletionPending",
+    select b.id, b.name, b.labels, b.width, b.status='deleting' as "deletionPending",
       b.created_at as "uploadedAt",
       coalesce(u.page_count, 0) as "usageCount",
       coalesce(u.is_public, false) as "publiclyAccessible",
@@ -240,8 +285,14 @@ export async function listGridPickerPhotos(
     import("../photo-grid").GridPickerPhoto[]
   >`select p.id as "photoId",p.name,p.width,p.height from media_photos p where p.status='ready'
     ${photoFilterSql(filters)}
-    and strpos(lower(name),lower(${query}))>0
+    and ${photoSearchSql(query)}
     order by created_at desc,id limit ${limit} offset ${offset}`;
+}
+function photoSearchSql(query: string) {
+  const sql = database();
+  return query
+    ? sql`(strpos(lower(p.name),lower(${query}))>0 or exists(select 1 from unnest(p.labels) label where strpos(lower(label),lower(${query}))>0))`
+    : sql`true`;
 }
 function photoFilterSql(filters: MediaFilters) {
   const sql = database();

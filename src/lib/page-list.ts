@@ -27,10 +27,13 @@ export function pageListHref(
   path: string,
   page: number,
   query?: PageListQuery,
+  extra?: Record<string, string>,
 ) {
   const params = new URLSearchParams();
   if (page > 1) params.set("page", String(page));
   if (query?.search) params.set("q", query.search);
   if (query && query.sort !== "page-date-desc") params.set("sort", query.sort);
+  for (const [key, value] of Object.entries(extra ?? {}))
+    if (value && key !== "page") params.set(key, value);
   return path + (params.size ? "?" + params : "");
 }

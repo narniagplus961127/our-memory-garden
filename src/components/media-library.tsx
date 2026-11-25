@@ -38,6 +38,7 @@ import {
 import { useMediaSelection } from "./media-selection";
 import { PhotoImage } from "./photo-image";
 import { useMediaBrowse } from "./use-media-browse";
+import { PhotoMetadataForm } from "./photo-metadata-form";
 async function jsonRequest(path: string, body?: unknown) {
   const response = await fetch(path, {
     method: body === undefined ? "GET" : "POST",
@@ -57,14 +58,17 @@ export function PhotoDetails({
   photo: initialPhoto,
   onClose,
   onDeleted,
+  onSaved,
 }: {
   photo: Photo;
   onClose: () => void;
   onDeleted: () => void;
+  onSaved?: (photo: Photo) => void;
 }) {
   const [photo, setPhoto] = useState(initialPhoto),
     [confirm, setConfirm] = useState(false),
     [deleting, setDeleting] = useState(false),
+    [savingMetadata, setSavingMetadata] = useState(false),
     [deleteError, setDeleteError] = useState(initialPhoto.deletionError || "");
   async function remove() {
     setDeleting(true);
@@ -105,7 +109,7 @@ export function PhotoDetails({
       title="Photo details"
       label="Photo details"
       onClose={onClose}
-      busy={deleting}
+      busy={deleting || savingMetadata}
       className="photo-details"
     >
       <div className="photo-detail-identity">
@@ -119,8 +123,13 @@ export function PhotoDetails({
           className="photo-detail-tabs"
           aria-label="Photo details sections"
         >
-          <Tabs.Trigger value="overview">Overview</Tabs.Trigger>
-          <Tabs.Trigger value="usage" disabled={deleting}>
+          <Tabs.Trigger value="overview" disabled={deleting || savingMetadata}>
+            Overview
+          </Tabs.Trigger>
+          <Tabs.Trigger value="organize" disabled={deleting || savingMetadata}>
+            Organize
+          </Tabs.Trigger>
+          <Tabs.Trigger value="usage" disabled={deleting || savingMetadata}>
             Usage
           </Tabs.Trigger>
         </Tabs.List>
@@ -166,7 +175,7 @@ export function PhotoDetails({
                 )}
                 <Button
                   className="secondary"
-                  disabled={photo.usages.length > 0}
+                  disabled={photo.usages.length > 0 || savingMetadata}
                   aria-describedby={
                     photo.usages.length > 0 ? "photo-in-use" : undefined
                   }
@@ -186,6 +195,20 @@ export function PhotoDetails({
               )}
             </div>
           </div>
+        </Tabs.Content>
+        <Tabs.Content
+          value="organize"
+          forceMount
+          className="data-[state=inactive]:hidden"
+        >
+          <PhotoMetadataForm
+            photo={photo}
+            onBusyChange={setSavingMetadata}
+            onSaved={(saved) => {
+              setPhoto(saved);
+              onSaved?.(saved);
+            }}
+          />
         </Tabs.Content>
         <Tabs.Content value="usage">
           <h3>
@@ -722,6 +745,11 @@ export function MediaLibrary({
                   )}
                   <div>
                     <strong>{photo.name}</strong>
+                    {!!photo.labels?.length && (
+                      <p className="m-0 line-clamp-2 break-words text-xs text-muted-foreground">
+                        {photo.labels.join(" · ")}
+                      </p>
+                    )}
                     <small>
                       {photo.deletionPending
                         ? "Deletion unfinished · retry in Details"
@@ -775,6 +803,17 @@ export function MediaLibrary({
       {detail && (
         <PhotoDetails
           photo={detail}
+          onSaved={(saved) => {
+            setDetail(saved);
+            setPhotos((current) =>
+              current.map((photo) =>
+                photo.id === saved.id
+                  ? { ...photo, name: saved.name, labels: saved.labels }
+                  : photo,
+              ),
+            );
+            if (query.trim()) refresh();
+          }}
           onClose={closeDetails}
           onDeleted={() => {
             selection.forget(detail.id);

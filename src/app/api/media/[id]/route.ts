@@ -2,8 +2,27 @@ import { assertSameOrigin, bodyJson } from "@/lib/server/http";
 import { deletePhoto } from "@/lib/server/media";
 import { currentAdministrator } from "@/lib/server/auth";
 import { errorResponse, RequestError } from "@/lib/server/http";
-import { getPhoto } from "@/lib/server/media";
+import { getPhoto, updatePhotoMetadata } from "@/lib/server/media";
 export const dynamic = "force-dynamic";
+export async function PATCH(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  try {
+    assertSameOrigin(request);
+    if (!(await currentAdministrator(request.headers)))
+      throw new RequestError(401, "Sign in to organize photos.");
+    return Response.json(
+      await updatePhotoMetadata(
+        (await params).id,
+        await bodyJson(request, 8192),
+      ),
+      { headers: { "Cache-Control": "private, no-store" } },
+    );
+  } catch (error) {
+    return errorResponse(error);
+  }
+}
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> },

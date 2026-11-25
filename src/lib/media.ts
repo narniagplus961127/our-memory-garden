@@ -8,6 +8,8 @@ export type PhotoUsage = {
 export type Photo = {
   id: string;
   name: string;
+  labels?: string[];
+  metadataVersion?: number;
   deletionPending?: boolean;
   deletionError?: string;
   width: number;
@@ -19,7 +21,7 @@ export type Photo = {
 };
 export type PhotoListItem = Pick<
   Photo,
-  "id" | "name" | "width" | "publiclyAccessible"
+  "id" | "name" | "width" | "publiclyAccessible" | "labels"
 > & {
   deletionPending: boolean;
   usageCount: number;
