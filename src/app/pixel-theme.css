@@ -488,6 +488,21 @@ body {
   color: var(--ink);
   background: #fff3d8;
 }
+.garden-photo-grid .photo-pagination > [data-slot="button"] {
+  background: #fff;
+  border-color: #fff;
+  color: var(--ink);
+}
+.garden-photo-grid
+  .photo-pagination
+  > [data-slot="button"]:hover:not(:disabled) {
+  background: #fff8e7;
+  border-color: #fff8e7;
+}
+.garden-photo-grid .photo-pagination > [data-slot="button"]:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 3px;
+}
 .photo-grid-editor-item,
 .photo-grid-editor-item > img,
 .photo-grid-item-actions::before,
