@@ -35,6 +35,7 @@ export function ColumnLayoutPicker({
       <div className="column-counts">
         {[1, 2, 3, 4].map((n) => (
           <Button
+            variant="outline"
             key={n}
             aria-label={n + (n === 1 ? " column" : " columns")}
             aria-pressed={nextCount === n}
@@ -51,6 +52,7 @@ export function ColumnLayoutPicker({
       <div className="column-options">
         {(nextCount === 2 ? columnRatios : [columnRatios[0]]).map((option) => (
           <Button
+            variant="outline"
             key={option.value}
             aria-pressed={nextRatio === option.value}
             onClick={() => setRatio(option.value)}
@@ -84,7 +86,7 @@ export function ColumnLayoutPicker({
         <Button className="secondary" onClick={onClose}>
           Cancel
         </Button>
-        <Button onClick={() => onApply(nextCount, nextRatio)}>
+        <Button variant="primary" onClick={() => onApply(nextCount, nextRatio)}>
           Apply layout
         </Button>
       </div>

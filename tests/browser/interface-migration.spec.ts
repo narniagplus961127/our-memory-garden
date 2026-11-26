@@ -187,7 +187,7 @@ test("editor block deletion needs confirmation and shared modals use an icon clo
   );
   await expect(
     chooser.getByRole("button", { name: "2 columns", exact: true }),
-  ).toHaveCSS("color", "rgb(48, 67, 55)");
+  ).toHaveCSS("color", "rgb(45, 64, 50)");
   await page.screenshot({
     path: testInfo.outputPath("shared-column-modal.png"),
   });

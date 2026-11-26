@@ -66,10 +66,10 @@ test("add several blocks without selection, choose full-width sections and read 
   const chooser = page.getByRole("dialog", { name: "Choose your columns" });
   await expect(
     chooser.getByRole("button", { name: "2 columns", exact: true }),
-  ).toHaveCSS("color", "rgb(48, 67, 55)");
+  ).toHaveCSS("color", "rgb(45, 64, 50)");
   await expect(
     chooser.getByRole("button", { name: "Equal", exact: true }),
-  ).toHaveCSS("color", "rgb(48, 67, 55)");
+  ).toHaveCSS("color", "rgb(45, 64, 50)");
   await chooser
     .getByRole("button", { name: "Apply layout", exact: true })
     .click();
@@ -185,7 +185,7 @@ test("sections contain new blocks and columns; styles persist without losing the
     page
       .getByRole("group", { name: "Column content alignment", exact: true })
       .getByRole("button", { name: "Bottom", exact: true }),
-  ).toHaveCSS("color", "rgb(48, 67, 55)");
+  ).toHaveCSS("color", "rgb(45, 64, 50)");
   await saved(page);
   await page
     .getByRole("complementary", { name: "Block styles", exact: true })

@@ -4,6 +4,7 @@ import "./globals.css";
 import "./pixel-theme.css";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { PhotoUploadProvider } from "@/components/photo-uploads";
+import { gardenColourVariables } from "@/lib/garden-colours";
 const pixelFont = localFont({
   src: "./fonts/fusion-pixel.woff2",
   variable: "--font-pixel",
@@ -21,7 +22,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={pixelFont.variable} data-theme="pixel-garden">
+    <html
+      lang="en"
+      className={pixelFont.variable}
+      data-theme="pixel-garden"
+      style={gardenColourVariables}
+    >
       <body>
         <TooltipProvider>
           <PhotoUploadProvider>{children}</PhotoUploadProvider>

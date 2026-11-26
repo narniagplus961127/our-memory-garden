@@ -1,5 +1,6 @@
 "use client";
 import { createContext, useContext, useEffect, type ReactNode } from "react";
+import { gardenColourCss } from "@/lib/garden-colours";
 import {
   formatPageDate,
   pageDateAttribute,
@@ -64,6 +65,7 @@ export function EditorFrame({
   }, [frameDocument]);
   return (
     <>
+      <style>{gardenColourCss}</style>
       <style>{`body { margin:0; overflow-x:clip; } .garden-rich-text { overflow-wrap:anywhere; }`}</style>
       <style>{dateStyles}</style>
       {children}

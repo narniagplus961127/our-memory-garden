@@ -222,7 +222,10 @@ export function CategoryForm({
           </div>
         )}
         <div className="actions">
-          <Button disabled={busy || !name.trim() || !validSlug(slug)}>
+          <Button
+            variant="primary"
+            disabled={busy || !name.trim() || !validSlug(slug)}
+          >
             {busy
               ? "Saving…"
               : category

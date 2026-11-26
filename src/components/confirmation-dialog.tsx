@@ -54,6 +54,7 @@ export function ConfirmationDialog({
           </Button>
           <Button
             type="button"
+            variant="primary"
             disabled={busy || confirmDisabled}
             onClick={onConfirm}
           >

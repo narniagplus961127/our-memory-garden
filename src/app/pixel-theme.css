@@ -1,7 +1,7 @@
 /* Shared pixel garden surfaces. Authored inline block styles keep precedence. */
 html[data-theme="pixel-garden"] {
-  --pixel-edge: #6f8651;
-  --pixel-shadow: #b6c69a;
+  --pixel-edge: var(--garden-input);
+  --pixel-shadow: var(--garden-shadow);
   --pixel-pink: #eab6be;
 }
 
@@ -36,8 +36,8 @@ body {
 }
 
 ::selection {
-  background: #d5e8af;
-  color: #263e2a;
+  background: var(--sage);
+  color: var(--ink);
 }
 
 :is(button, input, select, textarea) {
@@ -65,7 +65,7 @@ body {
     [data-variant="primary"],
     [data-variant="destructive"]
   ) {
-  box-shadow: 0 3px 0 #203b29;
+  box-shadow: 0 3px 0 var(--ink);
 }
 [data-slot="button"]:active:not(:disabled) {
   box-shadow: none;
@@ -78,7 +78,7 @@ body {
 .public-header {
   background: var(--cream);
   border-bottom: 2px solid var(--pixel-edge);
-  box-shadow: 0 4px 0 #bbc99e80;
+  box-shadow: 0 4px 0 color-mix(in srgb, var(--pixel-shadow) 50%, transparent);
 }
 .brand {
   font-family: var(--font-pixel), sans-serif;
@@ -96,8 +96,8 @@ body {
   padding: 0;
   border-top: 6px solid #86aa58;
   box-shadow: 0 -4px 0 #c6dba0;
-  background: #304f39;
-  color: #fff8e7;
+  background: var(--primary);
+  color: var(--primary-foreground);
 }
 .website-menu {
   background: var(--cream);
@@ -234,7 +234,7 @@ body {
 }
 
 .admin-shell {
-  background: var(--sage);
+  background: var(--paper);
   background-image: radial-gradient(#78914916 1px, transparent 1px);
   background-size: 12px 12px;
 }
@@ -276,13 +276,13 @@ body {
 .admin-sidebar nav a[aria-current="page"] {
   background: var(--cream);
   border-color: var(--pixel-edge);
-  box-shadow: 3px 3px 0 #a4b983;
+  box-shadow: 3px 3px 0 var(--pixel-shadow);
   text-decoration: none;
 }
 .sidebar-bottom {
   padding: 24px 20px 28px;
   gap: 8px;
-  border-top: 2px solid #9db782;
+  border-top: 2px solid var(--line);
   background: var(--leaf);
   font-size: var(--body-font-size);
 }
@@ -325,7 +325,7 @@ body {
   border: 2px solid var(--line);
   border-radius: 2px;
   background: var(--cream);
-  box-shadow: 3px 3px 0 #d2dbbe;
+  box-shadow: 3px 3px 0 var(--pixel-shadow);
 }
 .admin-list-copy strong {
   font-family: var(--font-pixel), sans-serif;
@@ -334,11 +334,11 @@ body {
 :is(.settings-card, .basic-editor, .template-card, .media-card, .auth-main) {
   border: 2px solid var(--line);
   border-radius: 2px;
-  box-shadow: 4px 4px 0 #ccd5b4;
+  box-shadow: 4px 4px 0 var(--pixel-shadow);
 }
 .auth-main {
   border-color: var(--pixel-edge);
-  border-top: 8px solid #87ad59;
+  border-top: 8px solid var(--primary);
 }
 .auth-main .eyebrow::before {
   content: "";
@@ -346,8 +346,8 @@ body {
   width: 12px;
   height: 12px;
   margin-right: 10px;
-  background: #87ad59;
-  box-shadow: 4px -4px 0 #c2d58b;
+  background: var(--primary);
+  box-shadow: 4px -4px 0 var(--pixel-shadow);
 }
 .template-preview,
 .template-mini-photo,
@@ -360,7 +360,7 @@ body {
   box-shadow: 6px 6px 0 #233c2b55;
 }
 .garden-modal-header {
-  background: var(--secondary);
+  background: var(--cream);
 }
 .garden-modal-header [data-slot="dialog-title"] {
   line-height: 1.35;
@@ -370,7 +370,7 @@ body {
 .garden-toast {
   border-radius: 2px;
   border-color: var(--pixel-edge);
-  box-shadow: 4px 4px 0 #b6c69a80;
+  box-shadow: 4px 4px 0 color-mix(in srgb, var(--pixel-shadow) 50%, transparent);
 }
 .garden-photo-viewer {
   font-family: var(--font-pixel), sans-serif;
@@ -610,7 +610,7 @@ body {
     top: 0;
     z-index: 35;
     border-bottom: 2px solid var(--pixel-edge);
-    box-shadow: 0 4px 0 #c1d09e80;
+    box-shadow: 0 4px 0 color-mix(in srgb, var(--pixel-shadow) 50%, transparent);
   }
   .admin-mobile-bar details nav {
     top: 100%;

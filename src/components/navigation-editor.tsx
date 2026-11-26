@@ -176,7 +176,7 @@ export function NavigationEditor({ initial }: { initial: NavigationState }) {
             from visitors.
           </p>
         </div>
-        <Button asChild className="button">
+        <Button asChild variant="primary" className="button">
           <Link
             href="/admin/navigation/new"
             aria-disabled={locked}

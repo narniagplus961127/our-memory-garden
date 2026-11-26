@@ -218,7 +218,7 @@ export function NavigationItemForm({
           </div>
         )}
         <div className="actions">
-          <Button disabled={busy}>
+          <Button variant="primary" disabled={busy}>
             {busy ? "Saving…" : item ? "Update menu item" : "Add menu item"}
           </Button>
           <Button asChild className="button secondary">

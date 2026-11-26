@@ -2,6 +2,7 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useEffect, useId, useState } from "react";
+import { gardenColours } from "@/lib/garden-colours";
 const normalColour = (colour: string) =>
   colour.length === 4
     ? "#" + [...colour.slice(1)].map((c) => c + c).join("")
@@ -33,9 +34,9 @@ export function BackgroundColour({
       <p className="appearance-label">{label}</p>
       <div className="colour-presets" aria-label={label + " presets"}>
         {[
-          ["Paper", "#fffcf5"],
-          ["Sage", "#e0e7d9"],
-          ["Clay", "#e5c7b7"],
+          ["Paper", gardenColours.page],
+          ["Sage", gardenColours.sage],
+          ["Clay", gardenColours.clay],
           [defaultLabel, ""],
         ].map(([preset, colour]) => (
           <Button
@@ -71,7 +72,7 @@ export function BackgroundColour({
               ? "Choose custom background colour"
               : "Choose " + label.toLowerCase()
           }
-          value={value ? normalColour(value) : "#fffcf5"}
+          value={value ? normalColour(value) : gardenColours.page}
           onChange={(e) => {
             setDraft(e.target.value);
             onChange(e.target.value);

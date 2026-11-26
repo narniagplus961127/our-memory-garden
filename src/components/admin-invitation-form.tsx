@@ -68,7 +68,12 @@ export function AdminInvitationForm() {
             maxLength={254}
           />
         </div>
-        <Button type="submit" className="justify-self-start" disabled={busy}>
+        <Button
+          variant="primary"
+          type="submit"
+          className="justify-self-start"
+          disabled={busy}
+        >
           {busy ? "Creating invitation…" : "Create invitation"}
         </Button>
       </form>

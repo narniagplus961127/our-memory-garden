@@ -4,19 +4,15 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  background: #edf2dc;
-  --cream: #fff8e7;
-  --leaf: #e2edc7;
-  --line: #b4c394;
-  --garden-muted: #506344;
+  background: var(--paper);
   --editor-panel-width: 352px;
-  --puck-color-azure-04: #304337;
-  --puck-color-azure-06: #50725a;
-  --puck-color-azure-07: #90ad89;
-  --puck-color-azure-09: #d4dece;
-  --puck-color-azure-11: #e8ede3;
-  --puck-color-line-placeholder: #50725a;
-  --puck-color-border-selected: #50725a;
+  --puck-color-azure-04: var(--ink);
+  --puck-color-azure-06: var(--primary);
+  --puck-color-azure-07: var(--input);
+  --puck-color-azure-09: var(--line);
+  --puck-color-azure-11: var(--sage);
+  --puck-color-line-placeholder: var(--primary);
+  --puck-color-border-selected: var(--primary);
 }
 .editor-inline .garden-workspace-bar {
   min-height: 68px;
@@ -99,7 +95,7 @@
 .editor-inline .editor-rail button[aria-pressed="true"] {
   background: var(--leaf);
   color: var(--ink);
-  border-color: #b7cbbd;
+  border-color: var(--input);
 }
 .editor-rail .rail-label {
   position: absolute;
@@ -126,7 +122,7 @@
   padding: 3px;
   border: 1px solid var(--line);
   border-radius: 2px;
-  background: #e4edcc;
+  background: var(--sage);
 }
 .button-width-control button {
   font-size: 13px;
@@ -302,7 +298,7 @@
   display: flex;
   border: 1px solid var(--line);
   border-radius: 2px;
-  background: #f2f4f1;
+  background: var(--paper);
   padding: 3px;
   gap: 3px;
 }
@@ -331,7 +327,7 @@
   min-height: 0;
   display: flex;
   flex-direction: column;
-  background: #e9efd8;
+  background: var(--sage);
   margin: 0 12px 12px 0;
   border: 1px solid var(--line);
   border-radius: 2px;
@@ -853,11 +849,12 @@
   border-radius: 50%;
   border: 1px solid transparent;
   background: transparent;
+  color: var(--ink);
   padding: 0;
 }
 .editor-inline .colour-presets button[aria-pressed="true"] {
   background: var(--leaf);
-  border-color: #b7cbbd;
+  border-color: var(--input);
   color: var(--ink);
 }
 .colour-swatch {
@@ -865,7 +862,7 @@
   place-items: center;
   width: 24px;
   height: 24px;
-  border: 1px solid #a9b8ae;
+  border: 1px solid var(--input);
   border-radius: 50%;
   font-size: 18px;
 }
@@ -1011,18 +1008,18 @@
 }
 .garden-canvas-actions > div {
   background: var(--cream);
-  color: #304337;
-  border: 1px solid #dce3df;
+  color: var(--ink);
+  border: 1px solid var(--line);
   border-radius: 2px;
   padding: 4px;
   box-shadow: 0 3px 12px #30433720;
 }
 .garden-canvas-actions button {
   background: transparent;
-  color: #304337;
+  color: var(--ink);
 }
 .garden-canvas-actions button:hover {
-  background: #edf3ee;
+  background: var(--sage);
 }
 @container garden-image (max-width: 240px) {
   .canvas-photo-action {

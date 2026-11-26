@@ -57,24 +57,24 @@
 }
 
 :root {
-  --background: #fff8e7;
-  --foreground: #2e4630;
-  --card: #fff8e7;
-  --card-foreground: #2e4630;
-  --popover: #fff8e7;
-  --popover-foreground: #2e4630;
-  --primary: #d1e4aa;
-  --primary-foreground: #2e4630;
-  --secondary: #f5edcf;
-  --secondary-foreground: #2e4630;
-  --muted: #e9efd8;
-  --muted-foreground: #506344;
-  --accent: #e2edc7;
-  --accent-foreground: #2e4630;
-  --destructive: #a74435;
-  --border: #b4c394;
-  --input: #9db17e;
-  --ring: #5a7d41;
+  --background: var(--garden-surface);
+  --foreground: var(--garden-text);
+  --card: var(--garden-surface);
+  --card-foreground: var(--garden-text);
+  --popover: var(--garden-surface);
+  --popover-foreground: var(--garden-text);
+  --primary: var(--garden-forest);
+  --primary-foreground: var(--garden-surface);
+  --secondary: var(--garden-sage);
+  --secondary-foreground: var(--garden-text);
+  --muted: var(--garden-sage);
+  --muted-foreground: var(--garden-muted-text);
+  --accent: var(--garden-sage);
+  --accent-foreground: var(--garden-text);
+  --destructive: var(--garden-destructive);
+  --border: var(--garden-border);
+  --input: var(--garden-input);
+  --ring: var(--garden-focus);
   --radius: 2px;
 }
 
@@ -218,7 +218,7 @@
 .page-url-input {
   display: flex;
   align-items: center;
-  border: 1px solid var(--line);
+  border: 1px solid var(--input);
   border-radius: var(--control-radius);
   background: var(--cream);
   min-width: 0;
@@ -271,13 +271,13 @@
   }
 }
 :root {
-  --paper: #fbf3dc;
-  --cream: #fff8e7;
-  --sage: #edf2dc;
-  --leaf: #dbe8b6;
-  --ink: #2e4630;
-  --garden-muted: #506344;
-  --line: #b4c394;
+  --paper: var(--garden-page);
+  --cream: var(--garden-surface);
+  --sage: var(--garden-sage);
+  --leaf: var(--garden-sage);
+  --ink: var(--garden-text);
+  --garden-muted: var(--garden-muted-text);
+  --line: var(--garden-border);
   --clay: #a76b50;
   --gutter: 64px;
   --control-height: 44px;
@@ -440,8 +440,8 @@ body:has(> .garden-footer) > main {
 }
 .auth-main button[type="submit"] {
   width: 100%;
-  background: var(--ink);
-  color: var(--cream);
+  background: var(--primary);
+  color: var(--primary-foreground);
 }
 .auth-main h1 {
   margin-bottom: 20px;
@@ -458,8 +458,8 @@ body:has(> .garden-footer) > main {
   color: var(--garden-muted);
 }
 .error {
-  background: #f1dfd4;
-  color: #713e30;
+  background: var(--garden-error-fill);
+  color: var(--garden-error-text);
   padding: 16px;
   border-radius: 4px;
 }
@@ -746,8 +746,8 @@ td:last-child {
   margin-left: 12px;
 }
 button.primary {
-  background: var(--ink);
-  color: var(--cream);
+  background: var(--primary);
+  color: var(--primary-foreground);
 }
 .garden-document {
   display: flow-root;
@@ -808,14 +808,14 @@ button.primary {
   background: var(--sage);
 }
 .garden-tone-clay {
-  background: #e7d1c2;
+  background: var(--garden-clay);
 }
 .garden-tone-dark-green {
   --garden-muted: #dce7da;
   --divider-line: #ffffff61;
   --divider-ink: #fff;
   --divider-logo-filter: brightness(0) invert(1);
-  background: var(--ink);
+  background: var(--garden-forest);
   color: #fff;
 }
 .garden-tone-dark-green
@@ -996,8 +996,8 @@ button.primary {
   padding-bottom: 24px;
 }
 .garden-button-block .primary {
-  background: var(--ink);
-  color: var(--cream);
+  background: var(--primary);
+  color: var(--primary-foreground);
 }
 .garden-button-block > .button {
   max-width: 100%;
@@ -1202,8 +1202,8 @@ button.primary {
   background: var(--paper);
 }
 .editor-save-error {
-  background: #f1dfd4;
-  color: #713e30;
+  background: var(--garden-error-fill);
+  color: var(--garden-error-text);
   padding: 12px 28px;
   display: flex;
   align-items: center;
@@ -2464,7 +2464,9 @@ button.primary {
   overflow-wrap: anywhere;
 }
 .garden-toast-error {
-  border-left-color: var(--clay);
+  border-left-color: var(--destructive);
+  background: var(--garden-error-fill);
+  color: var(--garden-error-text);
 }
 .garden-toast button {
   flex-shrink: 0;
@@ -2831,7 +2833,7 @@ button.primary {
   }
   button,
   .button {
-    border: 1px solid var(--line);
+    border: 1px solid var(--input);
     border-radius: var(--control-radius);
     background: var(--leaf);
     color: var(--ink);
@@ -2863,7 +2865,7 @@ button.primary {
     font-size: var(--control-font-size);
     line-height: 20px;
     width: 100%;
-    border: 1px solid var(--line);
+    border: 1px solid var(--input);
     border-radius: var(--control-radius);
     background: var(--cream);
     padding: 9px 12px;
@@ -2895,7 +2897,7 @@ button.primary {
   select:focus,
   button:focus-visible,
   a:focus-visible {
-    outline: 2px solid var(--garden-muted);
+    outline: 2px solid var(--ring);
     outline-offset: 3px;
   }
 }

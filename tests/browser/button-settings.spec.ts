@@ -171,7 +171,7 @@ test("button width and custom colours autosave, render publicly, reset and rejec
     .click();
   await page.getByText("Fit content", { exact: true }).click();
   await saved(page);
-  await expect(button).toHaveCSS("background-color", "rgb(48, 67, 55)");
+  await expect(button).toHaveCSS("background-color", "rgb(53, 86, 65)");
   expect(
     Math.abs((await button.boundingBox())!.width - fitWidth),
   ).toBeLessThanOrEqual(1);
