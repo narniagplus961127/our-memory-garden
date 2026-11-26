@@ -64,6 +64,8 @@ export function SwiperViewport({ children }: { children: ReactNode }) {
     [registerPhoto, openPhoto],
   );
 
+  // Controls reveal a sliver of the next slide; remeasure after that change
+  // even when the viewport's own size is unchanged.
   useEffect(() => {
     const element = viewport.current;
     const track = element?.firstElementChild;
@@ -116,7 +118,7 @@ export function SwiperViewport({ children }: { children: ReactNode }) {
       mutation.disconnect();
       element.removeEventListener("scroll", updatePage);
     };
-  }, []);
+  }, [navigation.count]);
 
   const { page, count } = navigation;
   function go(index: number) {
@@ -135,7 +137,7 @@ export function SwiperViewport({ children }: { children: ReactNode }) {
         {count > 1 && (
           <Button
             type="button"
-            variant="outline"
+            variant="ghost"
             size="icon"
             className="garden-swiper-previous"
             aria-label="Previous slides"
@@ -166,7 +168,7 @@ export function SwiperViewport({ children }: { children: ReactNode }) {
         {count > 1 && (
           <Button
             type="button"
-            variant="outline"
+            variant="ghost"
             size="icon"
             className="garden-swiper-next"
             aria-label="Next slides"
