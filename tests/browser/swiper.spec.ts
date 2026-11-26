@@ -176,13 +176,16 @@ test("create a Swiper, round-trip its slides, and browse with responsive paginat
       "rgb(45, 64, 50)",
     );
     const header = view.locator(".public-header");
-    await expect(header).toHaveCSS("background-color", "rgb(255, 250, 240)");
+    await expect(header).toHaveCSS("background-color", "rgb(53, 86, 65)");
     await expect(header).not.toHaveCSS("box-shadow", "none");
     await expect(header.locator(".brand")).toHaveCSS(
       "color",
-      "rgb(45, 64, 50)",
+      "rgb(255, 255, 255)",
     );
-    await expect(header.locator(".brand img")).toHaveCSS("filter", "none");
+    await expect(header.locator(".brand img")).toHaveCSS(
+      "filter",
+      "brightness(0) invert(1)",
+    );
 
     await swiper.getByRole("button", { name: "Next slides" }).click();
     await expect(

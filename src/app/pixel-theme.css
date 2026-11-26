@@ -76,9 +76,29 @@ body {
 }
 
 .public-header {
-  background: var(--cream);
+  background: var(--garden-forest);
+  color: var(--garden-surface);
   border-bottom: 2px solid var(--pixel-edge);
   box-shadow: 0 4px 0 color-mix(in srgb, var(--pixel-shadow) 50%, transparent);
+}
+.public-header .brand,
+.admin-mobile-bar .brand {
+  color: var(--garden-surface);
+}
+.public-header .brand img,
+.admin-mobile-bar .brand img {
+  filter: brightness(0) invert(1);
+}
+.admin-mobile-bar {
+  background: var(--garden-forest);
+  color: var(--garden-surface);
+}
+.admin-mobile-bar details nav {
+  color: var(--ink);
+}
+.public-header .website-menu-trigger:focus-visible,
+.admin-mobile-bar > details > summary:focus-visible {
+  outline-color: var(--garden-surface);
 }
 .brand {
   font-family: var(--font-pixel), sans-serif;
@@ -436,32 +456,34 @@ body {
   font-family: var(--font-pixel), sans-serif;
 }
 
-/* Viewer surfaces use the same cream/sage palette as other dialogs. */
+/* Forest chrome frames the photo while the viewing stage stays sage. */
 [data-slot="dialog-content"].garden-modal.photo-lightbox {
   background: var(--sage);
   color: var(--ink);
 }
 .photo-lightbox .garden-modal-header {
-  background: var(--cream);
-  color: var(--ink);
-  border-color: var(--line);
+  background: var(--garden-forest);
+  color: var(--garden-surface);
+  border-color: var(--garden-forest);
 }
 .photo-lightbox .garden-modal-header [data-slot="dialog-title"] {
-  color: var(--ink);
+  color: var(--garden-surface);
 }
 .photo-lightbox button[data-slot="button"] {
-  border: 1px solid var(--pixel-edge);
+  border: 1px solid var(--garden-forest);
   border-radius: 2px;
-  background: var(--cream);
-  color: var(--ink);
+  background: var(--garden-forest);
+  color: var(--garden-surface);
   box-shadow: 2px 2px 0 #233c2b24;
 }
-.photo-lightbox button[data-slot="button"]:hover:not(:disabled) {
-  background: var(--leaf);
+.photo-lightbox .garden-modal-header button:focus-visible {
+  outline: 2px solid var(--garden-surface);
+  outline-offset: 3px;
 }
 .photo-lightbox-caption {
-  background: var(--cream);
-  border-top: 1px solid var(--line);
+  background: var(--garden-forest);
+  color: var(--garden-surface);
+  border-top: 1px solid var(--garden-forest);
 }
 
 /* Content blocks share the theme in both the canvas and public renderer. */
@@ -571,10 +593,15 @@ body {
 }
 .garden-swiper-rail > button {
   border-radius: 2px;
-  border-color: var(--pixel-edge);
-  background: var(--cream);
-  color: var(--ink);
+  border-color: var(--garden-forest);
+  background: var(--garden-forest);
+  color: var(--garden-surface);
   box-shadow: 2px 2px 0 var(--pixel-shadow);
+}
+.admin-list-row button {
+  border-color: var(--garden-forest);
+  background: var(--garden-forest);
+  color: var(--garden-surface);
 }
 .garden-swiper-track > * {
   --garden-muted: var(--garden-muted-text);
@@ -676,8 +703,12 @@ body {
     border-color: var(--pixel-edge);
     box-shadow: 3px 3px 0 var(--pixel-shadow);
   }
-  .garden-swiper-rail > button:hover:not(:disabled) {
-    background: var(--leaf);
+  .garden-swiper-rail > button:hover:not(:disabled),
+  .photo-lightbox button[data-slot="button"]:hover:not(:disabled),
+  .admin-list-row button:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--garden-forest) 88%, black);
+    color: var(--garden-surface);
+    filter: none;
   }
 }
 @media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
