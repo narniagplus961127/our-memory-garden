@@ -587,7 +587,7 @@ export async function deletePhoto(id: string) {
     if (pins.length)
       throw new RequestError(
         409,
-        "This photo is being prepared for a backup. Finish or cancel the export before deleting it.",
+        "A temporary archive still reserves this photo. Try again after the archive expires.",
       );
     await sql`update media_photos set status='deleting',deletion_error=null where id=${id}`;
     return rows[0];

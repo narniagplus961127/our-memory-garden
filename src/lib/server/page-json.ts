@@ -61,17 +61,6 @@ async function readPageGridPhotos(sql: Sql, page: GardenPage) {
   return photos;
 }
 
-export async function exportPageJson(id: string) {
-  return database().begin(
-    "isolation level repeatable read read only",
-    async (sql) => {
-      const page = await getPage(sql, id);
-      const photos = await readPageGridPhotos(sql, page);
-      return { slug: page.slug, file: makePageJson(page.content, photos) };
-    },
-  );
-}
-
 export async function pageJsonSources(id: string) {
   if (!uuid.test(id)) throw new RequestError(404, "Page not found.");
   return database()<Pick<GardenPage, "id" | "title" | "slug">[]>`

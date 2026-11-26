@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { readFileSync } from "node:fs";
 import { parseEnv } from "node:util";
-import { legacyTextContent } from "./editor-controls";
+import { legacyTextContent, pageImportFixture } from "./editor-controls";
 
 const env = parseEnv(readFileSync(".env.test", "utf8"));
 
@@ -52,9 +52,7 @@ test("insert a live page date in text and render the current date", async ({
   await expect.poll(dateOnCanvas).toBe('"Page date"');
   const saved = page.getByRole("status", { name: "Auto-save status" });
   await expect(saved).toHaveText("Saved");
-  const exported = await page.request.get(api + "/json");
-  expect(exported.ok()).toBeTruthy();
-  expect(JSON.stringify(await exported.json())).toContain(
+  expect(JSON.stringify(await pageImportFixture(page, garden.id))).toContain(
     'data-garden-page-date=\\"long\\"',
   );
 

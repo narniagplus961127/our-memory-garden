@@ -1,7 +1,11 @@
 import { expect, test } from "@playwright/test";
 import { readFileSync } from "node:fs";
 import { parseEnv } from "node:util";
-import { chooseAddTarget, selectBlock } from "./editor-controls";
+import {
+  chooseAddTarget,
+  pageImportFixture,
+  selectBlock,
+} from "./editor-controls";
 
 const env = parseEnv(readFileSync(".env.test", "utf8"));
 const headers = {
@@ -83,21 +87,19 @@ test("create a Swiper, round-trip its slides, and browse with responsive paginat
     "background-color",
     "rgb(53, 86, 65)",
   );
-  const exported = await (
-    await page.request.get("/api/pages/" + source.id + "/json")
-  ).json();
-  expect(exported.page.blocks[0].settings.background).toBe("dark-green");
-  const block = exported.page.blocks[0].blocks[0];
+  const exported = await pageImportFixture(page, source.id);
+  expect(exported.page.blocks[0].settings!.background).toBe("dark-green");
+  const block = exported.page.blocks[0].blocks![0];
   expect(block).toMatchObject({
     type: "Swiper",
     settings: { slidesPerView: 2, mobileSlidesPerView: 1 },
   });
-  expect(block.blocks.map((item: { type: string }) => item.type)).toEqual(
+  expect(block.blocks!.map((item: { type: string }) => item.type)).toEqual(
     Array(5).fill("Text"),
   );
 
   // Distinct copy lets the visitor test follow the order across pages.
-  for (const [index, item] of block.blocks.entries()) {
+  for (const [index, item] of block.blocks!.entries()) {
     delete item.html;
     item.text = "Slide " + (index + 1);
   }

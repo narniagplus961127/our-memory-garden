@@ -1,6 +1,6 @@
 import { currentAdministrator } from "@/lib/server/auth";
 import { errorResponse, RequestError } from "@/lib/server/http";
-import { storageUsage } from "@/lib/server/exports";
+import { storageUsage } from "@/lib/server/storage-usage";
 export const dynamic = "force-dynamic";
 export async function GET(request: Request) {
   try {

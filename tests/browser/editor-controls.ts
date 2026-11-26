@@ -1,5 +1,14 @@
 import { type Page } from "@playwright/test";
 import type { GardenPage, PageData } from "../../src/lib/pages";
+import { makePageJson } from "../../src/lib/page-json";
+
+// Build an import fixture from saved blocks; downloads are not an application feature.
+export async function pageImportFixture(page: Page, id: string) {
+  const response = await page.request.get("/api/pages/" + id);
+  if (!response.ok()) throw new Error("Could not read saved fixture content.");
+  const saved = (await response.json()) as GardenPage;
+  return makePageJson(saved.content, new Map());
+}
 
 // Explicit historic fixture: recovery and compatibility tests must not depend
 // on today's empty blank-page template.

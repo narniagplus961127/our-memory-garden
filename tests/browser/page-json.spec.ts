@@ -98,13 +98,12 @@ test("review and replace editor content from JSON and another page", async ({
       .getByText("Edited in JSON.", { exact: true }),
   ).toBeVisible();
   await page.getByRole("button", { name: "Page actions" }).click();
-  const downloading = page.waitForEvent("download");
-  await page.getByRole("menuitem", { name: "Download page JSON" }).click();
-  const download = await downloading;
-  expect(download.suggestedFilename()).toBe(slug + ".json");
-  const path = await download.path();
-  const downloaded = JSON.parse(readFileSync(path!, "utf8"));
-  expect(Object.keys(downloaded.page)).toEqual(["blocks"]);
+  await expect(
+    page.getByRole("menuitem", { name: "Download page JSON" }),
+  ).toHaveCount(0);
+  expect(
+    (await page.request.get("/api/pages/" + source.id + "/json")).status(),
+  ).toBe(404);
 
   const other = await page.request.post("/api/pages", {
     headers,
@@ -129,7 +128,7 @@ test("review and replace editor content from JSON and another page", async ({
   expect(templateResponse.status()).toBe(201);
   const template = await templateResponse.json();
 
-  // Navigate to the destination afresh after verifying the file download.
+  // Navigate to the destination afresh after verifying downloads are removed.
   await page.goto("/admin/pages/" + source.id);
   dialog = await openImport();
   await dialog.getByRole("tab", { name: "Use another page" }).click();
@@ -154,14 +153,18 @@ test("review and replace editor content from JSON and another page", async ({
 
   dialog = await openImport();
   await dialog.getByRole("tab", { name: "Use template content" }).click();
-  await dialog.getByLabel("Source template").selectOption(template.id);
+  await dialog
+    .getByLabel("Source template", { exact: true })
+    .selectOption(template.id);
   await expect(dialog).toContainText("1 block");
   await dialog.getByRole("tab", { name: "Upload JSON" }).click();
   await expect(
     dialog.getByRole("button", { name: "Replace page content" }),
   ).toBeDisabled();
   await dialog.getByRole("tab", { name: "Use template content" }).click();
-  await dialog.getByLabel("Source template").selectOption(template.id);
+  await dialog
+    .getByLabel("Source template", { exact: true })
+    .selectOption(template.id);
   await expect(dialog).toContainText("1 block");
   if (isMobile) {
     const fit = await dialog.boundingBox();
