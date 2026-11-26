@@ -1,6 +1,6 @@
 "use client";
 import { useState, type ReactNode } from "react";
-import { Menu, X } from "lucide-react";
+import { X } from "lucide-react";
 import { Button } from "./ui/button";
 import {
   Sheet,
@@ -18,9 +18,14 @@ export function PublicMenu({ children }: { children: ReactNode }) {
           type="button"
           variant="outline"
           size="icon"
+          className="website-menu-trigger"
           aria-label="Open website menu"
         >
-          <Menu aria-hidden="true" />
+          <span className="website-menu-icon" aria-hidden="true">
+            <span />
+            <span />
+            <span />
+          </span>
         </Button>
       </SheetTrigger>
       <SheetContent

@@ -32,7 +32,12 @@ export function PageCards({
                 />
               ) : (
                 <div className="garden-card-cover" aria-hidden="true">
-                  ❀
+                  <img
+                    src="/brand/seedlings.svg"
+                    alt=""
+                    width={48}
+                    height={48}
+                  />
                 </div>
               )}
             </div>
