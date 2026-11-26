@@ -579,12 +579,12 @@ export function MediaLibrary({
             }}
           />
         </div>
-        <Button className="secondary" disabled={loading} onClick={refresh}>
+        <Button variant="primary" disabled={loading} onClick={refresh}>
           Refresh library
         </Button>
       </div>
       <Button
-        variant="outline"
+        variant="primary"
         className="mb-4"
         aria-expanded={filtersOpen}
         aria-controls={fieldId + "-filters"}
@@ -770,7 +770,7 @@ export function MediaLibrary({
                         </Button>
                       ) : null}
                       <Button
-                        className="secondary"
+                        variant="primary"
                         aria-label={"Photo details " + photo.name}
                         onClick={(event) =>
                           void details(photo.id, event.currentTarget)
