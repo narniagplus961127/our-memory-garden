@@ -546,6 +546,8 @@ body {
     padding: 8px 4px;
     border-width: 8px;
     border-image-width: 8px;
+    /* Percentage slices keep the SVG centre visible on narrow tiles. */
+    border-image-slice: 22.2222% 8.3333% fill;
   }
 }
 

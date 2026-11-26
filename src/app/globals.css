@@ -2977,14 +2977,14 @@ button.primary {
   .count-up-values {
     width: 100%;
     max-width: 360px;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 8px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
   }
   .count-up-row {
     display: contents;
   }
   .count-up-values[data-units="1"] .count-up-unit,
-  .count-up-values[data-units="3"] .count-up-unit:last-child {
+  .count-up-values[data-units="4"] .count-up-row:first-child .count-up-unit {
     grid-column: 1 / -1;
   }
   .count-up-unit {
