@@ -1,4 +1,4 @@
-import { StorageSettings } from "@/components/backup-settings";
+import { StorageSettings } from "@/components/storage-settings";
 import { requireAdministrator } from "@/lib/server/auth";
 export const metadata = { title: "Storage" };
 

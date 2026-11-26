@@ -2,7 +2,6 @@
 
 import {
   Copy,
-  Download,
   Ellipsis,
   ExternalLink,
   History,
@@ -110,21 +109,6 @@ export function EditorPageActions({
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
-                asChild
-                disabled={!jsonReady}
-                className="min-h-11"
-              >
-                <a
-                  href={
-                    jsonReady ? "/api/pages/" + page.id + "/json" : undefined
-                  }
-                  download
-                >
-                  <Download aria-hidden="true" />
-                  Download page JSON
-                </a>
-              </DropdownMenuItem>
-              <DropdownMenuItem
                 className="min-h-11"
                 disabled={!jsonReady}
                 onSelect={() => {
@@ -137,7 +121,7 @@ export function EditorPageActions({
               </DropdownMenuItem>
               {!jsonReady && (
                 <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">
-                  Finish saving your changes to use page JSON.
+                  Finish saving your changes to import page content.
                 </DropdownMenuLabel>
               )}
               <DropdownMenuSeparator />

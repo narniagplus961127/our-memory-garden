@@ -2777,39 +2777,29 @@ button.primary {
   margin: 0;
   min-width: 0;
 }
-.backup-settings > h1 {
+.storage-settings > h1 {
   margin-top: 40px;
 }
-.backup-settings > h2 {
+.storage-settings > h2 {
   font-size: 24px;
   color: var(--garden-muted);
 }
-.backup-settings .settings-card {
+.storage-settings .settings-card {
   margin: 16px 0;
   max-width: none;
   padding: 18px;
   overflow-wrap: anywhere;
 }
-.backup-settings .settings-card h3 {
+.storage-settings .settings-card h3 {
   margin-top: 0;
   margin-bottom: 8px;
 }
-.backup-settings progress {
-  width: 100%;
-  accent-color: var(--garden-muted);
-}
-.backup-settings > p {
+.storage-settings > p {
   margin: 24px 0;
 }
-.backup-settings .actions {
-  flex-wrap: wrap;
-}
 @media (max-width: 760px) {
-  .backup-settings > h1 {
+  .storage-settings > h1 {
     margin-top: 28px;
-  }
-  .backup-settings .actions {
-    display: grid;
   }
 }
 .media-cleanup-preview {

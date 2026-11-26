@@ -38,6 +38,28 @@ test("imports older JSON and another page’s content without replacing page set
   const targetPath = "/api/pages/" + target.id;
   const filePath = sourcePath + "/json";
   const targetFile = targetPath + "/json";
+  async function gridPhotos(id) {
+    const saved = await json(await request("/api/pages/" + id));
+    const grid = saved.content.content[0].props.content[2];
+    const photos = [];
+    let offset = 0;
+    do {
+      const batch = await json(
+        await request(
+          `/api/pages/${id}/photo-grid/${grid.props.id}?grid=${grid.props.gridId}&revision=${grid.props.gridRevision}&offset=${offset}`,
+        ),
+      );
+      photos.push(
+        ...batch.photos.map(({ photoId, alt, caption }) => ({
+          photoId,
+          alt,
+          caption,
+        })),
+      );
+      offset = batch.next;
+    } while (offset !== null);
+    return photos;
+  }
   const image = await sharp({
     create: { width: 40, height: 30, channels: 3, background: "#a0a981" },
   })
@@ -186,18 +208,19 @@ test("imports older JSON and another page’s content without replacing page set
     }),
   );
   const response = await request(filePath);
-  assert.equal(response.status, 200);
-  assert.equal(response.headers.get("cache-control"), "private, no-store");
-  assert.match(response.headers.get("content-disposition"), /memory-.*\.json/);
-  const bytes = await response.text();
-  assert.match(bytes, /\n  "page": \{/);
-  const exported = JSON.parse(bytes);
-  assert.deepEqual(Object.keys(exported), ["format", "version", "page"]);
-  assert.deepEqual(Object.keys(exported.page), ["blocks"]);
-  assert.doesNotMatch(bytes, /created_by|gridRevision|gridId|visibility/);
-  assert.deepEqual(exported.page.blocks[0].blocks[2].photos, photos);
-  assert.equal(exported.page.blocks[0].blocks[1].html, richText);
+  assert.equal(response.status, 404);
+  assert.equal(response.headers.get("content-disposition"), null);
+  const exported = {
+    format: document.format,
+    version: document.version,
+    page: { blocks: document.page.blocks },
+  };
+  assert.deepEqual(await gridPhotos(source.id), photos);
   const original = await json(await request(sourcePath));
+  assert.equal(
+    original.content.content[0].props.content[1].props.textRich,
+    richText,
+  );
   assert.equal(original.title, source.title);
   assert.equal(original.page_date, settings.page_date);
   assert.equal(original.cover_photo_id, settings.cover_photo_id);
@@ -236,10 +259,7 @@ test("imports older JSON and another page’s content without replacing page set
   ])
     assert.equal(copy[field], original[field]);
   assert.deepEqual(copy.content.root, original.content.root);
-  assert.deepEqual(
-    await json(await request(`/api/pages/${cloneId}/json`)),
-    exported,
-  );
+  assert.deepEqual(await gridPhotos(cloneId), photos);
   const nextCloneId = crypto.randomUUID();
   await json(
     await request(clonePath, "POST", { ...cloneRequest, id: nextCloneId }),
@@ -273,10 +293,7 @@ test("imports older JSON and another page’s content without replacing page set
   assert.equal(updated.title, updatedSinceExport.title);
   assert.equal(updated.slug, source.slug);
   assert.equal(updated.visibility, "private");
-  assert.deepEqual(
-    await json(await request(`/api/pages/${cloneId}/json`)),
-    exported,
-  );
+  assert.deepEqual(await gridPhotos(cloneId), photos);
   assert.equal(
     updated.content.content[0].props.content[0].props.text,
     "Updated in JSON",
@@ -306,10 +323,7 @@ test("imports older JSON and another page’s content without replacing page set
   assert.equal(imported.title, target.title);
   assert.deepEqual(imported.content.root, target.content.root);
   assert.notEqual(gridId(imported), gridId(updated));
-  assert.deepEqual(
-    (await json(await request(targetFile))).page.blocks[0].blocks[2].photos,
-    [...photos].reverse(),
-  );
+  assert.deepEqual(await gridPhotos(target.id), [...photos].reverse());
   const privateCopyId = crypto.randomUUID();
   await json(
     await request(clonePath, "POST", {
@@ -338,8 +352,8 @@ test("imports older JSON and another page’s content without replacing page set
       },
     ),
   );
-  const restored = await json(await request(filePath));
-  assert.deepEqual(restored.page.blocks[0].blocks[2].photos, photos);
+  const restored = document;
+  assert.deepEqual(await gridPhotos(source.id), photos);
   const restoredPage = await json(await request(sourcePath));
   assert.equal(restoredPage.title, updatedSinceExport.title);
   assert.equal(restoredPage.page_date, "2024-11-27");
@@ -349,8 +363,5 @@ test("imports older JSON and another page’s content without replacing page set
   const fromFile = await json(await request(targetPath));
   assert.equal(fromFile.title, target.title);
   assert.equal(fromFile.visibility, "public");
-  assert.deepEqual(
-    (await json(await request(targetFile))).page.blocks[0].blocks[2].photos,
-    photos,
-  );
+  assert.deepEqual(await gridPhotos(target.id), photos);
 });

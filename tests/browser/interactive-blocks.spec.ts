@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 import { readFileSync } from "node:fs";
 import { parseEnv } from "node:util";
 import { countUpParts } from "../../src/lib/live-count-up";
-import { selectBlock } from "./editor-controls";
+import { pageImportFixture, selectBlock } from "./editor-controls";
 
 const env = parseEnv(readFileSync(".env.test", "utf8"));
 const headers = {
@@ -110,10 +110,8 @@ test("author, round-trip and view a live counter and an isolated scripted embed"
   await expect(
     page.getByRole("status", { name: "Auto-save status" }),
   ).toHaveText("Saved");
-  const emptyExport = await (
-    await page.request.get("/api/pages/" + source.id + "/json")
-  ).json();
-  expect(emptyExport.page.blocks[0].blocks[0].settings).toMatchObject({
+  const emptyExport = await pageImportFixture(page, source.id);
+  expect(emptyExport.page.blocks[0].blocks![0].settings).toMatchObject({
     heading: "",
     startDate: "",
     showStartCaption: false,
@@ -151,10 +149,8 @@ test("author, round-trip and view a live counter and an isolated scripted embed"
   );
   await expect(editorEmbed.getByText("Network blocked")).toBeVisible();
 
-  const exported = await page.request.get("/api/pages/" + source.id + "/json");
-  expect(exported.ok()).toBeTruthy();
-  const file = await exported.json();
-  const [counter, embed] = file.page.blocks[0].blocks;
+  const file = await pageImportFixture(page, source.id);
+  const [counter, embed] = file.page.blocks[0].blocks!;
   expect(counter).toMatchObject({
     type: "LiveCountUp",
     settings: {
@@ -179,7 +175,7 @@ test("author, round-trip and view a live counter and an isolated scripted embed"
       })
     ).ok(),
   ).toBeTruthy();
-  expect(await (await page.request.get(targetJson)).json()).toEqual(file);
+  expect(await pageImportFixture(page, target.id)).toEqual(file);
 
   const current = await (
     await page.request.get("/api/pages/" + target.id)

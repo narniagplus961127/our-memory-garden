@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { readFileSync } from "node:fs";
 import { parseEnv } from "node:util";
-import { selectBlock } from "./editor-controls";
+import { pageImportFixture, selectBlock } from "./editor-controls";
 
 const env = parseEnv(readFileSync(".env.test", "utf8"));
 const headers = {
@@ -82,10 +82,8 @@ test("the Divider supports presets and saves a custom emoji through page JSON", 
   await expect(
     page.getByRole("status", { name: "Auto-save status" }),
   ).toHaveText("Saved");
-  const exported = await (
-    await page.request.get("/api/pages/" + source.id + "/json")
-  ).json();
-  expect(exported.page.blocks[0].blocks[0]).toMatchObject({
+  const exported = await pageImportFixture(page, source.id);
+  expect(exported.page.blocks[0].blocks![0]).toMatchObject({
     type: "Divider",
     settings: { dividerIcon: "custom", dividerEmoji: emoji },
   });

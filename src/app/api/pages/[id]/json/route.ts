@@ -2,7 +2,6 @@ import { currentAdministrator } from "@/lib/server/auth";
 import { maxPageJsonBytes } from "@/lib/page-json";
 import { listPageTemplates } from "@/lib/server/page-templates";
 import {
-  exportPageJson,
   importPageJson,
   pageJsonSources,
   reviewPageJson,
@@ -20,7 +19,7 @@ const privateHeaders = { "Cache-Control": "private, no-store" };
 export async function GET(request: Request, { params }: Context) {
   try {
     if (!(await currentAdministrator(request.headers)))
-      throw new RequestError(401, "Sign in to export page JSON.");
+      throw new RequestError(401, "Sign in to import page content.");
     const { id } = await params;
     if (new URL(request.url).searchParams.get("sources") === "templates")
       return Response.json(await listPageTemplates(), {
@@ -30,14 +29,7 @@ export async function GET(request: Request, { params }: Context) {
       return Response.json(await pageJsonSources(id), {
         headers: privateHeaders,
       });
-    const { file, slug } = await exportPageJson(id);
-    return new Response(JSON.stringify(file, null, 2) + "\n", {
-      headers: {
-        ...privateHeaders,
-        "Content-Type": "application/json; charset=utf-8",
-        "Content-Disposition": 'attachment; filename="' + slug + '.json"',
-      },
-    });
+    throw new RequestError(404, "Page JSON downloads are no longer available.");
   } catch (error) {
     return errorResponse(error);
   }

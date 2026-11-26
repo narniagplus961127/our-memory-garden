@@ -56,7 +56,7 @@ test("photo metadata validates, protects concurrent edits and keeps photo identi
   const path = `/api/media/${upload.id}`;
   const [identity] =
     await sql`select id,original_key,display_key,original_sha256,original_bytes,display_bytes from media_photos where id=${upload.id}`;
-  let pageId, exportId;
+  let pageId;
   try {
     const fields = {
       name: "Friendly name",
@@ -223,21 +223,7 @@ test("photo metadata validates, protects concurrent edits and keeps photo identi
       headers: { "If-None-Match": etag },
     });
     assert.equal(unchanged.status, 304);
-    const snapshot = await call("/api/exports", "POST", {}, cookie);
-    assert.equal(snapshot.status, 202);
-    exportId = (await snapshot.json()).id;
-    const [record] =
-      await sql`select document from garden_export_records where export_id=${exportId} and kind='photos' and document->>'id'=${upload.id}`;
-    assert.equal(record.document.name, "Public image name");
-    assert.deepEqual(record.document.labels, [secret]);
   } finally {
-    if (exportId)
-      await call(
-        `/api/exports/${exportId}`,
-        "DELETE",
-        { confirm: true },
-        cookie,
-      );
     if (pageId) await sql`delete from pages where id=${pageId}`;
     await call(path, "DELETE", { confirm: true }, cookie);
     await sql.end();

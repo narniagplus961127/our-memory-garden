@@ -23,11 +23,6 @@ export default function SettingsPage() {
         <Link href="/admin/settings/storage">View storage usage →</Link>
       </div>
       <div className="settings-card">
-        <h2>Export</h2>
-        <p>Keep an independent copy of page content and original photos.</p>
-        <Link href="/admin/settings/export">Export garden →</Link>
-      </div>
-      <div className="settings-card">
         <h2>Account</h2>
         <p>Manage your sign-in and password.</p>
         <Link href="/admin/settings/account">Manage account →</Link>
