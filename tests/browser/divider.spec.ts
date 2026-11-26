@@ -121,7 +121,7 @@ test("the Divider supports presets and saves a custom emoji through page JSON", 
     const footer = view.getByRole("contentinfo");
     await expect(footer).toHaveText("Our Memory Garden");
     await expect(footer).toHaveCSS("text-align", "center");
-    await expect(footer).toHaveCSS("background-color", "rgb(48, 67, 55)");
+    await expect(footer).toHaveCSS("background-color", "rgb(53, 86, 65)");
     await expect(footer).toHaveCSS("color", "rgb(255, 255, 255)");
     const [line, middle] = await Promise.all([
       divider.boundingBox(),

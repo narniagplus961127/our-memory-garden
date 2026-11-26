@@ -21,7 +21,7 @@ export default async function Categories() {
             Organize your pages into places, occasions and chapters.
           </p>
         </div>
-        <Button asChild>
+        <Button asChild variant="primary">
           <Link href="/admin/categories/new">Create category</Link>
         </Button>
       </div>

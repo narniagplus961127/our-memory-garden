@@ -29,7 +29,7 @@ export default async function Pages({
           <p className="muted">Manage and organize your pages.</p>
         </div>
         <div className="admin-list-heading-actions">
-          <Button asChild>
+          <Button asChild variant="primary">
             <Link href="/admin/pages/new">Create page</Link>
           </Button>
           <Button asChild variant="outline">

@@ -119,7 +119,11 @@ export function AuthForm({
               )}
             </div>
           )}
-          <Button disabled={!ready || pending || !configured} type="submit">
+          <Button
+            variant="primary"
+            disabled={!ready || pending || !configured}
+            type="submit"
+          >
             {pending
               ? "Please wait…"
               : mode === "login"

@@ -25,7 +25,7 @@ export default async function Templates() {
             Create reusable starting points for new pages.
           </p>
         </div>
-        <Button asChild>
+        <Button asChild variant="primary">
           <Link href="/admin/templates/new">Create template</Link>
         </Button>
       </div>

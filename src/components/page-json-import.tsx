@@ -198,6 +198,7 @@ export function PageJsonImport({
           </Button>
           <Button
             type="button"
+            variant="primary"
             disabled={!ready || !!busy}
             onClick={() => void replace()}
           >

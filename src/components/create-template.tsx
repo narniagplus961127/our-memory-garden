@@ -106,7 +106,11 @@ export function CreateTemplate({
           </p>
         )}
         <div className="actions">
-          <Button type="submit" disabled={busy || !name.trim()}>
+          <Button
+            variant="primary"
+            type="submit"
+            disabled={busy || !name.trim()}
+          >
             {busy ? "Creating…" : "Create template"}
           </Button>
           <Button asChild variant="outline">

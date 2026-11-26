@@ -96,7 +96,7 @@ export function AdminInvitationAccept() {
     return (
       <div className="grid gap-4">
         <p role="status">Your garden access is ready.</p>
-        <Button asChild className="justify-self-start">
+        <Button asChild variant="primary" className="justify-self-start">
           <Link href="/login">Continue to sign in</Link>
         </Button>
       </div>
@@ -148,7 +148,7 @@ export function AdminInvitationAccept() {
             )}
           </div>
           <div className="actions">
-            <Button type="submit">
+            <Button variant="primary" type="submit">
               {stage === "password" ? "Continue" : "Verify and accept"}
             </Button>
             {stage === "code" && (

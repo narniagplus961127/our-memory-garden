@@ -2,6 +2,8 @@
 
 Reviewed 26 November 2026. Recommendation only; no application styles, saved page content or production configuration were changed.
 
+Implementation follow-up: the user approved this proposal later on 26 November. Ticket 114 applies the refined palette; the findings below retain the original review baseline. The shared implementation is `src/lib/garden-colours.ts`, including both site and editor iframe colours. Existing authored custom hex values are preserved.
+
 ## Recommendation
 
 Keep the pixel-garden direction and refine its interface palette. Use a less yellow ivory canvas, white form and modal surfaces, soft sage for supporting areas, and one forest green for main actions. Keep the wooden boards, pinned paper, fence, plants and pixel font. Their material colours are intentional, rather than palette inconsistencies.

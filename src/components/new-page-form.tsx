@@ -186,7 +186,9 @@ export function NewPageForm({
         </p>
       </div>
       <div className="actions">
-        <Button disabled={pending}>Create private page</Button>
+        <Button variant="primary" disabled={pending}>
+          Create private page
+        </Button>
         <Button asChild className="button secondary">
           <Link href="/admin/pages">Cancel</Link>
         </Button>
