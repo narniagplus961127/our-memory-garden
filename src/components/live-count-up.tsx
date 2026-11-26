@@ -155,14 +155,19 @@ export function LiveCountUp({
       }
     >
       {heading.trim() && <h2 className="count-up-heading">{heading}</h2>}
-      <div className="count-up-row">{dateUnits.map((key) => unit(key))}</div>
-      {showClock && (
-        <div className="count-up-row count-up-clock">
-          {unit("hours", 2)}
-          {unit("minutes", 2)}
-          {unit("seconds", 2)}
-        </div>
-      )}
+      <div
+        className="count-up-values"
+        data-units={dateUnits.length + (showClock ? 3 : 0)}
+      >
+        <div className="count-up-row">{dateUnits.map((key) => unit(key))}</div>
+        {showClock && (
+          <div className="count-up-row count-up-clock">
+            {unit("hours", 2)}
+            {unit("minutes", 2)}
+            {unit("seconds", 2)}
+          </div>
+        )}
+      </div>
       {showStartCaption && (
         <small
           className="count-up-caption"

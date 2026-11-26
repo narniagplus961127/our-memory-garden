@@ -23,7 +23,6 @@ import {
 import type { GardenPage } from "@/lib/pages";
 import { thumbnailPhotoUrl } from "@/lib/media";
 import { Button } from "./ui/button";
-import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { Textarea } from "./ui/textarea";
 import { PhotoLibraryDialog } from "./media-library";
@@ -36,6 +35,8 @@ import {
 } from "./ui/dropdown-menu";
 import { Modal } from "./modal";
 import { PhotoControls } from "./editor-photo-controls";
+import { PhotoDescriptionInput } from "./photo-description-input";
+import { photoDescription } from "@/lib/photo-description";
 import { fetchGridBatch, PhotoGridBlock } from "./photo-grid-block";
 import type { gardenConfig, GardenBlocks } from "./garden-blocks";
 
@@ -130,6 +131,9 @@ function GridPhotoList({
   const field = useId();
   const url = gridPhotosUrl(pageId, blockId, reference);
   const photos = batch?.photos;
+  const undescribed =
+    photos?.filter((photo) => !photoDescription(photo.alt, photo.caption))
+      .length ?? 0;
   const items = useMemo(
     () =>
       (photos ?? []).map((photo, index) => ({
@@ -304,6 +308,12 @@ function GridPhotoList({
         </p>
       )}
       {!library && !editing && failure}
+      {undescribed > 0 && (
+        <p className="muted text-xs m-0">
+          {undescribed} of the loaded photos still need descriptions. Use a
+          photo’s menu → Edit details to add alt text or a short caption.
+        </p>
+      )}
       <span id={sorter.instructionsId} className="sr-only">
         Drag a photo to reorder it. With a keyboard, press Space, use the arrow
         keys, then press Enter to drop.
@@ -487,15 +497,11 @@ function GridPhotoList({
               });
             }}
           >
-            <Label htmlFor={field + "-alt"}>Alt text</Label>
-            <Input
-              id={field + "-alt"}
+            <PhotoDescriptionInput
+              label="Alt text"
               value={editing.alt}
-              maxLength={1000}
               disabled={busy}
-              onChange={(event) =>
-                setEditing({ ...editing, alt: event.target.value })
-              }
+              onChange={(alt) => setEditing({ ...editing, alt })}
             />
             <Label htmlFor={field + "-caption"}>Caption</Label>
             <Textarea

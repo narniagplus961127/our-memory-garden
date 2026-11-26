@@ -20,6 +20,8 @@ import { richField } from "./garden-rich-field";
 import { CanvasPhotoAction } from "./canvas-photo-action";
 import { PhotoControls } from "./editor-photo-controls";
 import { PhotoImage } from "./photo-image";
+import { PhotoDescriptionInput } from "./photo-description-input";
+import { photoDescription } from "@/lib/photo-description";
 import { StandalonePhoto } from "./standalone-photo";
 import { CanvasRichText } from "./canvas-rich-text";
 import { Label } from "./ui/label";
@@ -926,7 +928,13 @@ export const gardenConfig: Config<
             </PhotoControls>
           ),
         },
-        alt: { type: "text", label: "Alternative text" },
+        alt: {
+          type: "custom",
+          label: "Alternative text",
+          render: ({ value, onChange }) => (
+            <PhotoDescriptionInput value={value} onChange={onChange} />
+          ),
+        },
         caption: { type: "textarea", label: "Caption", visible: false },
         captionRich: richField("Caption"),
         fit: {
@@ -947,7 +955,7 @@ export const gardenConfig: Config<
         },
       },
       defaultProps: {
-        alt: "A photograph from our garden",
+        alt: "",
         caption: "",
         captionRich: "<p></p>",
         fit: "cover",
@@ -975,7 +983,7 @@ export const gardenConfig: Config<
           <ImageLink
             destination={destination}
             editing={puck.isEditing}
-            alt={alt}
+            alt={photoDescription(alt, caption) ?? ""}
             photoId={photoId}
             caption={caption}
           >
@@ -985,7 +993,7 @@ export const gardenConfig: Config<
                 className={"garden-photo garden-fit-" + (fit ?? "cover")}
                 {...responsivePhotoSources(photoId, "100vw")}
                 loading="lazy"
-                alt={alt}
+                alt={photoDescription(alt, caption) ?? "Photo"}
               />
             ) : (
               <div
