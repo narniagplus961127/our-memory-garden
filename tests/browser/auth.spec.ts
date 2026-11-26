@@ -71,7 +71,10 @@ test("website navigation keeps custom links and returns with Back and Escape", a
     ).toHaveAttribute("href", "/");
     const opener = page.getByRole("button", { name: "Open website menu" });
     await opener.click();
-    const menu = page.getByRole("dialog", { name: "Menu", exact: true });
+    const menu = page.getByRole("dialog", {
+      name: "Explore the garden",
+      exact: true,
+    });
     await expect(
       menu.getByRole("link", { name: "Our adventures", exact: true }),
     ).toHaveAttribute("href", "https://example.com/adventures");

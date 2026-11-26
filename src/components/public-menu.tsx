@@ -51,7 +51,17 @@ export function PublicMenu({ children }: { children: ReactNode }) {
         }}
       >
         <header className="website-menu-header">
-          <SheetTitle>Menu</SheetTitle>
+          <div className="website-menu-heading">
+            <img
+              className="website-menu-seedling"
+              src="/brand/seedlings.svg"
+              alt=""
+              width={48}
+              height={48}
+            />
+            <span className="website-menu-eyebrow">Our Memory Garden</span>
+            <SheetTitle>Explore the garden</SheetTitle>
+          </div>
           <SheetClose className="website-menu-close" aria-label="Close menu">
             <X aria-hidden="true" />
           </SheetClose>

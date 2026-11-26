@@ -861,43 +861,76 @@ body {
   max-width: none;
   height: 100dvh;
   border: 0;
-  background: var(--sage);
+  background: var(--garden-panel);
   box-shadow: none;
   overflow: hidden;
 }
+.website-menu[data-slot="sheet-content"]::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background-image: url("/brand/garden-plants-pattern-v2.svg");
+  background-size: 720px 640px;
+  opacity: 0.07;
+  pointer-events: none;
+}
 .website-menu .website-menu-header {
-  position: relative;
+  position: static;
   justify-content: center;
-  padding: max(24px, env(safe-area-inset-top)) 72px 20px;
+  padding: max(clamp(64px, 8dvh, 88px), env(safe-area-inset-top)) 64px 28px;
   border-bottom: 0;
 }
-.website-menu-header h2 {
-  font-size: 36px;
+.website-menu-heading {
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  color: var(--garden-forest);
   text-align: center;
+}
+.website-menu-seedling {
+  image-rendering: pixelated;
+}
+.website-menu-eyebrow {
+  color: var(--garden-muted-text);
+  font-size: 14px;
+  line-height: 1.4;
+  letter-spacing: 0.08em;
+}
+.website-menu .website-menu-header h2 {
+  font-size: clamp(28px, 3vw, 38px);
+  line-height: 1.2;
+  color: var(--garden-forest);
+  text-wrap: balance;
 }
 .website-menu .website-menu-close {
   position: absolute;
   top: max(20px, env(safe-area-inset-top));
   right: max(20px, env(safe-area-inset-right));
+  border: 2px solid var(--garden-forest);
+  border-image: none;
+  background: var(--garden-forest);
+  color: var(--garden-surface);
+  box-shadow: 2px 3px 0 var(--pixel-shadow);
 }
 .website-menu nav {
   display: flex;
   flex-direction: column;
-  padding: 12px max(20px, env(safe-area-inset-right))
-    max(32px, env(safe-area-inset-bottom)) max(20px, env(safe-area-inset-left));
+  padding: 4px max(24px, env(safe-area-inset-right))
+    max(40px, env(safe-area-inset-bottom)) max(24px, env(safe-area-inset-left));
   overflow-y: auto;
   overscroll-behavior: contain;
   scrollbar-gutter: stable both-edges;
 }
 .website-menu nav > .public-menu-items {
   flex: 0 0 auto;
-  width: min(100%, 560px);
-  margin: auto;
-  gap: 18px;
+  width: min(100%, 480px);
+  margin: 0 auto;
+  gap: 14px;
 }
 .website-menu .public-menu-items > li {
   display: grid;
-  grid-template-columns: minmax(0, 1fr);
+  grid-template-columns: 48px minmax(0, 1fr) 48px;
   isolation: isolate;
 }
 .website-menu .public-menu-items > li::before {
@@ -906,6 +939,7 @@ body {
   align-self: stretch;
   border: 16px solid transparent;
   border-image: url("/brand/menu-sign-v1.svg") 16 fill / 16px / 0 stretch;
+  filter: brightness(1.06);
   pointer-events: none;
 }
 .website-menu nav > ul > li + li {
@@ -914,33 +948,33 @@ body {
 .website-menu nav > ul > li + li::after {
   content: "";
   position: absolute;
-  inset: -18px 36px auto;
-  height: 18px;
-  border-inline: 6px solid #79654d;
+  inset: -14px 32px auto;
+  height: 14px;
+  border-inline: 4px solid #a28b68;
   z-index: -1;
   pointer-events: none;
 }
 .website-menu .public-menu-items > .has-submenu {
-  grid-template-columns: minmax(0, 1fr) 48px;
+  grid-template-columns: 48px minmax(0, 1fr) 48px;
   column-gap: 0;
 }
 .website-menu .public-menu-items > li > a {
-  grid-area: 1 / 1;
+  grid-area: 1 / 1 / 2 / -1;
   position: relative;
   justify-content: center;
-  min-height: 80px;
-  padding: 18px 26px;
+  min-height: 72px;
+  padding: 16px 48px;
   color: #fff8e7;
-  font-size: 24px;
+  font-size: 22px;
   line-height: 1.4;
   text-align: center;
   text-shadow: 1px 2px 0 #49331f;
 }
 .website-menu .has-submenu > a {
-  padding-right: 4px;
+  padding-inline: 48px;
 }
 .website-menu .has-submenu > .submenu-toggle {
-  grid-area: 1 / 2;
+  grid-area: 1 / 3;
   position: relative;
   align-self: stretch;
   color: #fff8e7;
@@ -957,8 +991,8 @@ body {
   gap: 10px;
 }
 .website-menu .public-submenu .public-menu-items > li > a {
-  min-height: 58px;
-  padding-block: 14px;
+  min-height: 60px;
+  padding-block: 12px;
   font-size: 18px;
 }
 .website-menu nav :is(a, .submenu-toggle):is(:hover, :focus-visible) {
@@ -972,8 +1006,35 @@ body {
   outline-offset: -8px;
 }
 @media (hover: hover) and (pointer: fine) {
+  .website-menu .website-menu-close:hover {
+    background: color-mix(in srgb, var(--garden-forest) 88%, black);
+  }
   .website-menu li:has(> a:hover, > .submenu-toggle:hover)::before {
     filter: brightness(1.12);
+  }
+}
+@media (max-width: 480px) {
+  .website-menu .website-menu-header {
+    padding: max(64px, env(safe-area-inset-top)) 48px 24px;
+  }
+  .website-menu-heading {
+    gap: 8px;
+  }
+  .website-menu .public-menu-items > li > a {
+    font-size: 20px;
+    padding-inline: 36px;
+  }
+  .website-menu .public-submenu .public-menu-items > li > a {
+    font-size: 18px;
+  }
+}
+@media (max-height: 600px) and (min-width: 481px) {
+  .website-menu .website-menu-header {
+    padding-top: max(20px, env(safe-area-inset-top));
+    padding-bottom: 16px;
+  }
+  .website-menu-seedling {
+    display: none;
   }
 }
 @keyframes garden-menu-appear {
