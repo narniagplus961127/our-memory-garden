@@ -21,3 +21,9 @@ Storage UI and measurement now live in dedicated storage modules. Legacy archive
 ## Limitations
 
 Existing temporary archive objects/records are removed by their original expiry cleanup. An unexpired legacy reservation may still delay photo deletion until expiry (at most 24 hours after its last preparation). No new export job or reservation can be created. Previously downloaded JSON remains importable.
+
+## Production verification follow-up
+
+The first release removed the implementation successfully, but production's unmatched POST fallback rendered the generic not-found HTML with status 200 (`X-Matched-Path: /_not-found`); GET and HEAD returned 404. Added one small optional-catch-all handler for retired `/api/exports` URLs. Every verb returns an explicit 404 with no cache, and HEAD has no body. It does not import authentication, database, storage or export code, so old clients cannot trigger garden rendering or create/download archives. Page JSON import and the compact toolbar are unaffected. Verify the same production GET/POST/HEAD checks after the follow-up deployment.
+
+The follow-up production build, TypeScript, formatting and diff checks passed. Directly exercised all seven supported HTTP handlers: 404/no-store for every method, JSON unavailable response for normal methods and an empty HEAD body. No environment or service connection was required for this check.
