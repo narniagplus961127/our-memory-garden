@@ -66,7 +66,9 @@ export function EditorFrame({
   return (
     <>
       <style>{gardenColourCss}</style>
-      <style>{`body { margin:0; overflow-x:clip; } .garden-rich-text { overflow-wrap:anywhere; }`}</style>
+      {/* The frame grows with its content; scrolling belongs to the outer canvas.
+          An inner scrollbar changes the grid width and can restart auto-sizing. */}
+      <style>{`html { overflow-y:hidden; } body { margin:0; overflow-x:clip; } .garden-rich-text { overflow-wrap:anywhere; }`}</style>
       <style>{dateStyles}</style>
       {children}
     </>
