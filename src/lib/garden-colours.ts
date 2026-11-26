@@ -4,6 +4,8 @@ import type { CSSProperties } from "react";
 export const gardenColours = {
   page: "#faf8f1",
   surface: "#ffffff",
+  panel: "#fffaf0",
+  parchment: "#fff3d8",
   forest: "#355641",
   text: "#2d4032",
   mutedText: "#596b59",

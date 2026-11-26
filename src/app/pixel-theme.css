@@ -90,6 +90,53 @@ body {
   image-rendering: pixelated;
   flex-shrink: 0;
 }
+:is(
+  .public-header .website-menu-trigger,
+  .website-menu .website-menu-close,
+  .admin-mobile-bar > details > summary
+) {
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 5px solid transparent;
+  border-image: url("/brand/menu-sign-v1.svg") 22.2222% 8.3333% fill / 5px / 0
+    stretch;
+  border-radius: 0;
+  background: transparent;
+  color: var(--garden-parchment);
+  padding: 7px;
+  box-shadow: 2px 3px 0 #49331f40;
+}
+:is(
+  .website-menu-trigger,
+  .website-menu-close,
+  .admin-mobile-bar summary
+):focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 3px;
+}
+:is(
+  .website-menu-trigger,
+  .website-menu-close,
+  .admin-mobile-bar summary
+):active {
+  box-shadow: 1px 1px 0 #49331f40;
+}
+.website-menu-icon {
+  display: grid;
+  width: 20px;
+  gap: 4px;
+}
+.website-menu-icon > span {
+  display: block;
+  height: 2px;
+  background: currentColor;
+}
+.website-menu-icon > span:nth-child(2) {
+  width: 14px;
+}
 .garden-footer {
   --fence-edge: 6px;
   position: relative;
@@ -142,7 +189,7 @@ body {
   position: absolute;
   inset: 0;
   z-index: -1;
-  background: #fff3d8;
+  background: var(--garden-parchment);
   clip-path: polygon(
     0 0,
     100% 0,
@@ -196,6 +243,19 @@ body {
   display: grid;
   background: #ece1bf;
   color: #657c45;
+}
+.garden-card-cover > img,
+.template-mini-photo > img {
+  width: 48px;
+  height: 48px;
+  aspect-ratio: auto;
+  object-fit: contain;
+  border-radius: 0;
+  image-rendering: pixelated;
+}
+.template-mini-photo > img {
+  width: 32px;
+  height: 32px;
 }
 .garden-card-copy {
   display: grid;
@@ -442,7 +502,7 @@ body {
   position: absolute;
   inset: 0;
   z-index: -1;
-  background: #fff3d8;
+  background: var(--garden-parchment);
   clip-path: polygon(
     0 0,
     100% 0,
@@ -486,7 +546,7 @@ body {
 }
 .garden-photo-grid .photo-grid-placeholder {
   color: var(--ink);
-  background: #fff3d8;
+  background: var(--garden-parchment);
 }
 .garden-photo-grid .photo-pagination > [data-slot="button"] {
   background: #fff;
@@ -510,14 +570,11 @@ body {
   border-radius: 2px;
 }
 .garden-swiper-rail > button {
-  border: 0;
-  background: transparent;
-  color: inherit;
-  box-shadow: none;
-}
-.garden-swiper-rail > button:focus-visible {
-  outline: 2px solid currentColor;
-  outline-offset: 1px;
+  border-radius: 2px;
+  border-color: var(--pixel-edge);
+  background: var(--cream);
+  color: var(--ink);
+  box-shadow: 2px 2px 0 var(--pixel-shadow);
 }
 .garden-swiper-track > * {
   --garden-muted: var(--garden-muted-text);
@@ -527,7 +584,7 @@ body {
   position: relative;
   padding: 20px 12px 12px;
   border: 1px solid #d2bf97;
-  background-color: #fff3d8;
+  background-color: var(--garden-parchment);
   color: var(--garden-text);
   box-shadow: 2px 3px 0 #49331f30;
 }
@@ -544,7 +601,10 @@ body {
   pointer-events: none;
 }
 .garden-swiper-pagination button > span {
-  border-radius: 50%;
+  border-radius: 0;
+}
+.garden-swiper-pagination button[aria-current="page"] > span {
+  box-shadow: 2px 2px 0 var(--pixel-shadow);
 }
 .garden-button-block > .button {
   box-shadow: 3px 3px 0 var(--pixel-shadow);
@@ -617,14 +677,13 @@ body {
     box-shadow: 3px 3px 0 var(--pixel-shadow);
   }
   .garden-swiper-rail > button:hover:not(:disabled) {
-    background: transparent;
-    box-shadow: none;
+    background: var(--leaf);
   }
 }
 @media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
   :is(.garden-page-card, .template-card):hover,
   .garden-swiper-public .garden-swiper-track > *:hover {
-    translate: 0 -3px;
+    translate: 0 -6px;
   }
 }
 .photo-grid-tile:has(> button:focus-visible),

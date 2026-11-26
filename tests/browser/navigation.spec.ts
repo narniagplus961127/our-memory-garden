@@ -74,6 +74,9 @@ test("manage nested navigation and change addresses through desktop and mobile c
   await page
     .getByLabel("Destination type", { exact: true })
     .selectOption("page");
+  await page
+    .getByRole("searchbox", { name: "Search garden pages" })
+    .fill(p.title);
   await page.getByLabel("Garden page", { exact: true }).selectOption(p.id);
   async function expectFieldAlignment() {
     const fields = await page
@@ -98,7 +101,12 @@ test("manage nested navigation and change addresses through desktop and mobile c
             x: control.x,
             width: control.width,
             height: control.height,
-            labelGap: control.top - label.getBoundingClientRect().bottom,
+            labelGap:
+              (form
+                .querySelector<HTMLElement>('[id="' + label.htmlFor + '"]')!
+                .closest(".page-choice-control")
+                ?.getBoundingClientRect().top ?? control.top) -
+              label.getBoundingClientRect().bottom,
             fieldGap: previous
               ? label.getBoundingClientRect().top - previous.bottom
               : null,

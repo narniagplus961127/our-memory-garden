@@ -103,7 +103,14 @@ export function NewPageForm({
                         <i />
                         <i />
                       </span>
-                      <span className="template-mini-photo">❧</span>
+                      <span className="template-mini-photo">
+                        <img
+                          src="/brand/seedlings.svg"
+                          alt=""
+                          width={32}
+                          height={32}
+                        />
+                      </span>
                     </span>
                     {template.preview === "journal" && (
                       <span className="template-mini-lines">

@@ -57,11 +57,11 @@
 }
 
 :root {
-  --background: var(--garden-surface);
+  --background: var(--garden-panel);
   --foreground: var(--garden-text);
-  --card: var(--garden-surface);
+  --card: var(--garden-panel);
   --card-foreground: var(--garden-text);
-  --popover: var(--garden-surface);
+  --popover: var(--garden-panel);
   --popover-foreground: var(--garden-text);
   --primary: var(--garden-forest);
   --primary-foreground: var(--garden-surface);
@@ -272,7 +272,7 @@
 }
 :root {
   --paper: var(--garden-page);
-  --cream: var(--garden-surface);
+  --cream: var(--garden-panel);
   --sage: var(--garden-sage);
   --leaf: var(--garden-sage);
   --ink: var(--garden-text);
@@ -3117,6 +3117,9 @@ button.primary {
 }
 .garden-swiper-track .garden-image {
   margin: 0;
+}
+.garden-swiper-track .garden-image-full figcaption {
+  padding-inline: 0;
 }
 .garden-swiper-pagination {
   display: flex;

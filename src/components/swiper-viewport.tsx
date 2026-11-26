@@ -137,7 +137,7 @@ export function SwiperViewport({ children }: { children: ReactNode }) {
         {count > 1 && (
           <Button
             type="button"
-            variant="ghost"
+            variant="outline"
             size="icon"
             className="garden-swiper-previous"
             aria-label="Previous slides"
@@ -168,7 +168,7 @@ export function SwiperViewport({ children }: { children: ReactNode }) {
         {count > 1 && (
           <Button
             type="button"
-            variant="ghost"
+            variant="outline"
             size="icon"
             className="garden-swiper-next"
             aria-label="Next slides"
