@@ -7,6 +7,7 @@ import { PhotoViewer } from "./photo-viewer";
 import { PhotoImage } from "./photo-image";
 import { AnimatedBlock } from "./animated-block";
 import { Button } from "./ui/button";
+import { photoDescription } from "@/lib/photo-description";
 
 export async function fetchGridBatch(
   url: string,
@@ -140,7 +141,9 @@ export function PhotoGridBlock({
         }
       >
         {photos.map((photo, index) => {
-          const alt = photo.alt || photo.caption || "Photo " + (index + 1);
+          const alt =
+            photoDescription(photo.alt, photo.caption) ||
+            "Photo " + (index + 1);
           const image = (
             <PhotoImage
               embedded

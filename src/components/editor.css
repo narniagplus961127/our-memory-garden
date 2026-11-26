@@ -984,6 +984,31 @@
 .garden-rich-text h4:last-child {
   margin-bottom: 0;
 }
+.content-suggestions {
+  border-top: 1px solid var(--line);
+  margin-top: 16px;
+  padding-top: 16px;
+  font-size: 13px;
+}
+.content-suggestions summary {
+  cursor: pointer;
+}
+.content-suggestions p {
+  margin: 12px 0;
+}
+.content-suggestions ul {
+  list-style: disc;
+  padding-left: 16px;
+}
+.garden-block-list .content-suggestions button {
+  height: auto;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  text-align: left;
+  justify-content: flex-start;
+  padding: 8px 0;
+  font-size: 13px;
+}
 .garden-rich-text [contenteditable] {
   cursor: text;
   user-select: text;

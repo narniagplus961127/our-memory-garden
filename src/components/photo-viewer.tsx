@@ -9,6 +9,7 @@ import {
 } from "react";
 import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut } from "lucide-react";
 import { displayPhotoUrl, responsivePhotoSources } from "@/lib/media";
+import { photoDescription } from "@/lib/photo-description";
 import { Modal } from "./modal";
 import { PhotoImage } from "./photo-image";
 import { Button } from "./ui/button";
@@ -248,8 +249,7 @@ export function PhotoViewer({
   onClose: () => void;
 }) {
   const alt =
-    photo.alt ||
-    photo.caption ||
+    photoDescription(photo.alt, photo.caption) ||
     (navigation ? "Photo " + (navigation.index + 1) : "Photo");
   function move(direction: -1 | 1) {
     if (

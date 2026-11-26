@@ -51,6 +51,7 @@ import { usePageDetails } from "./use-page-details";
 import { SaveFeedback } from "./save-feedback";
 import { Toast } from "./toast";
 import { equal } from "@/lib/page-merge";
+import { contentSuggestions } from "@/lib/content-checks";
 import { inlinePageData, richPageData, editedPageData } from "@/lib/rich-text";
 const useGardenPuck = createUsePuck<typeof gardenConfig>();
 const RequestBlockRemoval = createContext<(id: string) => void>(() => {});
@@ -547,6 +548,16 @@ function Workspace({
     selected = useGardenPuck((state) => state.selectedItem),
     getPuck = useGetPuck();
   const { targets, items } = documentOutline(data.content as PageBlock[]);
+  const suggestions = useMemo(
+    () =>
+      panel === "outline"
+        ? contentSuggestions(
+            data.content as PageBlock[],
+            data.root.props?.showTitle !== false,
+          )
+        : [],
+    [data.content, data.root.props?.showTitle, panel],
+  );
   const activeText = useActiveInlineText();
   const formatEditor =
     (panel === null || panel === "settings") &&
@@ -791,6 +802,30 @@ function Workspace({
           </span>
         </Button>
       ))}
+      {suggestions.length > 0 && (
+        <details className="content-suggestions">
+          <summary>Content suggestions ({suggestions.length})</summary>
+          <p className="muted">
+            Optional improvements for readers and screen readers.
+          </p>
+          <ul>
+            {suggestions.map((suggestion, index) => (
+              <li key={suggestion.blockId + ":" + index}>
+                <Button
+                  type="button"
+                  variant="link"
+                  onClick={() => {
+                    select(suggestion.blockId);
+                    setPanel("settings");
+                  }}
+                >
+                  {suggestion.message}
+                </Button>
+              </li>
+            ))}
+          </ul>
+        </details>
+      )}
     </div>
   );
   return (
