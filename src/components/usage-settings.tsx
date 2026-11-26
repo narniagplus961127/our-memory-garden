@@ -336,6 +336,7 @@ export function UsageSettings() {
             </div>
             <Button
               type="submit"
+              variant="primary"
               className="justify-self-start"
               disabled={busy || saving}
             >
