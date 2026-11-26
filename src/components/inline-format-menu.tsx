@@ -1,6 +1,6 @@
 "use client";
 import { Modal } from "./modal";
-import { CalendarDays } from "lucide-react";
+import { AlignCenter, AlignLeft, AlignRight, CalendarDays } from "lucide-react";
 import {
   isPageDateFormat,
   pageDateFormats,
@@ -313,6 +313,52 @@ export function InlineFormatMenu({
       >
         B
       </Button>
+      {[
+        ["Italic", "italic", "I"],
+        ["Underline", "underline", "U"],
+      ].map(([label, mark, icon]) => (
+        <Button
+          key={mark}
+          type="button"
+          disabled={disabled}
+          aria-label={label}
+          title={label}
+          aria-pressed={editor?.isActive(mark) ?? false}
+          onClick={() => command()?.toggleMark(mark).run()}
+        >
+          {icon}
+        </Button>
+      ))}
+      <Button
+        disabled={disabled}
+        type="button"
+        aria-label="Align left"
+        title="Align left"
+        aria-pressed={editor?.isActive({ textAlign: "left" }) ?? false}
+        onClick={() => command()?.setTextAlign("left").run()}
+      >
+        <AlignLeft aria-hidden="true" />
+      </Button>
+      <Button
+        disabled={disabled}
+        type="button"
+        aria-label="Align centre"
+        title="Align centre"
+        aria-pressed={editor?.isActive({ textAlign: "center" }) ?? false}
+        onClick={() => command()?.setTextAlign("center").run()}
+      >
+        <AlignCenter aria-hidden="true" />
+      </Button>
+      <Button
+        disabled={disabled}
+        type="button"
+        aria-label="Align right"
+        title="Align right"
+        aria-pressed={editor?.isActive({ textAlign: "right" }) ?? false}
+        onClick={() => command()?.setTextAlign("right").run()}
+      >
+        <AlignRight aria-hidden="true" />
+      </Button>
       {allowLinks && (
         <Button
           disabled={disabled}
@@ -403,64 +449,6 @@ export function InlineFormatMenu({
             onClick={closeMore}
           >
             ×
-          </Button>
-        </div>
-        <div className="format-more-actions">
-          {[
-            ["Italic", "italic", "I"],
-            ["Underline", "underline", "U"],
-          ].map(([label, mark, icon]) => (
-            <Button
-              key={mark}
-              type="button"
-              disabled={disabled}
-              aria-label={label}
-              title={label}
-              aria-pressed={editor?.isActive(mark) ?? false}
-              onClick={() => command()?.toggleMark(mark).run()}
-            >
-              {icon}
-            </Button>
-          ))}
-          <Button
-            disabled={disabled}
-            type="button"
-            aria-label="Align left"
-            title="Align left"
-            aria-pressed={editor?.isActive({ textAlign: "left" }) ?? false}
-            onClick={() => command()?.setTextAlign("left").run()}
-          >
-            ≡
-          </Button>
-          <Button
-            disabled={disabled}
-            type="button"
-            aria-label="Align centre"
-            title="Align centre"
-            aria-pressed={editor?.isActive({ textAlign: "center" }) ?? false}
-            onClick={() => command()?.setTextAlign("center").run()}
-          >
-            ☰
-          </Button>
-          <Button
-            disabled={disabled}
-            type="button"
-            aria-label="Align right"
-            title="Align right"
-            aria-pressed={editor?.isActive({ textAlign: "right" }) ?? false}
-            onClick={() => command()?.setTextAlign("right").run()}
-          >
-            <svg
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.7"
-              aria-hidden="true"
-            >
-              <path d="M4 5h16M9 10h11M4 15h16M9 20h11" />
-            </svg>
           </Button>
         </div>
         <div className="format-more-spacing">

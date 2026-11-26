@@ -427,15 +427,22 @@
 .inline-format-bar::-webkit-scrollbar {
   display: none;
 }
-.inline-format-bar > select {
-  flex-shrink: 0;
-  width: 150px;
+.inline-format-bar > [data-slot="native-select-wrapper"] {
+  flex: 0 0 148px;
+  width: 148px;
+}
+.inline-format-bar
+  > [data-slot="native-select-wrapper"]:has(select[aria-label="Text style"]) {
+  flex-basis: 88px;
+  width: 88px;
+}
+.inline-format-bar select {
   min-height: 44px;
   padding-top: 8px;
   padding-bottom: 8px;
-}
-.inline-format-bar > select[aria-label="Text style"] {
-  width: 110px;
+  padding-left: 8px;
+  padding-right: 28px;
+  font-size: 13px;
 }
 .inline-format-bar > .format-more-trigger {
   position: sticky;
@@ -476,15 +483,6 @@
   height: 44px;
   padding: 4px;
   background: transparent;
-}
-.format-more-actions {
-  display: flex;
-  gap: 8px;
-  padding-bottom: 14px;
-  border-bottom: 1px solid var(--line);
-}
-.format-more-actions button {
-  min-width: 44px;
 }
 .format-more-spacing {
   display: grid;

@@ -537,9 +537,9 @@ test("formatting-only conflicts show both formatted versions before a choice", a
     selection.addRange(range);
   });
   await page
-    .getByRole("button", { name: "More text formatting", exact: true })
+    .locator(".inline-format-bar")
+    .getByRole("button", { name: "Italic", exact: true })
     .click();
-  await page.getByRole("button", { name: "Italic", exact: true }).click();
   const comparison = page.getByRole("region", {
     name: "Resolve editing conflicts",
   });
