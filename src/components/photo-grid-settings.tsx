@@ -478,7 +478,12 @@ function GridPhotoList({
           busy={busy}
           returnFocus={editOpener}
           footer={
-            <Button type="submit" form={field} disabled={busy}>
+            <Button
+              type="submit"
+              variant="primary"
+              form={field}
+              disabled={busy}
+            >
               {busy ? "Saving…" : "Save photo details"}
             </Button>
           }

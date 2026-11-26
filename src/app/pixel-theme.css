@@ -70,6 +70,24 @@ body {
 [data-slot="button"]:active:not(:disabled) {
   box-shadow: none;
 }
+:is(.admin-main, .editor-admin-main, .garden-modal) [data-variant="primary"] {
+  border-color: var(--garden-forest);
+  background: var(--garden-forest);
+  color: var(--garden-surface);
+  box-shadow: 0 3px 0 var(--ink);
+}
+:is(.admin-main, .editor-admin-main, .garden-modal)
+  [data-variant="primary"]:active:not(:disabled) {
+  box-shadow: none;
+}
+@media (hover: hover) and (pointer: fine) {
+  :is(.admin-main, .editor-admin-main, .garden-modal)
+    [data-variant="primary"]:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--garden-forest) 88%, black);
+    color: var(--garden-surface);
+    filter: none;
+  }
+}
 :is([data-slot="input"], [data-slot="textarea"], [data-slot="native-select"]) {
   border-radius: 2px;
   font-size: var(--control-font-size);

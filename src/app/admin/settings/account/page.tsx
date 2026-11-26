@@ -11,7 +11,7 @@ export default async function Account() {
       <p className="eyebrow">Settings</p>
       <h1>Your account</h1>
       <p>You are signed in as {admin.email}.</p>
-      <Button asChild className="button">
+      <Button asChild variant="primary" className="button">
         <Link href="/forgot-password">Reset password by email</Link>
       </Button>
       <div className="mt-8">

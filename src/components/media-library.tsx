@@ -167,7 +167,7 @@ export function PhotoDetails({
               </p>
               <div className="actions">
                 {!photo.deletionPending && (
-                  <Button asChild className="button">
+                  <Button asChild variant="primary" className="button">
                     <a href={"/api/media/" + photo.id + "/original"}>
                       Download original
                     </a>

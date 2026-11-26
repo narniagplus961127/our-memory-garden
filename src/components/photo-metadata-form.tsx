@@ -145,7 +145,11 @@ export function PhotoMetadataForm({
         </p>
       )}
       <div className="flex flex-wrap gap-2">
-        <Button type="submit" disabled={busy || photo.deletionPending}>
+        <Button
+          type="submit"
+          variant="primary"
+          disabled={busy || photo.deletionPending}
+        >
           {busy ? "Saving…" : "Save changes"}
         </Button>
         {conflict && (
