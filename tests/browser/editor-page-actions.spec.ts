@@ -331,7 +331,10 @@ test("the website drawer and nested menus support keyboard and reduced motion at
     const height = await page
       .locator(".public-header")
       .evaluate((el) => el.getBoundingClientRect().height);
-    const drawer = page.getByRole("dialog", { name: "Menu", exact: true });
+    const drawer = page.getByRole("dialog", {
+      name: "Explore the garden",
+      exact: true,
+    });
     const opener = page.getByRole("button", {
       name: "Open website menu",
       exact: true,
