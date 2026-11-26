@@ -3079,19 +3079,31 @@ button.primary {
   overscroll-behavior-inline: contain;
   scrollbar-width: none;
   scroll-snap-type: x mandatory;
+  padding-block: 8px;
 }
 .garden-swiper-track {
   --swiper-count: var(--swiper-desktop, 3);
+  --swiper-peek: 0px;
   display: grid;
   grid-auto-flow: column;
   grid-auto-columns: calc(
-    (100% - (var(--swiper-count) - 1) * var(--swiper-gap)) / var(--swiper-count)
+    (
+        100% - var(--swiper-peek) - (var(--swiper-count) - 1) *
+          var(--swiper-gap)
+      ) /
+      var(--swiper-count)
   );
   gap: var(--swiper-gap);
   align-items: start;
 }
+.garden-swiper-rail[data-controls="true"]
+  > .garden-swiper-viewport
+  > .garden-swiper-track {
+  --swiper-peek: calc(var(--swiper-gap) + clamp(20px, 6cqi, 40px));
+}
 .garden-swiper-track > * {
   min-width: 0;
+  margin: 0;
   scroll-snap-align: start;
 }
 .garden-swiper-editing > .garden-swiper-track {
@@ -3103,8 +3115,8 @@ button.primary {
 .garden-swiper-track .garden-columns {
   padding-inline: 0;
 }
-.garden-swiper-track .garden-image-inset {
-  margin-inline: 0;
+.garden-swiper-track .garden-image {
+  margin: 0;
 }
 .garden-swiper-pagination {
   display: flex;

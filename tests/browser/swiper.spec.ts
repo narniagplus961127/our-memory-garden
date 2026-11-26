@@ -158,15 +158,22 @@ test("create a Swiper, round-trip its slides, and browse with responsive paginat
     expect(pageDots.y - (rail.y + rail.height)).toBeCloseTo(2, 0);
     expect(pageDots.height).toBeCloseTo(24, 0);
     const viewport = swiper.locator(".garden-swiper-viewport");
-    const width = (await viewport.boundingBox())!.width;
+    const viewportBounds = (await viewport.boundingBox())!;
+    const width = viewportBounds.width;
     const slides = swiper.locator(".garden-swiper-track > *");
-    expect((await slides.first().boundingBox())!.width).toBeCloseTo(
-      isMobile ? width : (width - 16) / 2,
-      0,
+    const firstSlide = (await slides.first().boundingBox())!;
+    expect(firstSlide.width).toBeLessThan(isMobile ? width : (width - 16) / 2);
+    const nextSlide = (await slides.nth(isMobile ? 1 : 2).boundingBox())!;
+    const peek = viewportBounds.x + width - nextSlide.x;
+    expect(peek).toBeGreaterThanOrEqual(19);
+    expect(peek).toBeLessThanOrEqual(41);
+    await expect(slides.first()).toHaveCSS(
+      "background-color",
+      "rgb(255, 243, 216)",
     );
     await expect(swiper.getByText("Slide 1", { exact: true })).toHaveCSS(
       "color",
-      "rgb(255, 255, 255)",
+      "rgb(45, 64, 50)",
     );
     const header = view.locator(".public-header");
     await expect(header).toHaveCSS("background-color", "rgb(255, 255, 255)");
